@@ -23,6 +23,25 @@ export default async function DashboardHome() {
     .select("id", { count: "exact", head: true })
     .eq("profile_id", user!.id);
 
+  const { count: pendingConnectionCount } = await supabase
+    .from("connections")
+    .select("id", { count: "exact", head: true })
+    .eq("addressee_id", user!.id)
+    .eq("status", "pending");
+
+  const { data: myOpenRequests } = await supabase
+    .from("referral_requests")
+    .select("id, referral_responses(status)")
+    .eq("requesting_profile_id", user!.id)
+    .eq("status", "open");
+
+  const offersAwaitingDecision = (myOpenRequests || []).reduce(
+    (sum, r: any) => sum + (r.referral_responses || []).filter((resp: any) => resp.status === "offered").length,
+    0
+  );
+
+  const hasAttentionItems = (pendingConnectionCount ?? 0) > 0 || offersAwaitingDecision > 0;
+
   return (
     <div>
       <h1>Overview</h1>
@@ -32,6 +51,28 @@ export default async function DashboardHome() {
           You haven't set up your profile yet.{" "}
           <a href="/dashboard/profile">Complete your profile</a> to appear in the directory once
           verified.
+        </div>
+      )}
+
+      {hasAttentionItems && (
+        <div className="card">
+          <h2>Needs your attention</h2>
+          {(pendingConnectionCount ?? 0) > 0 && (
+            <p>
+              <a href="/dashboard/network">
+                {pendingConnectionCount} pending connection request{pendingConnectionCount === 1 ? "" : "s"}
+              </a>{" "}
+              waiting on your response.
+            </p>
+          )}
+          {offersAwaitingDecision > 0 && (
+            <p>
+              <a href="/dashboard/referrals">
+                {offersAwaitingDecision} colleague offer{offersAwaitingDecision === 1 ? "" : "s"}
+              </a>{" "}
+              on your open referral request{offersAwaitingDecision === 1 ? "" : "s"}, awaiting your decision.
+            </p>
+          )}
         </div>
       )}
 
