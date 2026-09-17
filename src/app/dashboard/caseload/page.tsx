@@ -20,11 +20,18 @@ export default async function CaseloadPage() {
 
   return (
     <div>
-      <h1>Caseload</h1>
-      <p className="muted">
-        Every case is referenced by its case number — never a name. The private label is your own
-        optional shorthand and is never shown to anyone else.
-      </p>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+        <div>
+          <h1>Caseload</h1>
+          <p className="muted">
+            Every case is referenced by its case number — never a name. The private label is your
+            own optional shorthand and is never shown to anyone else.
+          </p>
+        </div>
+        <a href="/api/export/caseload" className="btn secondary" style={{ flex: "0 0 auto" }}>
+          Export CSV
+        </a>
+      </div>
 
       <div className="card">
         <h2>Books of business</h2>

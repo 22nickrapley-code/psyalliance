@@ -32,11 +32,18 @@ export default async function IncomePage() {
 
   return (
     <div>
-      <h1>Income &amp; revenue</h1>
-      <p className="muted">
-        Projected from your active caseload: rate × sessions/week × 4.3 weeks/month, net of each
-        book of business's retention share.
-      </p>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+        <div>
+          <h1>Income &amp; revenue</h1>
+          <p className="muted">
+            Projected from your active caseload: rate × sessions/week × 4.3 weeks/month, net of
+            each book of business's retention share.
+          </p>
+        </div>
+        <a href="/api/export/caseload" className="btn secondary" style={{ flex: "0 0 auto" }}>
+          Export CSV
+        </a>
+      </div>
 
       <div className="stat-grid">
         <div className="stat">
