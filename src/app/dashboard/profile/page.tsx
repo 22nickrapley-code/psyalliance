@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { saveProfile } from "./actions";
+import { saveProfile, submitCredentialVerification } from "./actions";
 
 const CATEGORY_LABELS: Record<string, string> = {
   treatment_specialism: "Treatment specialisms (rank your top few, 1 = highest)",
@@ -15,10 +15,15 @@ export default async function ProfilePage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const [{ data: profile }, { data: lookups }, { data: selected }] = await Promise.all([
+  const [{ data: profile }, { data: lookups }, { data: selected }, { data: verifications }] = await Promise.all([
     supabase.from("profiles").select("*").eq("id", user!.id).maybeSingle(),
     supabase.from("lookup_values").select("id, category, value").order("category").order("value"),
     supabase.from("profile_lookup_values").select("lookup_value_id, rank").eq("profile_id", user!.id),
+    supabase
+      .from("credential_verifications")
+      .select("*")
+      .eq("profile_id", user!.id)
+      .order("created_at", { ascending: false }),
   ]);
 
   const selectedMap = new Map((selected || []).map((s) => [s.lookup_value_id, s.rank]));
@@ -122,6 +127,61 @@ export default async function ProfilePage() {
 
         <button type="submit">Save profile</button>
       </form>
+
+      <div className="card">
+        <h2>Credential verification</h2>
+        <p className="muted">
+          Submit your license details for review. A human (Nick or Rena) checks this against your
+          state board's lookup before your profile is marked verified and appears in the
+          directory.
+        </p>
+        <table style={{ marginBottom: "1rem" }}>
+          <thead>
+            <tr>
+              <th>Source</th>
+              <th>State</th>
+              <th>License #</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {(verifications || []).map((v) => (
+              <tr key={v.id}>
+                <td>{v.source}</td>
+                <td>{v.state || "—"}</td>
+                <td>{v.license_number}</td>
+                <td>{v.matched ? "Matched" : v.flagged_reason ? `Flagged: ${v.flagged_reason}` : "Awaiting review"}</td>
+              </tr>
+            ))}
+            {(verifications || []).length === 0 && (
+              <tr>
+                <td colSpan={4} className="muted">No submissions yet.</td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+        <form action={submitCredentialVerification} className="field-row" style={{ alignItems: "flex-end" }}>
+          <div className="field" style={{ maxWidth: 160 }}>
+            <label htmlFor="source">Source</label>
+            <select id="source" name="source" defaultValue="state_board">
+              <option value="state_board">State board</option>
+              <option value="asppb">ASPPB</option>
+              <option value="npi_registry">NPI registry</option>
+            </select>
+          </div>
+          <div className="field" style={{ maxWidth: 100 }}>
+            <label htmlFor="ver_state">State</label>
+            <input id="ver_state" name="state" type="text" maxLength={2} placeholder="TX" />
+          </div>
+          <div className="field">
+            <label htmlFor="license_number">License number</label>
+            <input id="license_number" name="license_number" type="text" required />
+          </div>
+          <div className="field" style={{ flex: "0 0 auto" }}>
+            <button type="submit">Submit for review</button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }

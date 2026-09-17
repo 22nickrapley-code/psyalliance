@@ -18,7 +18,7 @@ export default async function DashboardLayout({
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("full_name, verification_status")
+    .select("full_name, verification_status, is_admin")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -35,6 +35,7 @@ export default async function DashboardLayout({
           <a href="/dashboard/documents">Documents</a>
           <a href="/dashboard/network">Network</a>
           <a href="/dashboard/referrals">Referrals</a>
+          {profile?.is_admin && <a href="/dashboard/admin/verifications">Verification queue</a>}
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
           <span className="muted">

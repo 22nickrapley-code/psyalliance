@@ -63,3 +63,21 @@ export async function saveProfile(formData: FormData) {
   revalidatePath("/dashboard/profile");
   revalidatePath("/dashboard");
 }
+
+export async function submitCredentialVerification(formData: FormData) {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not signed in");
+
+  const { error } = await supabase.from("credential_verifications").insert({
+    profile_id: user.id,
+    source: String(formData.get("source") || "state_board"),
+    state: String(formData.get("state") || "") || null,
+    license_number: String(formData.get("license_number") || ""),
+  });
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/dashboard/profile");
+}
