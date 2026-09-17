@@ -29,6 +29,13 @@ export async function saveProfile(formData: FormData) {
     states_qualified: statesQualified,
     primary_state: statesQualified[0] || null,
     accepting_referrals: formData.get("accepting_referrals") === "on",
+    pronoun: String(formData.get("pronoun") || "") || null,
+    practice_website: String(formData.get("practice_website") || "") || null,
+    contact_phone: String(formData.get("contact_phone") || "") || null,
+    contact_email: String(formData.get("contact_email") || "") || null,
+    open_to_group_consultation: formData.get("open_to_group_consultation") === "on",
+    open_to_give_supervision: formData.get("open_to_give_supervision") === "on",
+    open_to_receive_supervision: formData.get("open_to_receive_supervision") === "on",
     updated_at: new Date().toISOString(),
   };
 

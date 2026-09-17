@@ -18,6 +18,9 @@ export async function saveNotificationPreferences(formData: FormData) {
     email_on_message: formData.get("email_on_message") === "on",
     email_on_town_hall_reply: formData.get("email_on_town_hall_reply") === "on",
     email_on_endorsement: formData.get("email_on_endorsement") === "on",
+    email_on_new_colleague_in_location: formData.get("email_on_new_colleague_in_location") === "on",
+    email_on_new_colleague_matching_specialism: formData.get("email_on_new_colleague_matching_specialism") === "on",
+    email_on_new_colleague_matching_caseload: formData.get("email_on_new_colleague_matching_caseload") === "on",
     digest_frequency: String(formData.get("digest_frequency") || "realtime"),
     updated_at: new Date().toISOString(),
   };

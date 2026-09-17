@@ -120,6 +120,40 @@ export default async function SettingsPage() {
               Email me when I receive a reaction or endorsement
             </label>
           </div>
+          <h3 style={{ fontSize: "0.95rem", marginTop: "1.25rem" }}>New colleague notifications</h3>
+          <div className="checkbox-row">
+            <input
+              id="email_on_new_colleague_in_location"
+              name="email_on_new_colleague_in_location"
+              type="checkbox"
+              defaultChecked={prefs?.email_on_new_colleague_in_location ?? true}
+            />
+            <label htmlFor="email_on_new_colleague_in_location" style={{ margin: 0, fontWeight: 400 }}>
+              A new verified colleague joins in my location
+            </label>
+          </div>
+          <div className="checkbox-row">
+            <input
+              id="email_on_new_colleague_matching_specialism"
+              name="email_on_new_colleague_matching_specialism"
+              type="checkbox"
+              defaultChecked={prefs?.email_on_new_colleague_matching_specialism ?? true}
+            />
+            <label htmlFor="email_on_new_colleague_matching_specialism" style={{ margin: 0, fontWeight: 400 }}>
+              A new colleague joins matching one of my specialisms
+            </label>
+          </div>
+          <div className="checkbox-row">
+            <input
+              id="email_on_new_colleague_matching_caseload"
+              name="email_on_new_colleague_matching_caseload"
+              type="checkbox"
+              defaultChecked={prefs?.email_on_new_colleague_matching_caseload ?? true}
+            />
+            <label htmlFor="email_on_new_colleague_matching_caseload" style={{ margin: 0, fontWeight: 400 }}>
+              A new colleague joins matching one of my current caseload needs
+            </label>
+          </div>
           <div className="field" style={{ maxWidth: 260, marginTop: "0.75rem" }}>
             <label htmlFor="digest_frequency">How often should we email you, at most?</label>
             <select id="digest_frequency" name="digest_frequency" defaultValue={prefs?.digest_frequency || "realtime"}>

@@ -110,6 +110,38 @@ export default async function ProfilePage() {
             <label htmlFor="primary_practice_city">Primary practice city</label>
             <input id="primary_practice_city" name="primary_practice_city" type="text" defaultValue={profile?.primary_practice_city || ""} />
           </div>
+          <div className="field-row">
+            <div className="field">
+              <label htmlFor="practice_website">Practice website</label>
+              <input id="practice_website" name="practice_website" type="text" placeholder="https://…" defaultValue={profile?.practice_website || ""} />
+            </div>
+            <div className="field">
+              <label htmlFor="contact_phone">Contact phone</label>
+              <input id="contact_phone" name="contact_phone" type="text" defaultValue={profile?.contact_phone || ""} />
+            </div>
+            <div className="field">
+              <label htmlFor="contact_email">Contact email</label>
+              <input id="contact_email" name="contact_email" type="email" defaultValue={profile?.contact_email || ""} />
+            </div>
+          </div>
+          <div className="checkbox-row">
+            <input id="open_to_group_consultation" name="open_to_group_consultation" type="checkbox" defaultChecked={profile?.open_to_group_consultation ?? true} />
+            <label htmlFor="open_to_group_consultation" style={{ margin: 0, fontWeight: 400, color: "var(--text)" }}>
+              Open to Partner group consultation
+            </label>
+          </div>
+          <div className="checkbox-row">
+            <input id="open_to_give_supervision" name="open_to_give_supervision" type="checkbox" defaultChecked={profile?.open_to_give_supervision ?? false} />
+            <label htmlFor="open_to_give_supervision" style={{ margin: 0, fontWeight: 400, color: "var(--text)" }}>
+              Open to provide private supervision
+            </label>
+          </div>
+          <div className="checkbox-row">
+            <input id="open_to_receive_supervision" name="open_to_receive_supervision" type="checkbox" defaultChecked={profile?.open_to_receive_supervision ?? false} />
+            <label htmlFor="open_to_receive_supervision" style={{ margin: 0, fontWeight: 400, color: "var(--text)" }}>
+              Open to receive private supervision
+            </label>
+          </div>
         </div>
 
         {Object.entries(CATEGORY_LABELS).map(([category, label]) => (
@@ -150,6 +182,10 @@ export default async function ProfilePage() {
             Purely a self-disclosure — some clients look for a provider who shares part of their own
             background. Leave any of this blank if you'd rather not say.
           </p>
+          <div className="field" style={{ maxWidth: 200, marginBottom: "1.25rem" }}>
+            <label htmlFor="pronoun">Pronoun (optional)</label>
+            <input id="pronoun" name="pronoun" type="text" placeholder="e.g. she/her" defaultValue={profile?.pronoun || ""} />
+          </div>
           {Object.entries(SELF_DISCLOSURE_CATEGORY_LABELS).map(([category, label]) => (
             <div key={category} style={{ marginBottom: "1.25rem" }}>
               <h3 style={{ fontSize: "0.95rem", marginBottom: "0.5rem" }}>{label}</h3>
