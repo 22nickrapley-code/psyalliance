@@ -36,6 +36,7 @@ export async function saveProfile(formData: FormData) {
     open_to_group_consultation: formData.get("open_to_group_consultation") === "on",
     open_to_give_supervision: formData.get("open_to_give_supervision") === "on",
     open_to_receive_supervision: formData.get("open_to_receive_supervision") === "on",
+    psypact_participating: formData.get("psypact_participating") === "on",
     updated_at: new Date().toISOString(),
   };
 

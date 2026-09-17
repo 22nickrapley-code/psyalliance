@@ -75,6 +75,7 @@ export default async function ReferralsPage() {
     primary_practice_city: string | null;
     primary_state: string | null;
     last_active_at: string | null;
+    psypact_participating: boolean;
     specialismRankById: Map<number, number>;
   };
   const peopleForMatching = new Map<string, DirectoryPersonForMatching>();
@@ -88,6 +89,7 @@ export default async function ReferralsPage() {
         primary_practice_city: row.primary_practice_city,
         primary_state: row.primary_state,
         last_active_at: row.last_active_at,
+        psypact_participating: row.psypact_participating,
         specialismRankById: new Map(),
       });
     }
@@ -121,6 +123,7 @@ export default async function ReferralsPage() {
           : "none"),
       endorsementScore: scoreById.get(p.id) || 0,
       lastActiveAt: p.last_active_at,
+      psypactParticipating: p.psypact_participating,
     }));
     return rankCandidates(candidates, { city: request.city, state: request.state }).slice(0, 5);
   }
@@ -214,6 +217,11 @@ export default async function ReferralsPage() {
                         {m.fullName}
                         {m.locationTier !== "national" ? ` · ${m.locationTier}` : ""}
                         {m.connectionTier !== "none" && <span className="tag" style={{ marginLeft: "0.4rem" }}>{m.connectionTier}</span>}
+                        {m.psypactParticipating && (
+                          <span className="tag" style={{ marginLeft: "0.4rem" }} title="Holds PSYPACT Authority to Practice Interjurisdictional Telepsychology — may be able to see this client by telehealth across state lines">
+                            PSYPACT
+                          </span>
+                        )}
                       </span>
                       <span style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
                         <span className="muted" style={{ fontSize: "0.8rem" }}>score {m.score}</span>

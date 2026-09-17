@@ -27,6 +27,7 @@ export interface MatchCandidate {
   connectionTier: ConnectionTier;
   endorsementScore: number;
   lastActiveAt: string | null;
+  psypactParticipating?: boolean;
 }
 
 export interface ScoredCandidate extends MatchCandidate {

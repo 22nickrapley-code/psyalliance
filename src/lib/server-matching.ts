@@ -40,6 +40,7 @@ export async function computeRankedCandidates(
     primary_state: string | null;
     accepting_referrals: boolean;
     last_active_at: string | null;
+    psypact_participating: boolean;
     specialismRankByValue: Map<string, number>;
     sessionTypes: Set<string>;
   };
@@ -55,6 +56,7 @@ export async function computeRankedCandidates(
         primary_state: row.primary_state,
         accepting_referrals: row.accepting_referrals,
         last_active_at: row.last_active_at,
+        psypact_participating: row.psypact_participating,
         specialismRankByValue: new Map(),
         sessionTypes: new Set(),
       });
@@ -80,6 +82,7 @@ export async function computeRankedCandidates(
       connectionTier: tierByOtherId.get(p.id) ?? "none",
       endorsementScore: scoreById.get(p.id) || 0,
       lastActiveAt: p.last_active_at,
+      psypactParticipating: p.psypact_participating,
     }));
 
   const ranked = rankCandidates(candidates, { city: need.city, state: need.state });

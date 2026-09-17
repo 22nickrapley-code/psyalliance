@@ -86,6 +86,7 @@ export default async function DashboardHome() {
   const caseloadSnapshot = await Promise.all(
     (recentCases || []).map(async (c) => {
       let topMatch: string | null = null;
+      let topMatchPsypact = false;
       if (c.primary_need) {
         const ranked = await computeRankedCandidates(supabase, user!.id, {
           specialismValue: c.primary_need,
@@ -94,8 +95,9 @@ export default async function DashboardHome() {
           sessionType: c.session_type,
         });
         topMatch = ranked[0]?.fullName || null;
+        topMatchPsypact = ranked[0]?.psypactParticipating ?? false;
       }
-      return { ...c, topMatch };
+      return { ...c, topMatch, topMatchPsypact };
     })
   );
 
@@ -216,7 +218,14 @@ export default async function DashboardHome() {
                   <td>{c.primary_need || "—"}</td>
                   <td>
                     {c.topMatch ? (
-                      <span className="tag">{c.topMatch}</span>
+                      <>
+                        <span className="tag">{c.topMatch}</span>
+                        {c.topMatchPsypact && (
+                          <span className="tag" style={{ marginLeft: "0.3rem" }} title="Holds PSYPACT Authority to Practice Interjurisdictional Telepsychology">
+                            PSYPACT
+                          </span>
+                        )}
+                      </>
                     ) : (
                       <span className="muted">—</span>
                     )}

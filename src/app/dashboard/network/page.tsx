@@ -10,13 +10,14 @@ type DirectoryPerson = {
   primary_practice_city: string | null;
   primary_state: string | null;
   accepting_referrals: boolean;
+  psypact_participating: boolean;
   specialisms: Set<string>;
 };
 
 export default async function NetworkPage({
   searchParams,
 }: {
-  searchParams: { q?: string; state?: string; specialism?: string; degree?: string };
+  searchParams: { q?: string; state?: string; specialism?: string; degree?: string; psypact?: string };
 }) {
   const supabase = createClient();
   const {
@@ -68,6 +69,7 @@ export default async function NetworkPage({
         primary_practice_city: row.primary_practice_city,
         primary_state: row.primary_state,
         accepting_referrals: row.accepting_referrals,
+        psypact_participating: row.psypact_participating,
         specialisms: new Set(),
       });
     }
@@ -113,12 +115,14 @@ export default async function NetworkPage({
   const stateFilter = (searchParams?.state || "").trim().toUpperCase();
   const specialismFilter = searchParams?.specialism || "";
   const degreeFilter = searchParams?.degree || "";
+  const psypactFilter = searchParams?.psypact === "1";
 
   const filteredDirectory = Array.from(people.values()).filter((p) => {
     if (q && !p.full_name.toLowerCase().includes(q)) return false;
     if (stateFilter && p.primary_state !== stateFilter) return false;
     if (specialismFilter && !p.specialisms.has(specialismFilter)) return false;
     if (degreeFilter && degreeFilter !== "all" && connectionDegree(p) !== degreeFilter) return false;
+    if (psypactFilter && !p.psypact_participating) return false;
     return true;
   });
 
@@ -224,6 +228,11 @@ export default async function NetworkPage({
               {p.credential_prefix} {p.full_name} — {p.qualification_level}
               {p.primary_practice_city ? `, ${p.primary_practice_city}` : ""}
               {p.primary_state ? `, ${p.primary_state}` : ""}
+              {p.psypact_participating && (
+                <span className="tag" style={{ marginLeft: "0.5rem" }} title="Holds PSYPACT Authority to Practice Interjurisdictional Telepsychology">
+                  PSYPACT
+                </span>
+              )}
               {badge && (
                 <span className="tag" style={{ marginLeft: "0.5rem" }} title={`Community score: ${badge.score}`}>
                   {badge.label}
@@ -286,10 +295,16 @@ export default async function NetworkPage({
               <option value="none">Not yet connected</option>
             </select>
           </div>
+          <div className="field checkbox-row" style={{ flex: "0 0 auto", alignSelf: "center" }}>
+            <input id="psypact" name="psypact" type="checkbox" value="1" defaultChecked={psypactFilter} />
+            <label htmlFor="psypact" style={{ margin: 0, fontWeight: 400, color: "var(--text)" }}>
+              PSYPACT only
+            </label>
+          </div>
           <div className="field" style={{ flex: "0 0 auto" }}>
             <button type="submit" className="secondary">Filter</button>
           </div>
-          {(q || stateFilter || specialismFilter || degreeFilter) && (
+          {(q || stateFilter || specialismFilter || degreeFilter || psypactFilter) && (
             <div className="field" style={{ flex: "0 0 auto" }}>
               <a href="/dashboard/network" className="btn secondary" style={{ display: "inline-block" }}>Clear</a>
             </div>
@@ -308,7 +323,14 @@ export default async function NetworkPage({
           <tbody>
             {filteredDirectory.map((p) => (
               <tr key={p.id}>
-                <td>{p.credential_prefix} {p.full_name}</td>
+                <td>
+                  {p.credential_prefix} {p.full_name}
+                  {p.psypact_participating && (
+                    <span className="tag" style={{ marginLeft: "0.4rem" }} title="Holds PSYPACT Authority to Practice Interjurisdictional Telepsychology">
+                      PSYPACT
+                    </span>
+                  )}
+                </td>
                 <td>{p.primary_practice_city || "—"}{p.primary_state ? `, ${p.primary_state}` : ""}</td>
                 <td>{[...p.specialisms].slice(0, 3).map((s) => <span key={s} className="tag">{s}</span>)}</td>
                 <td><span className="tag">{connectionDegree(p)}</span></td>

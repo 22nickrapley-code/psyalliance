@@ -142,6 +142,20 @@ export default async function ProfilePage() {
               Open to receive private supervision
             </label>
           </div>
+          <div className="checkbox-row">
+            <input id="psypact_participating" name="psypact_participating" type="checkbox" defaultChecked={profile?.psypact_participating ?? false} />
+            <label htmlFor="psypact_participating" style={{ margin: 0, fontWeight: 400, color: "var(--text)" }}>
+              I hold PSYPACT Authority to Practice Interjurisdictional Telepsychology (APIT)
+            </label>
+          </div>
+          <p className="muted" style={{ marginTop: "-0.5rem", marginBottom: 0 }}>
+            Shown as a badge to colleagues so they know you may be able to see their clients by
+            telehealth across state lines. Always confirm current participating states and your own
+            scope of practice at{" "}
+            <a href="https://psypact.org" target="_blank" rel="noreferrer">psypact.org</a> — this
+            platform doesn't track which states are in the compact, since that list changes over
+            time.
+          </p>
         </div>
 
         {Object.entries(CATEGORY_LABELS).map(([category, label]) => (
