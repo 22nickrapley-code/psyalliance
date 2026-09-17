@@ -2,12 +2,27 @@ import { createClient } from "@/lib/supabase/server";
 import { joinChannel, leaveChannel } from "./actions";
 import Link from "next/link";
 
-export default async function TownHallIndexPage() {
+export default async function TownHallIndexPage({
+  searchParams,
+}: {
+  searchParams: { q?: string };
+}) {
   const supabase = createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   const myself = user!.id;
+
+  const q = (searchParams?.q || "").trim();
+  const { data: searchResults } = q
+    ? await supabase
+        .from("town_hall_messages")
+        .select("id, body, created_at, channel_id, author:author_id(full_name), channel:channel_id(name)")
+        .ilike("body", `%${q}%`)
+        .is("deleted_at", null)
+        .order("created_at", { ascending: false })
+        .limit(30)
+    : { data: null };
 
   // Auto-join channels matching this user's own treatment specialisms, if
   // they aren't already a member (of that channel, at all - manual leaves
@@ -55,6 +70,36 @@ export default async function TownHallIndexPage() {
         general channels. You're auto-joined to channels matching your own specialisms; join or
         leave any others freely.
       </p>
+
+      <div className="card">
+        <h2>Search Town Hall</h2>
+        <form method="GET" className="field-row" style={{ alignItems: "flex-end" }}>
+          <div className="field">
+            <label htmlFor="q">Search conversations</label>
+            <input id="q" name="q" type="text" defaultValue={q} placeholder="e.g. depression, EMDR, telehealth in Texas…" />
+          </div>
+          <div className="field" style={{ flex: "0 0 auto" }}>
+            <button type="submit" className="secondary">Search</button>
+          </div>
+        </form>
+        {q && (
+          <div style={{ marginTop: "1rem" }}>
+            {(searchResults || []).map((m: any) => (
+              <div key={m.id} style={{ padding: "0.6rem 0", borderBottom: "1px solid var(--border)" }}>
+                <a href={`/dashboard/town-hall/${m.channel_id}`}>
+                  <span className="tag">{m.channel?.name}</span>
+                </a>{" "}
+                <strong>{m.author?.full_name || "Colleague"}</strong>
+                <span className="muted"> — {new Date(m.created_at).toLocaleDateString()}</span>
+                <p style={{ margin: "0.25rem 0 0" }}>{m.body}</p>
+              </div>
+            ))}
+            {(searchResults || []).length === 0 && (
+              <p className="muted">No Town Hall messages match "{q}".</p>
+            )}
+          </div>
+        )}
+      </div>
 
       <div className="card">
         <h2>Your channels ({myChannels.length})</h2>
