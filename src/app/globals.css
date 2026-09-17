@@ -232,3 +232,31 @@ th {
   font-weight: 400;
   color: var(--text);
 }
+
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 1; }
+}
+
+.skeleton-block,
+.skeleton-line {
+  background: var(--border);
+  border-radius: 6px;
+  animation: skeleton-pulse 1.4s ease-in-out infinite;
+}
+
+.skeleton-line {
+  height: 0.9rem;
+  margin-bottom: 0.6rem;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 2.5rem 1rem;
+  color: var(--muted);
+}
+
+.empty-state .btn,
+.empty-state button {
+  margin-top: 0.75rem;
+}
