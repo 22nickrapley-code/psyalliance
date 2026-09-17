@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { computeRankedCandidates } from "@/lib/server-matching";
 
 export default async function DashboardHome() {
   const supabase = createClient();
@@ -69,6 +70,34 @@ export default async function DashboardHome() {
     if (!r.conversation) return false;
     return new Date(r.conversation.last_message_at) > new Date(r.last_read_at);
   }).length;
+
+  // "My Caseload Distribution" + "Recommended Caseload Matches" from the
+  // original Dashboard.txt mockup - a snapshot of your most recent active
+  // cases with the top-ranked colleague match for each one's primary need,
+  // right on the Overview page rather than requiring a trip to Referrals.
+  const { data: recentCases } = await supabase
+    .from("caseload_clients")
+    .select("id, city, state, session_type, insurance, primary_need, secondary_need, tertiary_need")
+    .eq("profile_id", user!.id)
+    .eq("is_active", true)
+    .order("created_at", { ascending: false })
+    .limit(5);
+
+  const caseloadSnapshot = await Promise.all(
+    (recentCases || []).map(async (c) => {
+      let topMatch: string | null = null;
+      if (c.primary_need) {
+        const ranked = await computeRankedCandidates(supabase, user!.id, {
+          specialismValue: c.primary_need,
+          city: c.city,
+          state: c.state,
+          sessionType: c.session_type,
+        });
+        topMatch = ranked[0]?.fullName || null;
+      }
+      return { ...c, topMatch };
+    })
+  );
 
   const hasAttentionItems =
     (pendingConnectionCount ?? 0) > 0 ||
@@ -162,6 +191,45 @@ export default async function DashboardHome() {
           <div className="label">Accepting referrals</div>
         </div>
       </div>
+
+      {caseloadSnapshot.length > 0 && (
+        <div className="card" style={{ marginTop: "1.5rem" }}>
+          <h2>My caseload</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>Case</th>
+                <th>State</th>
+                <th>Session type</th>
+                <th>Insurance</th>
+                <th>Primary need</th>
+                <th>Recommended match</th>
+              </tr>
+            </thead>
+            <tbody>
+              {caseloadSnapshot.map((c) => (
+                <tr key={c.id}>
+                  <td>Case #{c.id}</td>
+                  <td>{c.state || "—"}</td>
+                  <td>{c.session_type || "—"}</td>
+                  <td>{c.insurance || "—"}</td>
+                  <td>{c.primary_need || "—"}</td>
+                  <td>
+                    {c.topMatch ? (
+                      <span className="tag">{c.topMatch}</span>
+                    ) : (
+                      <span className="muted">—</span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <p className="muted" style={{ marginTop: "0.75rem", marginBottom: 0 }}>
+            <a href="/dashboard/caseload">Manage full caseload</a> · <a href="/dashboard/referrals">post a referral request</a>
+          </p>
+        </div>
+      )}
 
       <div className="card" style={{ marginTop: "1.5rem" }}>
         <h2>Quick links</h2>
