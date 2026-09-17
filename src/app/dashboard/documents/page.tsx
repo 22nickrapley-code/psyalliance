@@ -64,7 +64,16 @@ export default async function DocumentsPage() {
           </div>
           <div className="field">
             <label htmlFor="file">File</label>
-            <input id="file" name="file" type="file" required />
+            <input
+              id="file"
+              name="file"
+              type="file"
+              required
+              accept=".pdf,.png,.jpg,.jpeg,.webp,.doc,.docx,.txt,.csv"
+            />
+            <p className="muted" style={{ marginTop: "0.3rem", marginBottom: 0 }}>
+              PDF, Word, image, plain text or CSV — up to 15MB.
+            </p>
           </div>
           <button type="submit">Upload</button>
         </form>

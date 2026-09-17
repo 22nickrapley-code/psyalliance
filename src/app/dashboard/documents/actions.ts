@@ -3,6 +3,22 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 
+// Keep uploads to the kinds of files a practice actually needs to share
+// (licenses, intake forms, referral letters, insurance panels) and off of
+// the free Storage tier's cap. Executables, archives, etc. are rejected
+// outright rather than merely discouraged.
+const MAX_FILE_SIZE_BYTES = 15 * 1024 * 1024; // 15MB
+const ALLOWED_CONTENT_TYPES = new Set([
+  "application/pdf",
+  "image/png",
+  "image/jpeg",
+  "image/webp",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "text/plain",
+  "text/csv",
+]);
+
 export async function uploadDocument(formData: FormData) {
   const supabase = createClient();
   const {
@@ -12,6 +28,14 @@ export async function uploadDocument(formData: FormData) {
 
   const file = formData.get("file") as File | null;
   if (!file || file.size === 0) throw new Error("No file selected");
+  if (file.size > MAX_FILE_SIZE_BYTES) {
+    throw new Error(`File is too large (max ${MAX_FILE_SIZE_BYTES / (1024 * 1024)}MB)`);
+  }
+  if (file.type && !ALLOWED_CONTENT_TYPES.has(file.type)) {
+    throw new Error(
+      `File type "${file.type}" isn't supported. Use PDF, Word, plain text/CSV, or an image.`
+    );
+  }
 
   const ownerScope = String(formData.get("owner_scope") || "personal");
   const folder = ownerScope === "world" ? "shared" : "personal";
