@@ -18,22 +18,35 @@ export default async function NetworkPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const [{ data: directoryRows }, { data: connections }, { data: myLookups }] = await Promise.all([
-    supabase.from("public_directory").select("*"),
-    supabase
-      .from("connections")
-      .select("*, requester:requester_id(full_name), addressee:addressee_id(full_name)")
-      .or(`requester_id.eq.${user!.id},addressee_id.eq.${user!.id}`),
-    supabase
-      .from("profile_lookup_values")
-      .select("lookup_value_id, lookup_values(category, value)")
-      .eq("profile_id", user!.id),
-  ]);
+  const [{ data: directoryRows }, { data: connections }, { data: myLookups }, { data: blocklist }, { data: scores }] =
+    await Promise.all([
+      supabase.from("public_directory").select("*"),
+      supabase
+        .from("connections")
+        .select("*, requester:requester_id(full_name), addressee:addressee_id(full_name)")
+        .or(`requester_id.eq.${user!.id},addressee_id.eq.${user!.id}`),
+      supabase
+        .from("profile_lookup_values")
+        .select("lookup_value_id, lookup_values(category, value)")
+        .eq("profile_id", user!.id),
+      supabase.from("do_not_work_with").select("blocked_profile_id").eq("profile_id", user!.id),
+      supabase.from("community_endorsement_scores").select("profile_id, score"),
+    ]);
+
+  const blockedIds = new Set((blocklist || []).map((b) => b.blocked_profile_id));
+  const scoreById = new Map((scores || []).map((s) => [s.profile_id, s.score as number]));
+  const engagementBadge = (personId: string) => {
+    const score = scoreById.get(personId) || 0;
+    if (score >= 20) return { label: "Highly engaged — consider Partner", score };
+    if (score >= 10) return { label: "Community pick — consider Bench", score };
+    return null;
+  };
 
   const myself = user!.id;
   const people = new Map<string, DirectoryPerson>();
   for (const row of directoryRows || []) {
     if (row.id === myself) continue;
+    if (blockedIds.has(row.id)) continue;
     if (!people.has(row.id)) {
       people.set(row.id, {
         id: row.id,
@@ -147,12 +160,19 @@ export default async function NetworkPage() {
       <div className="card">
         <h2>Recommended for you</h2>
         <p className="muted">Colleagues who share at least one of your treatment specialisms.</p>
-        {recommended.map((p) => (
+        {recommended.map((p) => {
+          const badge = engagementBadge(p.id);
+          return (
           <div key={p.id} className="checkbox-row" style={{ justifyContent: "space-between" }}>
             <span>
               {p.credential_prefix} {p.full_name} — {p.qualification_level}
               {p.primary_practice_city ? `, ${p.primary_practice_city}` : ""}
               {p.primary_state ? `, ${p.primary_state}` : ""}
+              {badge && (
+                <span className="tag" style={{ marginLeft: "0.5rem" }} title={`Community score: ${badge.score}`}>
+                  {badge.label}
+                </span>
+              )}
             </span>
             <span>
               <form action={sendConnectionRequest} style={{ display: "inline" }}>
@@ -167,7 +187,8 @@ export default async function NetworkPage() {
               </form>
             </span>
           </div>
-        ))}
+          );
+        })}
         {recommended.length === 0 && (
           <p className="muted">No matches yet — verified colleagues with overlapping specialisms will show up here.</p>
         )}

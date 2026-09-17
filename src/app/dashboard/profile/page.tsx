@@ -7,7 +7,20 @@ const CATEGORY_LABELS: Record<string, string> = {
   insurance: "Insurance accepted",
   language: "Languages spoken",
   session_type: "Session types offered",
+  age_group_specialism: "Client age groups you work with",
+  sexual_orientation_specialism: "Client populations you specialize with (sexual orientation)",
 };
+
+// Self-disclosed practitioner identity, shown separately from client-population
+// specialisms above — entirely optional, used only to help clients find a
+// good fit, never required and never shown as a search filter to anyone else
+// without the practitioner choosing to display it.
+const SELF_DISCLOSURE_CATEGORY_LABELS: Record<string, string> = {
+  ethnicity: "Your ethnicity (optional, select any that apply)",
+  gender_identity: "Your gender identity (optional, select any that apply)",
+  sex: "Your sex (optional)",
+};
+const SINGLE_SELECT_CATEGORIES = new Set(["sex"]);
 
 export default async function ProfilePage() {
   const supabase = createClient();
@@ -124,6 +137,35 @@ export default async function ProfilePage() {
             </div>
           </div>
         ))}
+
+        <div className="card">
+          <h2>About you (optional)</h2>
+          <p className="muted">
+            Purely a self-disclosure — some clients look for a provider who shares part of their own
+            background. Leave any of this blank if you'd rather not say.
+          </p>
+          {Object.entries(SELF_DISCLOSURE_CATEGORY_LABELS).map(([category, label]) => (
+            <div key={category} style={{ marginBottom: "1.25rem" }}>
+              <h3 style={{ fontSize: "0.95rem", marginBottom: "0.5rem" }}>{label}</h3>
+              <div className="checkbox-grid">
+                {(byCategory[category] || []).map((lv) => (
+                  <label key={lv.id}>
+                    <input
+                      type={SINGLE_SELECT_CATEGORIES.has(category) ? "radio" : "checkbox"}
+                      name={SINGLE_SELECT_CATEGORIES.has(category) ? `single_${category}` : `lv_${lv.id}`}
+                      value={SINGLE_SELECT_CATEGORIES.has(category) ? lv.id : undefined}
+                      defaultChecked={selectedMap.has(lv.id)}
+                    />
+                    {lv.value}
+                  </label>
+                ))}
+                {(byCategory[category] || []).length === 0 && (
+                  <p className="muted">No values seeded yet for this category.</p>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
 
         <button type="submit">Save profile</button>
       </form>

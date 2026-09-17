@@ -16,6 +16,7 @@ export async function createReferralRequest(formData: FormData) {
     requesting_profile_id: user.id,
     specialism_lookup_id: specialismId ? Number(specialismId) : null,
     state: String(formData.get("state") || "") || null,
+    city: String(formData.get("city") || "") || null,
     insurance: String(formData.get("insurance") || "") || null,
     notes: String(formData.get("notes") || "") || null,
   });

@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 
 const RANKED_CATEGORIES = ["treatment_specialism", "treatment_modality"];
+const SINGLE_SELECT_CATEGORIES = ["sex"];
 
 export async function saveProfile(formData: FormData) {
   const supabase = createClient();
@@ -41,7 +42,18 @@ export async function saveProfile(formData: FormData) {
   const { data: allLookups } = await supabase.from("lookup_values").select("id, category");
 
   const rows: { profile_id: string; lookup_value_id: number; rank: number | null }[] = [];
+  const singleSelectIdsChosen = new Set<string>();
+  for (const category of SINGLE_SELECT_CATEGORIES) {
+    const chosen = formData.get(`single_${category}`);
+    if (chosen) singleSelectIdsChosen.add(String(chosen));
+  }
   for (const lv of allLookups || []) {
+    if (SINGLE_SELECT_CATEGORIES.includes(lv.category)) {
+      if (singleSelectIdsChosen.has(String(lv.id))) {
+        rows.push({ profile_id: user.id, lookup_value_id: lv.id, rank: null });
+      }
+      continue;
+    }
     const checked = formData.get(`lv_${lv.id}`) === "on";
     if (!checked) continue;
     let rank: number | null = null;
