@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { createReferralRequest, offerToHelp, acceptResponse, closeReferralRequest } from "./actions";
+import { startConversation } from "../messages/actions";
 import { rankCandidates, type MatchCandidate, type ConnectionTier } from "@/lib/matching";
 
 export default async function ReferralsPage() {
@@ -179,13 +180,21 @@ export default async function ReferralsPage() {
             {(r.referral_responses || []).map((resp: any) => (
               <div key={resp.id} className="checkbox-row" style={{ justifyContent: "space-between" }}>
                 <span>{resp.profiles?.full_name} — {resp.status}{resp.message ? `: "${resp.message}"` : ""}</span>
-                {resp.status === "offered" && r.status === "open" && (
-                  <form action={acceptResponse}>
-                    <input type="hidden" name="response_id" value={resp.id} />
-                    <input type="hidden" name="referral_request_id" value={r.id} />
-                    <button type="submit">Accept</button>
+                <span>
+                  <form action={startConversation} style={{ display: "inline" }}>
+                    <input type="hidden" name="participant_ids" value={resp.responding_profile_id} />
+                    <input type="hidden" name="title" value={`Re: ${r.lookup_values?.value || "referral"} request`} />
+                    <input type="hidden" name="body" value={`Hi ${resp.profiles?.full_name || ""}, thanks for offering to help — could we discuss further?`} />
+                    <button type="submit" className="secondary" style={{ marginRight: "0.4rem" }}>Discuss</button>
                   </form>
-                )}
+                  {resp.status === "offered" && r.status === "open" && (
+                    <form action={acceptResponse} style={{ display: "inline" }}>
+                      <input type="hidden" name="response_id" value={resp.id} />
+                      <input type="hidden" name="referral_request_id" value={r.id} />
+                      <button type="submit">Accept</button>
+                    </form>
+                  )}
+                </span>
               </div>
             ))}
             {r.status === "open" && (
@@ -206,7 +215,21 @@ export default async function ReferralsPage() {
                         {m.locationTier !== "national" ? ` · ${m.locationTier}` : ""}
                         {m.connectionTier !== "none" && <span className="tag" style={{ marginLeft: "0.4rem" }}>{m.connectionTier}</span>}
                       </span>
-                      <span className="muted" style={{ fontSize: "0.8rem" }}>score {m.score}</span>
+                      <span style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                        <span className="muted" style={{ fontSize: "0.8rem" }}>score {m.score}</span>
+                        <form action={startConversation}>
+                          <input type="hidden" name="participant_ids" value={m.profileId} />
+                          <input type="hidden" name="title" value={`${r.lookup_values?.value || "Referral"} — coverage request`} />
+                          <input
+                            type="hidden"
+                            name="body"
+                            value={`Hi ${m.fullName}, I'm looking to refer a client${r.state ? ` in ${r.state}` : ""}${r.lookup_values?.value ? ` for ${r.lookup_values.value}` : ""}. Are you able to help?`}
+                          />
+                          <button type="submit" className="secondary" style={{ padding: "0.15rem 0.5rem", fontSize: "0.8rem" }}>
+                            Message
+                          </button>
+                        </form>
+                      </span>
                     </div>
                   ))}
                   {suggestedMatchesFor(r).length === 0 && (
