@@ -8,6 +8,7 @@ type NavItem = {
   href: string;
   label: string;
   icon: ReactNode;
+  badge?: number;
 };
 
 type NavGroup = {
@@ -26,6 +27,12 @@ const icon = {
     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
       <circle cx="12" cy="8" r="3.5" />
       <path d="M4.5 20c1.4-3.6 4.4-5.5 7.5-5.5s6.1 1.9 7.5 5.5" />
+    </svg>
+  ),
+  messages: (
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 5.5h16v10a1 1 0 0 1-1 1H9l-4.5 4v-4H5a1 1 0 0 1-1-1v-10Z" />
+      <path d="M8 10h8M8 13h5" />
     </svg>
   ),
   caseload: (
@@ -101,11 +108,14 @@ const icon = {
   ),
 };
 
-export function buildNavGroups(isAdmin: boolean): NavGroup[] {
+export function buildNavGroups(isAdmin: boolean, unreadMessageCount = 0): NavGroup[] {
   const groups: NavGroup[] = [
     {
       label: "Overview",
-      items: [{ href: "/dashboard", label: "Overview", icon: icon.overview }],
+      items: [
+        { href: "/dashboard", label: "Overview", icon: icon.overview },
+        { href: "/dashboard/messages", label: "Messages", icon: icon.messages, badge: unreadMessageCount },
+      ],
     },
     {
       label: "My practice",
@@ -168,7 +178,8 @@ export default function SidebarNav({ groups }: { groups: NavGroup[] }) {
                 className={`nav-link${isActive(item.href) ? " active" : ""}`}
               >
                 {item.icon}
-                {item.label}
+                <span style={{ flex: 1 }}>{item.label}</span>
+                {!!item.badge && <span className="nav-badge">{item.badge}</span>}
               </Link>
             ))}
           </div>

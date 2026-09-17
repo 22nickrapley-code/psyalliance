@@ -27,6 +27,15 @@ export default async function DashboardLayout({
   // not awaited-critical, but kept simple and correct rather than clever.
   supabase.from("profiles").update({ last_active_at: new Date().toISOString() }).eq("id", user.id).then(() => {});
 
+  const { data: myConversationRows } = await supabase
+    .from("conversation_participants")
+    .select("last_read_at, conversation:conversation_id(last_message_at)")
+    .eq("profile_id", user.id);
+  const unreadMessageCount = (myConversationRows || []).filter((r: any) => {
+    if (!r.conversation) return false;
+    return new Date(r.conversation.last_message_at) > new Date(r.last_read_at);
+  }).length;
+
   const displayName = profile?.full_name || user.email || "";
   const initials = displayName
     .split(/\s+/)
@@ -35,7 +44,7 @@ export default async function DashboardLayout({
     .map((p: string) => p[0]?.toUpperCase())
     .join("") || "U";
 
-  const groups = buildNavGroups(!!profile?.is_admin);
+  const groups = buildNavGroups(!!profile?.is_admin, unreadMessageCount);
 
   return (
     <div className="app-shell">

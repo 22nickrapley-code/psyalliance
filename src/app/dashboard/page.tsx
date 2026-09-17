@@ -61,12 +61,22 @@ export default async function DashboardHome() {
     .eq("candidate_profile_id", user!.id)
     .eq("status", "offered");
 
+  const { data: myConversationRows } = await supabase
+    .from("conversation_participants")
+    .select("last_read_at, conversation:conversation_id(last_message_at)")
+    .eq("profile_id", user!.id);
+  const unreadMessageCount = (myConversationRows || []).filter((r: any) => {
+    if (!r.conversation) return false;
+    return new Date(r.conversation.last_message_at) > new Date(r.last_read_at);
+  }).length;
+
   const hasAttentionItems =
     (pendingConnectionCount ?? 0) > 0 ||
     offersAwaitingDecision > 0 ||
     (expiringLicenseCount ?? 0) > 0 ||
     (expiringPanelCount ?? 0) > 0 ||
-    (plannerOfferCount ?? 0) > 0;
+    (plannerOfferCount ?? 0) > 0 ||
+    unreadMessageCount > 0;
 
   return (
     <div>
@@ -83,6 +93,14 @@ export default async function DashboardHome() {
       {hasAttentionItems && (
         <div className="card">
           <h2>Needs your attention</h2>
+          {unreadMessageCount > 0 && (
+            <p>
+              <a href="/dashboard/messages">
+                {unreadMessageCount} unread conversation{unreadMessageCount === 1 ? "" : "s"}
+              </a>{" "}
+              in your messages.
+            </p>
+          )}
           {(pendingConnectionCount ?? 0) > 0 && (
             <p>
               <a href="/dashboard/network">
@@ -166,6 +184,10 @@ export default async function DashboardHome() {
         <p>
           <a href="/dashboard/credentials">Credentials &amp; compliance</a> · track licenses,
           continuing education, and insurance panels with expiration reminders.
+        </p>
+        <p>
+          <a href="/dashboard/messages">Messages</a> · private, threaded conversations with your
+          verified colleagues.
         </p>
         <p>
           <a href="/dashboard/town-hall">Town Hall</a> · join the open community discussion,

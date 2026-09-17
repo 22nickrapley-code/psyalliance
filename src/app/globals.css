@@ -292,6 +292,16 @@ button.danger:hover {
   color: #fff;
 }
 
+.sidebar .nav-badge {
+  background: var(--gold);
+  color: #2a2313;
+  font-size: 0.68rem;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 0.05rem 0.45rem;
+  flex: 0 0 auto;
+}
+
 .sidebar .sidebar-footer {
   border-top: 1px solid rgba(243, 241, 232, 0.15);
   padding-top: 1rem;
