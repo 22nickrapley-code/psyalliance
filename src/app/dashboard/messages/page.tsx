@@ -8,6 +8,12 @@ type Contact = {
   specialisms: Set<string>;
 };
 
+type PartnerGroupInfo = {
+  id: string;
+  full_name: string;
+  open_to_group_consultation: boolean;
+};
+
 export default async function MessagesPage({
   searchParams,
 }: {
@@ -27,7 +33,7 @@ export default async function MessagesPage({
     { data: blocklist },
   ] = await Promise.all([
     supabase.from("conversation_participants").select("conversation_id, last_read_at").eq("profile_id", myself),
-    supabase.from("public_directory").select("id, full_name, credential_prefix, category, value"),
+    supabase.from("public_directory").select("id, full_name, credential_prefix, open_to_group_consultation, category, value"),
     supabase
       .from("connections")
       .select("*")
@@ -93,6 +99,7 @@ export default async function MessagesPage({
   );
 
   const contacts = new Map<string, Contact>();
+  const groupConsultationById = new Map<string, PartnerGroupInfo>();
   for (const row of directoryRows || []) {
     if (row.id === myself || blockedIds.has(row.id)) continue;
     if (!contacts.has(row.id)) {
@@ -101,6 +108,11 @@ export default async function MessagesPage({
         full_name: row.full_name,
         credential_prefix: row.credential_prefix,
         specialisms: new Set(),
+      });
+      groupConsultationById.set(row.id, {
+        id: row.id,
+        full_name: row.full_name,
+        open_to_group_consultation: (row as any).open_to_group_consultation ?? true,
       });
     }
     if (row.category === "treatment_specialism") {
@@ -113,6 +125,22 @@ export default async function MessagesPage({
     const otherId = c.requester_id === myself ? c.addressee_id : c.requester_id;
     tierByContact.set(otherId, c.tier);
   }
+
+  // Partner group consultation: per the spec notes, someone who's opted out
+  // of Partner group consultation on their profile should never be swept
+  // into one, and the initiator should be told who was left out and why -
+  // rather than silently including or silently dropping them with no
+  // explanation.
+  const partnerIds = Array.from(tierByContact.entries())
+    .filter(([, tier]) => tier === "partner")
+    .map(([id]) => id)
+    .filter((id) => !blockedIds.has(id));
+  const eligiblePartners = partnerIds
+    .map((id) => groupConsultationById.get(id))
+    .filter((p): p is PartnerGroupInfo => !!p && p.open_to_group_consultation);
+  const excludedPartners = partnerIds
+    .map((id) => groupConsultationById.get(id))
+    .filter((p): p is PartnerGroupInfo => !!p && !p.open_to_group_consultation);
 
   function degreeOf(contact: Contact): "partner" | "bench" | "recommended" | "none" {
     const tier = tierByContact.get(contact.id);
@@ -136,6 +164,40 @@ export default async function MessagesPage({
         Private, threaded conversations with your verified colleagues — separate from Town Hall's
         open specialism channels.
       </p>
+
+      {partnerIds.length > 0 && (
+        <div className="card">
+          <h2>Start Partner group consultation</h2>
+          <p className="muted">
+            Starts one conversation with all your Partners who are open to group consultation.
+          </p>
+          {excludedPartners.length > 0 && (
+            <div className="message-banner">
+              {excludedPartners.length} colleague{excludedPartners.length === 1 ? "" : "s"} not
+              included because they've opted out of Partner group consultation:{" "}
+              {excludedPartners.map((p) => p.full_name).join(", ")}.
+            </div>
+          )}
+          {eligiblePartners.length > 0 ? (
+            <form action={startConversation}>
+              {eligiblePartners.map((p) => (
+                <input key={p.id} type="hidden" name="participant_ids" value={p.id} />
+              ))}
+              <input type="hidden" name="title" value="Partner group consultation" />
+              <p className="muted">
+                Including: {eligiblePartners.map((p) => p.full_name).join(", ")}
+              </p>
+              <div className="field">
+                <label htmlFor="group_body">Message</label>
+                <textarea id="group_body" name="body" rows={2} placeholder="Kicking off a group consultation about…" />
+              </div>
+              <button type="submit" className="secondary">Start group consultation</button>
+            </form>
+          ) : (
+            <p className="muted">None of your Partners are currently open to group consultation.</p>
+          )}
+        </div>
+      )}
 
       <div className="card">
         <h2>Start new conversation</h2>
