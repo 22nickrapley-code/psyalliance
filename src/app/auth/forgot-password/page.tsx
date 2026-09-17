@@ -1,6 +1,6 @@
-import { signIn } from "../actions";
+import { requestPasswordReset } from "../actions";
 
-export default function SignInPage({
+export default function ForgotPasswordPage({
   searchParams,
 }: {
   searchParams: { error?: string; message?: string };
@@ -13,24 +13,21 @@ export default function SignInPage({
         {searchParams.error && <div className="error-banner">{searchParams.error}</div>}
         {searchParams.message && <div className="message-banner">{searchParams.message}</div>}
 
-        <form action={signIn} className="card">
-          <h2>Sign in</h2>
+        <form action={requestPasswordReset} className="card">
+          <h2>Reset your password</h2>
+          <p className="muted">
+            Enter the email address on your account and we'll send you a link to set a new
+            password.
+          </p>
           <div className="field">
             <label htmlFor="email">Email</label>
             <input id="email" name="email" type="email" required />
           </div>
-          <div className="field">
-            <label htmlFor="password">Password</label>
-            <input id="password" name="password" type="password" required />
-          </div>
-          <button type="submit" style={{ width: "100%" }}>Sign in</button>
-          <p className="muted" style={{ textAlign: "center", marginBottom: 0 }}>
-            <a href="/auth/forgot-password">Forgot your password?</a>
-          </p>
+          <button type="submit" style={{ width: "100%" }}>Send reset link</button>
         </form>
 
         <p className="muted" style={{ textAlign: "center" }}>
-          No account yet? <a href="/auth/sign-up">Create one</a>
+          <a href="/auth/sign-in">Back to sign in</a>
         </p>
       </div>
     </div>
