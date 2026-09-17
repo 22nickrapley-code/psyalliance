@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { sendConnectionRequest, respondToConnection, removeConnection } from "./actions";
+import { startConversation } from "../messages/actions";
 
 type DirectoryPerson = {
   id: string;
@@ -155,29 +156,51 @@ export default async function NetworkPage({
 
       <div className="card">
         <h2>Partners ({partners.length})</h2>
-        {partners.map((c: any) => (
+        {partners.map((c: any) => {
+          const otherId = c.requester_id === myself ? c.addressee_id : c.requester_id;
+          return (
           <div key={c.id} className="checkbox-row" style={{ justifyContent: "space-between" }}>
             <span>{nameOf(c)}</span>
-            <form action={removeConnection}>
-              <input type="hidden" name="id" value={c.id} />
-              <button type="submit" className="secondary">Remove</button>
-            </form>
+            <span>
+              <form action={startConversation} style={{ display: "inline" }}>
+                <input type="hidden" name="participant_ids" value={otherId} />
+                <input type="hidden" name="title" value={`${nameOf(c)}`} />
+                <input type="hidden" name="body" value={`Hi ${nameOf(c) || ""}, wanted to connect.`} />
+                <button type="submit" className="secondary" style={{ marginRight: "0.4rem" }}>Message</button>
+              </form>
+              <form action={removeConnection} style={{ display: "inline" }}>
+                <input type="hidden" name="id" value={c.id} />
+                <button type="submit" className="secondary">Remove</button>
+              </form>
+            </span>
           </div>
-        ))}
+          );
+        })}
         {partners.length === 0 && <p className="muted">No partners yet.</p>}
       </div>
 
       <div className="card">
         <h2>Bench ({bench.length})</h2>
-        {bench.map((c: any) => (
+        {bench.map((c: any) => {
+          const otherId = c.requester_id === myself ? c.addressee_id : c.requester_id;
+          return (
           <div key={c.id} className="checkbox-row" style={{ justifyContent: "space-between" }}>
             <span>{nameOf(c)}</span>
-            <form action={removeConnection}>
-              <input type="hidden" name="id" value={c.id} />
-              <button type="submit" className="secondary">Remove</button>
-            </form>
+            <span>
+              <form action={startConversation} style={{ display: "inline" }}>
+                <input type="hidden" name="participant_ids" value={otherId} />
+                <input type="hidden" name="title" value={`${nameOf(c)}`} />
+                <input type="hidden" name="body" value={`Hi ${nameOf(c) || ""}, wanted to connect.`} />
+                <button type="submit" className="secondary" style={{ marginRight: "0.4rem" }}>Message</button>
+              </form>
+              <form action={removeConnection} style={{ display: "inline" }}>
+                <input type="hidden" name="id" value={c.id} />
+                <button type="submit" className="secondary">Remove</button>
+              </form>
+            </span>
           </div>
-        ))}
+          );
+        })}
         {bench.length === 0 && <p className="muted">No bench connections yet.</p>}
       </div>
 
@@ -208,6 +231,12 @@ export default async function NetworkPage({
               )}
             </span>
             <span>
+              <form action={startConversation} style={{ display: "inline" }}>
+                <input type="hidden" name="participant_ids" value={p.id} />
+                <input type="hidden" name="title" value={`${p.credential_prefix || ""} ${p.full_name}`.trim()} />
+                <input type="hidden" name="body" value={`Hi ${p.full_name}, I noticed we share a specialism and wanted to reach out.`} />
+                <button type="submit" className="secondary" style={{ marginRight: "0.4rem" }}>Message</button>
+              </form>
               <form action={sendConnectionRequest} style={{ display: "inline" }}>
                 <input type="hidden" name="addressee_id" value={p.id} />
                 <input type="hidden" name="tier" value="partner" />
@@ -285,7 +314,18 @@ export default async function NetworkPage({
                 <td><span className="tag">{connectionDegree(p)}</span></td>
                 <td>
                   {connectionByOtherId.has(p.id) ? (
-                    <span className="muted">{connectionByOtherId.get(p.id).status}</span>
+                    connectionByOtherId.get(p.id).status === "accepted" ? (
+                      <form action={startConversation} style={{ display: "inline" }}>
+                        <input type="hidden" name="participant_ids" value={p.id} />
+                        <input type="hidden" name="title" value={`${p.credential_prefix || ""} ${p.full_name}`.trim()} />
+                        <input type="hidden" name="body" value={`Hi ${p.full_name}, `} />
+                        <button type="submit" className="secondary" style={{ padding: "0.15rem 0.5rem", fontSize: "0.8rem" }}>
+                          Message
+                        </button>
+                      </form>
+                    ) : (
+                      <span className="muted">{connectionByOtherId.get(p.id).status}</span>
+                    )
                   ) : (
                     <form action={sendConnectionRequest} style={{ display: "inline" }}>
                       <input type="hidden" name="addressee_id" value={p.id} />
