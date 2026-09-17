@@ -76,6 +76,26 @@ export async function saveProfile(formData: FormData) {
   revalidatePath("/dashboard");
 }
 
+export async function saveAvailability(formData: FormData) {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not signed in");
+
+  const days = formData.getAll("availability_day").map((d) => Number(d));
+
+  await supabase.from("profile_availability").delete().eq("profile_id", user.id);
+  if (days.length > 0) {
+    const { error } = await supabase
+      .from("profile_availability")
+      .insert(days.map((day_of_week) => ({ profile_id: user.id, day_of_week })));
+    if (error) throw new Error(error.message);
+  }
+
+  revalidatePath("/dashboard/profile");
+}
+
 export async function submitCredentialVerification(formData: FormData) {
   const supabase = createClient();
   const {

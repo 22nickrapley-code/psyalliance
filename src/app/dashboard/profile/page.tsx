@@ -1,5 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
-import { saveProfile, submitCredentialVerification } from "./actions";
+import { saveProfile, submitCredentialVerification, saveAvailability } from "./actions";
+
+const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 const CATEGORY_LABELS: Record<string, string> = {
   treatment_specialism: "Treatment specialisms (rank your top few, 1 = highest)",
@@ -28,16 +30,20 @@ export default async function ProfilePage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const [{ data: profile }, { data: lookups }, { data: selected }, { data: verifications }] = await Promise.all([
-    supabase.from("profiles").select("*").eq("id", user!.id).maybeSingle(),
-    supabase.from("lookup_values").select("id, category, value").order("category").order("value"),
-    supabase.from("profile_lookup_values").select("lookup_value_id, rank").eq("profile_id", user!.id),
-    supabase
-      .from("credential_verifications")
-      .select("*")
-      .eq("profile_id", user!.id)
-      .order("created_at", { ascending: false }),
-  ]);
+  const [{ data: profile }, { data: lookups }, { data: selected }, { data: verifications }, { data: availability }] =
+    await Promise.all([
+      supabase.from("profiles").select("*").eq("id", user!.id).maybeSingle(),
+      supabase.from("lookup_values").select("id, category, value").order("category").order("value"),
+      supabase.from("profile_lookup_values").select("lookup_value_id, rank").eq("profile_id", user!.id),
+      supabase
+        .from("credential_verifications")
+        .select("*")
+        .eq("profile_id", user!.id)
+        .order("created_at", { ascending: false }),
+      supabase.from("profile_availability").select("day_of_week").eq("profile_id", user!.id),
+    ]);
+
+  const availableDays = new Set((availability || []).map((a) => a.day_of_week));
 
   const selectedMap = new Map((selected || []).map((s) => [s.lookup_value_id, s.rank]));
 
@@ -169,6 +175,28 @@ export default async function ProfilePage() {
 
         <button type="submit">Save profile</button>
       </form>
+
+      <div className="card">
+        <h2>Weekly availability</h2>
+        <p className="muted">
+          Which days do you generally take new sessions or consultations? Visible to other verified
+          colleagues considering a referral or coverage request — not a booking calendar, just a
+          general signal.
+        </p>
+        <form action={saveAvailability}>
+          <div className="checkbox-row" style={{ flexWrap: "wrap" }}>
+            {DAY_LABELS.map((label, i) => (
+              <label key={i} style={{ minWidth: 70 }}>
+                <input type="checkbox" name="availability_day" value={i} defaultChecked={availableDays.has(i)} />
+                {label}
+              </label>
+            ))}
+          </div>
+          <button type="submit" className="secondary" style={{ marginTop: "0.75rem" }}>
+            Save availability
+          </button>
+        </form>
+      </div>
 
       <div className="card">
         <h2>Credential verification</h2>

@@ -12,26 +12,37 @@ type DirectoryPerson = {
   specialisms: Set<string>;
 };
 
-export default async function NetworkPage() {
+export default async function NetworkPage({
+  searchParams,
+}: {
+  searchParams: { q?: string; state?: string; specialism?: string; degree?: string };
+}) {
   const supabase = createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const [{ data: directoryRows }, { data: connections }, { data: myLookups }, { data: blocklist }, { data: scores }] =
-    await Promise.all([
-      supabase.from("public_directory").select("*"),
-      supabase
-        .from("connections")
-        .select("*, requester:requester_id(full_name), addressee:addressee_id(full_name)")
-        .or(`requester_id.eq.${user!.id},addressee_id.eq.${user!.id}`),
-      supabase
-        .from("profile_lookup_values")
-        .select("lookup_value_id, lookup_values(category, value)")
-        .eq("profile_id", user!.id),
-      supabase.from("do_not_work_with").select("blocked_profile_id").eq("profile_id", user!.id),
-      supabase.from("community_endorsement_scores").select("profile_id, score"),
-    ]);
+  const [
+    { data: directoryRows },
+    { data: connections },
+    { data: myLookups },
+    { data: blocklist },
+    { data: scores },
+    { data: allSpecialisms },
+  ] = await Promise.all([
+    supabase.from("public_directory").select("*"),
+    supabase
+      .from("connections")
+      .select("*, requester:requester_id(full_name), addressee:addressee_id(full_name)")
+      .or(`requester_id.eq.${user!.id},addressee_id.eq.${user!.id}`),
+    supabase
+      .from("profile_lookup_values")
+      .select("lookup_value_id, lookup_values(category, value)")
+      .eq("profile_id", user!.id),
+    supabase.from("do_not_work_with").select("blocked_profile_id").eq("profile_id", user!.id),
+    supabase.from("community_endorsement_scores").select("profile_id, score"),
+    supabase.from("lookup_values").select("value").eq("category", "treatment_specialism").order("value"),
+  ]);
 
   const blockedIds = new Set((blocklist || []).map((b) => b.blocked_profile_id));
   const scoreById = new Map((scores || []).map((s) => [s.profile_id, s.score as number]));
@@ -87,6 +98,28 @@ export default async function NetworkPage() {
     .slice(0, 10);
 
   const nameOf = (c: any) => (c.requester_id === myself ? c.addressee?.full_name : c.requester?.full_name);
+
+  // Connection-degree filter, per the spec ("filter by Partner | Bench |
+  // Recommended | ALL, ala LinkedIn 1st/2nd/3rd degree").
+  function connectionDegree(p: DirectoryPerson): "partner" | "bench" | "recommended" | "none" {
+    const conn = connectionByOtherId.get(p.id);
+    if (conn?.status === "accepted") return conn.tier;
+    if ([...p.specialisms].some((s) => mySpecialisms.has(s))) return "recommended";
+    return "none";
+  }
+
+  const q = (searchParams?.q || "").trim().toLowerCase();
+  const stateFilter = (searchParams?.state || "").trim().toUpperCase();
+  const specialismFilter = searchParams?.specialism || "";
+  const degreeFilter = searchParams?.degree || "";
+
+  const filteredDirectory = Array.from(people.values()).filter((p) => {
+    if (q && !p.full_name.toLowerCase().includes(q)) return false;
+    if (stateFilter && p.primary_state !== stateFilter) return false;
+    if (specialismFilter && !p.specialisms.has(specialismFilter)) return false;
+    if (degreeFilter && degreeFilter !== "all" && connectionDegree(p) !== degreeFilter) return false;
+    return true;
+  });
 
   return (
     <div>
@@ -195,22 +228,61 @@ export default async function NetworkPage() {
       </div>
 
       <div className="card">
-        <h2>Full verified directory ({people.size})</h2>
+        <h2>Full verified directory ({filteredDirectory.length} of {people.size})</h2>
+        <form method="GET" className="field-row" style={{ alignItems: "flex-end", flexWrap: "wrap", marginBottom: "1rem" }}>
+          <div className="field">
+            <label htmlFor="q">Name</label>
+            <input id="q" name="q" type="text" defaultValue={searchParams?.q || ""} placeholder="Search by name" />
+          </div>
+          <div className="field" style={{ maxWidth: 100 }}>
+            <label htmlFor="state">State</label>
+            <input id="state" name="state" type="text" maxLength={2} defaultValue={searchParams?.state || ""} placeholder="TX" />
+          </div>
+          <div className="field">
+            <label htmlFor="specialism">Specialism</label>
+            <select id="specialism" name="specialism" defaultValue={specialismFilter}>
+              <option value="">Any</option>
+              {(allSpecialisms || []).map((s) => (
+                <option key={s.value} value={s.value}>{s.value}</option>
+              ))}
+            </select>
+          </div>
+          <div className="field">
+            <label htmlFor="degree">Connection</label>
+            <select id="degree" name="degree" defaultValue={degreeFilter}>
+              <option value="all">All</option>
+              <option value="partner">Partner</option>
+              <option value="bench">Bench</option>
+              <option value="recommended">Recommended</option>
+              <option value="none">Not yet connected</option>
+            </select>
+          </div>
+          <div className="field" style={{ flex: "0 0 auto" }}>
+            <button type="submit" className="secondary">Filter</button>
+          </div>
+          {(q || stateFilter || specialismFilter || degreeFilter) && (
+            <div className="field" style={{ flex: "0 0 auto" }}>
+              <a href="/dashboard/network" className="btn secondary" style={{ display: "inline-block" }}>Clear</a>
+            </div>
+          )}
+        </form>
         <table>
           <thead>
             <tr>
               <th>Name</th>
               <th>City / state</th>
               <th>Specialisms</th>
+              <th>Degree</th>
               <th></th>
             </tr>
           </thead>
           <tbody>
-            {Array.from(people.values()).map((p) => (
+            {filteredDirectory.map((p) => (
               <tr key={p.id}>
                 <td>{p.credential_prefix} {p.full_name}</td>
                 <td>{p.primary_practice_city || "—"}{p.primary_state ? `, ${p.primary_state}` : ""}</td>
                 <td>{[...p.specialisms].slice(0, 3).map((s) => <span key={s} className="tag">{s}</span>)}</td>
+                <td><span className="tag">{connectionDegree(p)}</span></td>
                 <td>
                   {connectionByOtherId.has(p.id) ? (
                     <span className="muted">{connectionByOtherId.get(p.id).status}</span>
@@ -224,9 +296,11 @@ export default async function NetworkPage() {
                 </td>
               </tr>
             ))}
-            {people.size === 0 && (
+            {filteredDirectory.length === 0 && (
               <tr>
-                <td colSpan={4} className="muted">No verified colleagues yet.</td>
+                <td colSpan={5} className="muted">
+                  {people.size === 0 ? "No verified colleagues yet." : "No colleagues match those filters."}
+                </td>
               </tr>
             )}
           </tbody>
