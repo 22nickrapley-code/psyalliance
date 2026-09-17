@@ -197,6 +197,10 @@ export default async function DashboardHome() {
           <a href="/dashboard/planner">Planner</a> · going on leave? Get your caseload covered
           automatically, ranked by fit.
         </p>
+        <p>
+          <a href="/dashboard/supervision">Supervision</a> · find a colleague offering private
+          supervision, or offer yours to someone looking.
+        </p>
       </div>
     </div>
   );

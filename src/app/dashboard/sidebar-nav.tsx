@@ -100,6 +100,14 @@ const icon = {
       <path d="M19.4 13.5a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.55V19a2 2 0 1 1-4 0v-.09A1.7 1.7 0 0 0 8.9 17.4a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.7 1.7 0 0 0 .34-1.87 1.7 1.7 0 0 0-1.55-1H2.9a2 2 0 1 1 0-4H3a1.7 1.7 0 0 0 1.55-1 1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.9a1.7 1.7 0 0 0 1-1.55V3.2a2 2 0 1 1 4 0v.15c0 .68.4 1.28 1 1.55.63.28 1.37.16 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06c-.5.5-.62 1.24-.34 1.87.27.6.87 1 1.55 1h.1a2 2 0 1 1 0 4h-.09c-.68 0-1.28.4-1.55 1Z" />
     </svg>
   ),
+  supervision: (
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="8" cy="8" r="3" />
+      <circle cx="17" cy="6.5" r="2.3" />
+      <path d="M3 20c0-3.3 2.2-5.5 5-5.5s5 2.2 5 5.5" />
+      <path d="M13.5 20c.3-2.7 2-4.5 4.2-4.5" />
+    </svg>
+  ),
   verification: (
     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
       <path d="M9 12.5 11 14.5 15.5 9.5" />
@@ -135,6 +143,7 @@ export function buildNavGroups(isAdmin: boolean, unreadMessageCount = 0): NavGro
         { href: "/dashboard/town-hall", label: "Town Hall", icon: icon.townhall },
         { href: "/dashboard/referrals", label: "Referrals", icon: icon.referrals },
         { href: "/dashboard/planner", label: "Planner", icon: icon.planner },
+        { href: "/dashboard/supervision", label: "Supervision", icon: icon.supervision },
       ],
     },
     {
