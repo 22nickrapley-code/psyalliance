@@ -1,0 +1,65 @@
+"use server";
+
+import { createClient } from "@/lib/supabase/server";
+import { revalidatePath } from "next/cache";
+
+const RANKED_CATEGORIES = ["treatment_specialism", "treatment_modality"];
+
+export async function saveProfile(formData: FormData) {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not signed in");
+
+  const statesRaw = String(formData.get("states_qualified") || "");
+  const statesQualified = statesRaw
+    .split(",")
+    .map((s) => s.trim().toUpperCase())
+    .filter(Boolean);
+
+  const profileRow = {
+    id: user.id,
+    full_name: String(formData.get("full_name") || ""),
+    credential_prefix: String(formData.get("credential_prefix") || "") || null,
+    qualification_level: String(formData.get("qualification_level") || "PhD"),
+    board_certified: formData.get("board_certified") === "on",
+    primary_practice_city: String(formData.get("primary_practice_city") || "") || null,
+    states_qualified: statesQualified,
+    primary_state: statesQualified[0] || null,
+    accepting_referrals: formData.get("accepting_referrals") === "on",
+    updated_at: new Date().toISOString(),
+  };
+
+  const { error: upsertError } = await supabase.from("profiles").upsert(profileRow);
+  if (upsertError) {
+    throw new Error(upsertError.message);
+  }
+
+  // Rebuild the profile's lookup-value associations from scratch each save -
+  // simplest correct approach for a form with a variable number of checkboxes.
+  const { data: allLookups } = await supabase.from("lookup_values").select("id, category");
+
+  const rows: { profile_id: string; lookup_value_id: number; rank: number | null }[] = [];
+  for (const lv of allLookups || []) {
+    const checked = formData.get(`lv_${lv.id}`) === "on";
+    if (!checked) continue;
+    let rank: number | null = null;
+    if (RANKED_CATEGORIES.includes(lv.category)) {
+      const rankRaw = formData.get(`rank_${lv.id}`);
+      rank = rankRaw ? parseInt(String(rankRaw), 10) || null : null;
+    }
+    rows.push({ profile_id: user.id, lookup_value_id: lv.id, rank });
+  }
+
+  await supabase.from("profile_lookup_values").delete().eq("profile_id", user.id);
+  if (rows.length > 0) {
+    const { error: insertError } = await supabase.from("profile_lookup_values").insert(rows);
+    if (insertError) {
+      throw new Error(insertError.message);
+    }
+  }
+
+  revalidatePath("/dashboard/profile");
+  revalidatePath("/dashboard");
+}
