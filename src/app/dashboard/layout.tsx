@@ -40,6 +40,7 @@ export default async function DashboardLayout({
           <a href="/dashboard/network">Network</a>
           <a href="/dashboard/town-hall">Town Hall</a>
           <a href="/dashboard/referrals">Referrals</a>
+          <a href="/dashboard/planner">Planner</a>
           <a href="/dashboard/settings">Settings</a>
           {profile?.is_admin && <a href="/dashboard/admin/verifications">Verification queue</a>}
         </div>

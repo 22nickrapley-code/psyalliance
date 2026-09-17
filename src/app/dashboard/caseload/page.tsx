@@ -7,7 +7,7 @@ export default async function CaseloadPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const [{ data: books }, { data: cases }] = await Promise.all([
+  const [{ data: books }, { data: cases }, { data: specialisms }] = await Promise.all([
     supabase.from("books_of_business").select("*").eq("profile_id", user!.id).eq("is_active", true),
     supabase
       .from("caseload_clients")
@@ -15,6 +15,7 @@ export default async function CaseloadPage() {
       .eq("profile_id", user!.id)
       .eq("is_active", true)
       .order("created_at", { ascending: false }),
+    supabase.from("lookup_values").select("id, value").eq("category", "treatment_specialism").order("value"),
   ]);
 
   return (
@@ -87,6 +88,10 @@ export default async function CaseloadPage() {
           </div>
           <div className="field-row">
             <div className="field">
+              <label htmlFor="city">City</label>
+              <input id="city" name="city" type="text" placeholder="Austin" />
+            </div>
+            <div className="field">
               <label htmlFor="state">State</label>
               <input id="state" name="state" type="text" maxLength={2} placeholder="TX" />
             </div>
@@ -105,17 +110,36 @@ export default async function CaseloadPage() {
           <div className="field-row">
             <div className="field">
               <label htmlFor="primary_need">Primary need</label>
-              <input id="primary_need" name="primary_need" type="text" />
+              <select id="primary_need" name="primary_need" defaultValue="">
+                <option value="">—</option>
+                {(specialisms || []).map((s) => (
+                  <option key={s.id} value={s.value}>{s.value}</option>
+                ))}
+              </select>
             </div>
             <div className="field">
               <label htmlFor="secondary_need">Secondary need</label>
-              <input id="secondary_need" name="secondary_need" type="text" />
+              <select id="secondary_need" name="secondary_need" defaultValue="">
+                <option value="">—</option>
+                {(specialisms || []).map((s) => (
+                  <option key={s.id} value={s.value}>{s.value}</option>
+                ))}
+              </select>
             </div>
             <div className="field">
               <label htmlFor="tertiary_need">Tertiary need</label>
-              <input id="tertiary_need" name="tertiary_need" type="text" />
+              <select id="tertiary_need" name="tertiary_need" defaultValue="">
+                <option value="">—</option>
+                {(specialisms || []).map((s) => (
+                  <option key={s.id} value={s.value}>{s.value}</option>
+                ))}
+              </select>
             </div>
           </div>
+          <p className="muted" style={{ marginTop: "-0.5rem" }}>
+            Needs are picked from the standard specialism list so the Planner tool can match your
+            cases to the right colleagues by specialism.
+          </p>
           <div className="field-row">
             <div className="field">
               <label htmlFor="rate_per_session">Rate per session ($)</label>

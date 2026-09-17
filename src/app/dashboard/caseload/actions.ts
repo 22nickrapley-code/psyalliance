@@ -38,6 +38,7 @@ export async function createCase(formData: FormData) {
     book_of_business_id: bookId ? Number(bookId) : null,
     private_label: String(formData.get("private_label") || "") || null,
     state: String(formData.get("state") || "") || null,
+    city: String(formData.get("city") || "") || null,
     session_type: String(formData.get("session_type") || "") || null,
     insurance: String(formData.get("insurance") || "") || null,
     primary_need: String(formData.get("primary_need") || "") || null,
