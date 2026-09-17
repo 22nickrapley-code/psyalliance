@@ -74,3 +74,25 @@ export async function deleteDocument(formData: FormData) {
 
   revalidatePath("/dashboard/documents");
 }
+
+// "Is there a way of rating the documents? So that people can see what
+// others have found to be best?" - one star rating per person per shared
+// document; re-rating just upserts over your own prior rating.
+export async function rateDocument(formData: FormData) {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not signed in");
+
+  const documentId = Number(formData.get("document_id"));
+  const rating = Number(formData.get("rating"));
+  if (rating < 1 || rating > 5) throw new Error("Rating must be between 1 and 5");
+
+  const { error } = await supabase
+    .from("document_ratings")
+    .upsert({ document_id: documentId, rated_by: user.id, rating }, { onConflict: "document_id,rated_by" });
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/dashboard/documents");
+}
