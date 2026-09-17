@@ -34,6 +34,7 @@ export default async function DashboardLayout({
           <a href="/dashboard/capacity">Capacity &amp; overhead</a>
           <a href="/dashboard/documents">Documents</a>
           <a href="/dashboard/network">Network</a>
+          <a href="/dashboard/referrals">Referrals</a>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
           <span className="muted">
