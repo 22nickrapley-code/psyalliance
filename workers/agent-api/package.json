@@ -1,0 +1,16 @@
+{
+  "name": "psyalliance-agent-api",
+  "version": "0.1.0",
+  "private": true,
+  "description": "M4: agent-queryable directory API - a thin Cloudflare Worker in front of the public_directory view, plus a WebMCP-style tool descriptor so AI agents can discover it.",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "tail": "wrangler tail"
+  },
+  "devDependencies": {
+    "wrangler": "^3.78.0",
+    "typescript": "^5.5.3",
+    "@cloudflare/workers-types": "^4.20240909.0"
+  }
+}
