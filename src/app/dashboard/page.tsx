@@ -40,7 +40,33 @@ export default async function DashboardHome() {
     0
   );
 
-  const hasAttentionItems = (pendingConnectionCount ?? 0) > 0 || offersAwaitingDecision > 0;
+  const sixtyDaysFromNow = new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const { count: expiringLicenseCount } = await supabase
+    .from("licenses")
+    .select("id", { count: "exact", head: true })
+    .eq("profile_id", user!.id)
+    .lte("expiration_date", sixtyDaysFromNow)
+    .not("expiration_date", "is", null);
+
+  const { count: expiringPanelCount } = await supabase
+    .from("insurance_panels")
+    .select("id", { count: "exact", head: true })
+    .eq("profile_id", user!.id)
+    .lte("renewal_date", sixtyDaysFromNow)
+    .not("renewal_date", "is", null);
+
+  const { count: plannerOfferCount } = await supabase
+    .from("planner_offers")
+    .select("id", { count: "exact", head: true })
+    .eq("candidate_profile_id", user!.id)
+    .eq("status", "offered");
+
+  const hasAttentionItems =
+    (pendingConnectionCount ?? 0) > 0 ||
+    offersAwaitingDecision > 0 ||
+    (expiringLicenseCount ?? 0) > 0 ||
+    (expiringPanelCount ?? 0) > 0 ||
+    (plannerOfferCount ?? 0) > 0;
 
   return (
     <div>
@@ -71,6 +97,30 @@ export default async function DashboardHome() {
                 {offersAwaitingDecision} colleague offer{offersAwaitingDecision === 1 ? "" : "s"}
               </a>{" "}
               on your open referral request{offersAwaitingDecision === 1 ? "" : "s"}, awaiting your decision.
+            </p>
+          )}
+          {(plannerOfferCount ?? 0) > 0 && (
+            <p>
+              <a href="/dashboard/planner">
+                {plannerOfferCount} coverage request{plannerOfferCount === 1 ? "" : "s"}
+              </a>{" "}
+              from a colleague going on leave, awaiting your response.
+            </p>
+          )}
+          {(expiringLicenseCount ?? 0) > 0 && (
+            <p>
+              <a href="/dashboard/credentials">
+                {expiringLicenseCount} license{expiringLicenseCount === 1 ? "" : "s"}
+              </a>{" "}
+              expiring within 60 days.
+            </p>
+          )}
+          {(expiringPanelCount ?? 0) > 0 && (
+            <p>
+              <a href="/dashboard/credentials">
+                {expiringPanelCount} insurance panel{expiringPanelCount === 1 ? "" : "s"}
+              </a>{" "}
+              up for renewal within 60 days.
             </p>
           )}
         </div>
@@ -112,6 +162,18 @@ export default async function DashboardHome() {
         <p>
           <a href="/dashboard/documents">Documents</a> · store personal files or share into the
           shared practice library.
+        </p>
+        <p>
+          <a href="/dashboard/credentials">Credentials &amp; compliance</a> · track licenses,
+          continuing education, and insurance panels with expiration reminders.
+        </p>
+        <p>
+          <a href="/dashboard/town-hall">Town Hall</a> · join the open community discussion,
+          organized by specialism.
+        </p>
+        <p>
+          <a href="/dashboard/planner">Planner</a> · going on leave? Get your caseload covered
+          automatically, ranked by fit.
         </p>
       </div>
     </div>

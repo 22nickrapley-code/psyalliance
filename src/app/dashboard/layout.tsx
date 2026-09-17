@@ -36,6 +36,7 @@ export default async function DashboardLayout({
           <a href="/dashboard/caseload">Caseload</a>
           <a href="/dashboard/income">Income</a>
           <a href="/dashboard/capacity">Capacity &amp; overhead</a>
+          <a href="/dashboard/credentials">Credentials</a>
           <a href="/dashboard/documents">Documents</a>
           <a href="/dashboard/network">Network</a>
           <a href="/dashboard/town-hall">Town Hall</a>
