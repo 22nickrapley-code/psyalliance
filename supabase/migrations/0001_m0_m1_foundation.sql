@@ -1,7 +1,11 @@
 -- PsyAlliance schema: M0 (foundation/auth/credential) + M1 (solo practice toolkit)
--- Scaffold, not final production DDL. No real patient-identifying data is
--- permitted in this schema yet (client_identifier is a short initials-only
--- code) - see .env.example HIPAA_MODE_ENABLED note before that changes.
+-- Scaffold, not final production DDL. Designed to stay outside HIPAA's scope
+-- by not collecting anything identifying in the first place: caseload rows
+-- are referenced by their own system-generated id ("Case #<id>" in the UI),
+-- never a name or initials. private_label below is optional, user-typed,
+-- RLS-isolated to its owner alone - if a user chooses to put something
+-- identifying in it, that's their own private note, not a platform
+-- requirement. See .env.example HIPAA_MODE_ENABLED before that changes.
 
 -- ============================================================
 -- M0: profiles, credentials, lookup values
@@ -98,10 +102,10 @@ create table books_of_business (
 );
 
 create table caseload_clients (
-  id bigint generated always as identity primary key,
+  id bigint generated always as identity primary key,     -- the real reference: "Case #<id>" in the UI
   profile_id uuid not null references profiles (id) on delete cascade,
   book_of_business_id bigint references books_of_business (id),
-  client_identifier varchar(6) not null,   -- initials only, e.g. "NR" - never a real name
+  private_label varchar(24),                -- optional, user's own shorthand; never required, never shown to anyone else
   state text,
   session_type text,                       -- 'F2F' | 'Virtual'
   insurance text,
@@ -113,7 +117,7 @@ create table caseload_clients (
   is_active boolean not null default true,
   created_at timestamptz not null default now(),
   archived_at timestamptz,
-  constraint client_identifier_not_a_name check (char_length(client_identifier) <= 6)
+  constraint private_label_stays_short check (private_label is null or char_length(private_label) <= 24)
 );
 
 create table capacity_settings (

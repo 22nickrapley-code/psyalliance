@@ -38,7 +38,16 @@ the build plan once M0 is real and deployed.
 3. Push this repo to GitHub and connect Cloudflare Pages (or Workers) to it
    for deploys.
 
-No real patient-identifying data goes into `caseload_clients` — initials
-only, enforced by a column-length constraint. `HIPAA_MODE_ENABLED` in
-`.env.example` stays `false` until the Supabase HIPAA add-on (Team plan,
-$599/mo+) and a Cloudflare Enterprise BAA are actually in place.
+`caseload_clients` is designed to stay outside HIPAA's scope by not
+collecting anything identifying in the first place: every case is
+referenced by its own system-generated `id` ("Case #`<id>`" in the UI),
+never a name or initials. `private_label` is an optional, user-typed
+shorthand, RLS-isolated to its owner alone — if someone chooses to put
+something identifying in their own private note, that's their choice, not
+a platform requirement. This is a risk-reducing design decision, not a
+guaranteed legal exemption — see the build plan's architecture section
+for the caveat. `HIPAA_MODE_ENABLED` in `.env.example` stays `false`;
+because of this design there's no need for the Supabase HIPAA add-on
+(Team plan, $599/mo+) or a Cloudflare Enterprise BAA right now — free/low
+tiers are sufficient indefinitely, unless a future feature actually
+requires collecting real patient-identifying data.
