@@ -1,0 +1,23 @@
+{
+  // Cloudflare Worker config for deploying this Next.js app via OpenNext.
+  // "name" becomes part of the default *.workers.dev URL
+  // (psyalliance.<your-subdomain>.workers.dev) until a custom domain is
+  // attached in the Cloudflare dashboard - see the deploy walkthrough.
+  "name": "psyalliance",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2024-09-23",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  // NEXT_PUBLIC_* values are safe to keep here since they're already public
+  // in the client bundle. Nothing secret goes in this file - set the same
+  // two vars (plus NEXT_PUBLIC_SITE_URL once the domain is live) as
+  // Environment Variables in the Cloudflare dashboard for the deployed
+  // Worker, so they're available at runtime there too.
+  "vars": {
+    "NEXT_PUBLIC_SUPABASE_URL": "https://vvmulsyvyjsxhcpqfpyo.supabase.co",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_DHIdNnOs7O5y6ucrl2T4Eg_Q3QslBZl"
+  }
+}
