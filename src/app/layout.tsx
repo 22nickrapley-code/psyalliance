@@ -12,10 +12,42 @@ import "@fontsource/inter/500.css";
 import "@fontsource/inter/600.css";
 import "@fontsource/inter/700.css";
 
+// metadataBase must be a static value (Next.js can't await headers() here),
+// so it falls back to the current *.workers.dev URL until a custom domain is
+// live - set NEXT_PUBLIC_SITE_URL (see wrangler.jsonc) once it is, so OG
+// images/canonical links resolve to the real domain instead.
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://psyalliance.workers.dev";
+
 export const metadata = {
-  title: "PsyAlliance",
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: "PsyAlliance — for doctoral-level psychologists & psychiatrists",
+    template: "%s — PsyAlliance",
+  },
   description:
-    "A closed professional network and practice toolkit for PhD/PsyD/EdD psychologists and psychiatrists.",
+    "A closed, credential-verified professional network and virtual-practice toolkit exclusively for doctoral-level psychologists (PhD, PsyD, EdD) and psychiatrists (MD, DO) — not a public therapist directory. Caseload and practice administration, coverage matching, peer consultation, a shared document library, and a referral network fed by verified colleagues and physicians. Free, forever.",
+  keywords: [
+    "psychologist network",
+    "psychiatrist network",
+    "PhD psychologist directory",
+    "PsyD referral network",
+    "doctoral-level clinician network",
+    "practice coverage for psychologists",
+    "psychologist caseload management",
+    "clinician referral network",
+  ],
+  openGraph: {
+    title: "PsyAlliance — for doctoral-level psychologists & psychiatrists",
+    description:
+      "A closed, credential-verified network and practice toolkit exclusively for doctoral-level psychologists and psychiatrists — coverage, community, consultation, and referrals. Free, forever.",
+    url: siteUrl,
+    siteName: "PsyAlliance",
+    type: "website",
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function RootLayout({

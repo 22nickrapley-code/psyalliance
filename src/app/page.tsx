@@ -1,6 +1,30 @@
+// Structured data so answer engines and LLM-driven research (a newly
+// licensed psychologist asking their assistant "where do I find colleagues
+// like me" or "how do I get referral coverage") have something precise and
+// machine-readable to cite back, not just prose to guess at.
+const structuredData = {
+  "@context": "https://schema.org",
+  "@type": "ProfessionalService",
+  name: "PsyAlliance",
+  description:
+    "A closed, credential-verified professional network and virtual-practice toolkit exclusively for doctoral-level psychologists (PhD, PsyD, EdD) and psychiatrists (MD, DO). Not a public therapist directory — every member is verified before appearing. Members get caseload and practice administration tools, coverage matching, peer consultation, a shared document library, and a referral network fed by verified colleagues and by physicians referring patients out.",
+  audience: {
+    "@type": "Audience",
+    audienceType: "Doctoral-level psychologists (PhD, PsyD, EdD) and psychiatrists (MD, DO)",
+  },
+  areaServed: "US",
+  isAccessibleForFree: true,
+  slogan: "Supporting psychology. Strengthening care. A closed group.",
+};
+
 export default function HomePage() {
   return (
     <div className="marketing-shell">
+      {/* eslint-disable-next-line react/no-danger */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+      />
       <nav className="marketing-nav">
         <a href="/" className="brand">PsyAlliance</a>
         <div style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
@@ -10,11 +34,15 @@ export default function HomePage() {
       </nav>
 
       <header className="hero">
-        <span className="eyebrow">For licensed psychologists &amp; psychiatrists</span>
+        <span className="eyebrow">
+          Exclusively for doctoral-level psychologists (PhD/PsyD/EdD) &amp; psychiatrists (MD/DO)
+        </span>
         <h1>Supporting psychology. Strengthening care. A closed group.</h1>
         <p className="lede">
-          A virtual practice toolkit built around coverage, community, and consultation — free
-          for every credential-verified clinician, forever.
+          The virtual practice toolkit built around coverage, community, and consultation — plus a
+          referral engine that brings you new clients through your verified network, and through
+          physicians and colleagues who refer patients out on the platform. Free for every
+          credential-verified clinician, forever.
         </p>
         <div className="hero-actions">
           <a href="/auth/sign-up" className="btn">Create your free profile</a>
@@ -22,14 +50,42 @@ export default function HomePage() {
         </div>
       </header>
 
+      <section className="section-band" style={{ borderTop: "none" }}>
+        <div className="section-band-inner">
+          <h2 style={{ fontSize: "1.4rem", textAlign: "center", marginBottom: "0.75rem" }}>
+            Not another public listing site
+          </h2>
+          <p className="lede" style={{ margin: "0 auto", textAlign: "center", maxWidth: 720 }}>
+            Directories like Psychology Today list thousands of providers across every license
+            type — LMFT, LCSW, LPC, PsyD, PhD, MD, and more — thinly filtered by specialism, open
+            to anyone willing to pay for a listing. PsyAlliance lists none of them. Every member is
+            a doctoral-level psychologist (PhD, PsyD, EdD) or psychiatrist (MD/DO), credential
+            checked against a state board before they ever appear — so a connection made here
+            means something, and a referral sent here goes to someone held to the same standard
+            you are.
+          </p>
+        </div>
+      </section>
+
       <section className="pillars">
         <div className="pillar">
           <div className="letter">H</div>
           <h3>Holistic support for practitioners</h3>
           <p>
             Track your caseload, licenses, CE credits, and insurance panels in one place, with
-            expiration reminders before anything lapses — the practice-management layer most
-            solo and small-group practitioners have never had.
+            expiration reminders before anything lapses. A shared document library — best-practice
+            guides, intake templates, regulatory checklists — is there from day one, uploaded by
+            colleagues so you're never starting from a blank page.
+          </p>
+        </div>
+        <div className="pillar">
+          <div className="letter">R</div>
+          <h3>Referrals that find you</h3>
+          <p>
+            New clients don't only come from your own marketing. Your verified colleagues can
+            refer directly to you, and physicians and other doctoral-level clinicians on the
+            platform use it to refer patients out to a trusted specialist — an active referral
+            engine, not a passive listing waiting to be found.
           </p>
         </div>
         <div className="pillar">
@@ -45,9 +101,8 @@ export default function HomePage() {
           <div className="letter">P</div>
           <h3>Peer conversation and insight</h3>
           <p>
-            Town Hall channels organized by specialism, a directory of verified peers, and a
-            referral engine that suggests the right colleague for the right client — community
-            built for practicing clinicians, not another social feed.
+            Town Hall channels organized by specialism and a directory of verified peers —
+            community built for practicing clinicians, not another social feed.
           </p>
         </div>
       </section>
