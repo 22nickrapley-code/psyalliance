@@ -1,4 +1,5 @@
 import { signIn } from "../actions";
+import { GoogleSignInButton } from "../google-button";
 
 export default function SignInPage({
   searchParams,
@@ -28,6 +29,9 @@ export default function SignInPage({
             <a href="/auth/forgot-password">Forgot your password?</a>
           </p>
         </form>
+
+        <p className="muted" style={{ textAlign: "center", margin: "1rem 0" }}>or</p>
+        <GoogleSignInButton />
 
         <p className="muted" style={{ textAlign: "center" }}>
           No account yet? <a href="/auth/sign-up">Create one</a>
