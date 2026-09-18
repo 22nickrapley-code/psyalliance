@@ -48,15 +48,33 @@ export async function uploadDocument(formData: FormData) {
     .upload(storagePath, arrayBuffer, { contentType: file.type || "application/octet-stream" });
   if (uploadError) throw new Error(uploadError.message);
 
-  const { error: insertError } = await supabase.from("documents").insert({
-    profile_id: user.id,
-    owner_scope: ownerScope,
-    title: String(formData.get("title") || file.name),
-    treatment_area: String(formData.get("treatment_area") || "") || null,
-    storage_path: storagePath,
-    uploaded_by: user.id,
-  });
+  // A document can carry several treatment areas now (document_treatment_areas
+  // join table, mirroring profile_lookup_values) rather than just one - the
+  // legacy `treatment_area` column is left null on new uploads.
+  const treatmentAreaIds = formData
+    .getAll("treatment_area_ids")
+    .map((v) => Number(v))
+    .filter((n) => Number.isFinite(n));
+
+  const { data: inserted, error: insertError } = await supabase
+    .from("documents")
+    .insert({
+      profile_id: user.id,
+      owner_scope: ownerScope,
+      title: String(formData.get("title") || file.name),
+      storage_path: storagePath,
+      uploaded_by: user.id,
+    })
+    .select("id")
+    .single();
   if (insertError) throw new Error(insertError.message);
+
+  if (treatmentAreaIds.length > 0 && inserted) {
+    const { error: areasError } = await supabase.from("document_treatment_areas").insert(
+      treatmentAreaIds.map((lookup_value_id) => ({ document_id: inserted.id, lookup_value_id }))
+    );
+    if (areasError) throw new Error(areasError.message);
+  }
 
   revalidatePath("/dashboard/documents");
 }

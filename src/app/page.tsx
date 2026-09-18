@@ -11,10 +11,10 @@ export default function HomePage() {
 
       <header className="hero">
         <span className="eyebrow">For licensed psychologists &amp; psychiatrists</span>
-        <h1>Supporting Psychologists, Strengthening Care</h1>
+        <h1>Supporting psychology. Strengthening care. A closed group.</h1>
         <p className="lede">
-          A closed, credential-verified network and virtual-practice toolkit built around
-          coverage, community, and consultation — free for every verified clinician, forever.
+          A virtual practice toolkit built around coverage, community, and consultation — free
+          for every credential-verified clinician, forever.
         </p>
         <div className="hero-actions">
           <a href="/auth/sign-up" className="btn">Create your free profile</a>
@@ -23,6 +23,15 @@ export default function HomePage() {
       </header>
 
       <section className="pillars">
+        <div className="pillar">
+          <div className="letter">H</div>
+          <h3>Holistic support for practitioners</h3>
+          <p>
+            Track your caseload, licenses, CE credits, and insurance panels in one place, with
+            expiration reminders before anything lapses — the practice-management layer most
+            solo and small-group practitioners have never had.
+          </p>
+        </div>
         <div className="pillar">
           <div className="letter">C</div>
           <h3>Comprehensive coverage solutions</h3>
@@ -33,7 +42,7 @@ export default function HomePage() {
           </p>
         </div>
         <div className="pillar">
-          <div className="letter">C</div>
+          <div className="letter">P</div>
           <h3>Peer conversation and insight</h3>
           <p>
             Town Hall channels organized by specialism, a directory of verified peers, and a
@@ -41,13 +50,58 @@ export default function HomePage() {
             built for practicing clinicians, not another social feed.
           </p>
         </div>
-        <div className="pillar">
-          <div className="letter">C</div>
-          <h3>Holistic support for practitioners</h3>
-          <p>
-            Track your caseload, licenses, CE credits, and insurance panels in one place, with
-            expiration reminders before anything lapses — the practice-management layer most
-            solo and small-group practitioners have never had.
+      </section>
+
+      <section className="section-band" style={{ paddingTop: 0 }}>
+        <div className="section-band-inner">
+          <h2 style={{ fontSize: "1.4rem", textAlign: "center", marginBottom: "1.5rem" }}>
+            A look inside
+          </h2>
+          <div className="product-preview" aria-hidden="true">
+            <div className="product-preview-chrome">
+              <span />
+              <span />
+              <span />
+            </div>
+            <div className="product-preview-body">
+              <div className="product-preview-sidebar">
+                <div className="product-preview-brand">PsyAlliance</div>
+                <div className="product-preview-navlabel">My practice</div>
+                <div className="product-preview-nav">Profile</div>
+                <div className="product-preview-nav">Caseload</div>
+                <div className="product-preview-nav">Income</div>
+                <div className="product-preview-nav">Credentials</div>
+                <div className="product-preview-nav">Documents</div>
+                <div className="product-preview-navlabel">Network</div>
+                <div className="product-preview-nav">Referrals</div>
+                <div className="product-preview-nav">Planner</div>
+              </div>
+              <div className="product-preview-main">
+                <div className="product-preview-stats">
+                  <div className="product-preview-stat">
+                    <div className="product-preview-stat-value">14</div>
+                    <div className="product-preview-stat-label">Active clients</div>
+                  </div>
+                  <div className="product-preview-stat">
+                    <div className="product-preview-stat-value">Verified</div>
+                    <div className="product-preview-stat-label">Credential status</div>
+                  </div>
+                  <div className="product-preview-stat">
+                    <div className="product-preview-stat-value">2</div>
+                    <div className="product-preview-stat-label">Licenses expiring soon</div>
+                  </div>
+                </div>
+                <div className="product-preview-rows">
+                  <div className="product-preview-row" />
+                  <div className="product-preview-row" />
+                  <div className="product-preview-row" />
+                </div>
+              </div>
+            </div>
+          </div>
+          <p className="muted" style={{ textAlign: "center", marginTop: "1rem" }}>
+            A simplified look at the dashboard — your caseload, income, credentials, and shared
+            documents, all in one place.
           </p>
         </div>
       </section>

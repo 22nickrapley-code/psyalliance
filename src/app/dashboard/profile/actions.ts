@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 
 const RANKED_CATEGORIES = ["treatment_specialism", "treatment_modality"];
 const SINGLE_SELECT_CATEGORIES = ["sex"];
@@ -37,6 +38,8 @@ export async function saveProfile(formData: FormData) {
     open_to_give_supervision: formData.get("open_to_give_supervision") === "on",
     open_to_receive_supervision: formData.get("open_to_receive_supervision") === "on",
     psypact_participating: formData.get("psypact_participating") === "on",
+    runs_private_practice: formData.get("runs_private_practice") === "on",
+    employed_by_group_practice: formData.get("employed_by_group_practice") === "on",
     updated_at: new Date().toISOString(),
   };
 
@@ -82,6 +85,7 @@ export async function saveProfile(formData: FormData) {
 
   revalidatePath("/dashboard/profile");
   revalidatePath("/dashboard");
+  redirect("/dashboard/profile?saved=1");
 }
 
 export async function saveAvailability(formData: FormData) {

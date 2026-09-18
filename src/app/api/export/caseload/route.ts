@@ -36,8 +36,8 @@ export async function GET() {
 
   const header = [
     "Case number",
-    "Private label",
-    "Book of business",
+    "Private client label",
+    "Organization",
     "Active",
     "City",
     "State",

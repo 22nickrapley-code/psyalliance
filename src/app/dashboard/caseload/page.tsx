@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { createBookOfBusiness, createCase, archiveCase } from "./actions";
+import { createBookOfBusiness, createCase, archiveCase, deleteOrganization } from "./actions";
 
 export default async function CaseloadPage() {
   const supabase = await createClient();
@@ -24,8 +24,8 @@ export default async function CaseloadPage() {
         <div>
           <h1>Caseload</h1>
           <p className="muted">
-            Every case is referenced by its case number — never a name. The private label is your
-            own optional shorthand and is never shown to anyone else.
+            Every case is referenced by its case number — never a name. Your private client label
+            is your own optional shorthand and is never shown to anyone else.
           </p>
         </div>
         <a href="/api/export/caseload" className="btn secondary" style={{ flex: "0 0 auto" }}>
@@ -34,16 +34,17 @@ export default async function CaseloadPage() {
       </div>
 
       <div className="card">
-        <h2>Books of business</h2>
+        <h2>Organizations</h2>
         <p className="muted">
-          Separate practices or affiliations (e.g. your own private-pay practice vs. a group
-          practice) — each keeps a different share of revenue after overhead.
+          Your own private practice, or a group practice/consultancy you're employed by or
+          contracted to — each keeps a different share of the billed rate.
         </p>
         <table style={{ marginBottom: "1rem" }}>
           <thead>
             <tr>
               <th>Name</th>
-              <th>You retain</th>
+              <th>% of hourly rate retained</th>
+              <th></th>
             </tr>
           </thead>
           <tbody>
@@ -51,28 +52,40 @@ export default async function CaseloadPage() {
               <tr key={b.id}>
                 <td>{b.name}</td>
                 <td>{Math.round(b.expense_burden_pct * 100)}%</td>
+                <td>
+                  <form action={deleteOrganization}>
+                    <input type="hidden" name="id" value={b.id} />
+                    <button type="submit" className="secondary">Delete</button>
+                  </form>
+                </td>
               </tr>
             ))}
             {(books || []).length === 0 && (
               <tr>
-                <td colSpan={2} className="muted">No books of business yet — add one below.</td>
+                <td colSpan={3} className="muted">No organizations yet — add one below.</td>
               </tr>
             )}
           </tbody>
         </table>
         <form action={createBookOfBusiness} className="field-row" style={{ alignItems: "flex-end" }}>
           <div className="field">
-            <label htmlFor="name">Name</label>
-            <input id="name" name="name" type="text" required />
+            <label htmlFor="name">Organization name</label>
+            <input id="name" name="name" type="text" placeholder="e.g. my own practice, or the consultancy's name" required />
           </div>
-          <div className="field" style={{ maxWidth: 160 }}>
-            <label htmlFor="expense_burden_pct">You retain (0–1)</label>
+          <div className="field" style={{ maxWidth: 220 }}>
+            <label htmlFor="expense_burden_pct">% of hourly rate retained (0–1)</label>
             <input id="expense_burden_pct" name="expense_burden_pct" type="number" step="0.01" min="0" max="1" defaultValue="0.85" required />
           </div>
           <div className="field" style={{ flex: "0 0 auto" }}>
             <button type="submit">Add</button>
           </div>
         </form>
+        <p className="muted" style={{ marginTop: "0.75rem", marginBottom: 0 }}>
+          For your own private practice this is usually 100%. If you're employed by or contracted
+          to a group practice or consultancy, enter the percentage of the billed hourly rate you
+          take home after their commission — e.g. if they bill $200/hr and you're paid 70%, enter
+          0.70.
+        </p>
       </div>
 
       <div className="card">
@@ -80,7 +93,7 @@ export default async function CaseloadPage() {
         <form action={createCase}>
           <div className="field-row">
             <div className="field">
-              <label htmlFor="book_of_business_id">Book of business</label>
+              <label htmlFor="book_of_business_id">Organization</label>
               <select id="book_of_business_id" name="book_of_business_id">
                 <option value="">—</option>
                 {(books || []).map((b) => (
@@ -89,7 +102,7 @@ export default async function CaseloadPage() {
               </select>
             </div>
             <div className="field">
-              <label htmlFor="private_label">Your private label (optional, never shared)</label>
+              <label htmlFor="private_label">Your private client label (optional, never shared)</label>
               <input id="private_label" name="private_label" type="text" maxLength={24} />
             </div>
           </div>
@@ -168,7 +181,7 @@ export default async function CaseloadPage() {
             <tr>
               <th>Case #</th>
               <th>Label</th>
-              <th>Book</th>
+              <th>Organization</th>
               <th>State</th>
               <th>Rate</th>
               <th>Sessions/wk</th>

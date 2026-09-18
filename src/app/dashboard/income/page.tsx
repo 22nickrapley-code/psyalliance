@@ -37,7 +37,7 @@ export default async function IncomePage() {
           <h1>Income &amp; revenue</h1>
           <p className="muted">
             Projected from your active caseload: rate × sessions/week × 4.3 weeks/month, net of
-            each book of business's retention share.
+            each organization's retention share.
           </p>
         </div>
         <a href="/api/export/caseload" className="btn secondary" style={{ flex: "0 0 auto" }}>
@@ -65,11 +65,11 @@ export default async function IncomePage() {
       </div>
 
       <div className="card" style={{ marginTop: "1.5rem" }}>
-        <h2>By book of business</h2>
+        <h2>By organization</h2>
         <table>
           <thead>
             <tr>
-              <th>Book</th>
+              <th>Organization</th>
               <th>Active cases</th>
               <th>Gross</th>
               <th>Net</th>

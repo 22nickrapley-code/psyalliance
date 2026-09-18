@@ -24,7 +24,12 @@ const SELF_DISCLOSURE_CATEGORY_LABELS: Record<string, string> = {
 };
 const SINGLE_SELECT_CATEGORIES = new Set(["sex"]);
 
-export default async function ProfilePage() {
+export default async function ProfilePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ saved?: string }>;
+}) {
+  const { saved } = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -61,7 +66,44 @@ export default async function ProfilePage() {
         patient information lives here.
       </p>
 
-      <form action={saveProfile}>
+      {saved === "1" && (
+        <div className="card" style={{ borderColor: "var(--accent, #2a7)", background: "rgba(34,170,119,0.08)" }}>
+          Profile saved.
+        </div>
+      )}
+
+      <form action={saveProfile} id="profile-form">
+        <div className="card">
+          <h2>Practice model</h2>
+          <p className="muted">
+            Psychologists and psychiatrists generally work one of two ways — sometimes both at once.
+            Tell us which applies so your Caseload page can speak in the right terms.
+          </p>
+          <div className="checkbox-row">
+            <input
+              id="runs_private_practice"
+              name="runs_private_practice"
+              type="checkbox"
+              defaultChecked={profile?.runs_private_practice ?? false}
+            />
+            <label htmlFor="runs_private_practice" style={{ margin: 0, fontWeight: 400, color: "var(--text)" }}>
+              I run my own private practice (I handle my own business, billing, and marketing)
+            </label>
+          </div>
+          <div className="checkbox-row">
+            <input
+              id="employed_by_group_practice"
+              name="employed_by_group_practice"
+              type="checkbox"
+              defaultChecked={profile?.employed_by_group_practice ?? false}
+            />
+            <label htmlFor="employed_by_group_practice" style={{ margin: 0, fontWeight: 400, color: "var(--text)" }}>
+              I'm employed by / contracted to a group practice or consultancy (they handle back
+              office, billing, and marketing; I'm typically paid a percentage of the billed rate)
+            </label>
+          </div>
+        </div>
+
         <div className="card">
           <h2>Credentials</h2>
           <div className="field-row">
@@ -177,7 +219,7 @@ export default async function ProfilePage() {
                         max={5}
                         defaultValue={rank ?? ""}
                         placeholder="rank"
-                        style={{ width: 52, marginLeft: "auto", padding: "0.15rem 0.3rem" }}
+                        style={{ width: 68, flex: "0 0 auto", marginLeft: "auto", padding: "0.15rem 0.4rem" }}
                       />
                     )}
                   </label>
@@ -222,8 +264,6 @@ export default async function ProfilePage() {
             </div>
           ))}
         </div>
-
-        <button type="submit">Save profile</button>
       </form>
 
       <div className="card">
@@ -301,6 +341,10 @@ export default async function ProfilePage() {
             <button type="submit">Submit for review</button>
           </div>
         </form>
+      </div>
+
+      <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "1.5rem" }}>
+        <button type="submit" form="profile-form">Save profile</button>
       </div>
     </div>
   );

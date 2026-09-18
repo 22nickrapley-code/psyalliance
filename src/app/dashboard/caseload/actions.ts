@@ -24,6 +24,30 @@ export async function createBookOfBusiness(formData: FormData) {
   revalidatePath("/dashboard/income");
 }
 
+// Soft-delete only: caseload_clients.book_of_business_id has no ON DELETE
+// clause, so a hard DELETE here would fail (or worse, be silently blocked)
+// once any case references this organization. Reusing the existing
+// is_active flag mirrors archiveCase below and keeps historical cases intact.
+export async function deleteOrganization(formData: FormData) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not signed in");
+
+  const id = Number(formData.get("id"));
+
+  const { error } = await supabase
+    .from("books_of_business")
+    .update({ is_active: false })
+    .eq("id", id)
+    .eq("profile_id", user.id);
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/dashboard/caseload");
+  revalidatePath("/dashboard/income");
+}
+
 export async function createCase(formData: FormData) {
   const supabase = await createClient();
   const {
