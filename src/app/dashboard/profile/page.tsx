@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { saveProfile, submitCredentialVerification, saveAvailability } from "./actions";
+import BioImportBox from "./bio-import";
 
 const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -73,6 +74,8 @@ export default async function ProfilePage({
       )}
 
       <form action={saveProfile} id="profile-form">
+        <BioImportBox />
+
         <div className="card">
           <h2>Practice model</h2>
           <p className="muted">
@@ -209,10 +212,11 @@ export default async function ProfilePage({
                 const rank = selectedMap.get(lv.id);
                 return (
                   <label key={lv.id}>
-                    <input type="checkbox" name={`lv_${lv.id}`} defaultChecked={selectedMap.has(lv.id)} />
+                    <input id={`lv_${lv.id}`} type="checkbox" name={`lv_${lv.id}`} defaultChecked={selectedMap.has(lv.id)} />
                     {lv.value}
                     {isRanked && (
                       <input
+                        id={`rank_${lv.id}`}
                         type="number"
                         name={`rank_${lv.id}`}
                         min={1}

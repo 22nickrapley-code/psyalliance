@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { createBookOfBusiness, createCase, archiveCase, deleteOrganization } from "./actions";
+import CaseloadImportBox from "./import";
 
 export default async function CaseloadPage() {
   const supabase = await createClient();
@@ -87,6 +88,8 @@ export default async function CaseloadPage() {
           0.70.
         </p>
       </div>
+
+      <CaseloadImportBox />
 
       <div className="card">
         <h2>Add a case</h2>

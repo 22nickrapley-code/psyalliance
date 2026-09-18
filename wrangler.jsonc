@@ -20,4 +20,14 @@
     "NEXT_PUBLIC_SUPABASE_URL": "https://vvmulsyvyjsxhcpqfpyo.supabase.co",
     "NEXT_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_DHIdNnOs7O5y6ucrl2T4Eg_Q3QslBZl"
   }
+  // ANTHROPIC_API_KEY (used by the "paste your bio" and "import caseload
+  // from a file" AI-fill features) is NOT set here - it's a real secret, not
+  // a public NEXT_PUBLIC_* value, so it must never sit in a committed file.
+  // Set it as an encrypted secret in the Cloudflare dashboard instead:
+  // Workers & Pages -> psyalliance -> Settings -> Variables and Secrets ->
+  // add "ANTHROPIC_API_KEY" as a Secret (not a plaintext Variable). Get a key
+  // at https://platform.claude.com (Anthropic Console) -> API Keys. For
+  // local dev, add the same key to .env.local (already gitignored) as
+  // ANTHROPIC_API_KEY=sk-ant-... - until either is set, those two features
+  // show a friendly "not configured yet" message rather than breaking.
 }
