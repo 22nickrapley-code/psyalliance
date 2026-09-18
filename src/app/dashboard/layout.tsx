@@ -1,7 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { signOutAction } from "../auth/actions";
 import { redirect } from "next/navigation";
-import SidebarNav, { buildNavGroups } from "./sidebar-nav";
+import SidebarNav from "./sidebar-nav";
+import { buildNavGroups } from "./nav-groups";
 
 export default async function DashboardLayout({
   children,
