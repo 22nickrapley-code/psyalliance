@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createBookOfBusiness, createCase, archiveCase } from "./actions";
 
 export default async function CaseloadPage() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

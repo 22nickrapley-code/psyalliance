@@ -1,10 +1,11 @@
 import { requestPasswordReset } from "../actions";
 
-export default function ForgotPasswordPage({
-  searchParams,
-}: {
-  searchParams: { error?: string; message?: string };
-}) {
+export default async function ForgotPasswordPage(
+  props: {
+    searchParams: Promise<{ error?: string; message?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
   return (
     <div className="auth-shell">
       <div className="auth-card-wrap">

@@ -25,7 +25,7 @@ const SELF_DISCLOSURE_CATEGORY_LABELS: Record<string, string> = {
 const SINGLE_SELECT_CATEGORIES = new Set(["sex"]);
 
 export default async function ProfilePage() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

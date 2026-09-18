@@ -8,16 +8,16 @@ import { headers } from "next/headers";
 // env var (set this once the Cloudflare/GitHub domain is live) and falls
 // back to the request's own host so local/dev/preview environments work
 // without any extra configuration.
-function siteOrigin() {
+async function siteOrigin() {
   if (process.env.NEXT_PUBLIC_SITE_URL) return process.env.NEXT_PUBLIC_SITE_URL;
-  const h = headers();
+  const h = await headers();
   const host = h.get("x-forwarded-host") ?? h.get("host");
   const protocol = h.get("x-forwarded-proto") ?? "https";
   return `${protocol}://${host}`;
 }
 
 export async function signUp(formData: FormData) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const email = String(formData.get("email") || "");
   const password = String(formData.get("password") || "");
   const fullName = String(formData.get("fullName") || "");
@@ -27,7 +27,7 @@ export async function signUp(formData: FormData) {
     password,
     options: {
       data: { full_name: fullName },
-      emailRedirectTo: `${siteOrigin()}/auth/callback?next=${encodeURIComponent("/dashboard")}`,
+      emailRedirectTo: `${await siteOrigin()}/auth/callback?next=${encodeURIComponent("/dashboard")}`,
     },
   });
 
@@ -39,7 +39,7 @@ export async function signUp(formData: FormData) {
 }
 
 export async function signIn(formData: FormData) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const email = String(formData.get("email") || "");
   const password = String(formData.get("password") || "");
 
@@ -53,17 +53,17 @@ export async function signIn(formData: FormData) {
 }
 
 export async function signOutAction() {
-  const supabase = createClient();
+  const supabase = await createClient();
   await supabase.auth.signOut();
   redirect("/auth/sign-in");
 }
 
 export async function requestPasswordReset(formData: FormData) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const email = String(formData.get("email") || "");
 
   await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${siteOrigin()}/auth/callback?next=${encodeURIComponent("/auth/reset-password")}`,
+    redirectTo: `${await siteOrigin()}/auth/callback?next=${encodeURIComponent("/auth/reset-password")}`,
   });
 
   // Always show the same message whether or not the email exists, so this
@@ -75,7 +75,7 @@ export async function requestPasswordReset(formData: FormData) {
 }
 
 export async function resetPassword(formData: FormData) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const password = String(formData.get("password") || "");
   const confirmPassword = String(formData.get("confirmPassword") || "");
 

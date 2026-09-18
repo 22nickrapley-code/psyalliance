@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 
 export async function reviewCredential(formData: FormData) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -29,7 +29,7 @@ export async function reviewCredential(formData: FormData) {
 }
 
 export async function setProfileVerificationStatus(formData: FormData) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const profileId = String(formData.get("profile_id") || "");
   const status = String(formData.get("status") || "");
 

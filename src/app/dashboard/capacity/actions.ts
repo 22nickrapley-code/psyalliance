@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 
 export async function saveCapacitySettings(formData: FormData) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -23,7 +23,7 @@ export async function saveCapacitySettings(formData: FormData) {
 }
 
 export async function addOverheadExpense(formData: FormData) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -49,7 +49,7 @@ export async function addOverheadExpense(formData: FormData) {
 }
 
 export async function deleteOverheadExpense(formData: FormData) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const id = Number(formData.get("id"));
 
   const { error } = await supabase.from("practice_overhead_expenses").delete().eq("id", id);

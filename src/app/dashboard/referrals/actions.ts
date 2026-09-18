@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 
 export async function createReferralRequest(formData: FormData) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -26,7 +26,7 @@ export async function createReferralRequest(formData: FormData) {
 }
 
 export async function offerToHelp(formData: FormData) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -45,7 +45,7 @@ export async function offerToHelp(formData: FormData) {
 }
 
 export async function acceptResponse(formData: FormData) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const responseId = Number(formData.get("response_id"));
   const requestId = Number(formData.get("referral_request_id"));
 
@@ -71,7 +71,7 @@ export async function acceptResponse(formData: FormData) {
 }
 
 export async function closeReferralRequest(formData: FormData) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const id = Number(formData.get("id"));
 
   const { error } = await supabase

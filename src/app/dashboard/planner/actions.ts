@@ -9,7 +9,7 @@ import { revalidatePath } from "next/cache";
 // never on behalf of a candidate) so it always has the owner's own RLS
 // visibility into their connections, blocklist, and community scores.
 async function offerToNextCandidate(
-  supabase: ReturnType<typeof createClient>,
+  supabase: Awaited<ReturnType<typeof createClient>>,
   assignmentId: number,
   requesterId: string,
   requesterName: string,
@@ -56,7 +56,7 @@ async function offerToNextCandidate(
 }
 
 export async function createPlannerProject(formData: FormData) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -114,7 +114,7 @@ export async function createPlannerProject(formData: FormData) {
 // same matching computation with full RLS visibility into their own
 // connections/blocklist/scores - no cross-user impersonation needed.
 export async function advanceToNextCandidate(formData: FormData) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -149,7 +149,7 @@ export async function advanceToNextCandidate(formData: FormData) {
 // they're always authorized to update. The owner sees the decline (and
 // advances to the next candidate themselves) next time they load Planner.
 export async function respondToPlannerOffer(formData: FormData) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -170,7 +170,7 @@ export async function respondToPlannerOffer(formData: FormData) {
 }
 
 export async function cancelPlannerProject(formData: FormData) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const id = Number(formData.get("id"));
 
   const { error } = await supabase.from("planner_projects").update({ status: "cancelled" }).eq("id", id);

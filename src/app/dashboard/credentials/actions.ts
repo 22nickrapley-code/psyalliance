@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 
 export async function addLicense(formData: FormData) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -25,7 +25,7 @@ export async function addLicense(formData: FormData) {
 }
 
 export async function deleteLicense(formData: FormData) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const id = Number(formData.get("id"));
   const { error } = await supabase.from("licenses").delete().eq("id", id);
   if (error) throw new Error(error.message);
@@ -33,7 +33,7 @@ export async function deleteLicense(formData: FormData) {
 }
 
 export async function addCeCredit(formData: FormData) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -54,7 +54,7 @@ export async function addCeCredit(formData: FormData) {
 }
 
 export async function deleteCeCredit(formData: FormData) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const id = Number(formData.get("id"));
   const { error } = await supabase.from("continuing_education_credits").delete().eq("id", id);
   if (error) throw new Error(error.message);
@@ -62,7 +62,7 @@ export async function deleteCeCredit(formData: FormData) {
 }
 
 export async function addInsurancePanel(formData: FormData) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -81,7 +81,7 @@ export async function addInsurancePanel(formData: FormData) {
 }
 
 export async function updateInsurancePanelStatus(formData: FormData) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const id = Number(formData.get("id"));
   const status = String(formData.get("status") || "");
 
@@ -92,7 +92,7 @@ export async function updateInsurancePanelStatus(formData: FormData) {
 }
 
 export async function deleteInsurancePanel(formData: FormData) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const id = Number(formData.get("id"));
   const { error } = await supabase.from("insurance_panels").delete().eq("id", id);
   if (error) throw new Error(error.message);
@@ -100,7 +100,7 @@ export async function deleteInsurancePanel(formData: FormData) {
 }
 
 export async function saveNpiNumber(formData: FormData) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -122,7 +122,7 @@ export async function saveNpiNumber(formData: FormData) {
 // the existing human-reviewed credential_verifications queue rather than
 // auto-verifying anyone. A human (Nick/Rena) still makes the final call.
 export async function checkNpiRegistry() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { reviewCredential, setProfileVerificationStatus } from "./actions";
 
 export default async function AdminVerificationsPage() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

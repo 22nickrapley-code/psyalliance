@@ -19,13 +19,14 @@ function renderBody(body: string, mentionedNames: string[]) {
   );
 }
 
-export default async function ConversationPage({
-  params,
-}: {
-  params: { conversationId: string };
-}) {
+export default async function ConversationPage(
+  props: {
+    params: Promise<{ conversationId: string }>;
+  }
+) {
+  const params = await props.params;
   const conversationId = Number(params.conversationId);
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

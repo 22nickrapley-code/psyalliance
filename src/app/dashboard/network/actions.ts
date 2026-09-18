@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 
 export async function sendConnectionRequest(formData: FormData) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -25,7 +25,7 @@ export async function sendConnectionRequest(formData: FormData) {
 }
 
 export async function respondToConnection(formData: FormData) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const id = Number(formData.get("id"));
   const decision = String(formData.get("decision") || "accepted");
 
@@ -39,7 +39,7 @@ export async function respondToConnection(formData: FormData) {
 }
 
 export async function removeConnection(formData: FormData) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const id = Number(formData.get("id"));
 
   const { error } = await supabase.from("connections").delete().eq("id", id);

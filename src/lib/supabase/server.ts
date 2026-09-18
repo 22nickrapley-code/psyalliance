@@ -6,8 +6,8 @@ import { cookies } from "next/headers";
  * Still runs as the authenticated user (anon key + user session) so
  * RLS policies apply - this is not the service-role client.
  */
-export function createClient() {
-  const cookieStore = cookies();
+export async function createClient() {
+  const cookieStore = await cookies();
 
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,

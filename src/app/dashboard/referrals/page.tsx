@@ -4,7 +4,7 @@ import { startConversation } from "../messages/actions";
 import { rankCandidates, type MatchCandidate, type ConnectionTier } from "@/lib/matching";
 
 export default async function ReferralsPage() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

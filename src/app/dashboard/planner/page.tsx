@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createPlannerProject, respondToPlannerOffer, advanceToNextCandidate, cancelPlannerProject } from "./actions";
 
 export default async function PlannerPage() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

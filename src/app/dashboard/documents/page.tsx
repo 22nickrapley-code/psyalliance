@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { uploadDocument, deleteDocument, rateDocument } from "./actions";
 
-async function withSignedUrls(supabase: ReturnType<typeof createClient>, docs: any[]) {
+async function withSignedUrls(supabase: Awaited<ReturnType<typeof createClient>>, docs: any[]) {
   const withUrls = await Promise.all(
     docs.map(async (d) => {
       const { data } = await supabase.storage.from("documents").createSignedUrl(d.storage_path, 60);
@@ -11,12 +11,13 @@ async function withSignedUrls(supabase: ReturnType<typeof createClient>, docs: a
   return withUrls;
 }
 
-export default async function DocumentsPage({
-  searchParams,
-}: {
-  searchParams: { q?: string; from?: string; area?: string; where?: string };
-}) {
-  const supabase = createClient();
+export default async function DocumentsPage(
+  props: {
+    searchParams: Promise<{ q?: string; from?: string; area?: string; where?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

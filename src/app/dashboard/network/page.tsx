@@ -14,12 +14,13 @@ type DirectoryPerson = {
   specialisms: Set<string>;
 };
 
-export default async function NetworkPage({
-  searchParams,
-}: {
-  searchParams: { q?: string; state?: string; specialism?: string; degree?: string; psypact?: string };
-}) {
-  const supabase = createClient();
+export default async function NetworkPage(
+  props: {
+    searchParams: Promise<{ q?: string; state?: string; specialism?: string; degree?: string; psypact?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

@@ -18,7 +18,7 @@ function daysUntil(dateStr: string | null): number | null {
 }
 
 export default async function CredentialsPage() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

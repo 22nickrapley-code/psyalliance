@@ -1,10 +1,11 @@
 import { resetPassword } from "../actions";
 
-export default function ResetPasswordPage({
-  searchParams,
-}: {
-  searchParams: { error?: string };
-}) {
+export default async function ResetPasswordPage(
+  props: {
+    searchParams: Promise<{ error?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
   return (
     <div className="auth-shell">
       <div className="auth-card-wrap">

@@ -9,9 +9,10 @@ const REACTIONS: { key: string; label: string }[] = [
   { key: "thumbs_down", label: "👎" },
 ];
 
-export default async function TownHallChannelPage({ params }: { params: { channelId: string } }) {
+export default async function TownHallChannelPage(props: { params: Promise<{ channelId: string }> }) {
+  const params = await props.params;
   const channelId = Number(params.channelId);
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

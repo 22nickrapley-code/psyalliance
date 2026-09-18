@@ -11,12 +11,13 @@ type Person = {
   specialisms: Set<string>;
 };
 
-export default async function SupervisionPage({
-  searchParams,
-}: {
-  searchParams: { state?: string; specialism?: string };
-}) {
-  const supabase = createClient();
+export default async function SupervisionPage(
+  props: {
+    searchParams: Promise<{ state?: string; specialism?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

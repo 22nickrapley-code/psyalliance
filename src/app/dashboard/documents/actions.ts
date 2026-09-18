@@ -20,7 +20,7 @@ const ALLOWED_CONTENT_TYPES = new Set([
 ]);
 
 export async function uploadDocument(formData: FormData) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -62,7 +62,7 @@ export async function uploadDocument(formData: FormData) {
 }
 
 export async function deleteDocument(formData: FormData) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const id = Number(formData.get("id"));
   const storagePath = String(formData.get("storage_path") || "");
 
@@ -79,7 +79,7 @@ export async function deleteDocument(formData: FormData) {
 // others have found to be best?" - one star rating per person per shared
 // document; re-rating just upserts over your own prior rating.
 export async function rateDocument(formData: FormData) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

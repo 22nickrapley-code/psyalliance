@@ -14,12 +14,13 @@ type PartnerGroupInfo = {
   open_to_group_consultation: boolean;
 };
 
-export default async function MessagesPage({
-  searchParams,
-}: {
-  searchParams: { q?: string; degree?: string };
-}) {
-  const supabase = createClient();
+export default async function MessagesPage(
+  props: {
+    searchParams: Promise<{ q?: string; degree?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

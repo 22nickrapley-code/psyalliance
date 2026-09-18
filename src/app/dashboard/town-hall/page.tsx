@@ -2,12 +2,13 @@ import { createClient } from "@/lib/supabase/server";
 import { joinChannel, leaveChannel } from "./actions";
 import Link from "next/link";
 
-export default async function TownHallIndexPage({
-  searchParams,
-}: {
-  searchParams: { q?: string };
-}) {
-  const supabase = createClient();
+export default async function TownHallIndexPage(
+  props: {
+    searchParams: Promise<{ q?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

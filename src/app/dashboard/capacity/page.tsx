@@ -3,7 +3,7 @@ import { saveCapacitySettings, addOverheadExpense, deleteOverheadExpense } from 
 import { currency } from "@/lib/finance";
 
 export default async function CapacityPage() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

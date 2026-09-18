@@ -1,11 +1,12 @@
 import { signIn } from "../actions";
 import { GoogleSignInButton } from "../google-button";
 
-export default function SignInPage({
-  searchParams,
-}: {
-  searchParams: { error?: string; message?: string };
-}) {
+export default async function SignInPage(
+  props: {
+    searchParams: Promise<{ error?: string; message?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
   return (
     <div className="auth-shell">
       <div className="auth-card-wrap">

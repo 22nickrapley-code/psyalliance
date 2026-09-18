@@ -22,7 +22,7 @@ function findMentions(body: string, candidates: { id: string; full_name: string 
 }
 
 export async function startConversation(formData: FormData) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -75,7 +75,7 @@ export async function startConversation(formData: FormData) {
 }
 
 export async function sendMessage(formData: FormData) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -118,7 +118,7 @@ export async function sendMessage(formData: FormData) {
 }
 
 export async function markConversationRead(formData: FormData) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { computeRankedCandidates } from "@/lib/server-matching";
 
 export default async function DashboardHome() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

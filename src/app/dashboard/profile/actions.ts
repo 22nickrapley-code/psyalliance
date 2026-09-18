@@ -7,7 +7,7 @@ const RANKED_CATEGORIES = ["treatment_specialism", "treatment_modality"];
 const SINGLE_SELECT_CATEGORIES = ["sex"];
 
 export async function saveProfile(formData: FormData) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -85,7 +85,7 @@ export async function saveProfile(formData: FormData) {
 }
 
 export async function saveAvailability(formData: FormData) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -105,7 +105,7 @@ export async function saveAvailability(formData: FormData) {
 }
 
 export async function submitCredentialVerification(formData: FormData) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

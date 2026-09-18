@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { caseMonthlyGross, caseMonthlyNet, currency } from "@/lib/finance";
 
 export default async function IncomePage() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

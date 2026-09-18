@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 
 export async function postMessage(formData: FormData) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -28,7 +28,7 @@ export async function postMessage(formData: FormData) {
 }
 
 export async function editMessage(formData: FormData) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const messageId = Number(formData.get("message_id"));
   const channelId = Number(formData.get("channel_id"));
   const body = String(formData.get("body") || "").trim();
@@ -44,7 +44,7 @@ export async function editMessage(formData: FormData) {
 }
 
 export async function deleteMessage(formData: FormData) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const messageId = Number(formData.get("message_id"));
   const channelId = Number(formData.get("channel_id"));
 
@@ -60,7 +60,7 @@ export async function deleteMessage(formData: FormData) {
 const REACTION_VALUES = ["thumbs_up", "heart", "thumbs_down"] as const;
 
 export async function reactToMessage(formData: FormData) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -96,7 +96,7 @@ export async function reactToMessage(formData: FormData) {
 }
 
 export async function joinChannel(formData: FormData) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -112,7 +112,7 @@ export async function joinChannel(formData: FormData) {
 }
 
 export async function leaveChannel(formData: FormData) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
