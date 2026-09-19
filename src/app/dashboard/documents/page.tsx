@@ -1,10 +1,18 @@
 import { createClient } from "@/lib/supabase/server";
 import { uploadDocument, deleteDocument, rateDocument } from "./actions";
 
+// One hour, not the 60 *seconds* this used to be set to: these signed URLs
+// sit as plain <a href> links on a rendered page, and a user browsing the
+// list, reading titles, and clicking "Open" a minute or two later would
+// previously find the link already expired and broken. An hour comfortably
+// covers a normal browse-then-click session without over-extending how long
+// a leaked link stays valid.
+const SIGNED_URL_TTL_SECONDS = 60 * 60;
+
 async function withSignedUrls(supabase: Awaited<ReturnType<typeof createClient>>, docs: any[]) {
   const withUrls = await Promise.all(
     docs.map(async (d) => {
-      const { data } = await supabase.storage.from("documents").createSignedUrl(d.storage_path, 60);
+      const { data } = await supabase.storage.from("documents").createSignedUrl(d.storage_path, SIGNED_URL_TTL_SECONDS);
       return { ...d, signedUrl: data?.signedUrl || null };
     })
   );

@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { postMessage, reactToMessage, deleteMessage } from "../actions";
+import { postMessage, reactToMessage, deleteMessage, editMessage } from "../actions";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -111,13 +111,28 @@ export default async function TownHallChannelPage(props: { params: Promise<{ cha
             <div style={{ display: "flex", alignItems: "center" }}>
               <ReactionBar m={m} />
               {m.author_id === myself && (
-                <form action={deleteMessage} style={{ marginLeft: "0.75rem" }}>
-                  <input type="hidden" name="message_id" value={m.id} />
-                  <input type="hidden" name="channel_id" value={channelId} />
-                  <button type="submit" className="secondary" style={{ padding: "0.1rem 0.4rem", fontSize: "0.8rem" }}>
-                    Delete
-                  </button>
-                </form>
+                <>
+                  <details style={{ marginLeft: "0.75rem" }}>
+                    <summary style={{ cursor: "pointer", fontSize: "0.8rem", color: "var(--muted)", display: "inline" }}>
+                      Edit
+                    </summary>
+                    <form action={editMessage} style={{ marginTop: "0.5rem" }}>
+                      <input type="hidden" name="message_id" value={m.id} />
+                      <input type="hidden" name="channel_id" value={channelId} />
+                      <textarea name="body" rows={2} defaultValue={m.body} required style={{ width: "100%" }} />
+                      <button type="submit" className="secondary" style={{ marginTop: "0.35rem" }}>
+                        Save edit
+                      </button>
+                    </form>
+                  </details>
+                  <form action={deleteMessage} style={{ marginLeft: "0.75rem" }}>
+                    <input type="hidden" name="message_id" value={m.id} />
+                    <input type="hidden" name="channel_id" value={channelId} />
+                    <button type="submit" className="secondary" style={{ padding: "0.1rem 0.4rem", fontSize: "0.8rem" }}>
+                      Delete
+                    </button>
+                  </form>
+                </>
               )}
             </div>
           )}
@@ -136,13 +151,28 @@ export default async function TownHallChannelPage(props: { params: Promise<{ cha
                   <div style={{ display: "flex", alignItems: "center" }}>
                     <ReactionBar m={reply} />
                     {reply.author_id === myself && (
-                      <form action={deleteMessage} style={{ marginLeft: "0.75rem" }}>
-                        <input type="hidden" name="message_id" value={reply.id} />
-                        <input type="hidden" name="channel_id" value={channelId} />
-                        <button type="submit" className="secondary" style={{ padding: "0.1rem 0.4rem", fontSize: "0.75rem" }}>
-                          Delete
-                        </button>
-                      </form>
+                      <>
+                        <details style={{ marginLeft: "0.75rem" }}>
+                          <summary style={{ cursor: "pointer", fontSize: "0.75rem", color: "var(--muted)", display: "inline" }}>
+                            Edit
+                          </summary>
+                          <form action={editMessage} style={{ marginTop: "0.4rem" }}>
+                            <input type="hidden" name="message_id" value={reply.id} />
+                            <input type="hidden" name="channel_id" value={channelId} />
+                            <textarea name="body" rows={2} defaultValue={reply.body} required style={{ width: "100%" }} />
+                            <button type="submit" className="secondary" style={{ marginTop: "0.35rem" }}>
+                              Save edit
+                            </button>
+                          </form>
+                        </details>
+                        <form action={deleteMessage} style={{ marginLeft: "0.75rem" }}>
+                          <input type="hidden" name="message_id" value={reply.id} />
+                          <input type="hidden" name="channel_id" value={channelId} />
+                          <button type="submit" className="secondary" style={{ padding: "0.1rem 0.4rem", fontSize: "0.75rem" }}>
+                            Delete
+                          </button>
+                        </form>
+                      </>
                     )}
                   </div>
                 )}

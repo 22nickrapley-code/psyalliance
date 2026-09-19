@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
-import { saveProfile, submitCredentialVerification, saveAvailability } from "./actions";
+import { saveProfile, submitCredentialVerification, saveAvailability, uploadAvatar } from "./actions";
+import { resolveAvatarUrl } from "@/lib/avatars";
 import BioImportBox from "./bio-import";
 
 const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -28,9 +29,9 @@ const SINGLE_SELECT_CATEGORIES = new Set(["sex"]);
 export default async function ProfilePage({
   searchParams,
 }: {
-  searchParams: Promise<{ saved?: string }>;
+  searchParams: Promise<{ saved?: string; avatar_saved?: string; avatar_error?: string }>;
 }) {
-  const { saved } = await searchParams;
+  const { saved, avatar_saved, avatar_error } = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -48,6 +49,14 @@ export default async function ProfilePage({
         .order("created_at", { ascending: false }),
       supabase.from("profile_availability").select("day_of_week").eq("profile_id", user!.id),
     ]);
+
+  const avatarUrl = await resolveAvatarUrl(supabase, profile?.avatar_path);
+  const initials = (profile?.full_name || user!.email || "")
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((p: string) => p[0]?.toUpperCase())
+    .join("") || "U";
 
   const availableDays = new Set((availability || []).map((a) => a.day_of_week));
 
@@ -72,6 +81,62 @@ export default async function ProfilePage({
           Profile saved.
         </div>
       )}
+      {avatar_saved === "1" && (
+        <div className="card" style={{ borderColor: "var(--accent, #2a7)", background: "rgba(34,170,119,0.08)" }}>
+          Photo updated.
+        </div>
+      )}
+      {avatar_error && (
+        <div className="card" style={{ borderColor: "#b3392c", background: "rgba(179,57,44,0.08)" }}>
+          {avatar_error}
+        </div>
+      )}
+
+      <div className="card">
+        <h2>Professional photo</h2>
+        <p className="muted">
+          A headshot the way you'd expect on a public practice profile — helps colleagues recognize
+          you and puts a face to a referral or coverage request. Only visible to other verified,
+          signed-in members, never public.
+        </p>
+        <div style={{ display: "flex", alignItems: "center", gap: "1.25rem" }}>
+          {avatarUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={avatarUrl}
+              alt="Your profile photo"
+              width={84}
+              height={84}
+              style={{ width: 84, height: 84, borderRadius: "50%", objectFit: "cover", flex: "0 0 auto", border: "1px solid var(--border)" }}
+            />
+          ) : (
+            <div
+              style={{
+                width: 84,
+                height: 84,
+                borderRadius: "50%",
+                background: "var(--gold)",
+                color: "#2a2313",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: "1.6rem",
+                fontWeight: 700,
+                flex: "0 0 auto",
+              }}
+            >
+              {initials}
+            </div>
+          )}
+          <form action={uploadAvatar} encType="multipart/form-data" style={{ display: "flex", alignItems: "flex-end", gap: "0.75rem", flexWrap: "wrap" }}>
+            <div className="field">
+              <label htmlFor="avatar">{avatarUrl ? "Replace photo" : "Upload a photo"}</label>
+              <input id="avatar" name="avatar" type="file" accept="image/jpeg,image/png,image/webp" required />
+            </div>
+            <button type="submit" className="secondary">Upload</button>
+          </form>
+        </div>
+      </div>
 
       <form action={saveProfile} id="profile-form">
         <BioImportBox />
@@ -123,10 +188,11 @@ export default async function ProfilePage({
             <div className="field">
               <label htmlFor="qualification_level">Qualification</label>
               <select id="qualification_level" name="qualification_level" defaultValue={profile?.qualification_level || "PhD"}>
-                <option value="PhD">PhD</option>
-                <option value="PsyD">PsyD</option>
-                <option value="EdD">EdD</option>
-                <option value="MD">MD</option>
+                <option value="PhD">PhD — Psychologist</option>
+                <option value="PsyD">PsyD — Psychologist</option>
+                <option value="EdD">EdD — Psychologist</option>
+                <option value="MD">MD — Psychiatrist</option>
+                <option value="DO">DO — Psychiatrist</option>
               </select>
             </div>
             <div className="field">

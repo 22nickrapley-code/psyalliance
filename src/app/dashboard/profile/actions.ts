@@ -187,7 +187,7 @@ export async function parseProfileBio(bioText: string): Promise<{
         properties: {
           full_name: { type: "string", description: "Full name, if stated" },
           credential_prefix: { type: "string", description: "e.g. Dr" },
-          qualification_level: { type: "string", enum: ["PhD", "PsyD", "EdD", "MD"] },
+          qualification_level: { type: "string", enum: ["PhD", "PsyD", "EdD", "MD", "DO"] },
           primary_practice_city: { type: "string" },
           states_qualified: { type: "array", items: { type: "string" }, description: "Two-letter US state codes the practitioner is licensed in" },
           pronoun: { type: "string" },
@@ -244,6 +244,74 @@ export async function parseProfileBio(bioText: string): Promise<{
     if (err instanceof AiNotConfiguredError) return { error: err.message };
     return { error: err instanceof Error ? err.message : "Something went wrong parsing that text." };
   }
+}
+
+const MAX_AVATAR_BYTES = 5 * 1024 * 1024; // 5MB
+const ALLOWED_AVATAR_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
+
+// Professional photo upload, in the vein of a Psychology Today profile
+// photo. Stored privately (see 0032_profile_avatar_upload.sql) - only ever
+// shown to another signed-in member via a short-lived signed URL, never a
+// public one.
+export async function uploadAvatar(formData: FormData) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not signed in");
+
+  const file = formData.get("avatar");
+  if (!(file instanceof File) || file.size === 0) {
+    redirect("/dashboard/profile?avatar_error=" + encodeURIComponent("Choose a photo first."));
+  }
+  const photo = file as File;
+  if (!ALLOWED_AVATAR_TYPES.has(photo.type)) {
+    redirect("/dashboard/profile?avatar_error=" + encodeURIComponent("Please upload a JPEG, PNG, or WebP image."));
+  }
+  if (photo.size > MAX_AVATAR_BYTES) {
+    redirect("/dashboard/profile?avatar_error=" + encodeURIComponent("That photo is too large - please keep it under 5MB."));
+  }
+
+  // A profile row must already exist (created by the main "Save profile"
+  // form) since avatar_path lives on it and profiles.full_name etc are
+  // NOT NULL with no default - there's nothing sensible to upsert here.
+  const { data: existingProfile } = await supabase
+    .from("profiles")
+    .select("avatar_path")
+    .eq("id", user.id)
+    .maybeSingle();
+  if (!existingProfile) {
+    redirect("/dashboard/profile?avatar_error=" + encodeURIComponent("Save your profile details below first, then add a photo."));
+  }
+
+  const ext = (photo.name.split(".").pop() || photo.type.split("/")[1] || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";
+  const path = `${user.id}/avatar-${Date.now()}.${ext}`;
+
+  const { error: uploadError } = await supabase.storage.from("avatars").upload(path, photo, {
+    contentType: photo.type,
+    upsert: false,
+  });
+  if (uploadError) {
+    redirect("/dashboard/profile?avatar_error=" + encodeURIComponent(uploadError.message));
+  }
+
+  const { error: updateError } = await supabase.from("profiles").update({ avatar_path: path }).eq("id", user.id);
+  if (updateError) {
+    // Clean up the just-uploaded object rather than leaving an orphan.
+    await supabase.storage.from("avatars").remove([path]);
+    redirect("/dashboard/profile?avatar_error=" + encodeURIComponent(updateError.message));
+  }
+
+  // Best-effort cleanup of the previous photo, if any - not awaited-critical,
+  // and never blocks the redirect below on failure.
+  const oldPath = existingProfile?.avatar_path;
+  if (oldPath && oldPath !== path) {
+    await supabase.storage.from("avatars").remove([oldPath]);
+  }
+
+  revalidatePath("/dashboard/profile");
+  revalidatePath("/dashboard");
+  redirect("/dashboard/profile?avatar_saved=1");
 }
 
 export async function submitCredentialVerification(formData: FormData) {

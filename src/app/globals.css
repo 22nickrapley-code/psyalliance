@@ -22,6 +22,8 @@
   --danger-border: #e3a89f;
   --success: #1f4d3f;
   --success-soft: #e7efe9;
+  --plum: #6b4c6b;
+  --plum-soft: #f1e9ef;
   --radius-sm: 6px;
   --radius: 10px;
   --radius-lg: 16px;
@@ -478,6 +480,16 @@ tbody tr:hover {
 .tag.gold {
   background: var(--gold-soft);
   color: #7a5f30;
+}
+
+/* Psychologist / psychiatrist split - kept visually distinct (not red/
+   green-alert colors, which already mean something else in this UI) since
+   the two professions can't treat each other's patient types and routinely
+   refer between one another; a searcher should be able to tell at a glance
+   which they're looking at. */
+.tag.psychiatrist {
+  background: var(--plum-soft);
+  color: var(--plum);
 }
 
 .checkbox-grid {

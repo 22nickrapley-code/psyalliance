@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 
 export async function saveCapacitySettings(formData: FormData) {
   const supabase = await createClient();
@@ -20,6 +21,7 @@ export async function saveCapacitySettings(formData: FormData) {
   if (error) throw new Error(error.message);
 
   revalidatePath("/dashboard/capacity");
+  redirect("/dashboard/capacity?saved=1");
 }
 
 export async function addOverheadExpense(formData: FormData) {

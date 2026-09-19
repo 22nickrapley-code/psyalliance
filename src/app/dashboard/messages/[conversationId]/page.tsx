@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { sendMessage, markConversationRead } from "../actions";
+import { sendMessage } from "../actions";
 
 // Renders a message body, turning any "@Full Name" substring that matches a
 // mentioned participant into a highlighted span - simple text-based
@@ -62,14 +62,15 @@ export default async function ConversationPage(
   const others = (participants || []).filter((p) => p.profile_id !== myself);
   const title = conversation.title || others.map((o) => (o.profile as any)?.full_name).join(", ") || "Conversation";
 
-  // Mark read on open - best-effort, fire-and-forget so the page doesn't
-  // wait on it.
-  supabase
+  // Mark read on open. Previously fire-and-forget (a bare .then(() => {}))
+  // which let the request race the page response on Cloudflare Workers'
+  // request-scoped runtime and could get cancelled before it completed -
+  // awaited here so it reliably lands before the page renders.
+  await supabase
     .from("conversation_participants")
     .update({ last_read_at: new Date().toISOString() })
     .eq("conversation_id", conversationId)
-    .eq("profile_id", myself)
-    .then(() => {});
+    .eq("profile_id", myself);
 
   return (
     <div>
@@ -113,10 +114,6 @@ export default async function ConversationPage(
           <button type="submit">Send</button>
         </form>
       </div>
-
-      <form action={markConversationRead}>
-        <input type="hidden" name="conversation_id" value={conversationId} />
-      </form>
     </div>
   );
 }

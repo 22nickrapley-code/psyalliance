@@ -3,6 +3,7 @@ import { signOutAction } from "../auth/actions";
 import { redirect } from "next/navigation";
 import SidebarNav from "./sidebar-nav";
 import { buildNavGroups } from "./nav-groups";
+import { resolveAvatarUrl } from "@/lib/avatars";
 
 export default async function DashboardLayout({
   children,
@@ -20,9 +21,10 @@ export default async function DashboardLayout({
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("full_name, verification_status, is_admin")
+    .select("full_name, verification_status, is_admin, avatar_path")
     .eq("id", user.id)
     .maybeSingle();
+  const avatarUrl = await resolveAvatarUrl(supabase, profile?.avatar_path);
 
   // Cheap presence signal used only for match tie-breaking ("last login") -
   // not awaited-critical, but kept simple and correct rather than clever.
@@ -59,7 +61,12 @@ export default async function DashboardLayout({
 
         <div className="sidebar-footer">
           <div className="user-chip">
-            <div className="avatar">{initials}</div>
+            {avatarUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={avatarUrl} alt="" className="avatar" style={{ objectFit: "cover" }} />
+            ) : (
+              <div className="avatar">{initials}</div>
+            )}
             <div className="who">
               <div className="name">{displayName}</div>
               {profile?.verification_status && (

@@ -21,6 +21,35 @@ function findMentions(body: string, candidates: { id: string; full_name: string 
   return Array.from(mentioned);
 }
 
+// Shared by both the fresh-conversation path and the dedup-reuse path below
+// - posts the optional opening message and bumps last_message_at.
+async function postInitialMessage(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  conversationId: number,
+  authorId: string,
+  body: string,
+  otherParticipantIds: string[]
+) {
+  const { data: others } = await supabase
+    .from("profiles")
+    .select("id, full_name")
+    .in("id", otherParticipantIds);
+  const mentioned = findMentions(body, others || []);
+
+  const { error: messageError } = await supabase.from("conversation_messages").insert({
+    conversation_id: conversationId,
+    author_id: authorId,
+    body,
+    mentioned_profile_ids: mentioned,
+  });
+  if (messageError) throw new Error(messageError.message);
+
+  await supabase
+    .from("conversations")
+    .update({ last_message_at: new Date().toISOString() })
+    .eq("id", conversationId);
+}
+
 export async function startConversation(formData: FormData) {
   const supabase = await createClient();
   const {
@@ -36,6 +65,59 @@ export async function startConversation(formData: FormData) {
     throw new Error("Choose at least one colleague to message");
   }
 
+  const allParticipantIds = Array.from(new Set([user.id, ...participantIds]));
+
+  // Deduplicated by an exact (title, participant-set) match - re-triggering
+  // the same targeted outreach reuses the existing thread instead of
+  // spawning a fresh duplicate every time. This covers both the untitled
+  // "Start new conversation" flow AND fixed-title one-click outreach like
+  // Supervision's "Request supervision"/"Offer supervision" buttons, which
+  // pass the same title on every click and would otherwise create a new
+  // duplicate thread to the same person each time they're clicked. A
+  // *different* title with the same people (e.g. "Partner group
+  // consultation" run again after the partner list changed, or a
+  // genuinely new titled thread) is treated as new, since the title text
+  // itself differentiates it.
+  {
+    const { data: myParticipantRows } = await supabase
+      .from("conversation_participants")
+      .select("conversation_id")
+      .eq("profile_id", user.id);
+    const myConversationIds = (myParticipantRows || []).map((r) => r.conversation_id);
+
+    if (myConversationIds.length > 0) {
+      let titleMatchQuery = supabase.from("conversations").select("id").in("id", myConversationIds);
+      titleMatchQuery = title ? titleMatchQuery.eq("title", title) : titleMatchQuery.is("title", null);
+      const { data: titleMatchingConversations } = await titleMatchQuery;
+      const candidateIds = (titleMatchingConversations || []).map((c) => c.id);
+
+      if (candidateIds.length > 0) {
+        const { data: allRows } = await supabase
+          .from("conversation_participants")
+          .select("conversation_id, profile_id")
+          .in("conversation_id", candidateIds);
+        const participantsByConversation = new Map<number, Set<string>>();
+        for (const row of allRows || []) {
+          const set = participantsByConversation.get(row.conversation_id) || new Set<string>();
+          set.add(row.profile_id);
+          participantsByConversation.set(row.conversation_id, set);
+        }
+        const targetSet = new Set(allParticipantIds);
+        const existingId = Array.from(participantsByConversation.entries()).find(
+          ([, set]) => set.size === targetSet.size && [...set].every((id) => targetSet.has(id))
+        )?.[0];
+
+        if (existingId) {
+          if (body) {
+            await postInitialMessage(supabase, existingId, user.id, body, participantIds);
+          }
+          revalidatePath("/dashboard/messages");
+          redirect(`/dashboard/messages/${existingId}`);
+        }
+      }
+    }
+  }
+
   const { data: conversation, error: convError } = await supabase
     .from("conversations")
     .insert({ created_by: user.id, title })
@@ -43,31 +125,13 @@ export async function startConversation(formData: FormData) {
     .single();
   if (convError) throw new Error(convError.message);
 
-  const allParticipantIds = Array.from(new Set([user.id, ...participantIds]));
   const { error: participantsError } = await supabase
     .from("conversation_participants")
     .insert(allParticipantIds.map((profile_id) => ({ conversation_id: conversation.id, profile_id })));
   if (participantsError) throw new Error(participantsError.message);
 
   if (body) {
-    const { data: others } = await supabase
-      .from("profiles")
-      .select("id, full_name")
-      .in("id", participantIds);
-    const mentioned = findMentions(body, others || []);
-
-    const { error: messageError } = await supabase.from("conversation_messages").insert({
-      conversation_id: conversation.id,
-      author_id: user.id,
-      body,
-      mentioned_profile_ids: mentioned,
-    });
-    if (messageError) throw new Error(messageError.message);
-
-    await supabase
-      .from("conversations")
-      .update({ last_message_at: new Date().toISOString() })
-      .eq("id", conversation.id);
+    await postInitialMessage(supabase, conversation.id, user.id, body, participantIds);
   }
 
   revalidatePath("/dashboard/messages");
@@ -114,23 +178,5 @@ export async function sendMessage(formData: FormData) {
     .eq("profile_id", user.id);
 
   revalidatePath(`/dashboard/messages/${conversationId}`);
-  revalidatePath("/dashboard/messages");
-}
-
-export async function markConversationRead(formData: FormData) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error("Not signed in");
-
-  const conversationId = Number(formData.get("conversation_id"));
-
-  await supabase
-    .from("conversation_participants")
-    .update({ last_read_at: new Date().toISOString() })
-    .eq("conversation_id", conversationId)
-    .eq("profile_id", user.id);
-
   revalidatePath("/dashboard/messages");
 }

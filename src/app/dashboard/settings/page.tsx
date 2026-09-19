@@ -7,7 +7,8 @@ import {
   removeFromBlocklist,
 } from "./actions";
 
-export default async function SettingsPage() {
+export default async function SettingsPage(props: { searchParams: Promise<{ saved?: string }> }) {
+  const { saved } = await props.searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -50,6 +51,12 @@ export default async function SettingsPage() {
         Notification preferences, your emergency-cover contact, and a private list of colleagues to
         exclude from your own search and recommendations. None of this is visible to anyone else.
       </p>
+
+      {saved === "1" && (
+        <div className="card" style={{ borderColor: "var(--accent, #2a7)", background: "rgba(34,170,119,0.08)" }}>
+          Notification preferences saved.
+        </div>
+      )}
 
       <div className="card">
         <h2>Notifications</h2>

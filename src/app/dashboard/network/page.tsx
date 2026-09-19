@@ -1,6 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
 import { sendConnectionRequest, respondToConnection, removeConnection } from "./actions";
 import { startConversation } from "../messages/actions";
+import { resolveAvatarUrls } from "@/lib/avatars";
+import Avatar from "../avatar";
+import { professionFor, professionLabel, type Profession } from "@/lib/profession";
 
 type DirectoryPerson = {
   id: string;
@@ -11,12 +14,21 @@ type DirectoryPerson = {
   primary_state: string | null;
   accepting_referrals: boolean;
   psypact_participating: boolean;
+  avatar_path: string | null;
   specialisms: Set<string>;
 };
 
+function ProfessionTag({ profession }: { profession: Profession }) {
+  return (
+    <span className={`tag${profession === "psychiatrist" ? " psychiatrist" : ""}`}>
+      {professionLabel(profession)}
+    </span>
+  );
+}
+
 export default async function NetworkPage(
   props: {
-    searchParams: Promise<{ q?: string; state?: string; specialism?: string; degree?: string; psypact?: string }>;
+    searchParams: Promise<{ q?: string; state?: string; specialism?: string; degree?: string; psypact?: string; profession?: string }>;
   }
 ) {
   const searchParams = await props.searchParams;
@@ -36,7 +48,7 @@ export default async function NetworkPage(
     supabase.from("public_directory").select("*"),
     supabase
       .from("connections")
-      .select("*, requester:requester_id(full_name), addressee:addressee_id(full_name)")
+      .select("*, requester:requester_id(full_name, avatar_path), addressee:addressee_id(full_name, avatar_path)")
       .or(`requester_id.eq.${user!.id},addressee_id.eq.${user!.id}`),
     supabase
       .from("profile_lookup_values")
@@ -71,6 +83,7 @@ export default async function NetworkPage(
         primary_state: row.primary_state,
         accepting_referrals: row.accepting_referrals,
         psypact_participating: row.psypact_participating,
+        avatar_path: row.avatar_path,
         specialisms: new Set(),
       });
     }
@@ -78,6 +91,14 @@ export default async function NetworkPage(
       people.get(row.id)!.specialisms.add(row.value);
     }
   }
+
+  const avatarUrlByPath = await resolveAvatarUrls(supabase, [
+    ...Array.from(people.values()).map((p) => p.avatar_path),
+    ...(connections || []).map((c: any) => c.requester?.avatar_path),
+    ...(connections || []).map((c: any) => c.addressee?.avatar_path),
+  ]);
+  const avatarOf = (c: any) =>
+    avatarUrlByPath.get((c.requester_id === myself ? c.addressee?.avatar_path : c.requester?.avatar_path) || "") || null;
 
   const mySpecialisms = new Set(
     (myLookups || [])
@@ -117,6 +138,7 @@ export default async function NetworkPage(
   const specialismFilter = searchParams?.specialism || "";
   const degreeFilter = searchParams?.degree || "";
   const psypactFilter = searchParams?.psypact === "1";
+  const professionFilter = searchParams?.profession || "";
 
   const filteredDirectory = Array.from(people.values()).filter((p) => {
     if (q && !p.full_name.toLowerCase().includes(q)) return false;
@@ -124,6 +146,7 @@ export default async function NetworkPage(
     if (specialismFilter && !p.specialisms.has(specialismFilter)) return false;
     if (degreeFilter && degreeFilter !== "all" && connectionDegree(p) !== degreeFilter) return false;
     if (psypactFilter && !p.psypact_participating) return false;
+    if (professionFilter && professionFor(p.qualification_level) !== professionFilter) return false;
     return true;
   });
 
@@ -165,7 +188,10 @@ export default async function NetworkPage(
           const otherId = c.requester_id === myself ? c.addressee_id : c.requester_id;
           return (
           <div key={c.id} className="checkbox-row" style={{ justifyContent: "space-between" }}>
-            <span>{nameOf(c)}</span>
+            <span style={{ display: "flex", alignItems: "center", gap: "0.55rem" }}>
+              <Avatar url={avatarOf(c)} name={nameOf(c) || ""} />
+              {nameOf(c)}
+            </span>
             <span>
               <form action={startConversation} style={{ display: "inline" }}>
                 <input type="hidden" name="participant_ids" value={otherId} />
@@ -190,7 +216,10 @@ export default async function NetworkPage(
           const otherId = c.requester_id === myself ? c.addressee_id : c.requester_id;
           return (
           <div key={c.id} className="checkbox-row" style={{ justifyContent: "space-between" }}>
-            <span>{nameOf(c)}</span>
+            <span style={{ display: "flex", alignItems: "center", gap: "0.55rem" }}>
+              <Avatar url={avatarOf(c)} name={nameOf(c) || ""} />
+              {nameOf(c)}
+            </span>
             <span>
               <form action={startConversation} style={{ display: "inline" }}>
                 <input type="hidden" name="participant_ids" value={otherId} />
@@ -225,10 +254,12 @@ export default async function NetworkPage(
           const badge = engagementBadge(p.id);
           return (
           <div key={p.id} className="checkbox-row" style={{ justifyContent: "space-between" }}>
-            <span>
+            <span style={{ display: "flex", alignItems: "center", gap: "0.55rem" }}>
+              <Avatar url={avatarUrlByPath.get(p.avatar_path || "") || null} name={p.full_name} />
               {p.credential_prefix} {p.full_name} — {p.qualification_level}
               {p.primary_practice_city ? `, ${p.primary_practice_city}` : ""}
               {p.primary_state ? `, ${p.primary_state}` : ""}
+              <ProfessionTag profession={professionFor(p.qualification_level)} />
               {p.psypact_participating && (
                 <span className="tag" style={{ marginLeft: "0.5rem" }} title="Holds PSYPACT Authority to Practice Interjurisdictional Telepsychology">
                   PSYPACT
@@ -296,6 +327,14 @@ export default async function NetworkPage(
               <option value="none">Not yet connected</option>
             </select>
           </div>
+          <div className="field">
+            <label htmlFor="profession">Profession</label>
+            <select id="profession" name="profession" defaultValue={professionFilter}>
+              <option value="">Any</option>
+              <option value="psychologist">Psychologist</option>
+              <option value="psychiatrist">Psychiatrist</option>
+            </select>
+          </div>
           <div className="field checkbox-row" style={{ flex: "0 0 auto", alignSelf: "center" }}>
             <input id="psypact" name="psypact" type="checkbox" value="1" defaultChecked={psypactFilter} />
             <label htmlFor="psypact" style={{ margin: 0, fontWeight: 400, color: "var(--text)" }}>
@@ -305,7 +344,7 @@ export default async function NetworkPage(
           <div className="field" style={{ flex: "0 0 auto" }}>
             <button type="submit" className="secondary">Filter</button>
           </div>
-          {(q || stateFilter || specialismFilter || degreeFilter || psypactFilter) && (
+          {(q || stateFilter || specialismFilter || degreeFilter || psypactFilter || professionFilter) && (
             <div className="field" style={{ flex: "0 0 auto" }}>
               <a href="/dashboard/network" className="btn secondary" style={{ display: "inline-block" }}>Clear</a>
             </div>
@@ -315,6 +354,7 @@ export default async function NetworkPage(
           <thead>
             <tr>
               <th>Name</th>
+              <th>Profession</th>
               <th>City / state</th>
               <th>Specialisms</th>
               <th>Degree</th>
@@ -325,13 +365,17 @@ export default async function NetworkPage(
             {filteredDirectory.map((p) => (
               <tr key={p.id}>
                 <td>
-                  {p.credential_prefix} {p.full_name}
+                  <span style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                    <Avatar url={avatarUrlByPath.get(p.avatar_path || "") || null} name={p.full_name} size={24} />
+                    {p.credential_prefix} {p.full_name}
+                  </span>
                   {p.psypact_participating && (
                     <span className="tag" style={{ marginLeft: "0.4rem" }} title="Holds PSYPACT Authority to Practice Interjurisdictional Telepsychology">
                       PSYPACT
                     </span>
                   )}
                 </td>
+                <td><ProfessionTag profession={professionFor(p.qualification_level)} /></td>
                 <td>{p.primary_practice_city || "—"}{p.primary_state ? `, ${p.primary_state}` : ""}</td>
                 <td>{[...p.specialisms].slice(0, 3).map((s) => <span key={s} className="tag">{s}</span>)}</td>
                 <td><span className="tag">{connectionDegree(p)}</span></td>
@@ -361,7 +405,7 @@ export default async function NetworkPage(
             ))}
             {filteredDirectory.length === 0 && (
               <tr>
-                <td colSpan={5} className="muted">
+                <td colSpan={6} className="muted">
                   {people.size === 0 ? "No verified colleagues yet." : "No colleagues match those filters."}
                 </td>
               </tr>

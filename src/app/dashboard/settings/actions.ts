@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 
 export async function saveNotificationPreferences(formData: FormData) {
   const supabase = await createClient();
@@ -29,6 +30,7 @@ export async function saveNotificationPreferences(formData: FormData) {
   if (error) throw new Error(error.message);
 
   revalidatePath("/dashboard/settings");
+  redirect("/dashboard/settings?saved=1");
 }
 
 export async function saveEmergencyContact(formData: FormData) {

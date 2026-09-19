@@ -1,17 +1,12 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import { requireAdminOrRedirectPath } from "@/lib/admin";
 import { reviewCredential, setProfileVerificationStatus } from "./actions";
 
 export default async function AdminVerificationsPage() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  const { data: me } = await supabase.from("profiles").select("is_admin").eq("id", user!.id).maybeSingle();
-  if (!me?.is_admin) {
-    redirect("/dashboard");
-  }
+  const redirectPath = await requireAdminOrRedirectPath(supabase);
+  if (redirectPath) redirect(redirectPath);
 
   const { data: profiles } = await supabase
     .from("profiles")

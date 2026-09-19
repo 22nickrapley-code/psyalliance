@@ -19,7 +19,10 @@ export async function sendConnectionRequest(formData: FormData) {
     tier,
     status: "pending",
   });
-  if (error) throw new Error(error.message);
+  // 23505 = Postgres unique-violation - a request between these two people
+  // already exists (in either direction, per the table's unique constraint).
+  // Treat re-clicking "Connect" as a harmless no-op instead of a hard error.
+  if (error && error.code !== "23505") throw new Error(error.message);
 
   revalidatePath("/dashboard/network");
 }

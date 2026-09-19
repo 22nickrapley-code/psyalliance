@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 
 export async function addLicense(formData: FormData) {
   const supabase = await createClient();
@@ -116,6 +117,30 @@ export async function saveNpiNumber(formData: FormData) {
   if (error) throw new Error(error.message);
 
   revalidatePath("/dashboard/credentials");
+  redirect("/dashboard/credentials?saved=1");
+}
+
+export async function saveCaqhInfo(formData: FormData) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not signed in");
+
+  const caqhProviderId = String(formData.get("caqh_provider_id") || "").trim();
+  const lastAttestedDate = String(formData.get("caqh_last_attested_date") || "").trim();
+
+  const { error } = await supabase
+    .from("profiles")
+    .update({
+      caqh_provider_id: caqhProviderId || null,
+      caqh_last_attested_date: lastAttestedDate || null,
+    })
+    .eq("id", user.id);
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/dashboard/credentials");
+  redirect("/dashboard/credentials?saved=1");
 }
 
 // Automated pre-check against the free, public NPPES NPI Registry - feeds
@@ -138,17 +163,23 @@ export async function checkNpiRegistry() {
   let raw: any = null;
   let fetchError: string | null = null;
   try {
-    const res = await fetch(
-      `https://npiregistry.cms.hhs.gov/api/?number=${encodeURIComponent(profile.npi_number)}&version=2.1`,
-      { cache: "no-store" }
-    );
-    if (!res.ok) {
-      fetchError = `NPI registry returned HTTP ${res.status}`;
-    } else {
-      raw = await res.json();
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
+    try {
+      const res = await fetch(
+        `https://npiregistry.cms.hhs.gov/api/?number=${encodeURIComponent(profile.npi_number)}&version=2.1`,
+        { cache: "no-store", signal: controller.signal }
+      );
+      if (!res.ok) {
+        fetchError = `NPI registry returned HTTP ${res.status}`;
+      } else {
+        raw = await res.json();
+      }
+    } finally {
+      clearTimeout(timeout);
     }
   } catch (e: any) {
-    fetchError = e?.message || "Could not reach the NPI registry";
+    fetchError = e?.name === "AbortError" ? "The NPI registry took too long to respond - try again shortly" : e?.message || "Could not reach the NPI registry";
   }
 
   let matched = false;

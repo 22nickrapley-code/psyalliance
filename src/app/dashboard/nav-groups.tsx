@@ -1,15 +1,14 @@
 import type { ReactNode } from "react";
 
 // Plain data + icons for the sidebar nav - deliberately NOT a "use client"
-// file. It is imported directly from the server-rendered dashboard layout to
+// file. It's imported directly from the server-rendered dashboard layout to
 // build the `groups` prop, and Next.js replaces every export of a "use
 // client" module (not just the default component) with a client-only
 // reference when a Server Component imports it - calling a plain helper
 // function like buildNavGroups() from server code would break at runtime
-// under production bundling even though it is fine in local dev. Keeping
-// this logic in its own server-safe module and having sidebar-nav.tsx (the
-// actual client component) just render the pre-built `groups` prop avoids
-// that.
+// under production bundling even though it's fine in local dev. Keeping this
+// logic in its own server-safe module and having sidebar-nav.tsx (the actual
+// client component) just render the pre-built `groups` prop avoids that.
 
 export type NavItem = {
   href: string;
@@ -121,6 +120,22 @@ const icon = {
       <circle cx="12" cy="12" r="9" />
     </svg>
   ),
+  adminOverview: (
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3.5" y="3.5" width="7.5" height="7.5" rx="1.2" />
+      <rect x="13" y="3.5" width="7.5" height="7.5" rx="1.2" />
+      <rect x="3.5" y="13" width="7.5" height="7.5" rx="1.2" />
+      <rect x="13" y="13" width="7.5" height="7.5" rx="1.2" />
+    </svg>
+  ),
+  members: (
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="8" cy="8" r="3" />
+      <circle cx="17" cy="9" r="2.3" />
+      <path d="M2.5 20c.5-3.6 2.8-5.8 5.5-5.8s5 2.2 5.5 5.8" />
+      <path d="M14.5 20c.3-2.7 1.7-4.5 3.7-4.9" />
+    </svg>
+  ),
 };
 
 export function buildNavGroups(isAdmin: boolean, unreadMessageCount = 0): NavGroup[] {
@@ -164,9 +179,19 @@ export function buildNavGroups(isAdmin: boolean, unreadMessageCount = 0): NavGro
       label: "Admin",
       items: [
         {
+          href: "/dashboard/admin",
+          label: "Admin overview",
+          icon: icon.adminOverview,
+        },
+        {
           href: "/dashboard/admin/verifications",
           label: "Verification queue",
           icon: icon.verification,
+        },
+        {
+          href: "/dashboard/admin/members",
+          label: "All members",
+          icon: icon.members,
         },
       ],
     });

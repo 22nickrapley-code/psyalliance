@@ -2,6 +2,9 @@ import { createClient } from "@/lib/supabase/server";
 import { createReferralRequest, offerToHelp, acceptResponse, closeReferralRequest } from "./actions";
 import { startConversation } from "../messages/actions";
 import { rankCandidates, type MatchCandidate, type ConnectionTier } from "@/lib/matching";
+import { resolveAvatarUrls } from "@/lib/avatars";
+import Avatar from "../avatar";
+import { professionFor, professionLabel } from "@/lib/profession";
 
 export default async function ReferralsPage() {
   const supabase = await createClient();
@@ -72,10 +75,12 @@ export default async function ReferralsPage() {
     id: string;
     full_name: string;
     credential_prefix: string | null;
+    qualification_level: string;
     primary_practice_city: string | null;
     primary_state: string | null;
     last_active_at: string | null;
     psypact_participating: boolean;
+    avatar_path: string | null;
     specialismRankById: Map<number, number>;
   };
   const peopleForMatching = new Map<string, DirectoryPersonForMatching>();
@@ -86,10 +91,12 @@ export default async function ReferralsPage() {
         id: row.id,
         full_name: row.full_name,
         credential_prefix: row.credential_prefix,
+        qualification_level: row.qualification_level,
         primary_practice_city: row.primary_practice_city,
         primary_state: row.primary_state,
         last_active_at: row.last_active_at,
         psypact_participating: row.psypact_participating,
+        avatar_path: row.avatar_path,
         specialismRankById: new Map(),
       });
     }
@@ -98,6 +105,13 @@ export default async function ReferralsPage() {
       // value -> we'll resolve rank per-request below via specialism value.
     }
   }
+
+  // Avatars aren't part of the shared matching engine's candidate shape
+  // (kept generic for planner/server-matching too) - resolved here
+  // separately, keyed by profile id, and looked up when rendering matches.
+  const avatarPathById = new Map(Array.from(peopleForMatching.values()).map((p) => [p.id, p.avatar_path]));
+  const qualificationById = new Map(Array.from(peopleForMatching.values()).map((p) => [p.id, p.qualification_level]));
+  const avatarUrlByPath = await resolveAvatarUrls(supabase, Array.from(avatarPathById.values()));
   // Build a value->rank map per person for treatment_specialism rows specifically.
   const specialismRankByPersonAndValue = new Map<string, Map<string, number>>();
   for (const row of directoryRows || []) {
@@ -211,11 +225,26 @@ export default async function ReferralsPage() {
                     Suggested colleagues to reach out to (weighted by location, specialism rank, network
                     tier, and community engagement):
                   </p>
-                  {suggestedMatchesFor(r).map((m) => (
+                  {(() => {
+                    // Computed once and reused below - this ran the whole
+                    // matching engine over the entire directory twice per
+                    // open request (once to render the list, again just to
+                    // check its length for the empty state).
+                    const matches = suggestedMatchesFor(r);
+                    return (
+                      <>
+                        {matches.map((m) => (
                     <div key={m.profileId} className="checkbox-row" style={{ justifyContent: "space-between" }}>
-                      <span>
+                      <span style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                        <Avatar url={avatarUrlByPath.get(avatarPathById.get(m.profileId) || "") || null} name={m.fullName} size={26} />
                         {m.fullName}
                         {m.locationTier !== "national" ? ` · ${m.locationTier}` : ""}
+                        <span
+                          className={`tag${professionFor(qualificationById.get(m.profileId)) === "psychiatrist" ? " psychiatrist" : ""}`}
+                          style={{ marginLeft: "0.4rem" }}
+                        >
+                          {professionLabel(professionFor(qualificationById.get(m.profileId)))}
+                        </span>
                         {m.connectionTier !== "none" && <span className="tag" style={{ marginLeft: "0.4rem" }}>{m.connectionTier}</span>}
                         {m.psypactParticipating && (
                           <span className="tag" style={{ marginLeft: "0.4rem" }} title="Holds PSYPACT Authority to Practice Interjurisdictional Telepsychology — may be able to see this client by telehealth across state lines">
@@ -238,11 +267,14 @@ export default async function ReferralsPage() {
                           </button>
                         </form>
                       </span>
-                    </div>
-                  ))}
-                  {suggestedMatchesFor(r).length === 0 && (
-                    <p className="muted">No verified colleagues to suggest yet.</p>
-                  )}
+                          </div>
+                        ))}
+                        {matches.length === 0 && (
+                          <p className="muted">No verified colleagues to suggest yet.</p>
+                        )}
+                      </>
+                    );
+                  })()}
                 </div>
               </>
             )}

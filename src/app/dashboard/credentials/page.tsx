@@ -9,7 +9,13 @@ import {
   deleteInsurancePanel,
   saveNpiNumber,
   checkNpiRegistry,
+  saveCaqhInfo,
 } from "./actions";
+
+// CAQH ProView requires re-attestation at least every 120 days (its own
+// "120-day rule") or the profile goes inactive - the same expiry-reminder
+// pattern already used for licenses/insurance panels below applies here too.
+const CAQH_ATTESTATION_CYCLE_DAYS = 120;
 
 function daysUntil(dateStr: string | null): number | null {
   if (!dateStr) return null;
@@ -17,7 +23,8 @@ function daysUntil(dateStr: string | null): number | null {
   return Math.round(diffMs / (1000 * 60 * 60 * 24));
 }
 
-export default async function CredentialsPage() {
+export default async function CredentialsPage(props: { searchParams: Promise<{ saved?: string }> }) {
+  const { saved } = await props.searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -26,7 +33,11 @@ export default async function CredentialsPage() {
 
   const [{ data: profile }, { data: licenses }, { data: ceCredits }, { data: panels }, { data: npiChecks }] =
     await Promise.all([
-      supabase.from("profiles").select("npi_number, full_name").eq("id", myself).maybeSingle(),
+      supabase
+        .from("profiles")
+        .select("npi_number, full_name, caqh_provider_id, caqh_last_attested_date")
+        .eq("id", myself)
+        .maybeSingle(),
       supabase.from("licenses").select("*").eq("profile_id", myself).order("expiration_date"),
       supabase
         .from("continuing_education_credits")
@@ -53,6 +64,12 @@ export default async function CredentialsPage() {
         Track your licenses, continuing-education hours, and insurance-panel status in one place —
         with expiration reminders so nothing lapses unnoticed.
       </p>
+
+      {saved === "1" && (
+        <div className="card" style={{ borderColor: "var(--accent, #2a7)", background: "rgba(34,170,119,0.08)" }}>
+          NPI number saved.
+        </div>
+      )}
 
       <div className="card">
         <h2>Licenses</h2>
@@ -292,6 +309,65 @@ export default async function CredentialsPage() {
             Last check: {latestNpiCheck.matched ? "matched" : `needs review${latestNpiCheck.flagged_reason ? ` — ${latestNpiCheck.flagged_reason}` : ""}`}
           </p>
         )}
+      </div>
+
+      <div className="card">
+        <h2>CAQH re-attestation</h2>
+        <p className="muted">
+          Most commercial insurers and behavioral-health networks (Aetna, UnitedHealthcare, Cigna,
+          BCBS, Optum, Magellan) require an active CAQH ProView profile before they'll process an
+          insurance-panel application, and CAQH requires re-attestation at least every 120 days or
+          your profile goes inactive. This just tracks the date so it doesn't lapse unnoticed — it
+          doesn't connect to CAQH itself.
+        </p>
+        {(() => {
+          const nextDue = profile?.caqh_last_attested_date
+            ? new Date(
+                new Date(profile.caqh_last_attested_date).getTime() +
+                  CAQH_ATTESTATION_CYCLE_DAYS * 24 * 60 * 60 * 1000
+              )
+                .toISOString()
+                .slice(0, 10)
+            : null;
+          const days = daysUntil(nextDue);
+          return (
+            <>
+              {profile?.caqh_last_attested_date && (
+                <p style={{ marginBottom: "0.75rem" }}>
+                  Last attested {profile.caqh_last_attested_date} — next due {nextDue}
+                  {days !== null && days <= 30 && (
+                    <span className="tag" style={{ marginLeft: "0.4rem", color: days < 0 ? "#b91c1c" : undefined }}>
+                      {days < 0 ? "overdue" : `${days}d left`}
+                    </span>
+                  )}
+                </p>
+              )}
+              <form action={saveCaqhInfo} className="field-row" style={{ alignItems: "flex-end" }}>
+                <div className="field">
+                  <label htmlFor="caqh_provider_id">CAQH provider ID</label>
+                  <input
+                    id="caqh_provider_id"
+                    name="caqh_provider_id"
+                    type="text"
+                    defaultValue={profile?.caqh_provider_id || ""}
+                  />
+                </div>
+                <div className="field">
+                  <label htmlFor="caqh_last_attested_date">Last attested</label>
+                  <input
+                    id="caqh_last_attested_date"
+                    name="caqh_last_attested_date"
+                    type="date"
+                    defaultValue={profile?.caqh_last_attested_date || ""}
+                  />
+                </div>
+                <div className="field" style={{ flex: "0 0 auto" }}>
+                  <button type="submit" className="secondary">Save</button>
+                </div>
+              </form>
+            </>
+          );
+        })()}
       </div>
     </div>
   );

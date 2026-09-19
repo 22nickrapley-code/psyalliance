@@ -1,5 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { startConversation } from "../messages/actions";
+import { resolveAvatarUrls } from "@/lib/avatars";
+import Avatar from "../avatar";
 
 type Person = {
   id: string;
@@ -8,6 +10,7 @@ type Person = {
   qualification_level: string;
   primary_practice_city: string | null;
   primary_state: string | null;
+  avatar_path: string | null;
   specialisms: Set<string>;
 };
 
@@ -28,7 +31,7 @@ export default async function SupervisionPage(
       supabase
         .from("public_directory")
         .select(
-          "id, full_name, credential_prefix, qualification_level, primary_practice_city, primary_state, open_to_give_supervision, open_to_receive_supervision, category, value"
+          "id, full_name, credential_prefix, qualification_level, primary_practice_city, primary_state, avatar_path, open_to_give_supervision, open_to_receive_supervision, category, value"
         ),
       supabase
         .from("profiles")
@@ -56,6 +59,7 @@ export default async function SupervisionPage(
           qualification_level: row.qualification_level,
           primary_practice_city: row.primary_practice_city,
           primary_state: row.primary_state,
+          avatar_path: row.avatar_path,
           specialisms: new Set(),
         });
       }
@@ -71,6 +75,7 @@ export default async function SupervisionPage(
 
   const supervisors = buildPeople("open_to_give_supervision");
   const supervisees = buildPeople("open_to_receive_supervision");
+  const avatarUrlByPath = await resolveAvatarUrls(supabase, [...supervisors, ...supervisees].map((p) => p.avatar_path));
 
   return (
     <div>
@@ -125,7 +130,12 @@ export default async function SupervisionPage(
           <tbody>
             {supervisors.map((p) => (
               <tr key={p.id}>
-                <td>{p.credential_prefix} {p.full_name} — {p.qualification_level}</td>
+                <td>
+                  <span style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                    <Avatar url={avatarUrlByPath.get(p.avatar_path || "") || null} name={p.full_name} size={24} />
+                    {p.credential_prefix} {p.full_name} — {p.qualification_level}
+                  </span>
+                </td>
                 <td>{p.primary_practice_city || "—"}{p.primary_state ? `, ${p.primary_state}` : ""}</td>
                 <td>{[...p.specialisms].slice(0, 3).map((s) => <span key={s} className="tag">{s}</span>)}</td>
                 <td>
@@ -169,7 +179,12 @@ export default async function SupervisionPage(
           <tbody>
             {supervisees.map((p) => (
               <tr key={p.id}>
-                <td>{p.credential_prefix} {p.full_name} — {p.qualification_level}</td>
+                <td>
+                  <span style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                    <Avatar url={avatarUrlByPath.get(p.avatar_path || "") || null} name={p.full_name} size={24} />
+                    {p.credential_prefix} {p.full_name} — {p.qualification_level}
+                  </span>
+                </td>
                 <td>{p.primary_practice_city || "—"}{p.primary_state ? `, ${p.primary_state}` : ""}</td>
                 <td>{[...p.specialisms].slice(0, 3).map((s) => <span key={s} className="tag">{s}</span>)}</td>
                 <td>

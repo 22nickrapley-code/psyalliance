@@ -29,15 +29,23 @@ export async function postMessage(formData: FormData) {
 
 export async function editMessage(formData: FormData) {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not signed in");
+
   const messageId = Number(formData.get("message_id"));
   const channelId = Number(formData.get("channel_id"));
   const body = String(formData.get("body") || "").trim();
   if (!body) throw new Error("Message can't be empty");
 
+  // Explicit ownership check alongside RLS: a mismatch here should surface
+  // as a clear error rather than a silent no-op update.
   const { error } = await supabase
     .from("town_hall_messages")
     .update({ body, edited_at: new Date().toISOString() })
-    .eq("id", messageId);
+    .eq("id", messageId)
+    .eq("author_id", user.id);
   if (error) throw new Error(error.message);
 
   revalidatePath(`/dashboard/town-hall/${channelId}`);
@@ -45,13 +53,19 @@ export async function editMessage(formData: FormData) {
 
 export async function deleteMessage(formData: FormData) {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not signed in");
+
   const messageId = Number(formData.get("message_id"));
   const channelId = Number(formData.get("channel_id"));
 
   const { error } = await supabase
     .from("town_hall_messages")
     .update({ deleted_at: new Date().toISOString(), body: "[deleted]" })
-    .eq("id", messageId);
+    .eq("id", messageId)
+    .eq("author_id", user.id);
   if (error) throw new Error(error.message);
 
   revalidatePath(`/dashboard/town-hall/${channelId}`);

@@ -15,11 +15,52 @@ export default function CaseloadImportBox() {
   const [isPending, startTransition] = useTransition();
   const [message, setMessage] = useState<string | null>(null);
   const [isError, setIsError] = useState(false);
+  const [isReadingFile, setIsReadingFile] = useState(false);
 
   function handleFile(file: File) {
+    const isExcel = /\.(xlsx|xls)$/i.test(file.name);
+    if (!isExcel) {
+      const reader = new FileReader();
+      reader.onload = () => setRawText(String(reader.result || ""));
+      reader.readAsText(file);
+      return;
+    }
+
+    // True Excel binary workbook - parse it client-side (SheetJS) into CSV
+    // text and reuse the exact same text-based flow below. This never
+    // touches the server: the AI extraction action still just receives
+    // plain text, same as a pasted or .csv upload.
+    setIsReadingFile(true);
+    setIsError(false);
+    setMessage(null);
     const reader = new FileReader();
-    reader.onload = () => setRawText(String(reader.result || ""));
-    reader.readAsText(file);
+    reader.onload = async () => {
+      try {
+        const XLSX = await import("xlsx");
+        const buffer = reader.result as ArrayBuffer;
+        const workbook = XLSX.read(buffer, { type: "array" });
+        const firstSheetName = workbook.SheetNames[0];
+        if (!firstSheetName) {
+          setIsError(true);
+          setMessage("That workbook doesn't have any sheets.");
+          return;
+        }
+        const sheet = workbook.Sheets[firstSheetName];
+        const csv = XLSX.utils.sheet_to_csv(sheet);
+        setRawText(csv);
+      } catch (err) {
+        setIsError(true);
+        setMessage("Couldn't read that Excel file — try re-saving it or exporting as CSV.");
+      } finally {
+        setIsReadingFile(false);
+      }
+    };
+    reader.onerror = () => {
+      setIsError(true);
+      setMessage("Couldn't read that file.");
+      setIsReadingFile(false);
+    };
+    reader.readAsArrayBuffer(file);
   }
 
   function handleParse() {
@@ -66,18 +107,18 @@ export default function CaseloadImportBox() {
     <div className="card">
       <h2>Or import from a file (optional)</h2>
       <p className="muted">
-        Drop in a CSV export — from Excel, or copied out of an insurance panel's dashboard — and
-        we'll propose a list of cases for you to review before anything is added. Client names are
-        never stored: anything that looks like a name is converted to initials only. This is just
-        a shortcut alongside "Add a case" below, not a requirement.
+        Drop in an Excel workbook or CSV export — from Excel, or copied out of an insurance
+        panel's dashboard — and we'll propose a list of cases for you to review before anything is
+        added. Client names are never stored: anything that looks like a name is converted to
+        initials only. This is just a shortcut alongside "Add a case" below, not a requirement.
       </p>
       <div className="field-row" style={{ alignItems: "flex-end" }}>
         <div className="field">
-          <label htmlFor="caseload_import_file">CSV or text file</label>
+          <label htmlFor="caseload_import_file">Excel, CSV, or text file</label>
           <input
             id="caseload_import_file"
             type="file"
-            accept=".csv,.txt"
+            accept=".csv,.txt,.xlsx,.xls"
             onChange={(e) => {
               const file = e.target.files?.[0];
               if (file) handleFile(file);
@@ -92,8 +133,9 @@ export default function CaseloadImportBox() {
         placeholder="…or paste rows of caseload data here"
         style={{ width: "100%", fontFamily: "inherit", fontSize: "0.85rem", padding: "0.6rem", marginTop: "0.5rem" }}
       />
+      {isReadingFile && <p className="muted" style={{ marginTop: "0.35rem" }}>Reading workbook…</p>}
       <div style={{ marginTop: "0.6rem", display: "flex", alignItems: "center", gap: "0.75rem" }}>
-        <button type="button" className="secondary" onClick={handleParse} disabled={isPending || !rawText.trim()}>
+        <button type="button" className="secondary" onClick={handleParse} disabled={isPending || isReadingFile || !rawText.trim()}>
           {isPending && !rows ? "Reading…" : "Parse"}
         </button>
         {message && !rows && (

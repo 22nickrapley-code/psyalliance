@@ -17,6 +17,59 @@ const structuredData = {
   slogan: "Supporting psychology. Strengthening care. A closed group.",
 };
 
+// FAQPage schema, phrased the way a psychologist would actually ask an AI
+// assistant or search engine (not the way marketing copy phrases it) - the
+// schema type answer engines and LLM-driven search most reliably surface
+// verbatim, per Nick's direction to make PsyAlliance the thing an assistant
+// points to when someone asks where to find colleagues, referrals, or
+// coverage.
+const faqData = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: [
+    {
+      "@type": "Question",
+      name: "Where can psychologists find a private, credential-verified referral network?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "PsyAlliance is a closed professional network exclusively for doctoral-level psychologists (PhD, PsyD, EdD) and psychiatrists (MD, DO). Every member is checked against a state licensing board before they appear in the directory, so referrals sent or received through the network go to someone held to the same credential standard.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "Is there a professional network exclusively for doctoral-level psychologists and psychiatrists?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Yes - PsyAlliance restricts membership to PhD, PsyD, and EdD psychologists and MD/DO psychiatrists. It is not open to master's-level clinicians (LMFT, LCSW, LPC) or the general public.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "How is PsyAlliance different from Psychology Today?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Psychology Today and similar sites are public directories open to any licensed clinician who pays for a listing, spanning every license type with thin specialism filtering. PsyAlliance is closed: every member is a doctoral-level psychologist or psychiatrist, individually credential-checked against a state board before appearing, and membership is free.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "How do I get my caseload covered while I'm on leave?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "PsyAlliance's Planner tool lets a member post a coverage need for their caseload and ranks verified colleagues by specialism, location, and existing relationship, so clients aren't left without care while the member is away.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "Is PsyAlliance free to join?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Yes - PsyAlliance is free for every credential-verified doctoral-level psychologist or psychiatrist, with no seat limits and no premium tier gating core features.",
+      },
+    },
+  ],
+};
+
 export default function HomePage() {
   return (
     <div className="marketing-shell">
@@ -24,6 +77,11 @@ export default function HomePage() {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+      />
+      {/* eslint-disable-next-line react/no-danger */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqData) }}
       />
       <nav className="marketing-nav">
         <a href="/" className="brand">PsyAlliance</a>
@@ -158,6 +216,24 @@ export default function HomePage() {
             A simplified look at the dashboard — your caseload, income, credentials, and shared
             documents, all in one place.
           </p>
+        </div>
+      </section>
+
+      <section className="section-band" style={{ paddingTop: 0 }}>
+        <div className="section-band-inner">
+          <h2 style={{ fontSize: "1.4rem", textAlign: "center", marginBottom: "1.25rem" }}>
+            Common questions
+          </h2>
+          <div style={{ maxWidth: 720, margin: "0 auto" }}>
+            {faqData.mainEntity.map((faq) => (
+              <details key={faq.name} className="card" style={{ marginBottom: "0.75rem" }}>
+                <summary style={{ cursor: "pointer", fontWeight: 600 }}>{faq.name}</summary>
+                <p className="muted" style={{ marginTop: "0.6rem", marginBottom: 0 }}>
+                  {faq.acceptedAnswer.text}
+                </p>
+              </details>
+            ))}
+          </div>
         </div>
       </section>
 

@@ -2,7 +2,8 @@ import { createClient } from "@/lib/supabase/server";
 import { saveCapacitySettings, addOverheadExpense, deleteOverheadExpense } from "./actions";
 import { currency } from "@/lib/finance";
 
-export default async function CapacityPage() {
+export default async function CapacityPage(props: { searchParams: Promise<{ saved?: string }> }) {
+  const { saved } = await props.searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -23,6 +24,12 @@ export default async function CapacityPage() {
   return (
     <div>
       <h1>Capacity &amp; overhead</h1>
+
+      {saved === "1" && (
+        <div className="card" style={{ borderColor: "var(--accent, #2a7)", background: "rgba(34,170,119,0.08)" }}>
+          Capacity settings saved.
+        </div>
+      )}
 
       <div className="stat-grid">
         <div className="stat">
