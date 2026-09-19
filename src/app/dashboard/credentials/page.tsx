@@ -61,7 +61,7 @@ export default async function CredentialsPage(props: { searchParams: Promise<{ s
     <div>
       <h1>Credentials &amp; compliance</h1>
       <p className="muted">
-        Track your licenses, continuing-education hours, and insurance-panel status in one place —
+        Track your licenses, continuing-education hours, and insurance-panel status in one place,
         with expiration reminders so nothing lapses unnoticed.
       </p>
 
@@ -90,9 +90,9 @@ export default async function CredentialsPage(props: { searchParams: Promise<{ s
                 <tr key={l.id}>
                   <td>{l.state}</td>
                   <td>{l.license_number}</td>
-                  <td>{l.license_type || "—"}</td>
+                  <td>{l.license_type || "-"}</td>
                   <td>
-                    {l.expiration_date || "—"}
+                    {l.expiration_date || "-"}
                     {days !== null && days <= 60 && (
                       <span className="tag" style={{ marginLeft: "0.4rem", color: days < 0 ? "#b91c1c" : undefined }}>
                         {days < 0 ? "expired" : `${days}d left`}
@@ -159,8 +159,8 @@ export default async function CredentialsPage(props: { searchParams: Promise<{ s
             {(ceCredits || []).map((c) => (
               <tr key={c.id}>
                 <td>{c.title}</td>
-                <td>{c.provider || "—"}</td>
-                <td>{c.category || "—"}</td>
+                <td>{c.provider || "-"}</td>
+                <td>{c.category || "-"}</td>
                 <td>{c.hours}</td>
                 <td>{c.completed_date}</td>
                 <td>
@@ -234,7 +234,7 @@ export default async function CredentialsPage(props: { searchParams: Promise<{ s
                     </form>
                   </td>
                   <td>
-                    {p.renewal_date || "—"}
+                    {p.renewal_date || "-"}
                     {days !== null && days <= 60 && (
                       <span className="tag" style={{ marginLeft: "0.4rem", color: days < 0 ? "#b91c1c" : undefined }}>
                         {days < 0 ? "overdue" : `${days}d left`}
@@ -287,7 +287,7 @@ export default async function CredentialsPage(props: { searchParams: Promise<{ s
       <div className="card">
         <h2>NPI registry pre-check</h2>
         <p className="muted">
-          An automated check against the free public NPI registry — it only feeds your verification
+          An automated check against the free public NPI registry, it only feeds your verification
           queue as a pre-check; a human always makes the final call on your listing.
         </p>
         <form action={saveNpiNumber} className="field-row" style={{ alignItems: "flex-end" }}>
@@ -306,7 +306,7 @@ export default async function CredentialsPage(props: { searchParams: Promise<{ s
         )}
         {latestNpiCheck && (
           <p className="muted" style={{ marginTop: "0.5rem" }}>
-            Last check: {latestNpiCheck.matched ? "matched" : `needs review${latestNpiCheck.flagged_reason ? ` — ${latestNpiCheck.flagged_reason}` : ""}`}
+            Last check: {latestNpiCheck.matched ? "matched" : `needs review${latestNpiCheck.flagged_reason ? `, ${latestNpiCheck.flagged_reason}` : ""}`}
           </p>
         )}
       </div>
@@ -317,7 +317,7 @@ export default async function CredentialsPage(props: { searchParams: Promise<{ s
           Most commercial insurers and behavioral-health networks (Aetna, UnitedHealthcare, Cigna,
           BCBS, Optum, Magellan) require an active CAQH ProView profile before they'll process an
           insurance-panel application, and CAQH requires re-attestation at least every 120 days or
-          your profile goes inactive. This just tracks the date so it doesn't lapse unnoticed — it
+          your profile goes inactive. This just tracks the date so it doesn't lapse unnoticed, it
           doesn't connect to CAQH itself.
         </p>
         {(() => {
@@ -334,7 +334,7 @@ export default async function CredentialsPage(props: { searchParams: Promise<{ s
             <>
               {profile?.caqh_last_attested_date && (
                 <p style={{ marginBottom: "0.75rem" }}>
-                  Last attested {profile.caqh_last_attested_date} — next due {nextDue}
+                  Last attested {profile.caqh_last_attested_date}, next due {nextDue}
                   {days !== null && days <= 30 && (
                     <span className="tag" style={{ marginLeft: "0.4rem", color: days < 0 ? "#b91c1c" : undefined }}>
                       {days < 0 ? "overdue" : `${days}d left`}

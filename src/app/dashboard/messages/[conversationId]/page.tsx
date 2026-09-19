@@ -77,7 +77,17 @@ export default async function ConversationPage(
       <p><a href="/dashboard/messages">&larr; Back to messages</a></p>
       <h1>{title}</h1>
       <p className="muted">
-        With: {others.map((o) => (o.profile as any)?.full_name).join(", ") || "—"}
+        With:{" "}
+        {others.length > 0
+          ? others.map((o, i) => (
+              <span key={o.profile_id}>
+                <a href={`/dashboard/people/${o.profile_id}`} className="person-link">
+                  {(o.profile as any)?.full_name}
+                </a>
+                {i < others.length - 1 ? ", " : ""}
+              </span>
+            ))
+          : "-"}
       </p>
 
       <div className="card">
@@ -89,9 +99,18 @@ export default async function ConversationPage(
             <div key={m.id} style={{ marginBottom: "1.1rem", paddingBottom: "1.1rem", borderBottom: "1px solid var(--border)" }}>
               <div style={{ display: "flex", justifyContent: "space-between" }}>
                 <strong>
-                  {m.author?.credential_prefix ? `${m.author.credential_prefix} ` : ""}
-                  {m.author?.full_name || "Colleague"}
-                  {m.author_id === myself && <span className="tag" style={{ marginLeft: "0.4rem" }}>You</span>}
+                  {m.author_id === myself ? (
+                    <>
+                      {m.author?.credential_prefix ? `${m.author.credential_prefix} ` : ""}
+                      {m.author?.full_name || "Colleague"}
+                      <span className="tag" style={{ marginLeft: "0.4rem" }}>You</span>
+                    </>
+                  ) : (
+                    <a href={`/dashboard/people/${m.author_id}`} className="person-link">
+                      {m.author?.credential_prefix ? `${m.author.credential_prefix} ` : ""}
+                      {m.author?.full_name || "Colleague"}
+                    </a>
+                  )}
                 </strong>
                 <span className="muted">{new Date(m.created_at).toLocaleString()}</span>
               </div>

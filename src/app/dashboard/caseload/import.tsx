@@ -50,7 +50,7 @@ export default function CaseloadImportBox() {
         setRawText(csv);
       } catch (err) {
         setIsError(true);
-        setMessage("Couldn't read that Excel file — try re-saving it or exporting as CSV.");
+        setMessage("Couldn't read that Excel file. Try re-saving it or exporting as CSV.");
       } finally {
         setIsReadingFile(false);
       }
@@ -107,8 +107,8 @@ export default function CaseloadImportBox() {
     <div className="card">
       <h2>Or import from a file (optional)</h2>
       <p className="muted">
-        Drop in an Excel workbook or CSV export — from Excel, or copied out of an insurance
-        panel's dashboard — and we'll propose a list of cases for you to review before anything is
+        Drop in an Excel workbook or CSV export (from Excel, or copied out of an insurance
+        panel's dashboard) and we'll propose a list of cases for you to review before anything is
         added. Client names are never stored: anything that looks like a name is converted to
         initials only. This is just a shortcut alongside "Add a case" below, not a requirement.
       </p>
@@ -173,14 +173,14 @@ export default function CaseloadImportBox() {
                       }}
                     />
                   </td>
-                  <td>{r.private_label || "—"}</td>
-                  <td>{r.organization_name || "—"}</td>
-                  <td>{r.state || "—"}</td>
-                  <td>{r.session_type || "—"}</td>
-                  <td>{r.insurance || "—"}</td>
-                  <td>{r.primary_need || "—"}</td>
-                  <td>{r.rate_per_session ?? "—"}</td>
-                  <td>{r.sessions_per_week ?? "—"}</td>
+                  <td>{r.private_label || "-"}</td>
+                  <td>{r.organization_name || "-"}</td>
+                  <td>{r.state || "-"}</td>
+                  <td>{r.session_type || "-"}</td>
+                  <td>{r.insurance || "-"}</td>
+                  <td>{r.primary_need || "-"}</td>
+                  <td>{r.rate_per_session ?? "-"}</td>
+                  <td>{r.sessions_per_week ?? "-"}</td>
                 </tr>
               ))}
             </tbody>

@@ -53,7 +53,7 @@ export default async function DashboardLayout({
     <div className="app-shell">
       <aside className="sidebar">
         <a href="/dashboard" className="brand">
-          PsyAlliance
+          psyalliance.org
           <span>Practice network</span>
         </a>
 

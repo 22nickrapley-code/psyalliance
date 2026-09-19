@@ -29,7 +29,7 @@ function withAreas(d: any) {
 }
 
 function renderAreas(areas: { id: number; value: string }[]) {
-  return areas.length > 0 ? areas.map((a) => a.value).join(", ") : "—";
+  return areas.length > 0 ? areas.map((a) => a.value).join(", ") : "-";
 }
 
 export default async function DocumentsPage(
@@ -111,57 +111,71 @@ export default async function DocumentsPage(
     <div>
       <h1>Documents</h1>
       <p className="muted">
-        Personal documents are visible only to you. Shared library documents — best-practice
-        guides, session frameworks, regulatory references — are visible to any signed-in
+        Personal documents are visible only to you. Shared library documents (best-practice
+        guides, session frameworks, regulatory references) are visible to any signed-in
         colleague, and can be rated so the most useful ones surface.
       </p>
 
       <div className="card">
         <h2>Upload</h2>
         <form action={uploadDocument}>
-          <div className="field-row">
-            <div className="field">
+          <div className="field-row" style={{ alignItems: "flex-start" }}>
+            <div className="field" style={{ flex: "1 1 260px" }}>
               <label htmlFor="title">Title</label>
               <input id="title" name="title" type="text" />
+
+              <div style={{ marginTop: "1rem" }}>
+                <label htmlFor="file">File</label>
+                <div
+                  style={{
+                    border: "1px dashed var(--border-strong)",
+                    borderRadius: "var(--radius)",
+                    padding: "1.5rem 1.25rem",
+                    background: "var(--bg-alt)",
+                    textAlign: "center",
+                  }}
+                >
+                  <input
+                    id="file"
+                    name="file"
+                    type="file"
+                    required
+                    accept=".pdf,.png,.jpg,.jpeg,.webp,.doc,.docx,.txt,.csv"
+                    style={{ margin: "0 auto" }}
+                  />
+                  <p className="muted" style={{ marginTop: "0.6rem", marginBottom: 0 }}>
+                    PDF, Word, image, plain text or CSV, up to 15MB.
+                  </p>
+                </div>
+              </div>
             </div>
-            <div className="field">
+
+            <div className="field" style={{ maxWidth: 200 }}>
               <label htmlFor="treatment_area_ids">Treatment areas</label>
-              <select id="treatment_area_ids" name="treatment_area_ids" multiple size={6}>
+              <select id="treatment_area_ids" name="treatment_area_ids" multiple size={4} style={{ fontSize: "0.85rem" }}>
                 {(treatmentAreas || []).map((t) => (
                   <option key={t.id} value={t.id}>{t.value}</option>
                 ))}
               </select>
-              <p className="muted" style={{ marginTop: "0.3rem", marginBottom: 0 }}>
-                Hold Ctrl (Windows) or Cmd (Mac) to select more than one.
+              <p className="muted" style={{ marginTop: "0.3rem", marginBottom: 0, fontSize: "0.78rem" }}>
+                Ctrl/Cmd-click for more than one.
               </p>
-            </div>
-            <div className="field" style={{ maxWidth: 180 }}>
-              <label htmlFor="owner_scope">Visibility</label>
-              <select id="owner_scope" name="owner_scope" defaultValue="personal">
-                <option value="personal">Personal (only me)</option>
-                <option value="world">Shared library (everyone)</option>
-              </select>
+
+              <div style={{ marginTop: "1rem" }}>
+                <label htmlFor="owner_scope">Visibility</label>
+                <select id="owner_scope" name="owner_scope" defaultValue="personal">
+                  <option value="personal">Personal (only me)</option>
+                  <option value="world">Shared library (everyone)</option>
+                </select>
+              </div>
             </div>
           </div>
-          <div className="field">
-            <label htmlFor="file">File</label>
-            <input
-              id="file"
-              name="file"
-              type="file"
-              required
-              accept=".pdf,.png,.jpg,.jpeg,.webp,.doc,.docx,.txt,.csv"
-            />
-            <p className="muted" style={{ marginTop: "0.3rem", marginBottom: 0 }}>
-              PDF, Word, image, plain text or CSV — up to 15MB.
-            </p>
-          </div>
-          <button type="submit">Upload</button>
+          <button type="submit" style={{ marginTop: "1rem" }}>Upload</button>
         </form>
       </div>
 
       <div className="card">
-        <h2>My documents ({personalAll.length})</h2>
+        <h2>My personal documents ({personalAll.length})</h2>
         <table>
           <thead>
             <tr>
@@ -191,7 +205,7 @@ export default async function DocumentsPage(
             ))}
             {personalAll.length === 0 && (
               <tr>
-                <td colSpan={3} className="muted">No personal documents yet — upload one above.</td>
+                <td colSpan={3} className="muted">No personal documents yet, upload one above.</td>
               </tr>
             )}
           </tbody>
@@ -199,7 +213,7 @@ export default async function DocumentsPage(
       </div>
 
       <div className="card">
-        <h2>Shared library ({sharedAll.length})</h2>
+        <h2>Shared global documents ({sharedAll.length})</h2>
         <p className="muted">Ranked by rating, highest first.</p>
         <table>
           <thead>
@@ -217,7 +231,11 @@ export default async function DocumentsPage(
               return (
                 <tr key={d.id}>
                   <td>{d.title}</td>
-                  <td>{d.uploader?.full_name || "—"}</td>
+                  <td>
+                    {d.uploader?.full_name ? (
+                      <a href={`/dashboard/people/${d.uploaded_by}`} className="person-link">{d.uploader.full_name}</a>
+                    ) : "-"}
+                  </td>
                   <td>{renderAreas(d.areas)}</td>
                   <td>
                     {r ? (
@@ -261,7 +279,7 @@ export default async function DocumentsPage(
         <h2>Search documents</h2>
         <p className="muted">
           Search across both your personal documents and the shared library. Results appear
-          below — they don't filter the repositories above.
+          below, they don't filter the repositories above.
         </p>
         <form method="GET" className="field-row" style={{ alignItems: "flex-end" }}>
           <div className="field">
@@ -272,8 +290,8 @@ export default async function DocumentsPage(
             <label htmlFor="where">Where?</label>
             <select id="where" name="where" defaultValue={whereFilter}>
               <option value="all">All</option>
-              <option value="personal">My documents</option>
-              <option value="world">Shared library</option>
+              <option value="personal">My personal documents</option>
+              <option value="world">Shared global documents</option>
             </select>
           </div>
           <div className="field">
@@ -309,8 +327,12 @@ export default async function DocumentsPage(
               {searchResults.map((d: any) => (
                 <tr key={`${d.scope}-${d.id}`}>
                   <td>{d.title}</td>
-                  <td>{d.scope === "personal" ? "My documents" : "Shared library"}</td>
-                  <td>{d.uploader?.full_name || "—"}</td>
+                  <td>{d.scope === "personal" ? "My personal documents" : "Shared global documents"}</td>
+                  <td>
+                    {d.uploader?.full_name ? (
+                      <a href={`/dashboard/people/${d.uploaded_by}`} className="person-link">{d.uploader.full_name}</a>
+                    ) : "-"}
+                  </td>
                   <td>{renderAreas(d.areas)}</td>
                   <td>
                     {d.signedUrl && (

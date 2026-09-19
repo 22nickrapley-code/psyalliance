@@ -2,7 +2,7 @@ import "./globals.css";
 // Self-hosted via @fontsource rather than next/font/google: this bundles the
 // font files at build time with no network fetch required, so the build
 // can't fail (or silently fall back) because a Google Fonts request was
-// blocked — in this dev sandbox or in whatever host ends up building this
+// blocked, in this dev sandbox or in whatever host ends up building this
 // for production.
 import "@fontsource/fraunces/500.css";
 import "@fontsource/fraunces/600.css";
@@ -21,11 +21,11 @@ const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://psyalliance.workers
 export const metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: "PsyAlliance — for doctoral-level psychologists & psychiatrists",
-    template: "%s — PsyAlliance",
+    default: "psyalliance.org: for doctoral-level psychologists & psychiatrists",
+    template: "%s | psyalliance.org",
   },
   description:
-    "A closed, credential-verified professional network and virtual-practice toolkit exclusively for doctoral-level psychologists (PhD, PsyD, EdD) and psychiatrists (MD, DO) — not a public therapist directory. Caseload and practice administration, coverage matching, peer consultation, a shared document library, and a referral network fed by verified colleagues and physicians. Free, forever.",
+    "A closed, credential-verified professional network and virtual-practice toolkit exclusively for doctoral-level psychologists (PhD, PsyD, EdD) and psychiatrists (MD, DO). Not a public therapist directory. Caseload and practice administration, coverage matching, peer consultation, a shared document library, and a referral network fed by verified colleagues and physicians. Free, forever.",
   keywords: [
     "psychologist network",
     "psychiatrist network",
@@ -37,11 +37,11 @@ export const metadata = {
     "clinician referral network",
   ],
   openGraph: {
-    title: "PsyAlliance — for doctoral-level psychologists & psychiatrists",
+    title: "psyalliance.org: for doctoral-level psychologists & psychiatrists",
     description:
-      "A closed, credential-verified network and practice toolkit exclusively for doctoral-level psychologists and psychiatrists — coverage, community, consultation, and referrals. Free, forever.",
+      "A closed, credential-verified network and practice toolkit exclusively for doctoral-level psychologists and psychiatrists: coverage, community, consultation, and referrals. Free, forever.",
     url: siteUrl,
-    siteName: "PsyAlliance",
+    siteName: "psyalliance.org",
     type: "website",
   },
   robots: {

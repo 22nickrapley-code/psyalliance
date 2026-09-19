@@ -146,7 +146,7 @@ export default async function ReferralsPage() {
     <div>
       <h1>Referrals &amp; coverage</h1>
       <p className="muted">
-        Post a need — a client you can't take, a coverage gap — and see it here matched to the
+        Post a need (a client you can't take, a coverage gap) and see it here matched to the
         right specialism. Colleagues offer to help; you pick one.
       </p>
 
@@ -157,7 +157,7 @@ export default async function ReferralsPage() {
             <div className="field">
               <label htmlFor="specialism_lookup_id">Specialism needed</label>
               <select id="specialism_lookup_id" name="specialism_lookup_id">
-                <option value="">—</option>
+                <option value="">-</option>
                 {(specialisms || []).map((s) => (
                   <option key={s.id} value={s.id}>{s.value}</option>
                 ))}
@@ -196,12 +196,17 @@ export default async function ReferralsPage() {
             {r.notes && <p className="muted">{r.notes}</p>}
             {(r.referral_responses || []).map((resp: any) => (
               <div key={resp.id} className="checkbox-row" style={{ justifyContent: "space-between" }}>
-                <span>{resp.profiles?.full_name} — {resp.status}{resp.message ? `: "${resp.message}"` : ""}</span>
+                <span>
+                  <a href={`/dashboard/people/${resp.responding_profile_id}`} className="person-link">
+                    {resp.profiles?.full_name}
+                  </a>
+                  , {resp.status}{resp.message ? `: "${resp.message}"` : ""}
+                </span>
                 <span>
                   <form action={startConversation} style={{ display: "inline" }}>
                     <input type="hidden" name="participant_ids" value={resp.responding_profile_id} />
                     <input type="hidden" name="title" value={`Re: ${r.lookup_values?.value || "referral"} request`} />
-                    <input type="hidden" name="body" value={`Hi ${resp.profiles?.full_name || ""}, thanks for offering to help — could we discuss further?`} />
+                    <input type="hidden" name="body" value={`Hi ${resp.profiles?.full_name || ""}, thanks for offering to help, could we discuss further?`} />
                     <button type="submit" className="secondary" style={{ marginRight: "0.4rem" }}>Discuss</button>
                   </form>
                   {resp.status === "offered" && r.status === "open" && (
@@ -237,7 +242,12 @@ export default async function ReferralsPage() {
                     <div key={m.profileId} className="checkbox-row" style={{ justifyContent: "space-between" }}>
                       <span style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
                         <Avatar url={avatarUrlByPath.get(avatarPathById.get(m.profileId) || "") || null} name={m.fullName} size={26} />
-                        {m.fullName}
+                        <a
+                          href={`/dashboard/people/${m.profileId}`}
+                          className={`person-link${m.connectionTier !== "none" ? ` tier-${m.connectionTier}` : ""}`}
+                        >
+                          {m.fullName}
+                        </a>
                         {m.locationTier !== "national" ? ` · ${m.locationTier}` : ""}
                         <span
                           className={`tag${professionFor(qualificationById.get(m.profileId)) === "psychiatrist" ? " psychiatrist" : ""}`}
@@ -245,9 +255,11 @@ export default async function ReferralsPage() {
                         >
                           {professionLabel(professionFor(qualificationById.get(m.profileId)))}
                         </span>
-                        {m.connectionTier !== "none" && <span className="tag" style={{ marginLeft: "0.4rem" }}>{m.connectionTier}</span>}
+                        {m.connectionTier !== "none" && (
+                          <span className={`tag tier-${m.connectionTier}`} style={{ marginLeft: "0.4rem" }}>{m.connectionTier}</span>
+                        )}
                         {m.psypactParticipating && (
-                          <span className="tag" style={{ marginLeft: "0.4rem" }} title="Holds PSYPACT Authority to Practice Interjurisdictional Telepsychology — may be able to see this client by telehealth across state lines">
+                          <span className="tag" style={{ marginLeft: "0.4rem" }} title="Holds PSYPACT Authority to Practice Interjurisdictional Telepsychology. May be able to see this client by telehealth across state lines">
                             PSYPACT
                           </span>
                         )}
@@ -256,7 +268,7 @@ export default async function ReferralsPage() {
                         <span className="muted" style={{ fontSize: "0.8rem" }}>score {m.score}</span>
                         <form action={startConversation}>
                           <input type="hidden" name="participant_ids" value={m.profileId} />
-                          <input type="hidden" name="title" value={`${r.lookup_values?.value || "Referral"} — coverage request`} />
+                          <input type="hidden" name="title" value={`${r.lookup_values?.value || "Referral"}: coverage request`} />
                           <input
                             type="hidden"
                             name="body"
@@ -290,7 +302,7 @@ export default async function ReferralsPage() {
             <span>
               <strong>{r.lookup_values?.value || "Any specialism"}</strong>
               {r.state ? ` · ${r.state}` : ""}{r.insurance ? ` · ${r.insurance}` : ""}
-              {r.notes ? ` — ${r.notes}` : ""}
+              {r.notes ? `, ${r.notes}` : ""}
             </span>
             {myOfferedIds.has(r.id) ? (
               <span className="muted">offered</span>

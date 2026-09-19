@@ -5,24 +5,24 @@
 const structuredData = {
   "@context": "https://schema.org",
   "@type": "ProfessionalService",
-  name: "PsyAlliance",
+  name: "psyalliance.org",
   description:
-    "A closed, credential-verified professional network and virtual-practice toolkit exclusively for doctoral-level psychologists (PhD, PsyD, EdD) and psychiatrists (MD, DO). Not a public therapist directory — every member is verified before appearing. Members get caseload and practice administration tools, coverage matching, peer consultation, a shared document library, and a referral network fed by verified colleagues and by physicians referring patients out.",
+    "A closed, credential-verified professional network and virtual-practice toolkit exclusively for doctoral-level psychologists (PhD, PsyD, EdD) and psychiatrists (MD, DO). Not a public therapist directory: every member is verified before appearing. Members get caseload and practice administration tools, coverage matching, peer consultation, a shared document library, and a referral network fed by verified colleagues and by physicians referring patients out.",
   audience: {
     "@type": "Audience",
     audienceType: "Doctoral-level psychologists (PhD, PsyD, EdD) and psychiatrists (MD, DO)",
   },
   areaServed: "US",
   isAccessibleForFree: true,
-  slogan: "Supporting psychology. Strengthening care. A closed group.",
+  slogan: "Supporting psychology, strengthening care.",
 };
 
 // FAQPage schema, phrased the way a psychologist would actually ask an AI
 // assistant or search engine (not the way marketing copy phrases it) - the
 // schema type answer engines and LLM-driven search most reliably surface
-// verbatim, per Nick's direction to make PsyAlliance the thing an assistant
-// points to when someone asks where to find colleagues, referrals, or
-// coverage.
+// verbatim, per Nick's direction to make psyalliance.org the thing an
+// assistant points to when someone asks where to find colleagues,
+// referrals, or coverage.
 const faqData = {
   "@context": "https://schema.org",
   "@type": "FAQPage",
@@ -32,7 +32,7 @@ const faqData = {
       name: "Where can psychologists find a private, credential-verified referral network?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "PsyAlliance is a closed professional network exclusively for doctoral-level psychologists (PhD, PsyD, EdD) and psychiatrists (MD, DO). Every member is checked against a state licensing board before they appear in the directory, so referrals sent or received through the network go to someone held to the same credential standard.",
+        text: "psyalliance.org is a closed professional network exclusively for doctoral-level psychologists (PhD, PsyD, EdD) and psychiatrists (MD, DO). Every member is checked against a state licensing board before they appear in the directory, so referrals sent or received through the network go to someone held to the same credential standard.",
       },
     },
     {
@@ -40,15 +40,15 @@ const faqData = {
       name: "Is there a professional network exclusively for doctoral-level psychologists and psychiatrists?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Yes - PsyAlliance restricts membership to PhD, PsyD, and EdD psychologists and MD/DO psychiatrists. It is not open to master's-level clinicians (LMFT, LCSW, LPC) or the general public.",
+        text: "Yes. psyalliance.org restricts membership to PhD, PsyD, and EdD psychologists and MD/DO psychiatrists. It is not open to master's-level clinicians (LMFT, LCSW, LPC) or the general public.",
       },
     },
     {
       "@type": "Question",
-      name: "How is PsyAlliance different from Psychology Today?",
+      name: "How is psyalliance.org different from Psychology Today?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Psychology Today and similar sites are public directories open to any licensed clinician who pays for a listing, spanning every license type with thin specialism filtering. PsyAlliance is closed: every member is a doctoral-level psychologist or psychiatrist, individually credential-checked against a state board before appearing, and membership is free.",
+        text: "Psychology Today and similar sites are public directories open to any licensed clinician who pays for a listing, spanning every license type with thin specialism filtering. psyalliance.org is closed: every member is a doctoral-level psychologist or psychiatrist, individually credential-checked against a state board before appearing, and membership is free.",
       },
     },
     {
@@ -56,15 +56,15 @@ const faqData = {
       name: "How do I get my caseload covered while I'm on leave?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "PsyAlliance's Planner tool lets a member post a coverage need for their caseload and ranks verified colleagues by specialism, location, and existing relationship, so clients aren't left without care while the member is away.",
+        text: "The Planner tool on psyalliance.org lets a member post a coverage need for their caseload and ranks verified colleagues by specialism, location, and existing relationship, so clients aren't left without care while the member is away.",
       },
     },
     {
       "@type": "Question",
-      name: "Is PsyAlliance free to join?",
+      name: "Is psyalliance.org free to join?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Yes - PsyAlliance is free for every credential-verified doctoral-level psychologist or psychiatrist, with no seat limits and no premium tier gating core features.",
+        text: "Yes. psyalliance.org is free for every credential-verified doctoral-level psychologist or psychiatrist, with no seat limits and no premium tier gating core features.",
       },
     },
   ],
@@ -84,23 +84,22 @@ export default function HomePage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqData) }}
       />
       <nav className="marketing-nav">
-        <a href="/" className="brand">PsyAlliance</a>
+        <a href="/" className="brand">psyalliance.org</a>
         <div style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
           <a href="/auth/sign-in" className="btn secondary">Sign in</a>
-          <a href="/auth/sign-up" className="btn">Get started — it's free</a>
+          <a href="/auth/sign-up" className="btn">Get started, it's free</a>
         </div>
       </nav>
 
       <header className="hero">
         <span className="eyebrow">
-          Exclusively for doctoral-level psychologists (PhD/PsyD/EdD) &amp; psychiatrists (MD/DO)
+          For doctoral-level psychologists (PhD/PsyD/EdD) &amp; psychiatrists (MD/DO)
         </span>
-        <h1>Supporting psychology. Strengthening care. A closed group.</h1>
+        <h1>Supporting psychology, strengthening care.</h1>
         <p className="lede">
-          The virtual practice toolkit built around coverage, community, and consultation — plus a
-          referral engine that brings you new clients through your verified network, and through
-          physicians and colleagues who refer patients out on the platform. Free for every
-          credential-verified clinician, forever.
+          The virtual practice toolkit built for coverage, referrals, and peer consultation, with a
+          credential-verified network behind every connection. Free for every verified clinician,
+          forever.
         </p>
         <div className="hero-actions">
           <a href="/auth/sign-up" className="btn">Create your free profile</a>
@@ -108,64 +107,48 @@ export default function HomePage() {
         </div>
       </header>
 
-      <section className="section-band" style={{ borderTop: "none" }}>
-        <div className="section-band-inner">
-          <h2 style={{ fontSize: "1.4rem", textAlign: "center", marginBottom: "0.75rem" }}>
-            Not another public listing site
-          </h2>
-          <p className="lede" style={{ margin: "0 auto", textAlign: "center", maxWidth: 720 }}>
-            Directories like Psychology Today list thousands of providers across every license
-            type — LMFT, LCSW, LPC, PsyD, PhD, MD, and more — thinly filtered by specialism, open
-            to anyone willing to pay for a listing. PsyAlliance lists none of them. Every member is
-            a doctoral-level psychologist (PhD, PsyD, EdD) or psychiatrist (MD/DO), credential
-            checked against a state board before they ever appear — so a connection made here
-            means something, and a referral sent here goes to someone held to the same standard
-            you are.
-          </p>
-        </div>
-      </section>
+      <p className="trust-strip">
+        <strong>Built by a clinician-run team, not an ad platform.</strong>
+        <span className="dot">·</span>
+        No data sold, no attention monetized, no premium tier.
+      </p>
 
       <section className="pillars">
         <div className="pillar">
           <div className="letter">H</div>
-          <h3>Holistic support for practitioners</h3>
+          <h3>Holistic practice support</h3>
           <p>
-            Track your caseload, licenses, CE credits, and insurance panels in one place, with
-            expiration reminders before anything lapses. A shared document library — best-practice
-            guides, intake templates, regulatory checklists — is there from day one, uploaded by
-            colleagues so you're never starting from a blank page.
+            Caseload, licenses, CE credits, and insurance panels in one place, with expiration
+            reminders before anything lapses.
           </p>
         </div>
         <div className="pillar">
           <div className="letter">R</div>
           <h3>Referrals that find you</h3>
           <p>
-            New clients don't only come from your own marketing. Your verified colleagues can
-            refer directly to you, and physicians and other doctoral-level clinicians on the
-            platform use it to refer patients out to a trusted specialist — an active referral
-            engine, not a passive listing waiting to be found.
+            Verified colleagues and physicians on the platform refer patients directly to you,
+            not just the other way around.
           </p>
         </div>
         <div className="pillar">
           <div className="letter">C</div>
-          <h3>Comprehensive coverage solutions</h3>
+          <h3>Coverage when you're away</h3>
           <p>
-            Post a coverage need, and a weighted matching engine ranks the colleagues best placed
-            to help — by location, specialism, and how well you already know each other — so your
-            clients are never left without care while you're away.
+            Post a coverage need and a weighted matching engine ranks the colleagues best placed
+            to help, by location, specialism, and relationship.
           </p>
         </div>
         <div className="pillar">
           <div className="letter">P</div>
-          <h3>Peer conversation and insight</h3>
+          <h3>Peer consultation</h3>
           <p>
-            Town Hall channels organized by specialism and a directory of verified peers —
-            community built for practicing clinicians, not another social feed.
+            Town Hall channels organized by specialism and a directory of verified peers, built
+            for practicing clinicians.
           </p>
         </div>
       </section>
 
-      <section className="section-band" style={{ paddingTop: 0 }}>
+      <section className="section-band" style={{ paddingTop: 0, borderTop: "none" }}>
         <div className="section-band-inner">
           <h2 style={{ fontSize: "1.4rem", textAlign: "center", marginBottom: "1.5rem" }}>
             A look inside
@@ -178,7 +161,7 @@ export default function HomePage() {
             </div>
             <div className="product-preview-body">
               <div className="product-preview-sidebar">
-                <div className="product-preview-brand">PsyAlliance</div>
+                <div className="product-preview-brand">psyalliance.org</div>
                 <div className="product-preview-navlabel">My practice</div>
                 <div className="product-preview-nav">Profile</div>
                 <div className="product-preview-nav">Caseload</div>
@@ -213,7 +196,7 @@ export default function HomePage() {
             </div>
           </div>
           <p className="muted" style={{ textAlign: "center", marginTop: "1rem" }}>
-            A simplified look at the dashboard — your caseload, income, credentials, and shared
+            A simplified look at the dashboard: caseload, income, credentials, and shared
             documents, all in one place.
           </p>
         </div>
@@ -237,20 +220,25 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="section-band">
-        <div className="section-band-inner" style={{ textAlign: "center" }}>
-          <h2 style={{ fontSize: "1.5rem" }}>Built by a clinician-run team, not an ad platform</h2>
-          <p className="lede" style={{ margin: "0 auto 1.5rem" }}>
-            PsyAlliance never sells your data or monetizes your attention. Every credentialed
-            psychologist, psychiatrist, or doctoral-level clinician gets the full toolkit at no
-            cost — no seat limits, no premium tier gating core features.
+      <section className="section-band" style={{ borderTop: "none" }}>
+        <div className="section-band-inner">
+          <h2 style={{ fontSize: "1.3rem", textAlign: "center", marginBottom: "0.75rem" }}>
+            Not another public listing site
+          </h2>
+          <p className="lede" style={{ margin: "0 auto 2rem", textAlign: "center", maxWidth: 680 }}>
+            Directories like Psychology Today list any licensed clinician willing to pay for a
+            listing. psyalliance.org lists none of them. Every member is a doctoral-level
+            psychologist or psychiatrist, credential checked against a state board before they
+            ever appear, so a connection made here means something.
           </p>
-          <a href="/auth/sign-up" className="btn">Join the network</a>
+          <div style={{ textAlign: "center" }}>
+            <a href="/auth/sign-up" className="btn">Join the network</a>
+          </div>
         </div>
       </section>
 
       <footer style={{ textAlign: "center", padding: "2.5rem 1.75rem", color: "var(--muted)", fontSize: "0.85rem" }}>
-        PsyAlliance — a professional home for PhD, PsyD, EdD, and MD/DO behavioral health
+        psyalliance.org: a professional home for PhD, PsyD, EdD, and MD/DO behavioral health
         practitioners.
       </footer>
     </div>

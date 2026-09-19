@@ -23,7 +23,7 @@ export default function GlobalError({
         }}
       >
         <main style={{ maxWidth: 560, margin: "5rem auto", textAlign: "center", padding: "0 1.5rem" }}>
-          <h1>PsyAlliance hit a snag</h1>
+          <h1>psyalliance.org hit a snag</h1>
           <p style={{ color: "#a3372c", background: "#fbe9e7", border: "1px solid #e3a89f", borderRadius: 6, padding: "0.75rem 1rem" }}>
             {error.message || "An unexpected error occurred."}
           </p>

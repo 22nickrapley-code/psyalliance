@@ -25,6 +25,7 @@ export async function sendConnectionRequest(formData: FormData) {
   if (error && error.code !== "23505") throw new Error(error.message);
 
   revalidatePath("/dashboard/network");
+  revalidatePath("/dashboard/people/[id]", "page");
 }
 
 export async function respondToConnection(formData: FormData) {
@@ -39,6 +40,7 @@ export async function respondToConnection(formData: FormData) {
   if (error) throw new Error(error.message);
 
   revalidatePath("/dashboard/network");
+  revalidatePath("/dashboard/people/[id]", "page");
 }
 
 export async function removeConnection(formData: FormData) {
@@ -49,4 +51,5 @@ export async function removeConnection(formData: FormData) {
   if (error) throw new Error(error.message);
 
   revalidatePath("/dashboard/network");
+  revalidatePath("/dashboard/people/[id]", "page");
 }

@@ -94,7 +94,7 @@ export default async function IncomePage() {
             )}
             {byBook.length === 0 && unassigned.length === 0 && (
               <tr>
-                <td colSpan={4} className="muted">No active cases yet — add some on the Caseload page.</td>
+                <td colSpan={4} className="muted">No active cases yet, add some on the Caseload page.</td>
               </tr>
             )}
           </tbody>
@@ -102,7 +102,7 @@ export default async function IncomePage() {
       </div>
 
       <p className="muted">
-        "True net income" also subtracts your recurring practice overhead — see{" "}
+        "True net income" also subtracts your recurring practice overhead, see{" "}
         <a href="/dashboard/capacity">Capacity &amp; overhead</a> to add or edit those expenses.
       </p>
     </div>

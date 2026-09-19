@@ -37,11 +37,11 @@ export default async function CapacityPage(props: { searchParams: Promise<{ save
           <div className="label">Actual sessions / week</div>
         </div>
         <div className="stat">
-          <div className="value">{target || "—"}</div>
+          <div className="value">{target || "-"}</div>
           <div className="label">Target sessions / week</div>
         </div>
         <div className="stat">
-          <div className="value">{utilizationPct !== null ? `${utilizationPct}%` : "—"}</div>
+          <div className="value">{utilizationPct !== null ? `${utilizationPct}%` : "-"}</div>
           <div className="label">Utilization</div>
         </div>
         <div className="stat">
@@ -94,7 +94,7 @@ export default async function CapacityPage(props: { searchParams: Promise<{ save
             {(expenses || []).map((e) => (
               <tr key={e.id}>
                 <td>{e.expense_name}</td>
-                <td>{e.vendor || "—"}</td>
+                <td>{e.vendor || "-"}</td>
                 <td>{e.cadence}</td>
                 <td>{currency(Number(e.amount))}</td>
                 <td>{currency(Number(e.monthly_cost))}</td>
@@ -109,7 +109,7 @@ export default async function CapacityPage(props: { searchParams: Promise<{ save
             {(expenses || []).length === 0 && (
               <tr>
                 <td colSpan={6} className="muted">
-                  No overhead expenses yet — insurance, EHR/video platform, HIPAA-compliant email,
+                  No overhead expenses yet: insurance, EHR/video platform, HIPAA-compliant email,
                   directory ad spend, licensing fees, etc.
                 </td>
               </tr>

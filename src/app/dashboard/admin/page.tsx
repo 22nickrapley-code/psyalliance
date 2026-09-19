@@ -33,7 +33,7 @@ export default async function AdminOverviewPage() {
 
   const stateCounts = new Map<string, number>();
   for (const row of byState || []) {
-    const s = row.primary_state || "—";
+    const s = row.primary_state || "-";
     stateCounts.set(s, (stateCounts.get(s) || 0) + 1);
   }
   const topStates = Array.from(stateCounts.entries())
@@ -44,7 +44,7 @@ export default async function AdminOverviewPage() {
     <div>
       <h1>Admin</h1>
       <p className="muted">
-        Platform-wide stats and quick links for running admin tasks — credential review lives in{" "}
+        Platform-wide stats and quick links for running admin tasks. Credential review lives in{" "}
         <a href="/dashboard/admin/verifications">Verification queue</a>, and the full member list
         (search, verify, flag, promote to admin) is under{" "}
         <a href="/dashboard/admin/members">All members</a>.

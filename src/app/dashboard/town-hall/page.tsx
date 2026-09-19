@@ -67,7 +67,7 @@ export default async function TownHallIndexPage(
     <div>
       <h1>Town Hall</h1>
       <p className="muted">
-        Open community discussion for verified psychologists — organized by specialism, plus a few
+        Open community discussion for verified psychologists, organized by specialism, plus a few
         general channels. You're auto-joined to channels matching your own specialisms; join or
         leave any others freely.
       </p>
@@ -91,7 +91,7 @@ export default async function TownHallIndexPage(
                   <span className="tag">{m.channel?.name}</span>
                 </a>{" "}
                 <strong>{m.author?.full_name || "Colleague"}</strong>
-                <span className="muted"> — {new Date(m.created_at).toLocaleDateString()}</span>
+                <span className="muted">, {new Date(m.created_at).toLocaleDateString()}</span>
                 <p style={{ margin: "0.25rem 0 0" }}>{m.body}</p>
               </div>
             ))}

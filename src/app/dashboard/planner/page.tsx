@@ -42,7 +42,7 @@ export default async function PlannerPage() {
       <h1>Planner</h1>
       <p className="muted">
         Going on leave? Select the active cases that need covering and Planner ranks colleagues by
-        location, specialism fit, network tier, and community engagement — then drafts the outreach
+        location, specialism fit, network tier, and community engagement, then drafts the outreach
         message for you. A decline moves straight to the next-ranked colleague; you just click
         through.
       </p>
@@ -85,7 +85,7 @@ export default async function PlannerPage() {
           <div className="field-row">
             <div className="field">
               <label htmlFor="name">Project name</label>
-              <input id="name" name="name" type="text" placeholder="Leave — November" required />
+              <input id="name" name="name" type="text" placeholder="Coverage: November leave" required />
             </div>
             <div className="field">
               <label htmlFor="start_date">Start date</label>
@@ -106,7 +106,7 @@ export default async function PlannerPage() {
               {(myCases || []).map((c) => (
                 <label key={c.id}>
                   <input type="checkbox" name="case_ids" value={c.id} />
-                  Case #{c.id}{c.private_label ? ` (${c.private_label})` : ""} — {c.primary_need || "no need set"}
+                  Case #{c.id}{c.private_label ? ` (${c.private_label})` : ""}, {c.primary_need || "no need set"}
                   {c.state ? `, ${c.state}` : ""}
                 </label>
               ))}
@@ -132,8 +132,8 @@ export default async function PlannerPage() {
               return (
                 <div key={a.id} className="checkbox-row" style={{ justifyContent: "space-between" }}>
                   <span>
-                    Case: {caseInfo?.primary_need || "—"}{caseInfo?.state ? `, ${caseInfo.state}` : ""}
-                    {" — "}
+                    Case: {caseInfo?.primary_need || "-"}{caseInfo?.state ? `, ${caseInfo.state}` : ""}
+                    {", "}
                     {offer ? (
                       <>
                         {offer.status === "accepted" && <>Covered by {offer.candidate?.credential_prefix} {offer.candidate?.full_name}</>}

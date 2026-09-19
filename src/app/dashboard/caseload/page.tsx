@@ -25,7 +25,7 @@ export default async function CaseloadPage() {
         <div>
           <h1>Caseload</h1>
           <p className="muted">
-            Every case is referenced by its case number — never a name. Your private client label
+            Every case is referenced by its case number, never a name. Your private client label
             is your own optional shorthand and is never shown to anyone else.
           </p>
         </div>
@@ -38,7 +38,7 @@ export default async function CaseloadPage() {
         <h2>Organizations</h2>
         <p className="muted">
           Your own private practice, or a group practice/consultancy you're employed by or
-          contracted to — each keeps a different share of the billed rate.
+          contracted to, each keeps a different share of the billed rate.
         </p>
         <table style={{ marginBottom: "1rem" }}>
           <thead>
@@ -63,7 +63,7 @@ export default async function CaseloadPage() {
             ))}
             {(books || []).length === 0 && (
               <tr>
-                <td colSpan={3} className="muted">No organizations yet — add one below.</td>
+                <td colSpan={3} className="muted">No organizations yet, add one below.</td>
               </tr>
             )}
           </tbody>
@@ -84,7 +84,7 @@ export default async function CaseloadPage() {
         <p className="muted" style={{ marginTop: "0.75rem", marginBottom: 0 }}>
           For your own private practice this is usually 100%. If you're employed by or contracted
           to a group practice or consultancy, enter the percentage of the billed hourly rate you
-          take home after their commission — e.g. if they bill $200/hr and you're paid 70%, enter
+          take home after their commission, e.g. if they bill $200/hr and you're paid 70%, enter
           0.70.
         </p>
       </div>
@@ -98,7 +98,7 @@ export default async function CaseloadPage() {
             <div className="field">
               <label htmlFor="book_of_business_id">Organization</label>
               <select id="book_of_business_id" name="book_of_business_id">
-                <option value="">—</option>
+                <option value="">-</option>
                 {(books || []).map((b) => (
                   <option key={b.id} value={b.id}>{b.name}</option>
                 ))}
@@ -134,7 +134,7 @@ export default async function CaseloadPage() {
             <div className="field">
               <label htmlFor="primary_need">Primary need</label>
               <select id="primary_need" name="primary_need" defaultValue="">
-                <option value="">—</option>
+                <option value="">-</option>
                 {(specialisms || []).map((s) => (
                   <option key={s.id} value={s.value}>{s.value}</option>
                 ))}
@@ -143,7 +143,7 @@ export default async function CaseloadPage() {
             <div className="field">
               <label htmlFor="secondary_need">Secondary need</label>
               <select id="secondary_need" name="secondary_need" defaultValue="">
-                <option value="">—</option>
+                <option value="">-</option>
                 {(specialisms || []).map((s) => (
                   <option key={s.id} value={s.value}>{s.value}</option>
                 ))}
@@ -152,7 +152,7 @@ export default async function CaseloadPage() {
             <div className="field">
               <label htmlFor="tertiary_need">Tertiary need</label>
               <select id="tertiary_need" name="tertiary_need" defaultValue="">
-                <option value="">—</option>
+                <option value="">-</option>
                 {(specialisms || []).map((s) => (
                   <option key={s.id} value={s.value}>{s.value}</option>
                 ))}
@@ -195,11 +195,11 @@ export default async function CaseloadPage() {
             {(cases || []).map((c: any) => (
               <tr key={c.id}>
                 <td>#{c.id}</td>
-                <td>{c.private_label || <span className="muted">—</span>}</td>
-                <td>{c.books_of_business?.name || <span className="muted">—</span>}</td>
-                <td>{c.state || "—"}</td>
-                <td>{c.rate_per_session ? `$${c.rate_per_session}` : "—"}</td>
-                <td>{c.sessions_per_week ?? "—"}</td>
+                <td>{c.private_label || <span className="muted">-</span>}</td>
+                <td>{c.books_of_business?.name || <span className="muted">-</span>}</td>
+                <td>{c.state || "-"}</td>
+                <td>{c.rate_per_session ? `$${c.rate_per_session}` : "-"}</td>
+                <td>{c.sessions_per_week ?? "-"}</td>
                 <td>
                   <form action={archiveCase}>
                     <input type="hidden" name="id" value={c.id} />

@@ -81,7 +81,7 @@ export default async function SupervisionPage(
     <div>
       <h1>Supervision</h1>
       <p className="muted">
-        Connect with colleagues open to giving or receiving private clinical supervision —
+        Connect with colleagues open to giving or receiving private clinical supervision,
         separate from Town Hall's open Partner group consultation. Nothing here is booked or
         billed automatically; reaching out opens a direct message so you can work out the details
         yourselves.
@@ -133,10 +133,13 @@ export default async function SupervisionPage(
                 <td>
                   <span style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
                     <Avatar url={avatarUrlByPath.get(p.avatar_path || "") || null} name={p.full_name} size={24} />
-                    {p.credential_prefix} {p.full_name} — {p.qualification_level}
+                    <a href={`/dashboard/people/${p.id}`} className="person-link">
+                      {p.credential_prefix} {p.full_name}
+                    </a>
+                    , {p.qualification_level}
                   </span>
                 </td>
-                <td>{p.primary_practice_city || "—"}{p.primary_state ? `, ${p.primary_state}` : ""}</td>
+                <td>{p.primary_practice_city || "-"}{p.primary_state ? `, ${p.primary_state}` : ""}</td>
                 <td>{[...p.specialisms].slice(0, 3).map((s) => <span key={s} className="tag">{s}</span>)}</td>
                 <td>
                   <form action={startConversation}>
@@ -145,7 +148,7 @@ export default async function SupervisionPage(
                     <input
                       type="hidden"
                       name="body"
-                      value={`Hi ${p.full_name}, I saw you're open to providing supervision — would you be able to take on a supervisee? Happy to share more about my background if useful.`}
+                      value={`Hi ${p.full_name}, I saw you're open to providing supervision, would you be able to take on a supervisee? Happy to share more about my background if useful.`}
                     />
                     <button type="submit" className="secondary">Request supervision</button>
                   </form>
@@ -154,7 +157,7 @@ export default async function SupervisionPage(
             ))}
             {supervisors.length === 0 && (
               <tr>
-                <td colSpan={4} className="muted">No colleagues match — try widening your filters.</td>
+                <td colSpan={4} className="muted">No colleagues match, try widening your filters.</td>
               </tr>
             )}
           </tbody>
@@ -165,7 +168,7 @@ export default async function SupervisionPage(
         <h2>Looking to receive supervision ({supervisees.length})</h2>
         <p className="muted">
           If you're an experienced clinician, these are colleagues who've marked themselves as
-          seeking supervision — reach out if you have capacity.
+          seeking supervision, reach out if you have capacity.
         </p>
         <table>
           <thead>
@@ -182,10 +185,13 @@ export default async function SupervisionPage(
                 <td>
                   <span style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
                     <Avatar url={avatarUrlByPath.get(p.avatar_path || "") || null} name={p.full_name} size={24} />
-                    {p.credential_prefix} {p.full_name} — {p.qualification_level}
+                    <a href={`/dashboard/people/${p.id}`} className="person-link">
+                      {p.credential_prefix} {p.full_name}
+                    </a>
+                    , {p.qualification_level}
                   </span>
                 </td>
-                <td>{p.primary_practice_city || "—"}{p.primary_state ? `, ${p.primary_state}` : ""}</td>
+                <td>{p.primary_practice_city || "-"}{p.primary_state ? `, ${p.primary_state}` : ""}</td>
                 <td>{[...p.specialisms].slice(0, 3).map((s) => <span key={s} className="tag">{s}</span>)}</td>
                 <td>
                   <form action={startConversation}>
@@ -194,7 +200,7 @@ export default async function SupervisionPage(
                     <input
                       type="hidden"
                       name="body"
-                      value={`Hi ${p.full_name}, I saw you're looking for supervision — I have some capacity if you'd like to talk it through.`}
+                      value={`Hi ${p.full_name}, I saw you're looking for supervision, I have some capacity if you'd like to talk it through.`}
                     />
                     <button type="submit" className="secondary">Offer supervision</button>
                   </form>
@@ -203,7 +209,7 @@ export default async function SupervisionPage(
             ))}
             {supervisees.length === 0 && (
               <tr>
-                <td colSpan={4} className="muted">No colleagues match — try widening your filters.</td>
+                <td colSpan={4} className="muted">No colleagues match, try widening your filters.</td>
               </tr>
             )}
           </tbody>

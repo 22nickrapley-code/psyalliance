@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { saveProfile, submitCredentialVerification, saveAvailability, uploadAvatar } from "./actions";
 import { resolveAvatarUrl } from "@/lib/avatars";
 import BioImportBox from "./bio-import";
+import { ProfileView, type SpecialismValue } from "../profile-view";
 
 const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -16,7 +17,7 @@ const CATEGORY_LABELS: Record<string, string> = {
 };
 
 // Self-disclosed practitioner identity, shown separately from client-population
-// specialisms above — entirely optional, used only to help clients find a
+// specialisms above, entirely optional, used only to help clients find a
 // good fit, never required and never shown as a search filter to anyone else
 // without the practitioner choosing to display it.
 const SELF_DISCLOSURE_CATEGORY_LABELS: Record<string, string> = {
@@ -29,9 +30,9 @@ const SINGLE_SELECT_CATEGORIES = new Set(["sex"]);
 export default async function ProfilePage({
   searchParams,
 }: {
-  searchParams: Promise<{ saved?: string; avatar_saved?: string; avatar_error?: string }>;
+  searchParams: Promise<{ saved?: string; avatar_saved?: string; avatar_error?: string; edit?: string }>;
 }) {
-  const { saved, avatar_saved, avatar_error } = await searchParams;
+  const { saved, avatar_saved, avatar_error, edit } = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -68,6 +69,139 @@ export default async function ProfilePage({
     byCategory[lv.category].push({ id: lv.id, value: lv.value });
   }
 
+  const hasSavedProfile = !!profile?.full_name;
+  const showEditForm = edit === "1" || !hasSavedProfile;
+
+  const savedBanner = saved === "1" && (
+    <div className="card" style={{ borderColor: "var(--accent, #2a7)", background: "rgba(34,170,119,0.08)" }}>
+      Profile saved.
+    </div>
+  );
+  const avatarSavedBanner = avatar_saved === "1" && (
+    <div className="card" style={{ borderColor: "var(--accent, #2a7)", background: "rgba(34,170,119,0.08)" }}>
+      Photo updated.
+    </div>
+  );
+  const avatarErrorBanner = avatar_error && (
+    <div className="card" style={{ borderColor: "#b3392c", background: "rgba(179,57,44,0.08)" }}>
+      {avatar_error}
+    </div>
+  );
+
+  const credentialVerificationCard = (
+    <div className="card">
+      <h2>Credential verification</h2>
+      <p className="muted">
+        Submit your license details for review. A human (Nick or Rena) checks this against your
+        state board's lookup before your profile is marked verified and appears in the
+        directory.
+      </p>
+      <table style={{ marginBottom: "1rem" }}>
+        <thead>
+          <tr>
+            <th>Source</th>
+            <th>State</th>
+            <th>License #</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {(verifications || []).map((v) => (
+            <tr key={v.id}>
+              <td>{v.source}</td>
+              <td>{v.state || "-"}</td>
+              <td>{v.license_number}</td>
+              <td>{v.matched ? "Matched" : v.flagged_reason ? `Flagged: ${v.flagged_reason}` : "Awaiting review"}</td>
+            </tr>
+          ))}
+          {(verifications || []).length === 0 && (
+            <tr>
+              <td colSpan={4} className="muted">No submissions yet.</td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+      <form action={submitCredentialVerification} className="field-row" style={{ alignItems: "flex-end" }}>
+        <div className="field" style={{ maxWidth: 160 }}>
+          <label htmlFor="source">Source</label>
+          <select id="source" name="source" defaultValue="state_board">
+            <option value="state_board">State board</option>
+            <option value="asppb">ASPPB</option>
+            <option value="npi_registry">NPI registry</option>
+          </select>
+        </div>
+        <div className="field" style={{ maxWidth: 100 }}>
+          <label htmlFor="ver_state">State</label>
+          <input id="ver_state" name="state" type="text" maxLength={2} placeholder="TX" />
+        </div>
+        <div className="field">
+          <label htmlFor="license_number">License number</label>
+          <input id="license_number" name="license_number" type="text" required />
+        </div>
+        <div className="field" style={{ flex: "0 0 auto" }}>
+          <button type="submit">Submit for review</button>
+        </div>
+      </form>
+    </div>
+  );
+
+  if (!showEditForm) {
+    // Only the clinical categories shown on the polished profile view -
+    // self-disclosure categories (ethnicity, gender identity, sex) are
+    // deliberately left off, same whitelist as the /people/[id] view of
+    // someone else's profile.
+    const VISIBLE_CATEGORIES = new Set(Object.keys(CATEGORY_LABELS));
+    const specialismsByCategory: Record<string, { value: string; rank: number | null }[]> = {};
+    for (const [category, values] of Object.entries(byCategory)) {
+      if (!VISIBLE_CATEGORIES.has(category)) continue;
+      for (const v of values) {
+        if (!selectedMap.has(v.id)) continue;
+        specialismsByCategory[category] = specialismsByCategory[category] || [];
+        specialismsByCategory[category].push({ value: v.value, rank: selectedMap.get(v.id) ?? null });
+      }
+    }
+
+    return (
+      <div>
+        <h1>Your profile</h1>
+        <p className="muted">
+          This is what appears in the verified directory once your credentials are checked. No
+          patient information lives here.
+        </p>
+
+        {savedBanner}
+        {avatarSavedBanner}
+        {avatarErrorBanner}
+
+        <ProfileView
+          data={{
+            id: user!.id,
+            fullName: profile.full_name,
+            credentialPrefix: profile.credential_prefix,
+            qualificationLevel: profile.qualification_level,
+            boardCertified: !!profile.board_certified,
+            city: profile.primary_practice_city,
+            state: profile.primary_state,
+            acceptingReferrals: !!profile.accepting_referrals,
+            psypactParticipating: !!profile.psypact_participating,
+            avatarUrl,
+            practiceWebsite: profile.practice_website,
+            contactPhone: profile.contact_phone,
+            contactEmail: profile.contact_email,
+            openToGroupConsultation: !!profile.open_to_group_consultation,
+            openToGiveSupervision: !!profile.open_to_give_supervision,
+            openToReceiveSupervision: !!profile.open_to_receive_supervision,
+            availableDays,
+            specialismsByCategory,
+          }}
+          actions={<a href="/dashboard/profile?edit=1" className="btn secondary">Edit profile</a>}
+        />
+
+        {credentialVerificationCard}
+      </div>
+    );
+  }
+
   return (
     <div>
       <h1>Your profile</h1>
@@ -76,26 +210,21 @@ export default async function ProfilePage({
         patient information lives here.
       </p>
 
-      {saved === "1" && (
-        <div className="card" style={{ borderColor: "var(--accent, #2a7)", background: "rgba(34,170,119,0.08)" }}>
-          Profile saved.
+      {hasSavedProfile && (
+        <div className="card" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <span className="muted">Editing your profile details.</span>
+          <a href="/dashboard/profile" className="btn secondary">Cancel, view profile</a>
         </div>
       )}
-      {avatar_saved === "1" && (
-        <div className="card" style={{ borderColor: "var(--accent, #2a7)", background: "rgba(34,170,119,0.08)" }}>
-          Photo updated.
-        </div>
-      )}
-      {avatar_error && (
-        <div className="card" style={{ borderColor: "#b3392c", background: "rgba(179,57,44,0.08)" }}>
-          {avatar_error}
-        </div>
-      )}
+
+      {savedBanner}
+      {avatarSavedBanner}
+      {avatarErrorBanner}
 
       <div className="card">
         <h2>Professional photo</h2>
         <p className="muted">
-          A headshot the way you'd expect on a public practice profile — helps colleagues recognize
+          A headshot the way you'd expect on a public practice profile. Helps colleagues recognize
           you and puts a face to a referral or coverage request. Only visible to other verified,
           signed-in members, never public.
         </p>
@@ -144,7 +273,7 @@ export default async function ProfilePage({
         <div className="card">
           <h2>Practice model</h2>
           <p className="muted">
-            Psychologists and psychiatrists generally work one of two ways — sometimes both at once.
+            Psychologists and psychiatrists generally work one of two ways, sometimes both at once.
             Tell us which applies so your Caseload page can speak in the right terms.
           </p>
           <div className="checkbox-row">
@@ -188,11 +317,11 @@ export default async function ProfilePage({
             <div className="field">
               <label htmlFor="qualification_level">Qualification</label>
               <select id="qualification_level" name="qualification_level" defaultValue={profile?.qualification_level || "PhD"}>
-                <option value="PhD">PhD — Psychologist</option>
-                <option value="PsyD">PsyD — Psychologist</option>
-                <option value="EdD">EdD — Psychologist</option>
-                <option value="MD">MD — Psychiatrist</option>
-                <option value="DO">DO — Psychiatrist</option>
+                <option value="PhD">PhD, Psychologist</option>
+                <option value="PsyD">PsyD, Psychologist</option>
+                <option value="EdD">EdD, Psychologist</option>
+                <option value="MD">MD, Psychiatrist</option>
+                <option value="DO">DO, Psychiatrist</option>
               </select>
             </div>
             <div className="field">
@@ -263,7 +392,7 @@ export default async function ProfilePage({
             Shown as a badge to colleagues so they know you may be able to see their clients by
             telehealth across state lines. Always confirm current participating states and your own
             scope of practice at{" "}
-            <a href="https://psypact.org" target="_blank" rel="noreferrer">psypact.org</a> — this
+            <a href="https://psypact.org" target="_blank" rel="noreferrer">psypact.org</a>. This
             platform doesn't track which states are in the compact, since that list changes over
             time.
           </p>
@@ -305,7 +434,7 @@ export default async function ProfilePage({
         <div className="card">
           <h2>About you (optional)</h2>
           <p className="muted">
-            Purely a self-disclosure — some clients look for a provider who shares part of their own
+            Purely a self-disclosure: some clients look for a provider who shares part of their own
             background. Leave any of this blank if you'd rather not say.
           </p>
           <div className="field" style={{ maxWidth: 200, marginBottom: "1.25rem" }}>
@@ -340,7 +469,7 @@ export default async function ProfilePage({
         <h2>Weekly availability</h2>
         <p className="muted">
           Which days do you generally take new sessions or consultations? Visible to other verified
-          colleagues considering a referral or coverage request — not a booking calendar, just a
+          colleagues considering a referral or coverage request, not a booking calendar, just a
           general signal.
         </p>
         <form action={saveAvailability}>
@@ -358,60 +487,7 @@ export default async function ProfilePage({
         </form>
       </div>
 
-      <div className="card">
-        <h2>Credential verification</h2>
-        <p className="muted">
-          Submit your license details for review. A human (Nick or Rena) checks this against your
-          state board's lookup before your profile is marked verified and appears in the
-          directory.
-        </p>
-        <table style={{ marginBottom: "1rem" }}>
-          <thead>
-            <tr>
-              <th>Source</th>
-              <th>State</th>
-              <th>License #</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {(verifications || []).map((v) => (
-              <tr key={v.id}>
-                <td>{v.source}</td>
-                <td>{v.state || "—"}</td>
-                <td>{v.license_number}</td>
-                <td>{v.matched ? "Matched" : v.flagged_reason ? `Flagged: ${v.flagged_reason}` : "Awaiting review"}</td>
-              </tr>
-            ))}
-            {(verifications || []).length === 0 && (
-              <tr>
-                <td colSpan={4} className="muted">No submissions yet.</td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-        <form action={submitCredentialVerification} className="field-row" style={{ alignItems: "flex-end" }}>
-          <div className="field" style={{ maxWidth: 160 }}>
-            <label htmlFor="source">Source</label>
-            <select id="source" name="source" defaultValue="state_board">
-              <option value="state_board">State board</option>
-              <option value="asppb">ASPPB</option>
-              <option value="npi_registry">NPI registry</option>
-            </select>
-          </div>
-          <div className="field" style={{ maxWidth: 100 }}>
-            <label htmlFor="ver_state">State</label>
-            <input id="ver_state" name="state" type="text" maxLength={2} placeholder="TX" />
-          </div>
-          <div className="field">
-            <label htmlFor="license_number">License number</label>
-            <input id="license_number" name="license_number" type="text" required />
-          </div>
-          <div className="field" style={{ flex: "0 0 auto" }}>
-            <button type="submit">Submit for review</button>
-          </div>
-        </form>
-      </div>
+      {credentialVerificationCard}
 
       <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "1.5rem" }}>
         <button type="submit" form="profile-form">Save profile</button>

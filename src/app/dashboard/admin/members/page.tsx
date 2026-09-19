@@ -34,7 +34,7 @@ export default async function AdminMembersPage(
     <div>
       <h1>All members</h1>
       <p className="muted">
-        Every profile on the platform, not just the ones awaiting credential review — search,
+        Every profile on the platform, not just the ones awaiting credential review: search,
         override verification status, or promote a trusted co-reviewer to admin. Test/seed
         accounts (used for your own network/matching testing) are marked so you don't mistake
         them for real signups.
@@ -102,9 +102,9 @@ export default async function AdminMembersPage(
                       {professionLabel(professionFor(p.qualification_level))}
                     </span>
                   </td>
-                  <td>{p.primary_practice_city || "—"}{p.primary_state ? `, ${p.primary_state}` : ""}</td>
+                  <td>{p.primary_practice_city || "-"}{p.primary_state ? `, ${p.primary_state}` : ""}</td>
                   <td><span className="tag">{p.verification_status}</span></td>
-                  <td>{p.is_admin ? "Yes" : "—"}</td>
+                  <td>{p.is_admin ? "Yes" : "-"}</td>
                   <td>
                     <div style={{ display: "flex", gap: "0.3rem", flexWrap: "wrap" }}>
                       {p.verification_status !== "verified" && (

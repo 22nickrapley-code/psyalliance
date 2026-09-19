@@ -10,7 +10,7 @@ export default async function SignInPage(
   return (
     <div className="auth-shell">
       <div className="auth-card-wrap">
-        <a href="/" className="brand">PsyAlliance</a>
+        <a href="/" className="brand">psyalliance.org</a>
 
         {searchParams.error && <div className="error-banner">{searchParams.error}</div>}
         {searchParams.message && <div className="message-banner">{searchParams.message}</div>}

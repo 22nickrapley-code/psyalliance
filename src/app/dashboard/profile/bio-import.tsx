@@ -71,7 +71,7 @@ export default function BioImportBox() {
     <div className="card">
       <h2>Quick start (optional)</h2>
       <p className="muted">
-        Paste your bio from Psychology Today, your practice website, LinkedIn, a CV — anywhere you
+        Paste your bio from Psychology Today, your practice website, LinkedIn, a CV, anywhere you
         already have one written. We'll pre-fill what we can below so you're not starting from a
         blank page; you still review and save it yourself.
       </p>

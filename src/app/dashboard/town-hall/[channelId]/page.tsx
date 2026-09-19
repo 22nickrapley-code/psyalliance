@@ -50,7 +50,7 @@ export default async function TownHallChannelPage(props: { params: Promise<{ cha
     }
   }
 
-  const authorName = (m: any) => (m.deleted_at ? "—" : `${m.author?.credential_prefix || ""} ${m.author?.full_name || "Unknown"}`.trim());
+  const authorName = (m: any) => (m.deleted_at ? "-" : `${m.author?.credential_prefix || ""} ${m.author?.full_name || "Unknown"}`.trim());
 
   const ReactionBar = ({ m }: { m: any }) => {
     const r = reactionsByMessage.get(m.id) || { thumbs_up: 0, heart: 0, thumbs_down: 0, mine: null };
@@ -195,7 +195,7 @@ export default async function TownHallChannelPage(props: { params: Promise<{ cha
           </div>
         </div>
       ))}
-      {topLevel.length === 0 && <p className="muted">No messages yet — be the first to post in this channel.</p>}
+      {topLevel.length === 0 && <p className="muted">No messages yet, be the first to post in this channel.</p>}
     </div>
   );
 }

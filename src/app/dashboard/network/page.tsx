@@ -18,11 +18,30 @@ type DirectoryPerson = {
   specialisms: Set<string>;
 };
 
+type Tier = "partner" | "bench" | "recommended" | "none";
+
 function ProfessionTag({ profession }: { profession: Profession }) {
   return (
     <span className={`tag${profession === "psychiatrist" ? " psychiatrist" : ""}`}>
       {professionLabel(profession)}
     </span>
+  );
+}
+
+// Consistent Partner=blue / Bench=purple / Recommended=orange coloring,
+// used everywhere a connection tier shows up on this page.
+function TierTag({ tier }: { tier: Tier }) {
+  if (tier === "none") return <span className="tag tier-none">Not yet connected</span>;
+  const label = tier === "partner" ? "Partner" : tier === "bench" ? "Bench" : "Recommended";
+  return <span className={`tag tier-${tier}`}>{label}</span>;
+}
+
+function PersonLink({ id, name, tier }: { id: string; name: string; tier?: Tier }) {
+  const tierClass = tier && tier !== "none" ? ` tier-${tier}` : "";
+  return (
+    <a href={`/dashboard/people/${id}`} className={`person-link${tierClass}`}>
+      {name}
+    </a>
   );
 }
 
@@ -63,8 +82,8 @@ export default async function NetworkPage(
   const scoreById = new Map((scores || []).map((s) => [s.profile_id, s.score as number]));
   const engagementBadge = (personId: string) => {
     const score = scoreById.get(personId) || 0;
-    if (score >= 20) return { label: "Highly engaged — consider Partner", score };
-    if (score >= 10) return { label: "Community pick — consider Bench", score };
+    if (score >= 20) return { label: "Highly engaged, consider Partner", score };
+    if (score >= 10) return { label: "Community pick, consider Bench", score };
     return null;
   };
 
@@ -106,6 +125,11 @@ export default async function NetworkPage(
       .map((l: any) => l.lookup_values.value)
   );
 
+  // The specific specialisms shared with the viewer, used both for the
+  // "recommended" degree computation and for the per-person one-line reason
+  // Nick asked for ("depression, anxiety" rather than a generic sentence).
+  const sharedSpecialismsWith = (p: DirectoryPerson) => [...p.specialisms].filter((s) => mySpecialisms.has(s));
+
   const connectionByOtherId = new Map<string, any>();
   for (const c of connections || []) {
     const otherId = c.requester_id === myself ? c.addressee_id : c.requester_id;
@@ -119,17 +143,18 @@ export default async function NetworkPage(
 
   const recommended = Array.from(people.values())
     .filter((p) => !connectionByOtherId.has(p.id))
-    .filter((p) => [...p.specialisms].some((s) => mySpecialisms.has(s)))
+    .filter((p) => sharedSpecialismsWith(p).length > 0)
     .slice(0, 10);
 
   const nameOf = (c: any) => (c.requester_id === myself ? c.addressee?.full_name : c.requester?.full_name);
+  const otherIdOf = (c: any) => (c.requester_id === myself ? c.addressee_id : c.requester_id);
 
   // Connection-degree filter, per the spec ("filter by Partner | Bench |
   // Recommended | ALL, ala LinkedIn 1st/2nd/3rd degree").
-  function connectionDegree(p: DirectoryPerson): "partner" | "bench" | "recommended" | "none" {
+  function connectionDegree(p: DirectoryPerson): Tier {
     const conn = connectionByOtherId.get(p.id);
     if (conn?.status === "accepted") return conn.tier;
-    if ([...p.specialisms].some((s) => mySpecialisms.has(s))) return "recommended";
+    if (sharedSpecialismsWith(p).length > 0) return "recommended";
     return "none";
   }
 
@@ -154,9 +179,12 @@ export default async function NetworkPage(
     <div>
       <h1>Network</h1>
       <p className="muted">
-        Partners are first-degree, mutual-consent connections. Bench is a looser "known, not yet
-        connected" tier. Recommended is computed from shared specialisms — nothing here is stored
-        until you connect.
+        <span className="tag tier-partner" style={{ marginRight: "0.35rem" }}>Partner</span>
+        first-degree, mutual-consent connections.
+        <span className="tag tier-bench" style={{ margin: "0 0.35rem 0 0.75rem" }}>Bench</span>
+        a looser "known, not yet connected" tier.
+        <span className="tag tier-recommended" style={{ margin: "0 0.35rem 0 0.75rem" }}>Recommended</span>
+        computed from shared specialisms, nothing here is stored until you connect.
       </p>
 
       {incoming.length > 0 && (
@@ -164,7 +192,9 @@ export default async function NetworkPage(
           <h2>Pending requests to you</h2>
           {incoming.map((c: any) => (
             <div key={c.id} className="checkbox-row" style={{ justifyContent: "space-between" }}>
-              <span>{nameOf(c)} wants to connect as <strong>{c.tier}</strong></span>
+              <span>
+                <PersonLink id={otherIdOf(c)} name={nameOf(c) || ""} /> wants to connect as <TierTag tier={c.tier} />
+              </span>
               <span>
                 <form action={respondToConnection} style={{ display: "inline" }}>
                   <input type="hidden" name="id" value={c.id} />
@@ -183,14 +213,17 @@ export default async function NetworkPage(
       )}
 
       <div className="card">
-        <h2>Partners ({partners.length})</h2>
+        <h2>
+          <span className="tag tier-partner" style={{ marginRight: "0.5rem" }}>Partner</span>
+          Partners ({partners.length})
+        </h2>
         {partners.map((c: any) => {
-          const otherId = c.requester_id === myself ? c.addressee_id : c.requester_id;
+          const otherId = otherIdOf(c);
           return (
           <div key={c.id} className="checkbox-row" style={{ justifyContent: "space-between" }}>
             <span style={{ display: "flex", alignItems: "center", gap: "0.55rem" }}>
               <Avatar url={avatarOf(c)} name={nameOf(c) || ""} />
-              {nameOf(c)}
+              <PersonLink id={otherId} name={nameOf(c) || ""} tier="partner" />
             </span>
             <span>
               <form action={startConversation} style={{ display: "inline" }}>
@@ -211,14 +244,17 @@ export default async function NetworkPage(
       </div>
 
       <div className="card">
-        <h2>Bench ({bench.length})</h2>
+        <h2>
+          <span className="tag tier-bench" style={{ marginRight: "0.5rem" }}>Bench</span>
+          Bench ({bench.length})
+        </h2>
         {bench.map((c: any) => {
-          const otherId = c.requester_id === myself ? c.addressee_id : c.requester_id;
+          const otherId = otherIdOf(c);
           return (
           <div key={c.id} className="checkbox-row" style={{ justifyContent: "space-between" }}>
             <span style={{ display: "flex", alignItems: "center", gap: "0.55rem" }}>
               <Avatar url={avatarOf(c)} name={nameOf(c) || ""} />
-              {nameOf(c)}
+              <PersonLink id={otherId} name={nameOf(c) || ""} tier="bench" />
             </span>
             <span>
               <form action={startConversation} style={{ display: "inline" }}>
@@ -242,7 +278,13 @@ export default async function NetworkPage(
         <div className="card">
           <h2>Sent requests, awaiting response</h2>
           {outgoing.map((c: any) => (
-            <p key={c.id} className="muted">{nameOf(c)} — {c.tier}</p>
+            <div key={c.id} className="checkbox-row" style={{ justifyContent: "space-between" }}>
+              <span style={{ display: "flex", alignItems: "center", gap: "0.55rem" }}>
+                <Avatar url={avatarOf(c)} name={nameOf(c) || ""} />
+                <PersonLink id={otherIdOf(c)} name={nameOf(c) || ""} />
+              </span>
+              <TierTag tier={c.tier} />
+            </div>
           ))}
         </div>
       )}
@@ -252,48 +294,60 @@ export default async function NetworkPage(
         <p className="muted">Colleagues who share at least one of your treatment specialisms.</p>
         {recommended.map((p) => {
           const badge = engagementBadge(p.id);
+          const shared = sharedSpecialismsWith(p);
           return (
-          <div key={p.id} className="checkbox-row" style={{ justifyContent: "space-between" }}>
-            <span style={{ display: "flex", alignItems: "center", gap: "0.55rem" }}>
+          <div key={p.id} className="directory-row">
+            <div className="directory-row-person">
               <Avatar url={avatarUrlByPath.get(p.avatar_path || "") || null} name={p.full_name} />
-              {p.credential_prefix} {p.full_name} — {p.qualification_level}
-              {p.primary_practice_city ? `, ${p.primary_practice_city}` : ""}
-              {p.primary_state ? `, ${p.primary_state}` : ""}
+              <span className="name">
+                <PersonLink id={p.id} name={`${p.credential_prefix ? p.credential_prefix + " " : ""}${p.full_name}`} tier="recommended" />
+                {p.qualification_level ? `, ${p.qualification_level}` : ""}
+                {p.primary_practice_city ? `, ${p.primary_practice_city}` : ""}
+                {p.primary_state ? `, ${p.primary_state}` : ""}
+              </span>
+            </div>
+            <div className="directory-row-badges">
               <ProfessionTag profession={professionFor(p.qualification_level)} />
               {p.psypact_participating && (
-                <span className="tag" style={{ marginLeft: "0.5rem" }} title="Holds PSYPACT Authority to Practice Interjurisdictional Telepsychology">
+                <span className="tag" title="Holds PSYPACT Authority to Practice Interjurisdictional Telepsychology">
                   PSYPACT
                 </span>
               )}
               {badge && (
-                <span className="tag" style={{ marginLeft: "0.5rem" }} title={`Community score: ${badge.score}`}>
+                <span className="tag" title={`Community score: ${badge.score}`}>
                   {badge.label}
                 </span>
               )}
-            </span>
-            <span>
+            </div>
+            <div className="directory-row-actions">
               <form action={startConversation} style={{ display: "inline" }}>
                 <input type="hidden" name="participant_ids" value={p.id} />
                 <input type="hidden" name="title" value={`${p.credential_prefix || ""} ${p.full_name}`.trim()} />
                 <input type="hidden" name="body" value={`Hi ${p.full_name}, I noticed we share a specialism and wanted to reach out.`} />
-                <button type="submit" className="secondary" style={{ marginRight: "0.4rem" }}>Message</button>
+                <button type="submit" className="secondary">Message</button>
               </form>
               <form action={sendConnectionRequest} style={{ display: "inline" }}>
                 <input type="hidden" name="addressee_id" value={p.id} />
                 <input type="hidden" name="tier" value="partner" />
                 <button type="submit">Connect (Partner)</button>
-              </form>{" "}
+              </form>
               <form action={sendConnectionRequest} style={{ display: "inline" }}>
                 <input type="hidden" name="addressee_id" value={p.id} />
                 <input type="hidden" name="tier" value="bench" />
                 <button type="submit" className="secondary">Add to Bench</button>
               </form>
-            </span>
+            </div>
+            {shared.length > 0 && (
+              <div className="directory-row-reason">
+                Recommended because you both work with {shared.slice(0, 3).join(", ")}
+                {shared.length > 3 ? `, and ${shared.length - 3} more` : ""}.
+              </div>
+            )}
           </div>
           );
         })}
         {recommended.length === 0 && (
-          <p className="muted">No matches yet — verified colleagues with overlapping specialisms will show up here.</p>
+          <p className="muted">No matches yet. Verified colleagues with overlapping specialisms will show up here.</p>
         )}
       </div>
 
@@ -362,12 +416,18 @@ export default async function NetworkPage(
             </tr>
           </thead>
           <tbody>
-            {filteredDirectory.map((p) => (
+            {filteredDirectory.map((p) => {
+              const degree = connectionDegree(p);
+              return (
               <tr key={p.id}>
                 <td>
                   <span style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
                     <Avatar url={avatarUrlByPath.get(p.avatar_path || "") || null} name={p.full_name} size={24} />
-                    {p.credential_prefix} {p.full_name}
+                    <PersonLink
+                      id={p.id}
+                      name={`${p.credential_prefix ? p.credential_prefix + " " : ""}${p.full_name}`}
+                      tier={degree}
+                    />
                   </span>
                   {p.psypact_participating && (
                     <span className="tag" style={{ marginLeft: "0.4rem" }} title="Holds PSYPACT Authority to Practice Interjurisdictional Telepsychology">
@@ -376,9 +436,9 @@ export default async function NetworkPage(
                   )}
                 </td>
                 <td><ProfessionTag profession={professionFor(p.qualification_level)} /></td>
-                <td>{p.primary_practice_city || "—"}{p.primary_state ? `, ${p.primary_state}` : ""}</td>
+                <td>{p.primary_practice_city || "-"}{p.primary_state ? `, ${p.primary_state}` : ""}</td>
                 <td>{[...p.specialisms].slice(0, 3).map((s) => <span key={s} className="tag">{s}</span>)}</td>
-                <td><span className="tag">{connectionDegree(p)}</span></td>
+                <td><TierTag tier={degree} /></td>
                 <td>
                   {connectionByOtherId.has(p.id) ? (
                     connectionByOtherId.get(p.id).status === "accepted" ? (
@@ -402,7 +462,8 @@ export default async function NetworkPage(
                   )}
                 </td>
               </tr>
-            ))}
+              );
+            })}
             {filteredDirectory.length === 0 && (
               <tr>
                 <td colSpan={6} className="muted">

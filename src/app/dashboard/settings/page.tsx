@@ -178,14 +178,14 @@ export default async function SettingsPage(props: { searchParams: Promise<{ save
         <h2>Emergency-cover contact</h2>
         <p className="muted">
           The one colleague who should be looped in if you're ever unexpectedly unavailable and your
-          caseload needs covering. This is a plain designation — it doesn't share any client
+          caseload needs covering. This is a plain designation. It doesn't share any client
           information automatically.
         </p>
         {emergencyContact ? (
           <div className="checkbox-row" style={{ justifyContent: "space-between" }}>
             <span>
               {emergencyContact.contact?.credential_prefix} {emergencyContact.contact?.full_name}
-              {emergencyContact.notes ? ` — ${emergencyContact.notes}` : ""}
+              {emergencyContact.notes ? `, ${emergencyContact.notes}` : ""}
             </span>
             <form action={removeEmergencyContact}>
               <button type="submit" className="secondary">Remove</button>
@@ -220,7 +220,7 @@ export default async function SettingsPage(props: { searchParams: Promise<{ save
         <h2>Do-not-work-with list</h2>
         <p className="muted">
           Colleagues you add here are quietly excluded from your own recommendations, matching
-          results, and predictive search — on your side only. They're never notified.
+          results, and predictive search. This is on your side only; they're never notified.
         </p>
         {(blocklist || []).map((b: any) => (
           <div key={b.blocked_profile_id} className="checkbox-row" style={{ justifyContent: "space-between" }}>

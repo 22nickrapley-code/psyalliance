@@ -21,7 +21,7 @@ export default async function AdminVerificationsPage() {
     <div>
       <h1>Credential verification queue</h1>
       <p className="muted">
-        Human sign-off, every time — this list is not auto-approved. Automated state-board /
+        Human sign-off, every time: this list is not auto-approved. Automated state-board /
         ASPPB / NPI lookups are a future integration; for now, check each submission by hand
         against the source before marking it matched.
       </p>
@@ -31,13 +31,13 @@ export default async function AdminVerificationsPage() {
         {pending.map((p: any) => (
           <div key={p.id} style={{ borderBottom: "1px solid var(--border)", paddingBottom: "0.75rem", marginBottom: "0.75rem" }}>
             <div>
-              <strong>{p.credential_prefix} {p.full_name}</strong> — {p.qualification_level}{" "}
+              <strong>{p.credential_prefix} {p.full_name}</strong>, {p.qualification_level}{" "}
               <span className="tag">{p.verification_status}</span>
             </div>
             {(p.credential_verifications || []).map((v: any) => (
               <div key={v.id} className="checkbox-row" style={{ justifyContent: "space-between" }}>
                 <span>
-                  {v.source} · {v.state || "—"} · #{v.license_number} ·{" "}
+                  {v.source} · {v.state || "-"} · #{v.license_number} ·{" "}
                   {v.matched ? "matched" : v.flagged_reason ? `flagged: ${v.flagged_reason}` : "unreviewed"}
                 </span>
                 {!v.matched && (
@@ -85,7 +85,7 @@ export default async function AdminVerificationsPage() {
       <div className="card">
         <h2>Verified ({verified.length})</h2>
         {verified.map((p: any) => (
-          <p key={p.id}>{p.credential_prefix} {p.full_name} — {p.qualification_level}</p>
+          <p key={p.id}>{p.credential_prefix} {p.full_name}, {p.qualification_level}</p>
         ))}
       </div>
     </div>
