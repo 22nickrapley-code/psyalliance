@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
-import { uploadDocument, deleteDocument, rateDocument } from "./actions";
+import { deleteDocument, rateDocument, createFolder, deleteFolder, moveDocumentToFolder } from "./actions";
+import UploadForm from "./upload-form";
 
 // One hour, not the 60 *seconds* this used to be set to: these signed URLs
 // sit as plain <a href> links on a rendered page, and a user browsing the
@@ -28,13 +29,18 @@ function withAreas(d: any) {
   return { ...d, areas: areas as { id: number; value: string }[] };
 }
 
-function renderAreas(areas: { id: number; value: string }[]) {
-  return areas.length > 0 ? areas.map((a) => a.value).join(", ") : "-";
+// A "General" document is deliberately its own bucket, not a wildcard - it
+// shows up here instead of a dash, but never counts as a match for a
+// specific treatment-area filter (see matchesCommon below).
+function renderAreas(d: { areas: { id: number; value: string }[]; is_general?: boolean }) {
+  if (d.areas.length > 0) return d.areas.map((a) => a.value).join(", ");
+  if (d.is_general) return <span className="tag">General</span>;
+  return "-";
 }
 
 export default async function DocumentsPage(
   props: {
-    searchParams: Promise<{ q?: string; from?: string; area?: string; where?: string }>;
+    searchParams: Promise<{ q?: string; from?: string; area?: string; where?: string; sort?: string; folder?: string; uploaded?: string }>;
   }
 ) {
   const searchParams = await props.searchParams;
@@ -44,7 +50,7 @@ export default async function DocumentsPage(
   } = await supabase.auth.getUser();
   const myself = user!.id;
 
-  const [{ data: personalDocs }, { data: sharedDocs }, { data: treatmentAreas }, { data: ratings }] =
+  const [{ data: personalDocs }, { data: sharedDocs }, { data: treatmentAreas }, { data: ratings }, { data: folders }, { data: me }] =
     await Promise.all([
       supabase
         .from("documents")
@@ -59,7 +65,12 @@ export default async function DocumentsPage(
         .order("created_at", { ascending: false }),
       supabase.from("lookup_values").select("id, value").eq("category", "treatment_specialism").order("value"),
       supabase.from("document_ratings").select("document_id, rating, rated_by"),
+      supabase.from("document_folders").select("id, name").eq("profile_id", myself).order("name"),
+      supabase.from("profiles").select("is_admin").eq("id", myself).maybeSingle(),
     ]);
+
+  const isAdmin = !!me?.is_admin;
+  const myFolders = folders || [];
 
   const ratingsByDoc = new Map<number, { avg: number; count: number; mine: number | null }>();
   for (const r of ratings || []) {
@@ -73,9 +84,32 @@ export default async function DocumentsPage(
   // The two repositories below (My documents / Shared library) always show
   // everything you have access to - they are never filtered by the search
   // box. Only the "Search documents" section at the bottom reacts to it.
-  const personalAll = await withSignedUrls(supabase, (personalDocs || []).map(withAreas));
+  const personalAllUnfiltered = await withSignedUrls(supabase, (personalDocs || []).map(withAreas));
   const sharedAllUnsorted = await withSignedUrls(supabase, (sharedDocs || []).map(withAreas));
+
+  const folderFilter = searchParams?.folder || "all";
+  const personalAll =
+    folderFilter === "all"
+      ? personalAllUnfiltered
+      : folderFilter === "unfiled"
+        ? personalAllUnfiltered.filter((d) => !d.folder_id)
+        : personalAllUnfiltered.filter((d) => String(d.folder_id) === folderFilter);
+  const folderCounts = new Map<string, number>();
+  for (const d of personalAllUnfiltered) {
+    const key = d.folder_id ? String(d.folder_id) : "unfiled";
+    folderCounts.set(key, (folderCounts.get(key) || 0) + 1);
+  }
+
+  const sortBy = searchParams?.sort || "rating";
   const sharedAll = [...sharedAllUnsorted].sort((a, b) => {
+    if (sortBy === "latest") {
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    }
+    if (sortBy === "area") {
+      const aName = a.is_general ? "General" : a.areas[0]?.value || "￿";
+      const bName = b.is_general ? "General" : b.areas[0]?.value || "￿";
+      return aName.localeCompare(bName) || a.title.localeCompare(b.title);
+    }
     const ra = ratingsByDoc.get(a.id)?.avg ?? -1;
     const rb = ratingsByDoc.get(b.id)?.avg ?? -1;
     if (rb !== ra) return rb - ra;
@@ -85,13 +119,15 @@ export default async function DocumentsPage(
   const q = (searchParams?.q || "").trim().toLowerCase();
   const fromFilter = (searchParams?.from || "").trim().toLowerCase();
   const areaFilter = searchParams?.area || "";
-  const areaFilterId = areaFilter ? Number(areaFilter) : null;
+  const areaFilterId = areaFilter && areaFilter !== "general" ? Number(areaFilter) : null;
+  const areaFilterGeneral = areaFilter === "general";
   const whereFilter = searchParams?.where || "all";
-  const hasSearchQuery = !!(q || fromFilter || areaFilterId || (searchParams?.where && searchParams.where !== "all"));
+  const hasSearchQuery = !!(q || fromFilter || areaFilter || (searchParams?.where && searchParams.where !== "all"));
 
   function matchesCommon(d: any) {
     if (q && !d.title.toLowerCase().includes(q)) return false;
     if (areaFilterId && !d.areas.some((a: { id: number }) => a.id === areaFilterId)) return false;
+    if (areaFilterGeneral && !d.is_general) return false;
     return true;
   }
 
@@ -116,71 +152,68 @@ export default async function DocumentsPage(
         colleague, and can be rated so the most useful ones surface.
       </p>
 
-      <div className="card">
-        <h2>Upload</h2>
-        <form action={uploadDocument}>
-          <div className="field-row" style={{ alignItems: "flex-start" }}>
-            <div className="field" style={{ flex: "1 1 260px" }}>
-              <label htmlFor="title">Title</label>
-              <input id="title" name="title" type="text" />
+      {searchParams?.uploaded === "1" && (
+        <div className="message-banner">Document uploaded successfully.</div>
+      )}
 
-              <div style={{ marginTop: "1rem" }}>
-                <label htmlFor="file">File</label>
-                <div
-                  style={{
-                    border: "1px dashed var(--border-strong)",
-                    borderRadius: "var(--radius)",
-                    padding: "1.5rem 1.25rem",
-                    background: "var(--bg-alt)",
-                    textAlign: "center",
-                  }}
-                >
-                  <input
-                    id="file"
-                    name="file"
-                    type="file"
-                    required
-                    accept=".pdf,.png,.jpg,.jpeg,.webp,.doc,.docx,.txt,.csv"
-                    style={{ margin: "0 auto" }}
-                  />
-                  <p className="muted" style={{ marginTop: "0.6rem", marginBottom: 0 }}>
-                    PDF, Word, image, plain text or CSV, up to 15MB.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="field" style={{ maxWidth: 200 }}>
-              <label htmlFor="treatment_area_ids">Treatment areas</label>
-              <select id="treatment_area_ids" name="treatment_area_ids" multiple size={4} style={{ fontSize: "0.85rem" }}>
-                {(treatmentAreas || []).map((t) => (
-                  <option key={t.id} value={t.id}>{t.value}</option>
-                ))}
-              </select>
-              <p className="muted" style={{ marginTop: "0.3rem", marginBottom: 0, fontSize: "0.78rem" }}>
-                Ctrl/Cmd-click for more than one.
-              </p>
-
-              <div style={{ marginTop: "1rem" }}>
-                <label htmlFor="owner_scope">Visibility</label>
-                <select id="owner_scope" name="owner_scope" defaultValue="personal">
-                  <option value="personal">Personal (only me)</option>
-                  <option value="world">Shared library (everyone)</option>
-                </select>
-              </div>
-            </div>
-          </div>
-          <button type="submit" style={{ marginTop: "1rem" }}>Upload</button>
-        </form>
-      </div>
+      <UploadForm treatmentAreas={treatmentAreas || []} folders={myFolders} />
 
       <div className="card">
-        <h2>My personal documents ({personalAll.length})</h2>
+        <h2>My personal documents ({personalAllUnfiltered.length})</h2>
+
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem", alignItems: "center", marginBottom: "1rem" }}>
+          <a
+            href="/dashboard/documents?folder=all"
+            className="tag"
+            style={folderFilter === "all" ? { background: "var(--accent)", color: "#fff" } : undefined}
+          >
+            All ({personalAllUnfiltered.length})
+          </a>
+          <a
+            href="/dashboard/documents?folder=unfiled"
+            className="tag"
+            style={folderFilter === "unfiled" ? { background: "var(--accent)", color: "#fff" } : undefined}
+          >
+            Unfiled ({folderCounts.get("unfiled") || 0})
+          </a>
+          {myFolders.map((f) => (
+            <a
+              key={f.id}
+              href={`/dashboard/documents?folder=${f.id}`}
+              className="tag gold"
+              style={folderFilter === String(f.id) ? { background: "var(--gold)", color: "#fff" } : undefined}
+            >
+              {f.name} ({folderCounts.get(String(f.id)) || 0})
+            </a>
+          ))}
+          <form action={createFolder} style={{ display: "inline-flex", gap: "0.3rem", marginLeft: "0.3rem" }}>
+            <input
+              type="text"
+              name="name"
+              placeholder="New folder name"
+              required
+              style={{ fontSize: "0.78rem", padding: "0.25rem 0.5rem", width: 150 }}
+            />
+            <button type="submit" className="secondary" style={{ fontSize: "0.78rem", padding: "0.25rem 0.6rem" }}>
+              + Folder
+            </button>
+          </form>
+          {folderFilter !== "all" && folderFilter !== "unfiled" && (
+            <form action={deleteFolder} style={{ display: "inline" }}>
+              <input type="hidden" name="id" value={folderFilter} />
+              <button type="submit" className="danger" style={{ fontSize: "0.78rem", padding: "0.25rem 0.6rem" }}>
+                Delete this folder
+              </button>
+            </form>
+          )}
+        </div>
+
         <table>
           <thead>
             <tr>
               <th>Title</th>
               <th>Treatment areas</th>
+              <th>Folder</th>
               <th></th>
             </tr>
           </thead>
@@ -188,7 +221,21 @@ export default async function DocumentsPage(
             {personalAll.map((d) => (
               <tr key={d.id}>
                 <td>{d.title}</td>
-                <td>{renderAreas(d.areas)}</td>
+                <td>{renderAreas(d)}</td>
+                <td>
+                  <form action={moveDocumentToFolder} style={{ display: "inline-flex", gap: "0.3rem" }}>
+                    <input type="hidden" name="document_id" value={d.id} />
+                    <select name="folder_id" defaultValue={d.folder_id || ""} style={{ fontSize: "0.8rem", padding: "0.25rem" }}>
+                      <option value="">Unfiled</option>
+                      {myFolders.map((f) => (
+                        <option key={f.id} value={f.id}>{f.name}</option>
+                      ))}
+                    </select>
+                    <button type="submit" className="secondary" style={{ fontSize: "0.78rem", padding: "0.25rem 0.5rem" }}>
+                      Move
+                    </button>
+                  </form>
+                </td>
                 <td>
                   {d.signedUrl && (
                     <a className="btn secondary" href={d.signedUrl} target="_blank" rel="noreferrer" style={{ marginRight: "0.5rem" }}>
@@ -205,7 +252,11 @@ export default async function DocumentsPage(
             ))}
             {personalAll.length === 0 && (
               <tr>
-                <td colSpan={3} className="muted">No personal documents yet, upload one above.</td>
+                <td colSpan={4} className="muted">
+                  {folderFilter === "all"
+                    ? "No personal documents yet, upload one above."
+                    : "Nothing in this folder yet."}
+                </td>
               </tr>
             )}
           </tbody>
@@ -213,8 +264,28 @@ export default async function DocumentsPage(
       </div>
 
       <div className="card">
-        <h2>Shared global documents ({sharedAll.length})</h2>
-        <p className="muted">Ranked by rating, highest first.</p>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: "0.75rem" }}>
+          <div>
+            <h2>Shared global documents ({sharedAll.length})</h2>
+            <p className="muted">
+              {sortBy === "latest" ? "Sorted by newest first." : sortBy === "area" ? "Sorted by treatment area." : "Ranked by rating, highest first."}
+            </p>
+          </div>
+          <form method="GET" className="field-row" style={{ alignItems: "flex-end", marginBottom: 0 }}>
+            {folderFilter !== "all" && <input type="hidden" name="folder" value={folderFilter} />}
+            <div className="field" style={{ maxWidth: 170, marginBottom: 0 }}>
+              <label htmlFor="sort">Sort by</label>
+              <select id="sort" name="sort" defaultValue={sortBy}>
+                <option value="rating">Rating</option>
+                <option value="latest">Latest</option>
+                <option value="area">Treatment area</option>
+              </select>
+            </div>
+            <div className="field" style={{ flex: "0 0 auto", marginBottom: 0 }}>
+              <button type="submit" className="secondary">Sort</button>
+            </div>
+          </form>
+        </div>
         <table>
           <thead>
             <tr>
@@ -236,10 +307,10 @@ export default async function DocumentsPage(
                       <a href={`/dashboard/people/${d.uploaded_by}`} className="person-link">{d.uploader.full_name}</a>
                     ) : "-"}
                   </td>
-                  <td>{renderAreas(d.areas)}</td>
+                  <td>{renderAreas(d)}</td>
                   <td>
                     {r ? (
-                      <span className="tag gold" title={`${r.count} rating${r.count === 1 ? "" : "s"}`}>
+                      <span className="tag gold" title={`${r.count} rating${r.count === 1 ? "" : "s"}, averaged`}>
                         {"★".repeat(Math.round(r.avg))}{"☆".repeat(5 - Math.round(r.avg))} ({r.count})
                       </span>
                     ) : (
@@ -262,6 +333,15 @@ export default async function DocumentsPage(
                       </select>{" "}
                       <button type="submit" className="secondary">Save</button>
                     </form>
+                    {(d.uploaded_by === myself || isAdmin) && (
+                      <form action={deleteDocument} style={{ display: "inline", marginLeft: "0.4rem" }}>
+                        <input type="hidden" name="id" value={d.id} />
+                        <input type="hidden" name="storage_path" value={d.storage_path} />
+                        <button type="submit" className="danger" title={d.uploaded_by === myself ? "Delete your upload" : "Delete as admin"}>
+                          Delete
+                        </button>
+                      </form>
+                    )}
                   </td>
                 </tr>
               );
@@ -302,6 +382,7 @@ export default async function DocumentsPage(
             <label htmlFor="area">Treatment area</label>
             <select id="area" name="area" defaultValue={areaFilter}>
               <option value="">All</option>
+              <option value="general">General (not area-specific)</option>
               {(treatmentAreas || []).map((t) => (
                 <option key={t.id} value={t.id}>{t.value}</option>
               ))}
@@ -333,7 +414,7 @@ export default async function DocumentsPage(
                       <a href={`/dashboard/people/${d.uploaded_by}`} className="person-link">{d.uploader.full_name}</a>
                     ) : "-"}
                   </td>
-                  <td>{renderAreas(d.areas)}</td>
+                  <td>{renderAreas(d)}</td>
                   <td>
                     {d.signedUrl && (
                       <a className="btn secondary" href={d.signedUrl} target="_blank" rel="noreferrer">
