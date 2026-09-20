@@ -108,7 +108,7 @@ export default function HomePage() {
       </header>
 
       <p className="trust-strip">
-        <strong>Built by a clinician-run team, not an ad platform.</strong>
+        <strong>Built by <a href="#founders">a psychologist</a>, with feedback from her peers</strong> — not by an ad platform.
         <span className="dot">·</span>
         No data sold, no attention monetized, no premium tier.
       </p>
@@ -233,6 +233,50 @@ export default function HomePage() {
           </p>
           <div style={{ textAlign: "center" }}>
             <a href="/auth/sign-up" className="btn">Join the network</a>
+          </div>
+        </div>
+      </section>
+
+      <section className="section-band" id="founders" style={{ borderTop: "none" }}>
+        <div className="section-band-inner">
+          <h2 style={{ fontSize: "1.3rem", textAlign: "center", marginBottom: "1.75rem" }}>
+            Who built this
+          </h2>
+          <div
+            style={{
+              display: "flex",
+              gap: "1.75rem",
+              alignItems: "flex-start",
+              justifyContent: "center",
+              flexWrap: "wrap",
+              maxWidth: 720,
+              margin: "0 auto",
+            }}
+          >
+            <img
+              src="/team/rena-pazienza.jpg"
+              alt="Rena Pazienza, PhD"
+              style={{
+                width: 140,
+                height: 175,
+                objectFit: "cover",
+                borderRadius: "var(--radius)",
+                flexShrink: 0,
+                boxShadow: "var(--shadow-sm)",
+              }}
+            />
+            <div style={{ maxWidth: 480, minWidth: 240 }}>
+              <h3 style={{ marginBottom: "0.4rem" }}>Rena Pazienza, PhD</h3>
+              <p className="muted" style={{ marginTop: 0, fontSize: "0.92rem", lineHeight: 1.6 }}>
+                Rena is a licensed psychologist who built psyalliance.org around a gap she kept
+                running into in her own practice: directories like Psychology Today lump every
+                license type together with no way to find a true specialist, and there was no
+                dedicated way for single-specialist practices like hers to coordinate coverage,
+                referrals, and consultation with each other. She shaped the platform with feedback
+                from her clinical peers before it ever went live. Co-founded with her husband,
+                Nick Rapley.
+              </p>
+            </div>
           </div>
         </div>
       </section>
