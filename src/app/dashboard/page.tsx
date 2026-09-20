@@ -341,113 +341,6 @@ export default async function DashboardHome(
         </div>
       )}
 
-      <div className="card">
-        <div className="widget-header">
-          <h2>Quick referral search</h2>
-        </div>
-        <p className="muted">
-          Enter a client's basics and psyalliance.org will suggest three verified colleagues to
-          connect with. Nothing here is saved, client initials are just a label for your own
-          screen.
-        </p>
-        <form method="GET">
-          <div className="field-row">
-            <div className="field" style={{ maxWidth: 100 }}>
-              <label htmlFor="ref_initials">Client initials</label>
-              <input id="ref_initials" name="ref_initials" type="text" maxLength={4} defaultValue={searchParams.ref_initials || ""} placeholder="J.J." />
-            </div>
-            <div className="field" style={{ maxWidth: 90 }}>
-              <label htmlFor="ref_state">State</label>
-              <input id="ref_state" name="ref_state" type="text" maxLength={2} defaultValue={searchParams.ref_state || ""} placeholder="TX" />
-            </div>
-            <div className="field" style={{ maxWidth: 150 }}>
-              <label htmlFor="ref_session_type">Session type</label>
-              <select id="ref_session_type" name="ref_session_type" defaultValue={searchParams.ref_session_type || ""}>
-                <option value="">Any</option>
-                {(sessionTypeOptions || []).map((s) => (
-                  <option key={s.value} value={s.value}>{s.value}</option>
-                ))}
-              </select>
-            </div>
-            <div className="field">
-              <label htmlFor="ref_insurance">Insurance</label>
-              <select id="ref_insurance" name="ref_insurance" defaultValue={searchParams.ref_insurance || ""}>
-                <option value="">Any</option>
-                {(insuranceOptions || []).map((s) => (
-                  <option key={s.value} value={s.value}>{s.value}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-          <div className="field-row">
-            <div className="field">
-              <label htmlFor="ref_primary">Primary treatment area</label>
-              <select id="ref_primary" name="ref_primary" defaultValue={searchParams.ref_primary || ""}>
-                <option value="">None</option>
-                {(allSpecialisms || []).map((s) => (
-                  <option key={s.id} value={s.value}>{s.value}</option>
-                ))}
-              </select>
-            </div>
-            <div className="field">
-              <label htmlFor="ref_secondary">Secondary</label>
-              <select id="ref_secondary" name="ref_secondary" defaultValue={searchParams.ref_secondary || ""}>
-                <option value="">None</option>
-                {(allSpecialisms || []).map((s) => (
-                  <option key={s.id} value={s.value}>{s.value}</option>
-                ))}
-              </select>
-            </div>
-            <div className="field">
-              <label htmlFor="ref_tertiary">Tertiary</label>
-              <select id="ref_tertiary" name="ref_tertiary" defaultValue={searchParams.ref_tertiary || ""}>
-                <option value="">None</option>
-                {(allSpecialisms || []).map((s) => (
-                  <option key={s.id} value={s.value}>{s.value}</option>
-                ))}
-              </select>
-            </div>
-            <div className="field" style={{ flex: "0 0 auto", alignSelf: "flex-end" }}>
-              <button type="submit">Find matches</button>
-            </div>
-          </div>
-        </form>
-
-        {hasSearchInputs && (
-          <div style={{ marginTop: "1rem" }}>
-            <h3 style={{ fontSize: "0.9rem" }}>
-              Recommended by psyalliance.org{searchParams.ref_initials ? ` for ${searchParams.ref_initials}` : ""}
-            </h3>
-            {quickSearchResults.length > 0 ? (
-              <table>
-                <thead>
-                  <tr>
-                    <th>Name</th>
-                    <th>State</th>
-                    <th>Connection</th>
-                    {searchParams.ref_insurance && <th>Accepts {searchParams.ref_insurance}</th>}
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {quickSearchResults.map((r) => (
-                    <tr key={r.profileId}>
-                      <td><a href={`/dashboard/people/${r.profileId}`} className={`person-link${r.connectionTier !== "none" ? ` tier-${r.connectionTier}` : ""}`}>{r.fullName}</a></td>
-                      <td>{r.state || "-"}</td>
-                      <td>{r.connectionTier !== "none" ? <span className={`tag tier-${r.connectionTier}`}>{r.connectionTier}</span> : <span className="muted">-</span>}</td>
-                      {searchParams.ref_insurance && <td>{r.acceptsInsurance ? "Yes" : "Not listed"}</td>}
-                      <td><a href={`/dashboard/people/${r.profileId}`} className="btn secondary" style={{ padding: "0.15rem 0.5rem", fontSize: "0.8rem" }}>View</a></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            ) : (
-              <p className="muted">Pick at least one treatment area to get suggestions.</p>
-            )}
-          </div>
-        )}
-      </div>
-
       <div className="overview-grid">
         <div className="overview-col">
           <div className="card">
@@ -601,6 +494,113 @@ export default async function DashboardHome(
             {recentDocs.length === 0 && <p className="muted">No documents yet.</p>}
           </div>
         </div>
+      </div>
+
+      <div className="card">
+        <div className="widget-header">
+          <h2>Quick referral search</h2>
+        </div>
+        <p className="muted">
+          Enter a client's basics and psyalliance.org will suggest three verified colleagues to
+          connect with. Nothing here is saved, client initials are just a label for your own
+          screen.
+        </p>
+        <form method="GET">
+          <div className="field-row">
+            <div className="field" style={{ maxWidth: 100 }}>
+              <label htmlFor="ref_initials">Client initials</label>
+              <input id="ref_initials" name="ref_initials" type="text" maxLength={4} defaultValue={searchParams.ref_initials || ""} placeholder="J.J." />
+            </div>
+            <div className="field" style={{ maxWidth: 90 }}>
+              <label htmlFor="ref_state">State</label>
+              <input id="ref_state" name="ref_state" type="text" maxLength={2} defaultValue={searchParams.ref_state || ""} placeholder="TX" />
+            </div>
+            <div className="field" style={{ maxWidth: 150 }}>
+              <label htmlFor="ref_session_type">Session type</label>
+              <select id="ref_session_type" name="ref_session_type" defaultValue={searchParams.ref_session_type || ""}>
+                <option value="">Any</option>
+                {(sessionTypeOptions || []).map((s) => (
+                  <option key={s.value} value={s.value}>{s.value}</option>
+                ))}
+              </select>
+            </div>
+            <div className="field">
+              <label htmlFor="ref_insurance">Insurance</label>
+              <select id="ref_insurance" name="ref_insurance" defaultValue={searchParams.ref_insurance || ""}>
+                <option value="">Any</option>
+                {(insuranceOptions || []).map((s) => (
+                  <option key={s.value} value={s.value}>{s.value}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <div className="field-row">
+            <div className="field">
+              <label htmlFor="ref_primary">Primary treatment area</label>
+              <select id="ref_primary" name="ref_primary" defaultValue={searchParams.ref_primary || ""}>
+                <option value="">None</option>
+                {(allSpecialisms || []).map((s) => (
+                  <option key={s.id} value={s.value}>{s.value}</option>
+                ))}
+              </select>
+            </div>
+            <div className="field">
+              <label htmlFor="ref_secondary">Secondary</label>
+              <select id="ref_secondary" name="ref_secondary" defaultValue={searchParams.ref_secondary || ""}>
+                <option value="">None</option>
+                {(allSpecialisms || []).map((s) => (
+                  <option key={s.id} value={s.value}>{s.value}</option>
+                ))}
+              </select>
+            </div>
+            <div className="field">
+              <label htmlFor="ref_tertiary">Tertiary</label>
+              <select id="ref_tertiary" name="ref_tertiary" defaultValue={searchParams.ref_tertiary || ""}>
+                <option value="">None</option>
+                {(allSpecialisms || []).map((s) => (
+                  <option key={s.id} value={s.value}>{s.value}</option>
+                ))}
+              </select>
+            </div>
+            <div className="field" style={{ flex: "0 0 auto", alignSelf: "flex-end" }}>
+              <button type="submit">Find matches</button>
+            </div>
+          </div>
+        </form>
+
+        {hasSearchInputs && (
+          <div style={{ marginTop: "1rem" }}>
+            <h3 style={{ fontSize: "0.9rem" }}>
+              Recommended by psyalliance.org{searchParams.ref_initials ? ` for ${searchParams.ref_initials}` : ""}
+            </h3>
+            {quickSearchResults.length > 0 ? (
+              <table>
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>State</th>
+                    <th>Connection</th>
+                    {searchParams.ref_insurance && <th>Accepts {searchParams.ref_insurance}</th>}
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {quickSearchResults.map((r) => (
+                    <tr key={r.profileId}>
+                      <td><a href={`/dashboard/people/${r.profileId}`} className={`person-link${r.connectionTier !== "none" ? ` tier-${r.connectionTier}` : ""}`}>{r.fullName}</a></td>
+                      <td>{r.state || "-"}</td>
+                      <td>{r.connectionTier !== "none" ? <span className={`tag tier-${r.connectionTier}`}>{r.connectionTier}</span> : <span className="muted">-</span>}</td>
+                      {searchParams.ref_insurance && <td>{r.acceptsInsurance ? "Yes" : "Not listed"}</td>}
+                      <td><a href={`/dashboard/people/${r.profileId}`} className="btn secondary" style={{ padding: "0.15rem 0.5rem", fontSize: "0.8rem" }}>View</a></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <p className="muted">Pick at least one treatment area to get suggestions.</p>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
