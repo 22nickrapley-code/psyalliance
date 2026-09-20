@@ -10,7 +10,7 @@ export default async function AdminVerificationsPage() {
 
   const { data: profiles } = await supabase
     .from("profiles")
-    .select("*, credential_verifications(*)")
+    .select("*, credential_verifications!credential_verifications_profile_id_fkey(*)")
     .neq("verification_status", "rejected")
     .order("created_at", { ascending: true });
 
