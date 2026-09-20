@@ -11,6 +11,7 @@ import {
   checkNpiRegistry,
   saveCaqhInfo,
 } from "./actions";
+import UsStateDatalist from "@/components/us-state-datalist";
 
 // CAQH ProView requires re-attestation at least every 120 days (its own
 // "120-day rule") or the profile goes inactive - the same expiry-reminder
@@ -118,7 +119,8 @@ export default async function CredentialsPage(props: { searchParams: Promise<{ s
         <form action={addLicense} className="field-row" style={{ alignItems: "flex-end", flexWrap: "wrap" }}>
           <div className="field" style={{ maxWidth: 90 }}>
             <label htmlFor="state">State</label>
-            <input id="state" name="state" type="text" maxLength={2} placeholder="TX" required />
+            <input id="state" name="state" type="text" maxLength={24} placeholder="TX or Texas" list="us-states" autoComplete="off" required />
+            <UsStateDatalist />
           </div>
           <div className="field">
             <label htmlFor="license_number">License number</label>

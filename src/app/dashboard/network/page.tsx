@@ -4,6 +4,7 @@ import { startConversation } from "../messages/actions";
 import { resolveAvatarUrls } from "@/lib/avatars";
 import Avatar from "../avatar";
 import { professionFor, professionLabel, type Profession } from "@/lib/profession";
+import UsStateDatalist from "@/components/us-state-datalist";
 
 type DirectoryPerson = {
   id: string;
@@ -360,7 +361,8 @@ export default async function NetworkPage(
           </div>
           <div className="field" style={{ maxWidth: 100 }}>
             <label htmlFor="state">State</label>
-            <input id="state" name="state" type="text" maxLength={2} defaultValue={searchParams?.state || ""} placeholder="TX" />
+            <input id="state" name="state" type="text" maxLength={24} defaultValue={searchParams?.state || ""} placeholder="TX or Texas" list="us-states" autoComplete="off" />
+            <UsStateDatalist />
           </div>
           <div className="field">
             <label htmlFor="specialism">Specialism</label>

@@ -180,3 +180,44 @@ export async function sendMessage(formData: FormData) {
   revalidatePath(`/dashboard/messages/${conversationId}`);
   revalidatePath("/dashboard/messages");
 }
+
+// Deliberately not a NULL/boolean flag on conversation_participants - reuses
+// the same last_read_at column the whole unread computation already runs
+// off of everywhere else (list preview, Overview widget, sidebar count,
+// thread view). "Unread" is a sentinel far enough in the past that it reads
+// as older than any real last_message_at; "read" is just now(). Lets a
+// member manually flip a thread back to unread after opening it - familiar
+// from any email client - without a schema change or touching every other
+// unread check in the app.
+const FORCE_UNREAD_SENTINEL = "1970-01-01T00:00:00.000Z";
+
+export async function setConversationReadState(formData: FormData) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not signed in");
+
+  const conversationId = Number(formData.get("conversation_id"));
+  const state = String(formData.get("state") || "");
+  if (state !== "read" && state !== "unread") throw new Error("Invalid state");
+
+  const { error } = await supabase
+    .from("conversation_participants")
+    .update({ last_read_at: state === "unread" ? FORCE_UNREAD_SENTINEL : new Date().toISOString() })
+    .eq("conversation_id", conversationId)
+    .eq("profile_id", user.id);
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/dashboard/messages");
+  revalidatePath("/dashboard");
+  revalidatePath(`/dashboard/messages/${conversationId}`);
+
+  // Only the thread view passes this - marking a thread unread while sitting
+  // inside it would just get silently overwritten back to read by that
+  // page's own mark-read-on-open effect, so it sends the user back to the
+  // inbox instead, exactly like clicking "mark unread" in Gmail bounces you
+  // out of the thread.
+  const redirectTo = String(formData.get("redirect_to") || "");
+  if (redirectTo) redirect(redirectTo);
+}

@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
-import { startConversation } from "./actions";
+import { startConversation, setConversationReadState } from "./actions";
 import { professionFor } from "@/lib/profession";
+import UsStateDatalist from "@/components/us-state-datalist";
 
 type Tier = "partner" | "bench" | "recommended" | "none";
 
@@ -29,7 +30,7 @@ const TIER_SORT_ORDER: Record<Tier, number> = { partner: 0, bench: 1, recommende
 
 export default async function MessagesPage(
   props: {
-    searchParams: Promise<{ q?: string; degree?: string; state?: string; specialism?: string; profession?: string; sort?: string }>;
+    searchParams: Promise<{ q?: string; degree?: string; state?: string; specialism?: string; profession?: string; sort?: string; box?: string }>;
   }
 ) {
   const searchParams = await props.searchParams;
@@ -71,7 +72,7 @@ export default async function MessagesPage(
     conversationIds.length
       ? supabase
           .from("conversations")
-          .select("id, title, last_message_at")
+          .select("id, title, last_message_at, created_by")
           .in("id", conversationIds)
           .order("last_message_at", { ascending: false })
       : Promise.resolve({ data: [] as any[] }),
@@ -176,6 +177,14 @@ export default async function MessagesPage(
   const professionFilter = searchParams?.profession || "";
   const sortBy = searchParams?.sort || "alpha";
 
+  // Inbox/Sent toggle, same shape as any email client: Sent is threads you
+  // started, Inbox is everything else you're a participant in. Default view
+  // is Inbox, matching what people expect to land on first.
+  const box = searchParams?.box === "sent" ? "sent" : "inbox";
+  const inboxConversations = (conversations || []).filter((c: any) => c.created_by !== myself);
+  const sentConversations = (conversations || []).filter((c: any) => c.created_by === myself);
+  const boxConversations = box === "sent" ? sentConversations : inboxConversations;
+
   const filteredContacts = Array.from(contacts.values())
     .filter((c) => !q || c.full_name.toLowerCase().includes(q))
     .filter((c) => degreeFilter === "all" || degreeOf(c) === degreeFilter)
@@ -203,6 +212,91 @@ export default async function MessagesPage(
         Private, threaded conversations with your verified colleagues, separate from Town Hall's
         open specialism channels.
       </p>
+
+      <div className="card">
+        <div className="widget-header">
+          <h2>Your conversations</h2>
+          <div style={{ display: "flex", gap: "0.4rem" }}>
+            <a
+              href="/dashboard/messages?box=inbox"
+              className={`btn ${box === "inbox" ? "" : "secondary"}`}
+              style={{ padding: "0.35rem 0.75rem", fontSize: "0.85rem" }}
+            >
+              Inbox ({inboxConversations.length})
+            </a>
+            <a
+              href="/dashboard/messages?box=sent"
+              className={`btn ${box === "sent" ? "" : "secondary"}`}
+              style={{ padding: "0.35rem 0.75rem", fontSize: "0.85rem" }}
+            >
+              Sent ({sentConversations.length})
+            </a>
+          </div>
+        </div>
+        {boxConversations.map((c: any) => {
+          const others = otherParticipantsByConversation.get(c.id) || [];
+          const label = c.title || others.map((o) => o.name).join(", ") || "Conversation";
+          const latest = latestMessageByConversation.get(c.id);
+          const lastRead = lastReadByConversation.get(c.id);
+          const unread = !!latest && (!lastRead || new Date(latest.created_at) > new Date(lastRead));
+          const needsReply = unread && latest.author_id !== myself;
+          return (
+            <div key={c.id} style={{ display: "flex", alignItems: "stretch", gap: "0.5rem", marginBottom: "0.3rem" }}>
+              <a
+                href={`/dashboard/messages/${c.id}`}
+                style={{
+                  flex: 1,
+                  minWidth: 0,
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  padding: "0.75rem 0.85rem",
+                  borderRadius: "var(--radius)",
+                  borderLeft: needsReply ? "3px solid var(--tier-recommended)" : "3px solid transparent",
+                  background: needsReply ? "var(--tier-recommended-soft)" : "transparent",
+                  textDecoration: "none",
+                  color: "inherit",
+                }}
+              >
+                <span style={{ minWidth: 0 }}>
+                  <strong style={{ color: "var(--text)" }}>{label}</strong>
+                  {needsReply && (
+                    <span className="tag tier-recommended" style={{ marginLeft: "0.5rem" }}>Needs your reply</span>
+                  )}
+                  {unread && !needsReply && (
+                    <span className="tag" style={{ marginLeft: "0.5rem" }}>Unread</span>
+                  )}
+                  <br />
+                  <span className="muted" style={{ fontWeight: unread ? 600 : 400 }}>
+                    {latest ? (latest.body as string).slice(0, 90) : "No messages yet"}
+                  </span>
+                </span>
+                <span className="muted" style={{ whiteSpace: "nowrap", marginLeft: "1rem" }}>
+                  {c.last_message_at ? new Date(c.last_message_at).toLocaleDateString() : ""}
+                </span>
+              </a>
+              {latest && (
+                <form action={setConversationReadState} style={{ display: "flex", alignItems: "center" }}>
+                  <input type="hidden" name="conversation_id" value={c.id} />
+                  <input type="hidden" name="state" value={unread ? "read" : "unread"} />
+                  <button
+                    type="submit"
+                    className="btn secondary"
+                    style={{ whiteSpace: "nowrap", fontSize: "0.78rem", padding: "0.4rem 0.65rem" }}
+                  >
+                    {unread ? "Mark read" : "Mark unread"}
+                  </button>
+                </form>
+              )}
+            </div>
+          );
+        })}
+        {boxConversations.length === 0 && (
+          <p className="muted">
+            {box === "sent" ? "You haven't started any conversations yet." : "Nothing in your inbox yet."}
+          </p>
+        )}
+      </div>
 
       {partnerIds.length > 0 && (
         <div className="card">
@@ -239,7 +333,7 @@ export default async function MessagesPage(
       )}
 
       <div className="card">
-        <h2>Start new conversation</h2>
+        <h2>Send a New Message</h2>
         <form method="GET" className="field-row" style={{ alignItems: "flex-end", flexWrap: "wrap", marginBottom: "1rem" }}>
           <div className="field">
             <label htmlFor="q">Search colleagues</label>
@@ -247,7 +341,8 @@ export default async function MessagesPage(
           </div>
           <div className="field" style={{ maxWidth: 100 }}>
             <label htmlFor="state">State</label>
-            <input id="state" name="state" type="text" maxLength={2} defaultValue={searchParams?.state || ""} placeholder="TX" />
+            <input id="state" name="state" type="text" maxLength={24} defaultValue={searchParams?.state || ""} placeholder="TX or Texas" list="us-states" autoComplete="off" />
+            <UsStateDatalist />
           </div>
           <div className="field">
             <label htmlFor="specialism">Specialism</label>
@@ -325,7 +420,7 @@ export default async function MessagesPage(
             <label htmlFor="body">Message</label>
             <textarea id="body" name="body" rows={3} placeholder="Does anyone know a good psychiatrist in Austin I can refer a client to?" />
           </div>
-          <button type="submit">Start conversation</button>
+          <button type="submit">Send message</button>
         </form>
         {/* Plain DOM toggle for "select all" - this is a server component page,
             so a tiny inline script (rather than client-side React state) is
@@ -348,52 +443,6 @@ export default async function MessagesPage(
             `,
           }}
         />
-      </div>
-
-      <div className="card">
-        <h2>Your conversations</h2>
-        {(conversations || []).map((c) => {
-          const others = otherParticipantsByConversation.get(c.id) || [];
-          const label = c.title || others.map((o) => o.name).join(", ") || "Conversation";
-          const latest = latestMessageByConversation.get(c.id);
-          const lastRead = lastReadByConversation.get(c.id);
-          const needsAttention = !!latest && latest.author_id !== myself && (!lastRead || new Date(latest.created_at) > new Date(lastRead));
-          return (
-            <a
-              key={c.id}
-              href={`/dashboard/messages/${c.id}`}
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                padding: "0.75rem 0.85rem",
-                marginBottom: "0.3rem",
-                borderRadius: "var(--radius)",
-                borderLeft: needsAttention ? "3px solid var(--tier-recommended)" : "3px solid transparent",
-                background: needsAttention ? "var(--tier-recommended-soft)" : "transparent",
-                textDecoration: "none",
-                color: "inherit",
-              }}
-            >
-              <span>
-                <strong style={{ color: "var(--text)" }}>{label}</strong>
-                {needsAttention && (
-                  <span className="tag tier-recommended" style={{ marginLeft: "0.5rem" }}>Needs your reply</span>
-                )}
-                <br />
-                <span className="muted" style={{ fontWeight: needsAttention ? 600 : 400 }}>
-                  {latest ? (latest.body as string).slice(0, 90) : "No messages yet"}
-                </span>
-              </span>
-              <span className="muted" style={{ whiteSpace: "nowrap", marginLeft: "1rem" }}>
-                {c.last_message_at ? new Date(c.last_message_at).toLocaleDateString() : ""}
-              </span>
-            </a>
-          );
-        })}
-        {(conversations || []).length === 0 && (
-          <p className="muted">No conversations yet, start one above.</p>
-        )}
       </div>
     </div>
   );

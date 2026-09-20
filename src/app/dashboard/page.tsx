@@ -2,12 +2,13 @@ import { createClient } from "@/lib/supabase/server";
 import { computeRankedCandidates } from "@/lib/server-matching";
 import { setProfileFlag } from "./actions";
 import { professionFor, professionLabel } from "@/lib/profession";
+import UsStateDatalist from "@/components/us-state-datalist";
 
 const PIE_COLORS = ["#1f4d3f", "#b08d57", "#6b4c6b", "#2456a6", "#a3372c", "#4a4842", "#7a3fa0"];
 
-function ToggleButton({ flag, value, label }: { flag: string; value: boolean; label: string }) {
+function ToggleButton({ flag, value, label, compact }: { flag: string; value: boolean; label: string; compact?: boolean }) {
   return (
-    <div className="toggle-row">
+    <div className={compact ? "ov-toggle-row" : "toggle-row"}>
       <span>{label}</span>
       <form action={setProfileFlag} style={{ display: "inline" }}>
         <input type="hidden" name="flag" value={flag} />
@@ -34,6 +35,7 @@ export default async function DashboardHome(
       ref_primary?: string;
       ref_secondary?: string;
       ref_tertiary?: string;
+      box?: string;
     }>;
   }
 ) {
@@ -85,7 +87,7 @@ export default async function DashboardHome(
     supabase.from("planner_offers").select("id", { count: "exact", head: true }).eq("candidate_profile_id", myself).eq("status", "offered"),
     supabase
       .from("conversation_participants")
-      .select("conversation_id, last_read_at, conversation:conversation_id(id, title, last_message_at)")
+      .select("conversation_id, last_read_at, conversation:conversation_id(id, title, last_message_at, created_by)")
       .eq("profile_id", myself),
     supabase
       .from("connections")
@@ -163,8 +165,12 @@ export default async function DashboardHome(
   const townHallGrouped = (townHallRecent || []).slice(0, 5);
 
   // ---------- Messages preview ----------
-  const sortedConversationRows = [...(myConversationRows || [])]
-    .filter((r: any) => r.conversation)
+  // Same Inbox/Sent split as the full Messages page, so the quick-glance
+  // widget here behaves the same way: Sent = threads I started.
+  const messagesBox = searchParams.box === "sent" ? "sent" : "inbox";
+  const inboxRows = (myConversationRows || []).filter((r: any) => r.conversation && r.conversation.created_by !== myself);
+  const sentRows = (myConversationRows || []).filter((r: any) => r.conversation && r.conversation.created_by === myself);
+  const sortedConversationRows = [...(messagesBox === "sent" ? sentRows : inboxRows)]
     .sort((a: any, b: any) => new Date(b.conversation.last_message_at).getTime() - new Date(a.conversation.last_message_at).getTime())
     .slice(0, 4);
   const previewConversationIds = sortedConversationRows.map((r: any) => r.conversation.id);
@@ -275,9 +281,38 @@ export default async function DashboardHome(
     }));
   }
 
+  const displayName = profile?.full_name || "";
+  const initials = displayName.split(/\s+/).filter(Boolean).slice(0, 2).map((p: string) => p[0]?.toUpperCase()).join("") || "?";
+
   return (
-    <div>
-      <h1>Overview</h1>
+    <div className="overview-page">
+      <div className="overview-topline">
+        <div>
+          <h1>Overview</h1>
+          <p className="sub">
+            {profile?.credential_prefix ? `${profile.credential_prefix} ` : ""}{displayName || "Welcome"}
+            {profile?.qualification_level ? ` · ${profile.qualification_level}` : ""} — here's where things stand.
+          </p>
+        </div>
+        <div className="overview-stat-strip">
+          <a href="/dashboard/caseload" className="overview-stat-pill">
+            <span className="value">{caseCount ?? 0}</span>
+            <span className="label">Active clients</span>
+          </a>
+          <a href="/dashboard/messages" className="overview-stat-pill">
+            <span className="value">{unreadMessageCount}</span>
+            <span className="label">Unread</span>
+          </a>
+          <a href="/dashboard/network" className="overview-stat-pill">
+            <span className="value">{pendingConnectionCount ?? 0}</span>
+            <span className="label">Requests</span>
+          </a>
+          <a href="/dashboard/documents" className="overview-stat-pill">
+            <span className="value">{docCount ?? 0}</span>
+            <span className="label">Documents</span>
+          </a>
+        </div>
+      </div>
 
       {!profile && (
         <div className="error-banner">
@@ -288,124 +323,105 @@ export default async function DashboardHome(
       )}
 
       {hasAttentionItems && (
-        <div className="card">
-          <h2>Needs your attention</h2>
+        <div className="overview-alert-bar">
+          <strong>Needs your attention:</strong>
           {unreadMessageCount > 0 && (
-            <p>
-              <a href="/dashboard/messages">
-                {unreadMessageCount} unread conversation{unreadMessageCount === 1 ? "" : "s"}
-              </a>{" "}
-              in your messages.
-            </p>
+            <span>
+              <a href="/dashboard/messages">{unreadMessageCount} unread conversation{unreadMessageCount === 1 ? "" : "s"}</a>
+            </span>
           )}
           {(pendingConnectionCount ?? 0) > 0 && (
-            <p>
-              <a href="/dashboard/network">
-                {pendingConnectionCount} pending connection request{pendingConnectionCount === 1 ? "" : "s"}
-              </a>{" "}
-              waiting on your response.
-            </p>
+            <span>
+              <a href="/dashboard/network">{pendingConnectionCount} pending connection{pendingConnectionCount === 1 ? "" : "s"}</a>
+            </span>
           )}
           {offersAwaitingDecision > 0 && (
-            <p>
-              <a href="/dashboard/referrals">
-                {offersAwaitingDecision} colleague offer{offersAwaitingDecision === 1 ? "" : "s"}
-              </a>{" "}
-              on your open referral request{offersAwaitingDecision === 1 ? "" : "s"}, awaiting your decision.
-            </p>
+            <span>
+              <a href="/dashboard/referrals">{offersAwaitingDecision} referral offer{offersAwaitingDecision === 1 ? "" : "s"}</a>
+            </span>
           )}
           {(plannerOfferCount ?? 0) > 0 && (
-            <p>
-              <a href="/dashboard/planner">
-                {plannerOfferCount} coverage request{plannerOfferCount === 1 ? "" : "s"}
-              </a>{" "}
-              from a colleague going on leave, awaiting your response.
-            </p>
+            <span>
+              <a href="/dashboard/planner">{plannerOfferCount} coverage request{plannerOfferCount === 1 ? "" : "s"}</a>
+            </span>
           )}
           {expiringLicenseCount > 0 && (
-            <p>
-              <a href="/dashboard/credentials">
-                {expiringLicenseCount} license{expiringLicenseCount === 1 ? "" : "s"}
-              </a>{" "}
-              expiring within 60 days.
-            </p>
+            <span>
+              <a href="/dashboard/credentials">{expiringLicenseCount} license{expiringLicenseCount === 1 ? "" : "s"} expiring</a>
+            </span>
           )}
           {expiringPanelCount > 0 && (
-            <p>
-              <a href="/dashboard/credentials">
-                {expiringPanelCount} insurance panel{expiringPanelCount === 1 ? "" : "s"}
-              </a>{" "}
-              up for renewal within 60 days.
-            </p>
+            <span>
+              <a href="/dashboard/credentials">{expiringPanelCount} panel{expiringPanelCount === 1 ? "" : "s"} renewing</a>
+            </span>
           )}
         </div>
       )}
 
-      <div className="overview-grid">
-        <div className="overview-col">
-          <div className="card">
+      <div className="overview-bento">
+        {/* ---------- Left rail: identity ---------- */}
+        <div className="overview-col-left">
+          <div className="ov-card">
             <div className="widget-header">
               <h2>My profile</h2>
               <GoLink href="/dashboard/profile" />
             </div>
-            <p style={{ fontWeight: 600, marginTop: 0 }}>
-              {profile?.credential_prefix ? `${profile.credential_prefix} ` : ""}{profile?.full_name || "Your name"}
-              {profile?.qualification_level && (
-                <span className="muted" style={{ fontWeight: 400 }}> · {profile.qualification_level}</span>
-              )}
-            </p>
+            <div className="ov-profile-head">
+              <div className="ov-avatar">{initials}</div>
+              <div>
+                <div className="name">
+                  {profile?.credential_prefix ? `${profile.credential_prefix} ` : ""}{displayName || "Your name"}
+                </div>
+                {profile?.qualification_level && <div className="degree">{profile.qualification_level}</div>}
+              </div>
+            </div>
             {profile && (
               <>
-                <ToggleButton flag="accepting_referrals" value={!!profile.accepting_referrals} label="Incoming referrals" />
-                <ToggleButton flag="open_to_receive_supervision" value={!!profile.open_to_receive_supervision} label="Receiving supervision" />
-                <ToggleButton flag="open_to_give_supervision" value={!!profile.open_to_give_supervision} label="Giving supervision" />
-                <ToggleButton flag="open_to_group_consultation" value={!!profile.open_to_group_consultation} label="Group consultation" />
+                <ToggleButton compact flag="accepting_referrals" value={!!profile.accepting_referrals} label="Incoming referrals" />
+                <ToggleButton compact flag="open_to_receive_supervision" value={!!profile.open_to_receive_supervision} label="Receiving supervision" />
+                <ToggleButton compact flag="open_to_give_supervision" value={!!profile.open_to_give_supervision} label="Giving supervision" />
+                <ToggleButton compact flag="open_to_group_consultation" value={!!profile.open_to_group_consultation} label="Group consultation" />
               </>
             )}
           </div>
 
-          <div className="card">
+          <div className="ov-card">
             <div className="widget-header">
               <h2>My world</h2>
               <GoLink href="/dashboard/network" />
             </div>
-            <p style={{ margin: "0 0 0.3rem" }}>
-              <span className="tag tier-partner">Partners</span> {partners.length}
-            </p>
-            <p className="muted" style={{ marginTop: 0, fontSize: "0.82rem" }}>{partners.slice(0, 4).join(", ") || "None yet"}</p>
-            <p style={{ margin: "0.5rem 0 0.3rem" }}>
-              <span className="tag tier-bench">Bench</span> {bench.length}
-            </p>
-            <p className="muted" style={{ marginTop: 0, fontSize: "0.82rem" }}>{bench.slice(0, 4).join(", ") || "None yet"}</p>
-            <p style={{ margin: "0.5rem 0 0.3rem" }}>
-              <span className="tag tier-recommended">Recommended</span> {recommendedNames.size}
-            </p>
-            <p className="muted" style={{ marginTop: 0, fontSize: "0.82rem" }}>
+            <div className="ov-tier-line">
+              <span className="tag tier-partner">Partners</span>
+              <strong>{partners.length}</strong>
+            </div>
+            <p className="ov-tier-names">{partners.slice(0, 4).join(", ") || "None yet"}</p>
+            <div className="ov-tier-line">
+              <span className="tag tier-bench">Bench</span>
+              <strong>{bench.length}</strong>
+            </div>
+            <p className="ov-tier-names">{bench.slice(0, 4).join(", ") || "None yet"}</p>
+            <div className="ov-tier-line">
+              <span className="tag tier-recommended">Recommended</span>
+              <strong>{recommendedNames.size}</strong>
+            </div>
+            <p className="ov-tier-names" style={{ marginBottom: 0 }}>
               {Array.from(recommendedNames.values()).slice(0, 4).join(", ") || "None yet"}
             </p>
           </div>
         </div>
 
-        <div className="overview-col">
-          <div className="card">
-            <div className="widget-header">
-              <h2>Recent Town Hall conversations</h2>
-              <GoLink href="/dashboard/town-hall" />
-            </div>
-            {townHallGrouped.map((m: any) => (
-              <a key={m.id} href={`/dashboard/town-hall/${m.channel_id}`} className="preview-row">
-                <span className="title">{m.author?.full_name || "Colleague"} in {m.channel?.name || "Town Hall"}</span>
-                <br />
-                <span className="snippet">{m.body}</span>
-              </a>
-            ))}
-            {townHallGrouped.length === 0 && <p className="muted">No conversations yet.</p>}
-          </div>
-
-          <div className="card">
+        {/* ---------- Center: activity feed ---------- */}
+        <div className="overview-col-center">
+          <div className="ov-card">
             <div className="widget-header">
               <h2>My messages</h2>
-              <GoLink href="/dashboard/messages" />
+              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                <div className="ov-box-toggle">
+                  <a href="/dashboard?box=inbox" className={messagesBox === "inbox" ? "active" : ""}>Inbox ({inboxRows.length})</a>
+                  <a href="/dashboard?box=sent" className={messagesBox === "sent" ? "active" : ""}>Sent ({sentRows.length})</a>
+                </div>
+                <GoLink href="/dashboard/messages" />
+              </div>
             </div>
             {sortedConversationRows.map((r: any) => {
               const conv = r.conversation;
@@ -414,193 +430,191 @@ export default async function DashboardHome(
               const latest = latestByConversation.get(conv.id);
               const unread = latest && (!r.last_read_at || new Date(latest.created_at) > new Date(r.last_read_at));
               return (
-                <a key={conv.id} href={`/dashboard/messages/${conv.id}`} className="preview-row">
+                <a key={conv.id} href={`/dashboard/messages/${conv.id}`} className="ov-feed-row">
                   <span className="title">
                     {label}
                     {unread && <span className="tag tier-recommended" style={{ marginLeft: "0.4rem" }}>Unread</span>}
                   </span>
-                  <br />
                   <span className="snippet">{latest ? latest.body : "No messages yet"}</span>
                 </a>
               );
             })}
-            {sortedConversationRows.length === 0 && <p className="muted">No conversations yet.</p>}
+            {sortedConversationRows.length === 0 && (
+              <p className="muted">{messagesBox === "sent" ? "You haven't started any conversations yet." : "Nothing in your inbox yet."}</p>
+            )}
+          </div>
+
+          <div className="ov-card">
+            <div className="widget-header">
+              <h2>Recent Town Hall conversations</h2>
+              <GoLink href="/dashboard/town-hall" />
+            </div>
+            {townHallGrouped.map((m: any) => (
+              <a key={m.id} href={`/dashboard/town-hall/${m.channel_id}`} className="ov-feed-row">
+                <span className="title">{m.author?.full_name || "Colleague"} in {m.channel?.name || "Town Hall"}</span>
+                <span className="snippet">{m.body}</span>
+              </a>
+            ))}
+            {townHallGrouped.length === 0 && <p className="muted">No conversations yet.</p>}
           </div>
         </div>
 
-        <div className="overview-col">
-          <div className="card">
+        {/* ---------- Right rail: numbers + quick actions ---------- */}
+        <div className="overview-col-right">
+          <div className="ov-card">
             <div className="widget-header">
-              <h2>My caseload distribution</h2>
+              <h2>My caseload</h2>
               <GoLink href="/dashboard/caseload" />
             </div>
             {totalCases > 0 ? (
               <>
-                <div className="pie-chart" style={{ background: pieGradient }} />
-                <div className="pie-legend">
-                  {pieSlices.map((s) => (
-                    <span key={s.need}>
-                      <span className="pie-legend-swatch" style={{ background: s.color }} />
-                      {s.need} ({Math.round(s.pct)}%)
-                    </span>
-                  ))}
-                </div>
-                <div className="mini-stat-row">
-                  <div className="mini-stat">
-                    <div className="value">{totalCases}</div>
-                    <div className="label">Total active</div>
+                <div className="ov-pie-row">
+                  <div className="ov-mini-pie" style={{ background: pieGradient }} />
+                  <div className="ov-pie-legend">
+                    {pieSlices.slice(0, 4).map((s) => (
+                      <span key={s.need}>
+                        <span className="pie-legend-swatch" style={{ background: s.color }} />
+                        {s.need} ({Math.round(s.pct)}%)
+                      </span>
+                    ))}
                   </div>
-                  <div className="mini-stat">
+                </div>
+                <div className="ov-mini-stats">
+                  <div className="ov-mini-stat">
+                    <div className="value">{totalCases}</div>
+                    <div className="label">Active</div>
+                  </div>
+                  <div className="ov-mini-stat">
                     <div className="value">{stateCounts.size}</div>
                     <div className="label">States</div>
                   </div>
-                  <div className="mini-stat">
+                  <div className="ov-mini-stat">
                     <div className="value">{needEntries.length}</div>
-                    <div className="label">Treatment areas</div>
+                    <div className="label">Needs</div>
                   </div>
                 </div>
                 {caseloadMatches.length > 0 && (
-                  <div style={{ marginTop: "1rem" }}>
-                    <h3 style={{ fontSize: "0.85rem", marginBottom: "0.4rem" }}>
-                      Matched to your caseload ({topNeed})
-                    </h3>
-                    {caseloadMatches.map((m) => (
-                      <p key={m.profileId} style={{ margin: "0.15rem 0" }}>
-                        <a href={`/dashboard/people/${m.profileId}`} className={`person-link${m.connectionTier !== "none" ? ` tier-${m.connectionTier}` : ""}`}>
+                  <div style={{ marginTop: "0.75rem" }}>
+                    <h3 style={{ fontSize: "0.78rem", marginBottom: "0.3rem" }}>Matched for {topNeed}</h3>
+                    <div className="ov-chip-list">
+                      {caseloadMatches.slice(0, 4).map((m) => (
+                        <a key={m.profileId} href={`/dashboard/people/${m.profileId}`} className={`chip${m.connectionTier !== "none" ? " chip-match" : ""}`}>
                           {m.fullName}
                         </a>
-                      </p>
-                    ))}
+                      ))}
+                    </div>
                   </div>
                 )}
               </>
             ) : (
-              <p className="muted">Add active cases on the Caseload page to see your distribution here.</p>
+              <p className="muted">Add active clients on the Caseload page to see your distribution here.</p>
             )}
           </div>
 
-          <div className="card">
+          <div className="ov-card">
             <div className="widget-header">
               <h2>Recent documents</h2>
               <GoLink href="/dashboard/documents" />
             </div>
             {recentDocs.map((d: any) => (
-              <a key={`${d.scope}-${d.id}`} href="/dashboard/documents" className="preview-row">
+              <a key={`${d.scope}-${d.id}`} href="/dashboard/documents" className="ov-feed-row">
                 <span className="title">{d.title}</span>
-                <br />
                 <span className="snippet">{d.scope}{d.uploaderName ? ` · ${d.uploaderName}` : ""}</span>
               </a>
             ))}
             {recentDocs.length === 0 && <p className="muted">No documents yet.</p>}
           </div>
-        </div>
-      </div>
 
-      <div className="card">
-        <div className="widget-header">
-          <h2>Quick referral search</h2>
-        </div>
-        <p className="muted">
-          Enter a client's basics and psyalliance.org will suggest three verified colleagues to
-          connect with. Nothing here is saved, client initials are just a label for your own
-          screen.
-        </p>
-        <form method="GET">
-          <div className="field-row">
-            <div className="field" style={{ maxWidth: 100 }}>
-              <label htmlFor="ref_initials">Client initials</label>
-              <input id="ref_initials" name="ref_initials" type="text" maxLength={4} defaultValue={searchParams.ref_initials || ""} placeholder="J.J." />
-            </div>
-            <div className="field" style={{ maxWidth: 90 }}>
-              <label htmlFor="ref_state">State</label>
-              <input id="ref_state" name="ref_state" type="text" maxLength={2} defaultValue={searchParams.ref_state || ""} placeholder="TX" />
-            </div>
-            <div className="field" style={{ maxWidth: 150 }}>
-              <label htmlFor="ref_session_type">Session type</label>
-              <select id="ref_session_type" name="ref_session_type" defaultValue={searchParams.ref_session_type || ""}>
-                <option value="">Any</option>
-                {(sessionTypeOptions || []).map((s) => (
-                  <option key={s.value} value={s.value}>{s.value}</option>
-                ))}
-              </select>
-            </div>
-            <div className="field">
-              <label htmlFor="ref_insurance">Insurance</label>
-              <select id="ref_insurance" name="ref_insurance" defaultValue={searchParams.ref_insurance || ""}>
-                <option value="">Any</option>
-                {(insuranceOptions || []).map((s) => (
-                  <option key={s.value} value={s.value}>{s.value}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-          <div className="field-row">
-            <div className="field">
-              <label htmlFor="ref_primary">Primary treatment area</label>
-              <select id="ref_primary" name="ref_primary" defaultValue={searchParams.ref_primary || ""}>
-                <option value="">None</option>
-                {(allSpecialisms || []).map((s) => (
-                  <option key={s.id} value={s.value}>{s.value}</option>
-                ))}
-              </select>
-            </div>
-            <div className="field">
-              <label htmlFor="ref_secondary">Secondary</label>
-              <select id="ref_secondary" name="ref_secondary" defaultValue={searchParams.ref_secondary || ""}>
-                <option value="">None</option>
-                {(allSpecialisms || []).map((s) => (
-                  <option key={s.id} value={s.value}>{s.value}</option>
-                ))}
-              </select>
-            </div>
-            <div className="field">
-              <label htmlFor="ref_tertiary">Tertiary</label>
-              <select id="ref_tertiary" name="ref_tertiary" defaultValue={searchParams.ref_tertiary || ""}>
-                <option value="">None</option>
-                {(allSpecialisms || []).map((s) => (
-                  <option key={s.id} value={s.value}>{s.value}</option>
-                ))}
-              </select>
-            </div>
-            <div className="field" style={{ flex: "0 0 auto", alignSelf: "flex-end" }}>
-              <button type="submit">Find matches</button>
-            </div>
-          </div>
-        </form>
-
-        {hasSearchInputs && (
-          <div style={{ marginTop: "1rem" }}>
-            <h3 style={{ fontSize: "0.9rem" }}>
-              Recommended by psyalliance.org{searchParams.ref_initials ? ` for ${searchParams.ref_initials}` : ""}
-            </h3>
-            {quickSearchResults.length > 0 ? (
-              <table>
-                <thead>
-                  <tr>
-                    <th>Name</th>
-                    <th>State</th>
-                    <th>Connection</th>
-                    {searchParams.ref_insurance && <th>Accepts {searchParams.ref_insurance}</th>}
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {quickSearchResults.map((r) => (
-                    <tr key={r.profileId}>
-                      <td><a href={`/dashboard/people/${r.profileId}`} className={`person-link${r.connectionTier !== "none" ? ` tier-${r.connectionTier}` : ""}`}>{r.fullName}</a></td>
-                      <td>{r.state || "-"}</td>
-                      <td>{r.connectionTier !== "none" ? <span className={`tag tier-${r.connectionTier}`}>{r.connectionTier}</span> : <span className="muted">-</span>}</td>
-                      {searchParams.ref_insurance && <td>{r.acceptsInsurance ? "Yes" : "Not listed"}</td>}
-                      <td><a href={`/dashboard/people/${r.profileId}`} className="btn secondary" style={{ padding: "0.15rem 0.5rem", fontSize: "0.8rem" }}>View</a></td>
-                    </tr>
+          <details className="ov-card ov-quick-search" open={hasSearchInputs}>
+            <summary>Quick referral search</summary>
+            <p className="muted" style={{ marginTop: "0.5rem" }}>
+              Enter a client's basics for three verified colleagues to connect with. Nothing here
+              is saved.
+            </p>
+            <form method="GET">
+              <div className="field">
+                <label htmlFor="ref_initials">Client initials</label>
+                <input id="ref_initials" name="ref_initials" type="text" maxLength={4} defaultValue={searchParams.ref_initials || ""} placeholder="J.J." />
+              </div>
+              <div className="field">
+                <label htmlFor="ref_state">State</label>
+                <input id="ref_state" name="ref_state" type="text" maxLength={24} defaultValue={searchParams.ref_state || ""} placeholder="TX or Texas" list="us-states" autoComplete="off" />
+                <UsStateDatalist />
+              </div>
+              <div className="field">
+                <label htmlFor="ref_session_type">Session type</label>
+                <select id="ref_session_type" name="ref_session_type" defaultValue={searchParams.ref_session_type || ""}>
+                  <option value="">Any</option>
+                  {(sessionTypeOptions || []).map((s) => (
+                    <option key={s.value} value={s.value}>{s.value}</option>
                   ))}
-                </tbody>
-              </table>
-            ) : (
-              <p className="muted">Pick at least one treatment area to get suggestions.</p>
+                </select>
+              </div>
+              <div className="field">
+                <label htmlFor="ref_insurance">Insurance</label>
+                <select id="ref_insurance" name="ref_insurance" defaultValue={searchParams.ref_insurance || ""}>
+                  <option value="">Any</option>
+                  {(insuranceOptions || []).map((s) => (
+                    <option key={s.value} value={s.value}>{s.value}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="field">
+                <label htmlFor="ref_primary">Primary treatment area</label>
+                <select id="ref_primary" name="ref_primary" defaultValue={searchParams.ref_primary || ""}>
+                  <option value="">None</option>
+                  {(allSpecialisms || []).map((s) => (
+                    <option key={s.id} value={s.value}>{s.value}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="field">
+                <label htmlFor="ref_secondary">Secondary</label>
+                <select id="ref_secondary" name="ref_secondary" defaultValue={searchParams.ref_secondary || ""}>
+                  <option value="">None</option>
+                  {(allSpecialisms || []).map((s) => (
+                    <option key={s.id} value={s.value}>{s.value}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="field">
+                <label htmlFor="ref_tertiary">Tertiary</label>
+                <select id="ref_tertiary" name="ref_tertiary" defaultValue={searchParams.ref_tertiary || ""}>
+                  <option value="">None</option>
+                  {(allSpecialisms || []).map((s) => (
+                    <option key={s.id} value={s.value}>{s.value}</option>
+                  ))}
+                </select>
+              </div>
+              <button type="submit" style={{ width: "100%" }}>Find matches</button>
+            </form>
+
+            {hasSearchInputs && (
+              <div style={{ marginTop: "1rem" }}>
+                <h3 style={{ fontSize: "0.82rem" }}>
+                  Recommended{searchParams.ref_initials ? ` for ${searchParams.ref_initials}` : ""}
+                </h3>
+                {quickSearchResults.length > 0 ? (
+                  quickSearchResults.map((r) => (
+                    <div key={r.profileId} className="ov-feed-row" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <span>
+                        <a href={`/dashboard/people/${r.profileId}`} className={`person-link${r.connectionTier !== "none" ? ` tier-${r.connectionTier}` : ""}`} style={{ fontSize: "0.84rem" }}>
+                          {r.fullName}
+                        </a>
+                        <span className="muted" style={{ fontSize: "0.74rem", display: "block" }}>
+                          {r.state || "-"}{searchParams.ref_insurance ? ` · ${r.acceptsInsurance ? "Accepts" : "Not listed for"} ${searchParams.ref_insurance}` : ""}
+                        </span>
+                      </span>
+                      {r.connectionTier !== "none" && <span className={`tag tier-${r.connectionTier}`}>{r.connectionTier}</span>}
+                    </div>
+                  ))
+                ) : (
+                  <p className="muted">Pick at least one treatment area to get suggestions.</p>
+                )}
+              </div>
             )}
-          </div>
-        )}
+          </details>
+        </div>
       </div>
     </div>
   );

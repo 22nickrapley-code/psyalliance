@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { requireAdminOrRedirectPath } from "@/lib/admin";
 import { setMemberVerificationStatus, setMemberAdminFlag } from "./actions";
 import { professionFor, professionLabel } from "@/lib/profession";
+import UsStateDatalist from "@/components/us-state-datalist";
 
 export default async function AdminMembersPage(
   props: { searchParams: Promise<{ q?: string; state?: string; status?: string }> }
@@ -48,7 +49,8 @@ export default async function AdminMembersPage(
           </div>
           <div className="field" style={{ maxWidth: 100 }}>
             <label htmlFor="state">State</label>
-            <input id="state" name="state" type="text" maxLength={2} defaultValue={searchParams?.state || ""} placeholder="TX" />
+            <input id="state" name="state" type="text" maxLength={24} defaultValue={searchParams?.state || ""} placeholder="TX or Texas" list="us-states" autoComplete="off" />
+            <UsStateDatalist />
           </div>
           <div className="field">
             <label htmlFor="status">Status</label>

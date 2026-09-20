@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createBookOfBusiness, createCase, archiveCase, reactivateCase, deleteOrganization, requestNewInsurance } from "./actions";
 import CaseloadImportBox from "./import";
+import UsStateDatalist from "@/components/us-state-datalist";
 
 export default async function CaseloadPage(
   props: {
@@ -31,6 +32,10 @@ export default async function CaseloadPage(
     supabase.from("lookup_values").select("id, value").eq("category", "insurance").order("value"),
   ]);
 
+  const activeCases = cases || [];
+  const topActiveCases = activeCases.slice(0, 3);
+  const remainingActiveCases = activeCases.slice(3);
+
   const pastQ = (searchParams.past_q || "").trim().toLowerCase();
   const filteredPastCases = (pastCases || []).filter((c: any) => {
     if (!pastQ) return true;
@@ -48,7 +53,7 @@ export default async function CaseloadPage(
         <div>
           <h1>Caseload</h1>
           <p className="muted">
-            Every case is referenced by its case number, never a name. Your private client label
+            Every client is referenced by their client number, never a name. Your private client label
             is your own optional shorthand and is never shown to anyone else.
           </p>
         </div>
@@ -62,6 +67,55 @@ export default async function CaseloadPage(
           Request sent. An admin will review it, and you'll get a message once it's added.
         </div>
       )}
+
+      <div className="card">
+        <div className="widget-header">
+          <h2>Active clients ({activeCases.length})</h2>
+        </div>
+        {activeCases.length === 0 ? (
+          <p className="muted">No active clients yet, add one below.</p>
+        ) : (
+          <>
+            {topActiveCases.map((c: any) => (
+              <div key={c.id} className="case-row">
+                <span className="case-num">#{c.id}</span>
+                <span className="case-label">{c.private_label || <span className="muted">Unlabeled</span>}</span>
+                <span className="case-org">{c.books_of_business?.name || <span className="muted">-</span>}{c.state ? ` · ${c.state}` : ""}</span>
+                <span className="case-rate">{c.rate_per_session ? `$${c.rate_per_session}` : "-"}</span>
+                <span className="case-sessions muted">{c.sessions_per_week ?? "-"}/wk</span>
+                <span className="case-row-actions">
+                  <form action={archiveCase}>
+                    <input type="hidden" name="id" value={c.id} />
+                    <button type="submit" className="secondary" style={{ padding: "0.3rem 0.6rem", fontSize: "0.78rem" }}>Archive</button>
+                  </form>
+                </span>
+              </div>
+            ))}
+            {remainingActiveCases.length > 0 && (
+              <details className="case-accordion">
+                <summary>
+                  Show {remainingActiveCases.length} more active client{remainingActiveCases.length === 1 ? "" : "s"}
+                </summary>
+                {remainingActiveCases.map((c: any) => (
+                  <div key={c.id} className="case-row">
+                    <span className="case-num">#{c.id}</span>
+                    <span className="case-label">{c.private_label || <span className="muted">Unlabeled</span>}</span>
+                    <span className="case-org">{c.books_of_business?.name || <span className="muted">-</span>}{c.state ? ` · ${c.state}` : ""}</span>
+                    <span className="case-rate">{c.rate_per_session ? `$${c.rate_per_session}` : "-"}</span>
+                    <span className="case-sessions muted">{c.sessions_per_week ?? "-"}/wk</span>
+                    <span className="case-row-actions">
+                      <form action={archiveCase}>
+                        <input type="hidden" name="id" value={c.id} />
+                        <button type="submit" className="secondary" style={{ padding: "0.3rem 0.6rem", fontSize: "0.78rem" }}>Archive</button>
+                      </form>
+                    </span>
+                  </div>
+                ))}
+              </details>
+            )}
+          </>
+        )}
+      </div>
 
       <div className="card">
         <h2>Organizations</h2>
@@ -124,7 +178,7 @@ export default async function CaseloadPage(
       <CaseloadImportBox />
 
       <div className="card">
-        <h2>Add a case</h2>
+        <h2>Add a client</h2>
         <form action={createCase}>
           <div className="field-row">
             <div className="field">
@@ -148,7 +202,8 @@ export default async function CaseloadPage(
             </div>
             <div className="field">
               <label htmlFor="state">State</label>
-              <input id="state" name="state" type="text" maxLength={2} placeholder="TX" />
+              <input id="state" name="state" type="text" maxLength={24} placeholder="TX or Texas" list="us-states" autoComplete="off" />
+              <UsStateDatalist />
             </div>
             <div className="field">
               <label htmlFor="session_type">Session type</label>
@@ -236,54 +291,14 @@ export default async function CaseloadPage(
               <input id="sessions_per_week" name="sessions_per_week" type="number" step="0.01" min="0" placeholder="1 or 0.5 for biweekly" />
             </div>
           </div>
-          <button type="submit">Add case</button>
+          <button type="submit">Add client</button>
         </form>
-      </div>
-
-      <div className="card">
-        <h2>Active cases ({(cases || []).length})</h2>
-        <table>
-          <thead>
-            <tr>
-              <th>Case #</th>
-              <th>Label</th>
-              <th>Organization</th>
-              <th>State</th>
-              <th>Rate</th>
-              <th>Sessions/wk</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            {(cases || []).map((c: any) => (
-              <tr key={c.id}>
-                <td>#{c.id}</td>
-                <td>{c.private_label || <span className="muted">-</span>}</td>
-                <td>{c.books_of_business?.name || <span className="muted">-</span>}</td>
-                <td>{c.state || "-"}</td>
-                <td>{c.rate_per_session ? `$${c.rate_per_session}` : "-"}</td>
-                <td>{c.sessions_per_week ?? "-"}</td>
-                <td>
-                  <form action={archiveCase}>
-                    <input type="hidden" name="id" value={c.id} />
-                    <button type="submit" className="secondary">Archive</button>
-                  </form>
-                </td>
-              </tr>
-            ))}
-            {(cases || []).length === 0 && (
-              <tr>
-                <td colSpan={7} className="muted">No active cases yet.</td>
-              </tr>
-            )}
-          </tbody>
-        </table>
       </div>
 
       <div className="card">
         <h2>Past clients ({(pastCases || []).length})</h2>
         <p className="muted">
-          Anyone archived from your caseload. Re-add a past client and their case keeps the same
+          Anyone archived from your caseload. Re-add a past client and their record keeps the same
           number and details, no need to re-enter anything.
         </p>
         <form method="GET" className="field-row" style={{ alignItems: "flex-end", marginBottom: "0.75rem" }}>
@@ -294,7 +309,7 @@ export default async function CaseloadPage(
               name="past_q"
               type="text"
               defaultValue={searchParams.past_q || ""}
-              placeholder="Label, organization, state, or case #"
+              placeholder="Label, organization, state, or client #"
             />
           </div>
           <div className="field" style={{ flex: "0 0 auto" }}>
@@ -309,7 +324,7 @@ export default async function CaseloadPage(
         <table>
           <thead>
             <tr>
-              <th>Case #</th>
+              <th>Client #</th>
               <th>Label</th>
               <th>Organization</th>
               <th>State</th>

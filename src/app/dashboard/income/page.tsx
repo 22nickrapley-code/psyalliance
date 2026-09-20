@@ -62,6 +62,10 @@ export default async function IncomePage() {
           <div className="value">{currency(trueNet)}</div>
           <div className="label">True net income</div>
         </div>
+        <div className="stat">
+          <div className="value">{currency(trueNet * 12)}</div>
+          <div className="label">Annual true net income</div>
+        </div>
       </div>
 
       <div className="card" style={{ marginTop: "1.5rem" }}>
@@ -95,6 +99,55 @@ export default async function IncomePage() {
             {byBook.length === 0 && unassigned.length === 0 && (
               <tr>
                 <td colSpan={4} className="muted">No active cases yet, add some on the Caseload page.</td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="card">
+        <h2>Annual income by organization</h2>
+        <p className="muted">
+          Same figures, annualized (× 12) and split out per organization, so you can see where
+          your income actually comes from over a full year - not just this month.
+        </p>
+        <table>
+          <thead>
+            <tr>
+              <th>Organization</th>
+              <th>Active cases</th>
+              <th>Annual gross</th>
+              <th>Annual net</th>
+            </tr>
+          </thead>
+          <tbody>
+            {byBook.map(({ book, count, gross, net }) => (
+              <tr key={book.id}>
+                <td>{book.name}</td>
+                <td>{count}</td>
+                <td>{currency(gross * 12)}</td>
+                <td>{currency(net * 12)}</td>
+              </tr>
+            ))}
+            {unassigned.length > 0 && (
+              <tr>
+                <td className="muted">Unassigned</td>
+                <td>{unassigned.length}</td>
+                <td>{currency(unassigned.reduce((s, c) => s + caseMonthlyGross(c), 0) * 12)}</td>
+                <td>{currency(unassigned.reduce((s, c) => s + caseMonthlyNet(c, booksList), 0) * 12)}</td>
+              </tr>
+            )}
+            {byBook.length === 0 && unassigned.length === 0 && (
+              <tr>
+                <td colSpan={4} className="muted">No active cases yet, add some on the Caseload page.</td>
+              </tr>
+            )}
+            {(byBook.length > 0 || unassigned.length > 0) && (
+              <tr style={{ fontWeight: 700, borderTop: "2px solid var(--border-strong)" }}>
+                <td>Total</td>
+                <td>{casesList.length}</td>
+                <td>{currency(totalGross * 12)}</td>
+                <td>{currency(totalNet * 12)}</td>
               </tr>
             )}
           </tbody>

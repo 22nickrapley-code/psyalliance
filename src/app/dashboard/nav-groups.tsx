@@ -152,8 +152,8 @@ export function buildNavGroups(isAdmin: boolean, unreadMessageCount = 0): NavGro
       items: [
         { href: "/dashboard/profile", label: "Profile", icon: icon.profile },
         { href: "/dashboard/caseload", label: "Caseload", icon: icon.caseload },
-        { href: "/dashboard/income", label: "Income", icon: icon.income },
         { href: "/dashboard/capacity", label: "Capacity & overhead", icon: icon.capacity },
+        { href: "/dashboard/income", label: "Income", icon: icon.income },
         { href: "/dashboard/credentials", label: "Credentials", icon: icon.credentials },
         { href: "/dashboard/documents", label: "Documents", icon: icon.documents },
       ],

@@ -9,10 +9,15 @@ export default async function CapacityPage(props: { searchParams: Promise<{ save
     data: { user },
   } = await supabase.auth.getUser();
 
-  const [{ data: settings }, { data: cases }, { data: expenses }] = await Promise.all([
+  const [{ data: settings }, { data: cases }, { data: expenses }, { data: books }] = await Promise.all([
     supabase.from("capacity_settings").select("*").eq("profile_id", user!.id).maybeSingle(),
     supabase.from("caseload_clients").select("sessions_per_week").eq("profile_id", user!.id).eq("is_active", true),
-    supabase.from("practice_overhead_expenses").select("*").eq("profile_id", user!.id).order("id"),
+    supabase
+      .from("practice_overhead_expenses")
+      .select("*, books_of_business(name)")
+      .eq("profile_id", user!.id)
+      .order("id"),
+    supabase.from("books_of_business").select("*").eq("profile_id", user!.id).eq("is_active", true),
   ]);
 
   const actualSessionsPerWeek = (cases || []).reduce((s, c) => s + (c.sessions_per_week || 0), 0);
@@ -65,8 +70,19 @@ export default async function CapacityPage(props: { searchParams: Promise<{ save
           </div>
           <div className="field-row">
             <div className="field">
-              <label htmlFor="no_show_rate_pct">No-show rate (0–1)</label>
+              <label htmlFor="no_show_rate_pct">No-show rate</label>
               <input id="no_show_rate_pct" name="no_show_rate_pct" type="number" step="0.01" min="0" max="1" defaultValue={settings?.no_show_rate_pct ?? ""} />
+              <p className="muted" style={{ marginTop: "0.35rem", marginBottom: 0 }}>
+                The share of scheduled sessions where the client doesn't show, as a decimal (0.1 =
+                10% of sessions, roughly 1 in 10).
+                {settings?.no_show_rate_pct != null && actualSessionsPerWeek > 0 && (
+                  <>
+                    {" "}At your current caseload, that's about{" "}
+                    <strong>{(actualSessionsPerWeek * Number(settings.no_show_rate_pct)).toFixed(1)} client{actualSessionsPerWeek * Number(settings.no_show_rate_pct) === 1 ? "" : "s"} a week</strong> who
+                    no-show.
+                  </>
+                )}
+              </p>
             </div>
             <div className="field">
               <label htmlFor="missed_session_charge_pct">Missed-session charge (0 = none, 1 = full)</label>
@@ -83,6 +99,7 @@ export default async function CapacityPage(props: { searchParams: Promise<{ save
           <thead>
             <tr>
               <th>Expense</th>
+              <th>Organization</th>
               <th>Vendor</th>
               <th>Cadence</th>
               <th>Amount</th>
@@ -91,9 +108,10 @@ export default async function CapacityPage(props: { searchParams: Promise<{ save
             </tr>
           </thead>
           <tbody>
-            {(expenses || []).map((e) => (
+            {(expenses || []).map((e: any) => (
               <tr key={e.id}>
                 <td>{e.expense_name}</td>
+                <td>{e.books_of_business?.name || <span className="muted">General</span>}</td>
                 <td>{e.vendor || "-"}</td>
                 <td>{e.cadence}</td>
                 <td>{currency(Number(e.amount))}</td>
@@ -108,7 +126,7 @@ export default async function CapacityPage(props: { searchParams: Promise<{ save
             ))}
             {(expenses || []).length === 0 && (
               <tr>
-                <td colSpan={6} className="muted">
+                <td colSpan={7} className="muted">
                   No overhead expenses yet: insurance, EHR/video platform, HIPAA-compliant email,
                   directory ad spend, licensing fees, etc.
                 </td>
@@ -120,6 +138,19 @@ export default async function CapacityPage(props: { searchParams: Promise<{ save
           <div className="field">
             <label htmlFor="expense_name">Expense</label>
             <input id="expense_name" name="expense_name" type="text" required />
+          </div>
+          <div className="field">
+            <label htmlFor="book_of_business_id">Organization</label>
+            <select id="book_of_business_id" name="book_of_business_id" defaultValue="">
+              <option value="">General (not org-specific)</option>
+              {(books || []).map((b) => (
+                <option key={b.id} value={b.id}>{b.name}</option>
+              ))}
+            </select>
+            <p className="muted" style={{ marginTop: "0.3rem", marginBottom: 0, fontSize: "0.78rem" }}>
+              Most expenses are your own private practice - only pick one here if it's specific to
+              a particular organization.
+            </p>
           </div>
           <div className="field">
             <label htmlFor="vendor">Vendor</label>

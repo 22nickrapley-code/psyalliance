@@ -5,6 +5,7 @@ import { rankCandidates, type MatchCandidate, type ConnectionTier } from "@/lib/
 import { resolveAvatarUrls } from "@/lib/avatars";
 import Avatar from "../avatar";
 import { professionFor, professionLabel } from "@/lib/profession";
+import UsStateDatalist from "@/components/us-state-datalist";
 
 export default async function ReferralsPage() {
   const supabase = await createClient();
@@ -169,7 +170,8 @@ export default async function ReferralsPage() {
             </div>
             <div className="field">
               <label htmlFor="state">State</label>
-              <input id="state" name="state" type="text" maxLength={2} placeholder="TX" />
+              <input id="state" name="state" type="text" maxLength={24} placeholder="TX or Texas" list="us-states" autoComplete="off" />
+              <UsStateDatalist />
             </div>
             <div className="field">
               <label htmlFor="insurance">Insurance</label>

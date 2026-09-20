@@ -34,9 +34,11 @@ export async function addOverheadExpense(formData: FormData) {
   const cadence = String(formData.get("cadence") || "monthly");
   const amount = parseFloat(String(formData.get("amount") || "0")) || 0;
   const monthlyCost = cadence === "annual" ? amount / 12 : amount;
+  const bookOfBusinessId = formData.get("book_of_business_id") ? Number(formData.get("book_of_business_id")) : null;
 
   const { error } = await supabase.from("practice_overhead_expenses").insert({
     profile_id: user.id,
+    book_of_business_id: bookOfBusinessId,
     expense_name: String(formData.get("expense_name") || ""),
     vendor: String(formData.get("vendor") || "") || null,
     cadence,
