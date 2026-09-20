@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { extractStructuredData, AiNotConfiguredError } from "@/lib/ai/anthropic";
 
 export type ImportedCaseRow = {
@@ -216,6 +217,31 @@ export async function bulkImportCases(rows: ImportedCaseRow[]): Promise<{ import
   return { imported: insertRows.length };
 }
 
+// Self-service "request to add" for the Insurance dropdown - the canonical
+// list itself only grows through admin review (see
+// dashboard/admin/insurance-requests), same reasoning as credential
+// verification being human-reviewed rather than auto-approved.
+export async function requestNewInsurance(formData: FormData) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not signed in");
+
+  const value = String(formData.get("requested_value") || "").trim();
+  if (!value) throw new Error("Enter the insurance provider's name first.");
+  if (value.length > 120) throw new Error("That name is too long.");
+
+  const { error } = await supabase.from("insurance_requests").insert({
+    requested_by: user.id,
+    requested_value: value,
+  });
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/dashboard/caseload");
+  redirect("/dashboard/caseload?insurance_requested=1");
+}
+
 export async function archiveCase(formData: FormData) {
   const supabase = await createClient();
   const id = Number(formData.get("id"));
@@ -224,6 +250,31 @@ export async function archiveCase(formData: FormData) {
     .from("caseload_clients")
     .update({ is_active: false, archived_at: new Date().toISOString() })
     .eq("id", id);
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/dashboard/caseload");
+  revalidatePath("/dashboard/income");
+}
+
+// Nick's Sept 20 feedback: re-engaging a past client shouldn't mean
+// re-typing everything from scratch. Un-archiving keeps the same case
+// number and all its details (organization, rate, needs, etc.) rather than
+// inserting a fresh row - RLS ("own cases only") already scopes this to the
+// caller's own rows, .eq("profile_id", ...) below is belt-and-braces.
+export async function reactivateCase(formData: FormData) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not signed in");
+
+  const id = Number(formData.get("id"));
+
+  const { error } = await supabase
+    .from("caseload_clients")
+    .update({ is_active: true, archived_at: null })
+    .eq("id", id)
+    .eq("profile_id", user.id);
   if (error) throw new Error(error.message);
 
   revalidatePath("/dashboard/caseload");

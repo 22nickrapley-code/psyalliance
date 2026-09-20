@@ -1,14 +1,19 @@
 import { createClient } from "@/lib/supabase/server";
-import { createBookOfBusiness, createCase, archiveCase, deleteOrganization } from "./actions";
+import { createBookOfBusiness, createCase, archiveCase, reactivateCase, deleteOrganization, requestNewInsurance } from "./actions";
 import CaseloadImportBox from "./import";
 
-export default async function CaseloadPage() {
+export default async function CaseloadPage(
+  props: {
+    searchParams: Promise<{ insurance_requested?: string; past_q?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const [{ data: books }, { data: cases }, { data: specialisms }] = await Promise.all([
+  const [{ data: books }, { data: cases }, { data: pastCases }, { data: specialisms }, { data: insuranceOptions }] = await Promise.all([
     supabase.from("books_of_business").select("*").eq("profile_id", user!.id).eq("is_active", true),
     supabase
       .from("caseload_clients")
@@ -16,8 +21,26 @@ export default async function CaseloadPage() {
       .eq("profile_id", user!.id)
       .eq("is_active", true)
       .order("created_at", { ascending: false }),
+    supabase
+      .from("caseload_clients")
+      .select("*, books_of_business(name)")
+      .eq("profile_id", user!.id)
+      .eq("is_active", false)
+      .order("archived_at", { ascending: false }),
     supabase.from("lookup_values").select("id, value").eq("category", "treatment_specialism").order("value"),
+    supabase.from("lookup_values").select("id, value").eq("category", "insurance").order("value"),
   ]);
+
+  const pastQ = (searchParams.past_q || "").trim().toLowerCase();
+  const filteredPastCases = (pastCases || []).filter((c: any) => {
+    if (!pastQ) return true;
+    return (
+      (c.private_label || "").toLowerCase().includes(pastQ) ||
+      (c.books_of_business?.name || "").toLowerCase().includes(pastQ) ||
+      (c.state || "").toLowerCase().includes(pastQ) ||
+      String(c.id).includes(pastQ)
+    );
+  });
 
   return (
     <div>
@@ -34,6 +57,12 @@ export default async function CaseloadPage() {
         </a>
       </div>
 
+      {searchParams.insurance_requested === "1" && (
+        <div className="message-banner">
+          Request sent. An admin will review it, and you'll get a message once it's added.
+        </div>
+      )}
+
       <div className="card">
         <h2>Organizations</h2>
         <p className="muted">
@@ -44,7 +73,7 @@ export default async function CaseloadPage() {
           <thead>
             <tr>
               <th>Name</th>
-              <th>% of hourly rate retained</th>
+              <th>Share you keep</th>
               <th></th>
             </tr>
           </thead>
@@ -74,18 +103,21 @@ export default async function CaseloadPage() {
             <input id="name" name="name" type="text" placeholder="e.g. my own practice, or the consultancy's name" required />
           </div>
           <div className="field" style={{ maxWidth: 220 }}>
-            <label htmlFor="expense_burden_pct">% of hourly rate retained (0–1)</label>
+            <label htmlFor="expense_burden_pct">Share of hourly rate you keep</label>
             <input id="expense_burden_pct" name="expense_burden_pct" type="number" step="0.01" min="0" max="1" defaultValue="0.85" required />
+            <p className="muted" style={{ marginTop: "0.3rem", marginBottom: 0, fontSize: "0.78rem" }}>
+              As a decimal, not a percent — 0.85 = 85%.
+            </p>
           </div>
           <div className="field" style={{ flex: "0 0 auto" }}>
             <button type="submit">Add</button>
           </div>
         </form>
         <p className="muted" style={{ marginTop: "0.75rem", marginBottom: 0 }}>
-          For your own private practice this is usually 100%. If you're employed by or contracted
-          to a group practice or consultancy, enter the percentage of the billed hourly rate you
-          take home after their commission, e.g. if they bill $200/hr and you're paid 70%, enter
-          0.70.
+          For your own private practice this is usually 1 (100%) — you keep everything you bill.
+          If you're employed by or contracted to a group practice or consultancy, enter the share
+          of the billed hourly rate you take home after their cut, e.g. if they bill $200/hr and
+          you're paid $140, enter 0.70.
         </p>
       </div>
 
@@ -127,7 +159,38 @@ export default async function CaseloadPage() {
             </div>
             <div className="field">
               <label htmlFor="insurance">Insurance</label>
-              <input id="insurance" name="insurance" type="text" />
+              <select id="insurance" name="insurance" defaultValue="">
+                <option value="">-</option>
+                {(insuranceOptions || []).map((i) => (
+                  <option key={i.id} value={i.value}>{i.value}</option>
+                ))}
+              </select>
+              <details style={{ marginTop: "0.35rem" }}>
+                <summary className="muted" style={{ fontSize: "0.78rem", cursor: "pointer" }}>
+                  Not listed? Request it
+                </summary>
+                <form action={requestNewInsurance} className="field-row" style={{ marginTop: "0.4rem", alignItems: "flex-end" }}>
+                  <div className="field" style={{ flex: "1 1 180px" }}>
+                    <input
+                      name="requested_value"
+                      type="text"
+                      placeholder="Insurance provider name"
+                      maxLength={120}
+                      required
+                      style={{ fontSize: "0.82rem" }}
+                    />
+                  </div>
+                  <div className="field" style={{ flex: "0 0 auto" }}>
+                    <button type="submit" className="secondary" style={{ fontSize: "0.82rem", padding: "0.35rem 0.7rem" }}>
+                      Request
+                    </button>
+                  </div>
+                </form>
+                <p className="muted" style={{ fontSize: "0.76rem", marginTop: "0.3rem", marginBottom: 0 }}>
+                  Goes to an admin for review. Once approved, it's added to this list and you'll
+                  get a message letting you know.
+                </p>
+              </details>
             </div>
           </div>
           <div className="field-row">
@@ -211,6 +274,70 @@ export default async function CaseloadPage() {
             {(cases || []).length === 0 && (
               <tr>
                 <td colSpan={7} className="muted">No active cases yet.</td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="card">
+        <h2>Past clients ({(pastCases || []).length})</h2>
+        <p className="muted">
+          Anyone archived from your caseload. Re-add a past client and their case keeps the same
+          number and details, no need to re-enter anything.
+        </p>
+        <form method="GET" className="field-row" style={{ alignItems: "flex-end", marginBottom: "0.75rem" }}>
+          <div className="field" style={{ flex: "1 1 240px" }}>
+            <label htmlFor="past_q">Search past clients</label>
+            <input
+              id="past_q"
+              name="past_q"
+              type="text"
+              defaultValue={searchParams.past_q || ""}
+              placeholder="Label, organization, state, or case #"
+            />
+          </div>
+          <div className="field" style={{ flex: "0 0 auto" }}>
+            <button type="submit" className="secondary">Search</button>
+          </div>
+          {pastQ && (
+            <div className="field" style={{ flex: "0 0 auto" }}>
+              <a href="/dashboard/caseload" className="btn secondary" style={{ display: "inline-block" }}>Clear</a>
+            </div>
+          )}
+        </form>
+        <table>
+          <thead>
+            <tr>
+              <th>Case #</th>
+              <th>Label</th>
+              <th>Organization</th>
+              <th>State</th>
+              <th>Rate</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredPastCases.map((c: any) => (
+              <tr key={c.id}>
+                <td>#{c.id}</td>
+                <td>{c.private_label || <span className="muted">-</span>}</td>
+                <td>{c.books_of_business?.name || <span className="muted">-</span>}</td>
+                <td>{c.state || "-"}</td>
+                <td>{c.rate_per_session ? `$${c.rate_per_session}` : "-"}</td>
+                <td>
+                  <form action={reactivateCase}>
+                    <input type="hidden" name="id" value={c.id} />
+                    <button type="submit" className="secondary">Re-add to caseload</button>
+                  </form>
+                </td>
+              </tr>
+            ))}
+            {filteredPastCases.length === 0 && (
+              <tr>
+                <td colSpan={6} className="muted">
+                  {pastQ ? "No past clients match that search." : "No archived clients yet."}
+                </td>
               </tr>
             )}
           </tbody>

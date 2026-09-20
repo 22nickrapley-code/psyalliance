@@ -16,6 +16,7 @@ export default async function AdminOverviewPage() {
     { data: byState },
     { data: recentSignups },
     { count: unmatchedCredentialCount },
+    { count: pendingInsuranceRequestCount },
   ] = await Promise.all([
     supabase.from("profiles").select("*", { count: "exact", head: true }),
     supabase.from("profiles").select("*", { count: "exact", head: true }).eq("verification_status", "verified"),
@@ -29,6 +30,7 @@ export default async function AdminOverviewPage() {
       .order("created_at", { ascending: false })
       .limit(8),
     supabase.from("credential_verifications").select("*", { count: "exact", head: true }).eq("matched", false),
+    supabase.from("insurance_requests").select("*", { count: "exact", head: true }).eq("status", "pending"),
   ]);
 
   const stateCounts = new Map<string, number>();
@@ -45,8 +47,10 @@ export default async function AdminOverviewPage() {
       <h1>Admin</h1>
       <p className="muted">
         Platform-wide stats and quick links for running admin tasks. Credential review lives in{" "}
-        <a href="/dashboard/admin/verifications">Verification queue</a>, and the full member list
-        (search, verify, flag, promote to admin) is under{" "}
+        <a href="/dashboard/admin/verifications">Verification queue</a>, requests to add a new
+        insurance provider are under{" "}
+        <a href="/dashboard/admin/insurance-requests">Insurance requests</a>, and the full member
+        list (search, verify, flag, promote to admin) is under{" "}
         <a href="/dashboard/admin/members">All members</a>.
       </p>
 
@@ -77,11 +81,22 @@ export default async function AdminOverviewPage() {
             <div className="value">{unmatchedCredentialCount ?? 0}</div>
             <div className="label">Unreviewed credential submissions</div>
           </div>
+          <div className="stat">
+            <div className="value">{pendingInsuranceRequestCount ?? 0}</div>
+            <div className="label">Pending insurance requests</div>
+          </div>
         </div>
         {(pendingCount ?? 0) > 0 && (
           <p style={{ marginTop: "0.75rem" }}>
             <a href="/dashboard/admin/verifications" className="btn">
               Review {pendingCount} pending profile{pendingCount === 1 ? "" : "s"}
+            </a>
+          </p>
+        )}
+        {(pendingInsuranceRequestCount ?? 0) > 0 && (
+          <p style={{ marginTop: "0.5rem" }}>
+            <a href="/dashboard/admin/insurance-requests" className="btn secondary">
+              Review {pendingInsuranceRequestCount} insurance request{pendingInsuranceRequestCount === 1 ? "" : "s"}
             </a>
           </p>
         )}
