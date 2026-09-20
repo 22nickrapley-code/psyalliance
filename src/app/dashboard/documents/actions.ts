@@ -5,6 +5,15 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { assertIsAdmin } from "@/lib/admin";
 
+// A plain `throw` inside a server action wired to a bare <form action={fn}>
+// crashes the whole page with Next.js's generic error screen instead of showing
+// anything useful. Every validation/DB-error path in this file routes through
+// this instead, so a bad input or a failed insert sends the user back to this
+// same page with an inline banner rather than taking the page down.
+function documentsError(message: string): never {
+  redirect(`/dashboard/documents?error=${encodeURIComponent(message)}`);
+}
+
 // Keep uploads to the kinds of files a practice actually needs to share
 // (licenses, intake forms, referral letters, insurance panels) and off of
 // the free Storage tier's cap. Executables, archives, etc. are rejected
@@ -29,12 +38,12 @@ export async function uploadDocument(formData: FormData) {
   if (!user) throw new Error("Not signed in");
 
   const file = formData.get("file") as File | null;
-  if (!file || file.size === 0) throw new Error("No file selected");
+  if (!file || file.size === 0) documentsError("No file selected");
   if (file.size > MAX_FILE_SIZE_BYTES) {
-    throw new Error(`File is too large (max ${MAX_FILE_SIZE_BYTES / (1024 * 1024)}MB)`);
+    documentsError(`File is too large (max ${MAX_FILE_SIZE_BYTES / (1024 * 1024)}MB)`);
   }
   if (file.type && !ALLOWED_CONTENT_TYPES.has(file.type)) {
-    throw new Error(
+    documentsError(
       `File type "${file.type}" isn't supported. Use PDF, Word, plain text/CSV, or an image.`
     );
   }
@@ -48,7 +57,7 @@ export async function uploadDocument(formData: FormData) {
   const { error: uploadError } = await supabase.storage
     .from("documents")
     .upload(storagePath, arrayBuffer, { contentType: file.type || "application/octet-stream" });
-  if (uploadError) throw new Error(uploadError.message);
+  if (uploadError) documentsError(uploadError.message);
 
   // A document can carry several treatment areas now (document_treatment_areas
   // join table, mirroring profile_lookup_values) rather than just one - the
@@ -76,7 +85,7 @@ export async function uploadDocument(formData: FormData) {
       .eq("id", folderId)
       .eq("profile_id", user.id)
       .maybeSingle();
-    if (!ownedFolder) throw new Error("That folder doesn't exist");
+    if (!ownedFolder) documentsError("That folder doesn't exist");
   }
 
   const { data: inserted, error: insertError } = await supabase
@@ -92,13 +101,13 @@ export async function uploadDocument(formData: FormData) {
     })
     .select("id")
     .single();
-  if (insertError) throw new Error(insertError.message);
+  if (insertError) documentsError(insertError.message);
 
   if (treatmentAreaIds.length > 0 && inserted) {
     const { error: areasError } = await supabase.from("document_treatment_areas").insert(
       treatmentAreaIds.map((lookup_value_id) => ({ document_id: inserted.id, lookup_value_id }))
     );
-    if (areasError) throw new Error(areasError.message);
+    if (areasError) documentsError(areasError.message);
   }
 
   revalidatePath("/dashboard/documents");
@@ -127,7 +136,7 @@ export async function deleteDocument(formData: FormData) {
   // error - checked explicitly here so a stray/tampered request gets a
   // clear rejection instead of quietly doing nothing.
   const { data: doc } = await supabase.from("documents").select("uploaded_by").eq("id", id).maybeSingle();
-  if (!doc) throw new Error("Document not found");
+  if (!doc) documentsError("Document not found");
   if (doc.uploaded_by !== user.id) {
     await assertIsAdmin(supabase, user.id);
   }
@@ -136,7 +145,7 @@ export async function deleteDocument(formData: FormData) {
     await supabase.storage.from("documents").remove([storagePath]);
   }
   const { error } = await supabase.from("documents").delete().eq("id", id);
-  if (error) throw new Error(error.message);
+  if (error) documentsError(error.message);
 
   revalidatePath("/dashboard/documents");
 }
@@ -152,12 +161,12 @@ export async function createFolder(formData: FormData) {
   if (!user) throw new Error("Not signed in");
 
   const name = String(formData.get("name") || "").trim();
-  if (!name) throw new Error("Folder name can't be empty");
+  if (!name) documentsError("Folder name can't be empty");
 
   const { error } = await supabase.from("document_folders").insert({ profile_id: user.id, name });
   if (error) {
-    if (error.code === "23505") throw new Error(`You already have a folder called "${name}"`);
-    throw new Error(error.message);
+    if (error.code === "23505") documentsError(`You already have a folder called "${name}"`);
+    documentsError(error.message);
   }
 
   revalidatePath("/dashboard/documents");
@@ -174,7 +183,7 @@ export async function deleteFolder(formData: FormData) {
   // Documents inside are never deleted - folder_id just falls back to null
   // (ON DELETE SET NULL) and they reappear under "Unfiled".
   const { error } = await supabase.from("document_folders").delete().eq("id", id).eq("profile_id", user.id);
-  if (error) throw new Error(error.message);
+  if (error) documentsError(error.message);
 
   revalidatePath("/dashboard/documents");
 }
@@ -197,7 +206,7 @@ export async function moveDocumentToFolder(formData: FormData) {
       .eq("id", folderId)
       .eq("profile_id", user.id)
       .maybeSingle();
-    if (!ownedFolder) throw new Error("That folder doesn't exist");
+    if (!ownedFolder) documentsError("That folder doesn't exist");
   }
 
   // RLS ("own documents only") already scopes this update to the caller's
@@ -207,7 +216,7 @@ export async function moveDocumentToFolder(formData: FormData) {
     .update({ folder_id: folderId })
     .eq("id", documentId)
     .eq("profile_id", user.id);
-  if (error) throw new Error(error.message);
+  if (error) documentsError(error.message);
 
   revalidatePath("/dashboard/documents");
 }
@@ -224,12 +233,12 @@ export async function rateDocument(formData: FormData) {
 
   const documentId = Number(formData.get("document_id"));
   const rating = Number(formData.get("rating"));
-  if (rating < 1 || rating > 5) throw new Error("Rating must be between 1 and 5");
+  if (rating < 1 || rating > 5) documentsError("Rating must be between 1 and 5");
 
   const { error } = await supabase
     .from("document_ratings")
     .upsert({ document_id: documentId, rated_by: user.id, rating }, { onConflict: "document_id,rated_by" });
-  if (error) throw new Error(error.message);
+  if (error) documentsError(error.message);
 
   revalidatePath("/dashboard/documents");
 }

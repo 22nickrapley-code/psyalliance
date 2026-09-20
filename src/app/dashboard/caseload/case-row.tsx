@@ -36,12 +36,14 @@ export default function CaseRow({
       <div className="case-row">
         <span className="case-num">#{c.id}</span>
         <span className="case-label">{c.private_label || <span className="muted">Unlabeled</span>}</span>
-        <span className="case-org">
-          {c.books_of_business?.name || <span className="muted">-</span>}
-          {c.state ? ` · ${c.state}` : ""}
+        <span className="case-meta">
+          <span className="case-org">
+            {c.books_of_business?.name || <span className="muted">-</span>}
+            {c.state ? ` · ${c.state}` : ""}
+          </span>
+          <span className="case-rate">{c.rate_per_session ? `$${c.rate_per_session}` : "-"}</span>
+          <span className="case-sessions muted">{c.sessions_per_week ?? "-"}/wk</span>
         </span>
-        <span className="case-rate">{c.rate_per_session ? `$${c.rate_per_session}` : "-"}</span>
-        <span className="case-sessions muted">{c.sessions_per_week ?? "-"}/wk</span>
         <span className="case-row-actions">
           <button
             type="button"

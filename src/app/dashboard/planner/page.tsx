@@ -1,7 +1,10 @@
 import { createClient } from "@/lib/supabase/server";
 import { createPlannerProject, respondToPlannerOffer, advanceToNextCandidate, cancelPlannerProject } from "./actions";
 
-export default async function PlannerPage() {
+export default async function PlannerPage(
+  props: { searchParams: Promise<{ error?: string }> }
+) {
+  const { error } = await props.searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -46,6 +49,8 @@ export default async function PlannerPage() {
         message for you. A decline moves straight to the next-ranked colleague; you just click
         through.
       </p>
+
+      {error && <div className="error-banner">{error}</div>}
 
       {(incomingOffers || []).length > 0 && (
         <div className="card">
@@ -130,8 +135,8 @@ export default async function PlannerPage() {
               const offer = latestOffer(a);
               const caseInfo = a.caseload_clients;
               return (
-                <div key={a.id} className="checkbox-row" style={{ justifyContent: "space-between" }}>
-                  <span>
+                <div key={a.id} className="person-row">
+                  <span className="person-row-info">
                     Case: {caseInfo?.primary_need || "-"}{caseInfo?.state ? `, ${caseInfo.state}` : ""}
                     {", "}
                     {offer ? (
@@ -145,10 +150,12 @@ export default async function PlannerPage() {
                     )}
                   </span>
                   {offer && offer.status === "declined" && (
-                    <form action={advanceToNextCandidate}>
-                      <input type="hidden" name="assignment_id" value={a.id} />
-                      <button type="submit" className="secondary">Find next candidate</button>
-                    </form>
+                    <span className="person-row-actions">
+                      <form action={advanceToNextCandidate}>
+                        <input type="hidden" name="assignment_id" value={a.id} />
+                        <button type="submit" className="secondary">Find next candidate</button>
+                      </form>
+                    </span>
                   )}
                   {a.status === "exhausted" && <span className="muted">No more candidates to try</span>}
                 </div>

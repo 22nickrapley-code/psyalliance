@@ -2,8 +2,8 @@ import { createClient } from "@/lib/supabase/server";
 import { saveCapacitySettings, addOverheadExpense, deleteOverheadExpense } from "./actions";
 import { currency } from "@/lib/finance";
 
-export default async function CapacityPage(props: { searchParams: Promise<{ saved?: string }> }) {
-  const { saved } = await props.searchParams;
+export default async function CapacityPage(props: { searchParams: Promise<{ saved?: string; error?: string }> }) {
+  const { saved, error } = await props.searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -29,6 +29,8 @@ export default async function CapacityPage(props: { searchParams: Promise<{ save
   return (
     <div>
       <h1>Capacity &amp; overhead</h1>
+
+      {error && <div className="error-banner">{error}</div>}
 
       {saved === "1" && (
         <div className="card" style={{ borderColor: "var(--accent, #2a7)", background: "rgba(34,170,119,0.08)" }}>
@@ -142,7 +144,7 @@ export default async function CapacityPage(props: { searchParams: Promise<{ save
           <div className="field">
             <label htmlFor="book_of_business_id">Organization</label>
             <select id="book_of_business_id" name="book_of_business_id" defaultValue="">
-              <option value="">General (not org-specific)</option>
+              <option value="">General</option>
               {(books || []).map((b) => (
                 <option key={b.id} value={b.id}>{b.name}</option>
               ))}

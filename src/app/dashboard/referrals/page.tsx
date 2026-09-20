@@ -7,7 +7,10 @@ import Avatar from "../avatar";
 import { professionFor, professionLabel } from "@/lib/profession";
 import UsStateDatalist from "@/components/us-state-datalist";
 
-export default async function ReferralsPage() {
+export default async function ReferralsPage(
+  props: { searchParams: Promise<{ error?: string }> }
+) {
+  const { error } = await props.searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -151,6 +154,8 @@ export default async function ReferralsPage() {
         right specialism. Colleagues offer to help; you pick one.
       </p>
 
+      {error && <div className="error-banner">{error}</div>}
+
       <div className="card">
         <h2>Post a referral need</h2>
         <form action={createReferralRequest}>
@@ -197,22 +202,22 @@ export default async function ReferralsPage() {
             </div>
             {r.notes && <p className="muted">{r.notes}</p>}
             {(r.referral_responses || []).map((resp: any) => (
-              <div key={resp.id} className="checkbox-row" style={{ justifyContent: "space-between" }}>
-                <span>
+              <div key={resp.id} className="person-row">
+                <span className="person-row-info">
                   <a href={`/dashboard/people/${resp.responding_profile_id}`} className="person-link">
                     {resp.profiles?.full_name}
                   </a>
                   , {resp.status}{resp.message ? `: "${resp.message}"` : ""}
                 </span>
-                <span>
-                  <form action={startConversation} style={{ display: "inline" }}>
+                <span className="person-row-actions">
+                  <form action={startConversation}>
                     <input type="hidden" name="participant_ids" value={resp.responding_profile_id} />
                     <input type="hidden" name="title" value={`Re: ${r.lookup_values?.value || "referral"} request`} />
                     <input type="hidden" name="body" value={`Hi ${resp.profiles?.full_name || ""}, thanks for offering to help, could we discuss further?`} />
-                    <button type="submit" className="secondary" style={{ marginRight: "0.4rem" }}>Discuss</button>
+                    <button type="submit" className="secondary">Discuss</button>
                   </form>
                   {resp.status === "offered" && r.status === "open" && (
-                    <form action={acceptResponse} style={{ display: "inline" }}>
+                    <form action={acceptResponse}>
                       <input type="hidden" name="response_id" value={resp.id} />
                       <input type="hidden" name="referral_request_id" value={r.id} />
                       <button type="submit">Accept</button>
@@ -241,8 +246,8 @@ export default async function ReferralsPage() {
                     return (
                       <>
                         {matches.map((m) => (
-                    <div key={m.profileId} className="checkbox-row" style={{ justifyContent: "space-between" }}>
-                      <span style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                    <div key={m.profileId} className="person-row">
+                      <span className="person-row-info">
                         <Avatar url={avatarUrlByPath.get(avatarPathById.get(m.profileId) || "") || null} name={m.fullName} size={26} />
                         <a
                           href={`/dashboard/people/${m.profileId}`}
@@ -266,7 +271,7 @@ export default async function ReferralsPage() {
                           </span>
                         )}
                       </span>
-                      <span style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                      <span className="person-row-actions">
                         <span className="muted" style={{ fontSize: "0.8rem" }}>score {m.score}</span>
                         <form action={startConversation}>
                           <input type="hidden" name="participant_ids" value={m.profileId} />
@@ -300,8 +305,8 @@ export default async function ReferralsPage() {
       <div className="card">
         <h2>Open requests from colleagues</h2>
         {(openRequests || []).map((r: any) => (
-          <div key={r.id} className="checkbox-row" style={{ justifyContent: "space-between" }}>
-            <span>
+          <div key={r.id} className="person-row">
+            <span className="person-row-info">
               <strong>{r.lookup_values?.value || "Any specialism"}</strong>
               {r.state ? ` · ${r.state}` : ""}{r.insurance ? ` · ${r.insurance}` : ""}
               {r.notes ? `, ${r.notes}` : ""}
@@ -309,10 +314,12 @@ export default async function ReferralsPage() {
             {myOfferedIds.has(r.id) ? (
               <span className="muted">offered</span>
             ) : (
-              <form action={offerToHelp}>
-                <input type="hidden" name="referral_request_id" value={r.id} />
-                <button type="submit">I can help</button>
-              </form>
+              <span className="person-row-actions">
+                <form action={offerToHelp}>
+                  <input type="hidden" name="referral_request_id" value={r.id} />
+                  <button type="submit">I can help</button>
+                </form>
+              </span>
             )}
           </div>
         ))}

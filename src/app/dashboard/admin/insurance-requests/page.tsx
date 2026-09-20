@@ -3,10 +3,13 @@ import { redirect } from "next/navigation";
 import { requireAdminOrRedirectPath } from "@/lib/admin";
 import { reviewInsuranceRequest } from "./actions";
 
-export default async function AdminInsuranceRequestsPage() {
+export default async function AdminInsuranceRequestsPage(
+  props: { searchParams: Promise<{ error?: string }> }
+) {
   const supabase = await createClient();
   const redirectPath = await requireAdminOrRedirectPath(supabase);
   if (redirectPath) redirect(redirectPath);
+  const { error } = await props.searchParams;
 
   const { data: requests } = await supabase
     .from("insurance_requests")
@@ -23,6 +26,8 @@ export default async function AdminInsuranceRequestsPage() {
         Requests to add a new provider to the Insurance dropdown on Caseload. Approving adds it to
         the list immediately and messages the requester to let them know.
       </p>
+
+      {error && <div className="error-banner">{error}</div>}
 
       <div className="card">
         <h2>Awaiting review ({pending.length})</h2>

@@ -4,6 +4,15 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+// A plain `throw` inside a server action wired to a bare <form action={fn}>
+// crashes the whole page with Next.js's generic error screen instead of showing
+// anything useful. Every validation/DB-error path in this file routes through
+// this instead, so a bad input or a failed insert sends the user back to this
+// same page with an inline banner rather than taking the page down.
+function settingsError(message: string): never {
+  redirect(`/dashboard/settings?error=${encodeURIComponent(message)}`);
+}
+
 export async function saveNotificationPreferences(formData: FormData) {
   const supabase = await createClient();
   const {
@@ -27,7 +36,7 @@ export async function saveNotificationPreferences(formData: FormData) {
   };
 
   const { error } = await supabase.from("notification_preferences").upsert(row);
-  if (error) throw new Error(error.message);
+  if (error) settingsError(error.message);
 
   revalidatePath("/dashboard/settings");
   redirect("/dashboard/settings?saved=1");
@@ -41,15 +50,15 @@ export async function saveEmergencyContact(formData: FormData) {
   if (!user) throw new Error("Not signed in");
 
   const contactProfileId = String(formData.get("contact_profile_id") || "");
-  if (!contactProfileId) throw new Error("Choose a colleague first");
-  if (contactProfileId === user.id) throw new Error("You can't set yourself as your own emergency contact");
+  if (!contactProfileId) settingsError("Choose a colleague first");
+  if (contactProfileId === user.id) settingsError("You can't set yourself as your own emergency contact");
 
   const { error } = await supabase.from("emergency_contacts").upsert({
     profile_id: user.id,
     contact_profile_id: contactProfileId,
     notes: String(formData.get("notes") || "") || null,
   });
-  if (error) throw new Error(error.message);
+  if (error) settingsError(error.message);
 
   revalidatePath("/dashboard/settings");
 }
@@ -62,7 +71,7 @@ export async function removeEmergencyContact() {
   if (!user) throw new Error("Not signed in");
 
   const { error } = await supabase.from("emergency_contacts").delete().eq("profile_id", user.id);
-  if (error) throw new Error(error.message);
+  if (error) settingsError(error.message);
 
   revalidatePath("/dashboard/settings");
 }
@@ -75,14 +84,14 @@ export async function addToBlocklist(formData: FormData) {
   if (!user) throw new Error("Not signed in");
 
   const blockedProfileId = String(formData.get("blocked_profile_id") || "");
-  if (!blockedProfileId) throw new Error("Choose a colleague first");
-  if (blockedProfileId === user.id) throw new Error("You can't block yourself");
+  if (!blockedProfileId) settingsError("Choose a colleague first");
+  if (blockedProfileId === user.id) settingsError("You can't block yourself");
 
   const { error } = await supabase.from("do_not_work_with").insert({
     profile_id: user.id,
     blocked_profile_id: blockedProfileId,
   });
-  if (error) throw new Error(error.message);
+  if (error) settingsError(error.message);
 
   revalidatePath("/dashboard/settings");
 }
@@ -101,7 +110,7 @@ export async function removeFromBlocklist(formData: FormData) {
     .delete()
     .eq("profile_id", user.id)
     .eq("blocked_profile_id", blockedProfileId);
-  if (error) throw new Error(error.message);
+  if (error) settingsError(error.message);
 
   revalidatePath("/dashboard/settings");
 }

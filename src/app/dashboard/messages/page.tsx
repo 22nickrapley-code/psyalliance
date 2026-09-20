@@ -285,39 +285,35 @@ export default async function MessagesPage(
             const n = row.data;
             const unread = !n.read_at;
             return (
-              <div key={`n-${n.id}`} style={{ display: "flex", alignItems: "stretch", gap: "0.5rem", marginBottom: "0.3rem" }}>
+              <div key={`n-${n.id}`} className="inbox-row">
                 <div
+                  className="inbox-row-link"
                   style={{
-                    flex: 1,
-                    minWidth: 0,
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.7rem",
-                    padding: "0.75rem 0.85rem",
-                    borderRadius: "var(--radius)",
                     borderLeft: "3px solid var(--gold)",
                     background: "var(--gold-soft)",
                   }}
                 >
-                  <div className="msg-avatar system">PA</div>
-                  <span style={{ minWidth: 0, flex: 1 }}>
-                    <strong style={{ color: "var(--text)" }}>{n.title}</strong>
-                    <span className="tag gold" style={{ marginLeft: "0.5rem" }}>PsyAlliance Team</span>
-                    {unread && <span className="tag" style={{ marginLeft: "0.3rem" }}>Unread</span>}
-                    <br />
-                    <span className="muted" style={{ fontWeight: unread ? 600 : 400 }}>{n.body}</span>
+                  <span className="inbox-row-main">
+                    <div className="msg-avatar system">PA</div>
+                    <span className="inbox-row-text">
+                      <strong>{n.title}</strong>
+                      <span className="tag gold" style={{ marginLeft: "0.5rem" }}>PsyAlliance Team</span>
+                      {unread && <span className="tag" style={{ marginLeft: "0.3rem" }}>Unread</span>}
+                      <br />
+                      <span className="muted inbox-preview" style={{ fontWeight: unread ? 600 : 400 }}>{n.body}</span>
+                    </span>
                   </span>
-                  <span className="muted" style={{ whiteSpace: "nowrap", marginLeft: "1rem" }}>
+                  <span className="muted inbox-row-date">
                     {new Date(n.created_at).toLocaleDateString()}
                   </span>
                 </div>
-                <form action={setNotificationReadState} style={{ display: "flex", alignItems: "center" }}>
+                <form action={setNotificationReadState} className="inbox-row-actions">
                   <input type="hidden" name="id" value={n.id} />
                   <input type="hidden" name="state" value={unread ? "read" : "unread"} />
                   <button
                     type="submit"
                     className="btn secondary"
-                    style={{ whiteSpace: "nowrap", fontSize: "0.78rem", padding: "0.4rem 0.65rem" }}
+                    style={{ fontSize: "0.78rem", padding: "0.4rem 0.65rem" }}
                   >
                     {unread ? "Mark read" : "Mark unread"}
                   </button>
@@ -335,28 +331,19 @@ export default async function MessagesPage(
           const unread = !!latest && (!lastRead || new Date(latest.created_at) > new Date(lastRead));
           const needsReply = unread && latest.author_id !== myself;
           return (
-            <div key={c.id} style={{ display: "flex", alignItems: "stretch", gap: "0.5rem", marginBottom: "0.3rem" }}>
+            <div key={c.id} className="inbox-row">
               <a
                 href={`/dashboard/messages/${c.id}`}
+                className="inbox-row-link"
                 style={{
-                  flex: 1,
-                  minWidth: 0,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "0.7rem",
-                  justifyContent: "space-between",
-                  padding: "0.75rem 0.85rem",
-                  borderRadius: "var(--radius)",
                   borderLeft: needsReply ? "3px solid var(--tier-recommended)" : "3px solid transparent",
                   background: needsReply ? "var(--tier-recommended-soft)" : "transparent",
-                  textDecoration: "none",
-                  color: "inherit",
                 }}
               >
-                <span style={{ display: "flex", alignItems: "center", gap: "0.7rem", minWidth: 0, flex: 1 }}>
+                <span className="inbox-row-main">
                   <div className="msg-avatar">{avatarLabel}</div>
-                  <span style={{ minWidth: 0 }}>
-                    <strong style={{ color: "var(--text)" }}>{label}</strong>
+                  <span className="inbox-row-text">
+                    <strong>{label}</strong>
                     {needsReply && (
                       <span className="tag tier-recommended" style={{ marginLeft: "0.5rem" }}>Needs your reply</span>
                     )}
@@ -364,23 +351,23 @@ export default async function MessagesPage(
                       <span className="tag" style={{ marginLeft: "0.5rem" }}>Unread</span>
                     )}
                     <br />
-                    <span className="muted" style={{ fontWeight: unread ? 600 : 400 }}>
+                    <span className="muted inbox-preview" style={{ fontWeight: unread ? 600 : 400 }}>
                       {latest ? (latest.body as string).slice(0, 90) : "No messages yet"}
                     </span>
                   </span>
                 </span>
-                <span className="muted" style={{ whiteSpace: "nowrap", marginLeft: "1rem" }}>
+                <span className="muted inbox-row-date">
                   {c.last_message_at ? new Date(c.last_message_at).toLocaleDateString() : ""}
                 </span>
               </a>
               {latest && (
-                <form action={setConversationReadState} style={{ display: "flex", alignItems: "center" }}>
+                <form action={setConversationReadState} className="inbox-row-actions">
                   <input type="hidden" name="conversation_id" value={c.id} />
                   <input type="hidden" name="state" value={unread ? "read" : "unread"} />
                   <button
                     type="submit"
                     className="btn secondary"
-                    style={{ whiteSpace: "nowrap", fontSize: "0.78rem", padding: "0.4rem 0.65rem" }}
+                    style={{ fontSize: "0.78rem", padding: "0.4rem 0.65rem" }}
                   >
                     {unread ? "Mark read" : "Mark unread"}
                   </button>

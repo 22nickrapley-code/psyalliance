@@ -2,6 +2,16 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+
+// A plain `throw` inside a server action wired to a bare <form action={fn}>
+// crashes the whole page with Next.js's generic error screen instead of showing
+// anything useful. Every validation/DB-error path in this file routes through
+// this instead, so a bad input or a failed insert sends the user back to this
+// same page with an inline banner rather than taking the page down.
+function referralsError(message: string): never {
+  redirect(`/dashboard/referrals?error=${encodeURIComponent(message)}`);
+}
 
 export async function createReferralRequest(formData: FormData) {
   const supabase = await createClient();
@@ -20,7 +30,7 @@ export async function createReferralRequest(formData: FormData) {
     insurance: String(formData.get("insurance") || "") || null,
     notes: String(formData.get("notes") || "") || null,
   });
-  if (error) throw new Error(error.message);
+  if (error) referralsError(error.message);
 
   revalidatePath("/dashboard/referrals");
 }
@@ -39,7 +49,7 @@ export async function offerToHelp(formData: FormData) {
     responding_profile_id: user.id,
     message: String(formData.get("message") || "") || null,
   });
-  if (error) throw new Error(error.message);
+  if (error) referralsError(error.message);
 
   revalidatePath("/dashboard/referrals");
 }
@@ -53,7 +63,7 @@ export async function acceptResponse(formData: FormData) {
     .from("referral_responses")
     .update({ status: "accepted", responded_at: new Date().toISOString() })
     .eq("id", responseId);
-  if (acceptError) throw new Error(acceptError.message);
+  if (acceptError) referralsError(acceptError.message);
 
   await supabase
     .from("referral_responses")
@@ -65,7 +75,7 @@ export async function acceptResponse(formData: FormData) {
     .from("referral_requests")
     .update({ status: "matched" })
     .eq("id", requestId);
-  if (matchError) throw new Error(matchError.message);
+  if (matchError) referralsError(matchError.message);
 
   revalidatePath("/dashboard/referrals");
 }
@@ -78,7 +88,7 @@ export async function closeReferralRequest(formData: FormData) {
     .from("referral_requests")
     .update({ status: "closed", closed_at: new Date().toISOString() })
     .eq("id", id);
-  if (error) throw new Error(error.message);
+  if (error) referralsError(error.message);
 
   revalidatePath("/dashboard/referrals");
 }

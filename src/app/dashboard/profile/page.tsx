@@ -30,9 +30,9 @@ const SINGLE_SELECT_CATEGORIES = new Set(["sex"]);
 export default async function ProfilePage({
   searchParams,
 }: {
-  searchParams: Promise<{ saved?: string; avatar_saved?: string; avatar_error?: string; edit?: string }>;
+  searchParams: Promise<{ saved?: string; avatar_saved?: string; avatar_error?: string; error?: string; edit?: string }>;
 }) {
-  const { saved, avatar_saved, avatar_error, edit } = await searchParams;
+  const { saved, avatar_saved, avatar_error, error, edit } = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -85,6 +85,11 @@ export default async function ProfilePage({
   const avatarErrorBanner = avatar_error && (
     <div className="card" style={{ borderColor: "#b3392c", background: "rgba(179,57,44,0.08)" }}>
       {avatar_error}
+    </div>
+  );
+  const errorBanner = error && (
+    <div className="card" style={{ borderColor: "#b3392c", background: "rgba(179,57,44,0.08)" }}>
+      {error}
     </div>
   );
 
@@ -172,6 +177,7 @@ export default async function ProfilePage({
         {savedBanner}
         {avatarSavedBanner}
         {avatarErrorBanner}
+        {errorBanner}
 
         <ProfileView
           data={{
@@ -220,6 +226,7 @@ export default async function ProfilePage({
       {savedBanner}
       {avatarSavedBanner}
       {avatarErrorBanner}
+      {errorBanner}
 
       <div className="card">
         <h2>Professional photo</h2>

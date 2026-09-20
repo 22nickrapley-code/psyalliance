@@ -4,7 +4,7 @@ import Link from "next/link";
 
 export default async function TownHallIndexPage(
   props: {
-    searchParams: Promise<{ q?: string }>;
+    searchParams: Promise<{ q?: string; error?: string }>;
   }
 ) {
   const searchParams = await props.searchParams;
@@ -71,6 +71,8 @@ export default async function TownHallIndexPage(
         general channels. You're auto-joined to channels matching your own specialisms; join or
         leave any others freely.
       </p>
+
+      {searchParams?.error && <div className="error-banner">{searchParams.error}</div>}
 
       <div className="card">
         <h2>Search Town Hall</h2>

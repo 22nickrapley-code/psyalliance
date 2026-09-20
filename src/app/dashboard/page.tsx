@@ -37,6 +37,7 @@ export default async function DashboardHome(
       ref_secondary?: string;
       ref_tertiary?: string;
       box?: string;
+      error?: string;
     }>;
   }
 ) {
@@ -305,6 +306,7 @@ export default async function DashboardHome(
 
   return (
     <div className="overview-page">
+      {searchParams.error && <div className="error-banner">{searchParams.error}</div>}
       <div className="overview-topline">
         <div>
           <h1>Overview</h1>

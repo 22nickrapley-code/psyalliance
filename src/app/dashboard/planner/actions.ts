@@ -3,6 +3,16 @@
 import { createClient } from "@/lib/supabase/server";
 import { computeRankedCandidates, draftCoverageMessage } from "@/lib/server-matching";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+
+// A plain `throw` inside a server action wired to a bare <form action={fn}>
+// crashes the whole page with Next.js's generic error screen instead of showing
+// anything useful. Every validation/DB-error path in this file routes through
+// this instead, so a bad input or a failed insert sends the user back to this
+// same page with an inline banner rather than taking the page down.
+function plannerError(message: string): never {
+  redirect(`/dashboard/planner?error=${encodeURIComponent(message)}`);
+}
 
 // Runs only in an owner-authenticated context (either creating the project,
 // or the owner explicitly advancing to the next candidate after a decline -
@@ -70,15 +80,15 @@ export async function createPlannerProject(formData: FormData) {
   const notes = String(formData.get("notes") || "") || null;
   const caseIds = formData.getAll("case_ids").map((v) => Number(v));
 
-  if (!name || !startDate || !endDate) throw new Error("Name and date range are required");
-  if (caseIds.length === 0) throw new Error("Select at least one case to cover");
+  if (!name || !startDate || !endDate) plannerError("Name and date range are required");
+  if (caseIds.length === 0) plannerError("Select at least one case to cover");
 
   const { data: project, error: projectError } = await supabase
     .from("planner_projects")
     .insert({ profile_id: user.id, name, start_date: startDate, end_date: endDate, notes })
     .select()
     .single();
-  if (projectError) throw new Error(projectError.message);
+  if (projectError) plannerError(projectError.message);
 
   const { data: cases } = await supabase
     .from("caseload_clients")
@@ -92,7 +102,7 @@ export async function createPlannerProject(formData: FormData) {
       .insert({ project_id: project.id, caseload_client_id: caseRow.id })
       .select()
       .single();
-    if (assignmentError) throw new Error(assignmentError.message);
+    if (assignmentError) plannerError(assignmentError.message);
 
     await offerToNextCandidate(
       supabase,
@@ -126,9 +136,9 @@ export async function advanceToNextCandidate(formData: FormData) {
     .select("*, planner_projects(*), caseload_clients(*)")
     .eq("id", assignmentId)
     .maybeSingle();
-  if (error) throw new Error(error.message);
+  if (error) plannerError(error.message);
   if (!assignment || assignment.planner_projects.profile_id !== user.id) {
-    throw new Error("Not your assignment to advance");
+    plannerError("Not your assignment to advance");
   }
 
   const { data: myProfile } = await supabase.from("profiles").select("full_name").eq("id", user.id).maybeSingle();
@@ -157,14 +167,14 @@ export async function respondToPlannerOffer(formData: FormData) {
 
   const offerId = Number(formData.get("offer_id"));
   const decision = String(formData.get("decision") || "");
-  if (decision !== "accepted" && decision !== "declined") throw new Error("Invalid decision");
+  if (decision !== "accepted" && decision !== "declined") plannerError("Invalid decision");
 
   const { error } = await supabase
     .from("planner_offers")
     .update({ status: decision, responded_at: new Date().toISOString() })
     .eq("id", offerId)
     .eq("candidate_profile_id", user.id);
-  if (error) throw new Error(error.message);
+  if (error) plannerError(error.message);
 
   revalidatePath("/dashboard/planner");
 }
@@ -174,7 +184,7 @@ export async function cancelPlannerProject(formData: FormData) {
   const id = Number(formData.get("id"));
 
   const { error } = await supabase.from("planner_projects").update({ status: "cancelled" }).eq("id", id);
-  if (error) throw new Error(error.message);
+  if (error) plannerError(error.message);
 
   revalidatePath("/dashboard/planner");
 }

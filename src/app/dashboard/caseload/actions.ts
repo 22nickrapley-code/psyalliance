@@ -5,6 +5,15 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { extractStructuredData, AiNotConfiguredError } from "@/lib/ai/anthropic";
 
+// A plain `throw` inside a server action wired to a bare <form action={fn}>
+// crashes the whole page with Next.js's generic error screen instead of showing
+// anything useful. Every validation/DB-error path in this file routes through
+// this instead, so a bad input or a failed insert sends the user back to this
+// same page with an inline banner rather than taking the page down.
+function caseloadError(message: string): never {
+  redirect(`/dashboard/caseload?error=${encodeURIComponent(message)}`);
+}
+
 export type ImportedCaseRow = {
   private_label: string | null;
   organization_name: string | null;
@@ -34,7 +43,7 @@ export async function createBookOfBusiness(formData: FormData) {
     name,
     expense_burden_pct: retentionPct,
   });
-  if (error) throw new Error(error.message);
+  if (error) caseloadError(error.message);
 
   revalidatePath("/dashboard/caseload");
   revalidatePath("/dashboard/income");
@@ -58,7 +67,7 @@ export async function deleteOrganization(formData: FormData) {
     .update({ is_active: false })
     .eq("id", id)
     .eq("profile_id", user.id);
-  if (error) throw new Error(error.message);
+  if (error) caseloadError(error.message);
 
   revalidatePath("/dashboard/caseload");
   revalidatePath("/dashboard/income");
@@ -87,7 +96,7 @@ export async function createCase(formData: FormData) {
     rate_per_session: parseFloat(String(formData.get("rate_per_session") || "0")) || null,
     sessions_per_week: parseFloat(String(formData.get("sessions_per_week") || "0")) || null,
   });
-  if (error) throw new Error(error.message);
+  if (error) caseloadError(error.message);
 
   revalidatePath("/dashboard/caseload");
   revalidatePath("/dashboard/income");
@@ -229,14 +238,14 @@ export async function requestNewInsurance(formData: FormData) {
   if (!user) throw new Error("Not signed in");
 
   const value = String(formData.get("requested_value") || "").trim();
-  if (!value) throw new Error("Enter the insurance provider's name first.");
-  if (value.length > 120) throw new Error("That name is too long.");
+  if (!value) caseloadError("Enter the insurance provider's name first.");
+  if (value.length > 120) caseloadError("That name is too long.");
 
   const { error } = await supabase.from("insurance_requests").insert({
     requested_by: user.id,
     requested_value: value,
   });
-  if (error) throw new Error(error.message);
+  if (error) caseloadError(error.message);
 
   revalidatePath("/dashboard/caseload");
   redirect("/dashboard/caseload?insurance_requested=1");
@@ -277,7 +286,7 @@ export async function updateCase(formData: FormData) {
     })
     .eq("id", id)
     .eq("profile_id", user.id);
-  if (error) throw new Error(error.message);
+  if (error) caseloadError(error.message);
 
   revalidatePath("/dashboard/caseload");
   revalidatePath("/dashboard/income");
@@ -293,7 +302,7 @@ export async function archiveCase(formData: FormData) {
     .from("caseload_clients")
     .update({ is_active: false, archived_at: new Date().toISOString() })
     .eq("id", id);
-  if (error) throw new Error(error.message);
+  if (error) caseloadError(error.message);
 
   revalidatePath("/dashboard/caseload");
   revalidatePath("/dashboard/income");
@@ -318,7 +327,7 @@ export async function reactivateCase(formData: FormData) {
     .update({ is_active: true, archived_at: null })
     .eq("id", id)
     .eq("profile_id", user.id);
-  if (error) throw new Error(error.message);
+  if (error) caseloadError(error.message);
 
   revalidatePath("/dashboard/caseload");
   revalidatePath("/dashboard/income");

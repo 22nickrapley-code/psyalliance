@@ -85,6 +85,11 @@ export default function HomePage() {
       />
       <nav className="marketing-nav">
         <a href="/" className="brand">psyalliance.org</a>
+        <div className="marketing-nav-links">
+          <a href="#how-it-works">How verification works</a>
+          <a href="#compare">Why not a directory</a>
+          <a href="#founders">Our story</a>
+        </div>
         <div style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
           <a href="/auth/sign-in" className="btn secondary">Sign in</a>
           <a href="/auth/sign-up" className="btn">Get started, it's free</a>
@@ -95,11 +100,12 @@ export default function HomePage() {
         <span className="eyebrow">
           For doctoral-level psychologists (PhD/PsyD/EdD) &amp; psychiatrists (MD/DO)
         </span>
-        <h1>Supporting psychology, strengthening care.</h1>
+        <h1>Never scramble to cover your caseload again.</h1>
         <p className="lede">
-          The virtual practice toolkit built for coverage, referrals, and peer consultation, with a
-          credential-verified network behind every connection. Free for every verified clinician,
-          forever.
+          Supporting psychology, strengthening care — psyalliance.org is the credential-verified
+          network and virtual-practice toolkit built exclusively for doctoral-level psychologists
+          and psychiatrists. Manage your caseload, get matched with coverage when you're away, and
+          receive referrals from colleagues who know your credentials are real. Free, forever.
         </p>
         <div className="hero-actions">
           <a href="/auth/sign-up" className="btn">Create your free profile</a>
@@ -134,8 +140,9 @@ export default function HomePage() {
           <div className="letter">C</div>
           <h3>Coverage when you're away</h3>
           <p>
-            Post a coverage need and a weighted matching engine ranks the colleagues best placed
-            to help, by location, specialism, and relationship.
+            Parental leave, illness, vacation — post a coverage need and a weighted matching
+            engine ranks the colleagues best placed to help, by location, specialism, and
+            relationship, so no client is left without care.
           </p>
         </div>
         <div className="pillar">
@@ -145,6 +152,70 @@ export default function HomePage() {
             Town Hall channels organized by specialism and a directory of verified peers, built
             for practicing clinicians.
           </p>
+        </div>
+      </section>
+
+      <section className="section-band" id="how-it-works" style={{ borderTop: "none" }}>
+        <div className="section-band-inner">
+          <h2 style={{ fontSize: "1.4rem", textAlign: "center", marginBottom: "0.5rem" }}>
+            Every member is checked before they ever appear.
+          </h2>
+          <p className="lede" style={{ margin: "0 auto 2.25rem", textAlign: "center", maxWidth: 620, fontSize: "1rem" }}>
+            No self-attestation, no pay-for-a-badge. A membership here means something because
+            getting in takes real verification.
+          </p>
+          <div className="verify-steps">
+            <div className="verify-step">
+              <div className="verify-step-num">1</div>
+              <h3>Submit your credentials</h3>
+              <p>Your name, degree (PhD/PsyD/EdD or MD/DO), state, and license number.</p>
+            </div>
+            <div className="verify-step">
+              <div className="verify-step-num">2</div>
+              <h3>We check the record</h3>
+              <p>Cross-referenced against your state licensing board, and the NPI registry where available.</p>
+            </div>
+            <div className="verify-step">
+              <div className="verify-step-num">3</div>
+              <h3>A human signs off</h3>
+              <p>Verification isn't fully automated — every submission gets a final human review before you appear in the directory.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="section-band" id="compare" style={{ borderTop: "none" }}>
+        <div className="section-band-inner">
+          <h2 style={{ fontSize: "1.4rem", textAlign: "center", marginBottom: "0.5rem" }}>
+            Not another public listing site
+          </h2>
+          <p className="lede" style={{ margin: "0 auto 2rem", textAlign: "center", maxWidth: 680, fontSize: "1rem" }}>
+            Directories like Psychology Today list any licensed clinician willing to pay for a
+            listing. psyalliance.org lists none of them.
+          </p>
+          <div className="compare-grid">
+            <div className="compare-col">
+              <h3>Public directories</h3>
+              <ul>
+                <li><span className="x">&#10005;</span> Anyone with a license and a credit card gets listed</li>
+                <li><span className="x">&#10005;</span> Every discipline mixed together, with thin specialism filters</li>
+                <li><span className="x">&#10005;</span> No way to find coverage for your own caseload</li>
+                <li><span className="x">&#10005;</span> You're a profile in a sea of thousands</li>
+              </ul>
+            </div>
+            <div className="compare-col compare-col-highlight">
+              <h3>psyalliance.org</h3>
+              <ul>
+                <li><span className="check">&#10003;</span> Every member checked against a state licensing board first</li>
+                <li><span className="check">&#10003;</span> Doctoral-level psychologists and psychiatrists only</li>
+                <li><span className="check">&#10003;</span> Post a coverage need and get matched to the right colleague</li>
+                <li><span className="check">&#10003;</span> A closed, credential-verified professional community</li>
+              </ul>
+            </div>
+          </div>
+          <div style={{ textAlign: "center", marginTop: "2rem" }}>
+            <a href="/auth/sign-up" className="btn">Join the network</a>
+          </div>
         </div>
       </section>
 
@@ -220,71 +291,59 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="section-band" style={{ borderTop: "none" }}>
-        <div className="section-band-inner">
-          <h2 style={{ fontSize: "1.3rem", textAlign: "center", marginBottom: "0.75rem" }}>
-            Not another public listing site
-          </h2>
-          <p className="lede" style={{ margin: "0 auto 2rem", textAlign: "center", maxWidth: 680 }}>
-            Directories like Psychology Today list any licensed clinician willing to pay for a
-            listing. psyalliance.org lists none of them. Every member is a doctoral-level
-            psychologist or psychiatrist, credential checked against a state board before they
-            ever appear, so a connection made here means something.
-          </p>
-          <div style={{ textAlign: "center" }}>
-            <a href="/auth/sign-up" className="btn">Join the network</a>
-          </div>
-        </div>
-      </section>
-
       <section className="section-band" id="founders" style={{ borderTop: "none" }}>
         <div className="section-band-inner">
           <h2 style={{ fontSize: "1.3rem", textAlign: "center", marginBottom: "1.75rem" }}>
-            Who built this
+            Why this exists
           </h2>
-          <div
-            style={{
-              display: "flex",
-              gap: "1.75rem",
-              alignItems: "flex-start",
-              justifyContent: "center",
-              flexWrap: "wrap",
-              maxWidth: 720,
-              margin: "0 auto",
-            }}
-          >
+          <div className="founder-block">
             <img
               src="/team/rena-pazienza.jpg"
               alt="Rena Pazienza, PhD"
-              style={{
-                width: 140,
-                height: 175,
-                objectFit: "cover",
-                borderRadius: "var(--radius)",
-                flexShrink: 0,
-                boxShadow: "var(--shadow-sm)",
-              }}
+              className="founder-photo"
             />
-            <div style={{ maxWidth: 480, minWidth: 240 }}>
-              <h3 style={{ marginBottom: "0.4rem" }}>Rena Pazienza, PhD</h3>
-              <p className="muted" style={{ marginTop: 0, fontSize: "0.92rem", lineHeight: 1.6 }}>
-                Rena is a licensed psychologist who built psyalliance.org around a gap she kept
-                running into in her own practice: directories like Psychology Today lump every
-                license type together with no way to find a true specialist, and there was no
-                dedicated way for single-specialist practices like hers to coordinate coverage,
-                referrals, and consultation with each other. She shaped the platform with feedback
-                from her clinical peers before it ever went live. Co-founded with her husband,
-                Nick Rapley.
+            <div className="founder-copy">
+              <h3 style={{ marginBottom: "0.6rem" }}>Rena Pazienza, PhD</h3>
+              <p>
+                psyalliance.org started as the answer to one problem Rena, a licensed
+                psychologist, couldn't find anywhere: when she went on maternity leave, she needed
+                her caseload covered by someone qualified — and there was no way to do that.
+              </p>
+              <p>
+                Directories like Psychology Today are built for clients to find a therapist, not
+                for one psychologist to find another. There was nowhere to search specifically for
+                verified colleagues who could take on her clients while she was out, reach out to
+                them directly, and manage the handoff — and no single place to keep her own
+                caseload organized in the first place.
+              </p>
+              <p>
+                So she built the tool she wished had existed: a closed, credential-verified
+                network where a psychologist can actually find coverage, not just a listing. She
+                shaped it with feedback from her clinical peers before it ever went live, and
+                co-founded it with her husband, Nick Rapley.
               </p>
             </div>
           </div>
         </div>
       </section>
 
+      <section className="cta-band">
+        <h2>Ready to stop practicing alone?</h2>
+        <p>
+          Join a closed, credential-verified network built for doctoral-level psychologists and
+          psychiatrists — free, forever.
+        </p>
+        <a href="/auth/sign-up" className="btn cta-band-btn">Create your free profile</a>
+      </section>
+
       <footer style={{ textAlign: "center", padding: "2.5rem 1.75rem", color: "var(--muted)", fontSize: "0.85rem" }}>
         psyalliance.org: a professional home for PhD, PsyD, EdD, and MD/DO behavioral health
         practitioners.
       </footer>
+
+      <div className="marketing-sticky-cta">
+        <a href="/auth/sign-up" className="btn">Get started, it's free</a>
+      </div>
     </div>
   );
 }

@@ -48,7 +48,7 @@ function PersonLink({ id, name, tier }: { id: string; name: string; tier?: Tier 
 
 export default async function NetworkPage(
   props: {
-    searchParams: Promise<{ q?: string; state?: string; specialism?: string; degree?: string; psypact?: string; profession?: string }>;
+    searchParams: Promise<{ q?: string; state?: string; specialism?: string; degree?: string; psypact?: string; profession?: string; error?: string }>;
   }
 ) {
   const searchParams = await props.searchParams;
@@ -188,21 +188,23 @@ export default async function NetworkPage(
         computed from shared specialisms, nothing here is stored until you connect.
       </p>
 
+      {searchParams?.error && <div className="error-banner">{searchParams.error}</div>}
+
       {incoming.length > 0 && (
         <div className="card">
           <h2>Pending requests to you</h2>
           {incoming.map((c: any) => (
-            <div key={c.id} className="checkbox-row" style={{ justifyContent: "space-between" }}>
-              <span>
+            <div key={c.id} className="person-row">
+              <span className="person-row-info">
                 <PersonLink id={otherIdOf(c)} name={nameOf(c) || ""} /> wants to connect as <TierTag tier={c.tier} />
               </span>
-              <span>
-                <form action={respondToConnection} style={{ display: "inline" }}>
+              <span className="person-row-actions">
+                <form action={respondToConnection}>
                   <input type="hidden" name="id" value={c.id} />
                   <input type="hidden" name="decision" value="accepted" />
                   <button type="submit">Accept</button>
-                </form>{" "}
-                <form action={respondToConnection} style={{ display: "inline" }}>
+                </form>
+                <form action={respondToConnection}>
                   <input type="hidden" name="id" value={c.id} />
                   <input type="hidden" name="decision" value="declined" />
                   <button type="submit" className="secondary">Decline</button>
@@ -221,19 +223,19 @@ export default async function NetworkPage(
         {partners.map((c: any) => {
           const otherId = otherIdOf(c);
           return (
-          <div key={c.id} className="checkbox-row" style={{ justifyContent: "space-between" }}>
-            <span style={{ display: "flex", alignItems: "center", gap: "0.55rem" }}>
+          <div key={c.id} className="person-row">
+            <span className="person-row-info">
               <Avatar url={avatarOf(c)} name={nameOf(c) || ""} />
               <PersonLink id={otherId} name={nameOf(c) || ""} tier="partner" />
             </span>
-            <span>
-              <form action={startConversation} style={{ display: "inline" }}>
+            <span className="person-row-actions">
+              <form action={startConversation}>
                 <input type="hidden" name="participant_ids" value={otherId} />
                 <input type="hidden" name="title" value={`${nameOf(c)}`} />
                 <input type="hidden" name="body" value={`Hi ${nameOf(c) || ""}, wanted to connect.`} />
-                <button type="submit" className="secondary" style={{ marginRight: "0.4rem" }}>Message</button>
+                <button type="submit" className="secondary">Message</button>
               </form>
-              <form action={removeConnection} style={{ display: "inline" }}>
+              <form action={removeConnection}>
                 <input type="hidden" name="id" value={c.id} />
                 <button type="submit" className="secondary">Remove</button>
               </form>
@@ -252,19 +254,19 @@ export default async function NetworkPage(
         {bench.map((c: any) => {
           const otherId = otherIdOf(c);
           return (
-          <div key={c.id} className="checkbox-row" style={{ justifyContent: "space-between" }}>
-            <span style={{ display: "flex", alignItems: "center", gap: "0.55rem" }}>
+          <div key={c.id} className="person-row">
+            <span className="person-row-info">
               <Avatar url={avatarOf(c)} name={nameOf(c) || ""} />
               <PersonLink id={otherId} name={nameOf(c) || ""} tier="bench" />
             </span>
-            <span>
-              <form action={startConversation} style={{ display: "inline" }}>
+            <span className="person-row-actions">
+              <form action={startConversation}>
                 <input type="hidden" name="participant_ids" value={otherId} />
                 <input type="hidden" name="title" value={`${nameOf(c)}`} />
                 <input type="hidden" name="body" value={`Hi ${nameOf(c) || ""}, wanted to connect.`} />
-                <button type="submit" className="secondary" style={{ marginRight: "0.4rem" }}>Message</button>
+                <button type="submit" className="secondary">Message</button>
               </form>
-              <form action={removeConnection} style={{ display: "inline" }}>
+              <form action={removeConnection}>
                 <input type="hidden" name="id" value={c.id} />
                 <button type="submit" className="secondary">Remove</button>
               </form>

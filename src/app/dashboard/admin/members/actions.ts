@@ -4,6 +4,16 @@ import { createClient } from "@/lib/supabase/server";
 import { assertIsAdmin } from "@/lib/admin";
 import { notifyProfile } from "@/lib/notifications";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+
+// A plain `throw` inside a server action wired to a bare <form action={fn}>
+// crashes the whole page with Next.js's generic error screen instead of showing
+// anything useful. Every validation/DB-error path in this file routes through
+// this instead, so a bad input or a failed insert sends the user back to this
+// same page with an inline banner rather than taking the page down.
+function membersError(message: string): never {
+  redirect(`/dashboard/admin/members?error=${encodeURIComponent(message)}`);
+}
 
 export async function setMemberVerificationStatus(formData: FormData) {
   const supabase = await createClient();
@@ -31,7 +41,7 @@ export async function setMemberVerificationStatus(formData: FormData) {
       verified_at: status === "verified" ? new Date().toISOString() : null,
     })
     .eq("id", profileId);
-  if (error) throw new Error(error.message);
+  if (error) membersError(error.message);
 
   if (status === "verified" && before?.verification_status !== "verified") {
     await notifyProfile(supabase, {
@@ -66,7 +76,7 @@ export async function setMemberAdminFlag(formData: FormData) {
   const isAdmin = formData.get("is_admin") === "1";
 
   const { error } = await supabase.from("profiles").update({ is_admin: isAdmin }).eq("id", profileId);
-  if (error) throw new Error(error.message);
+  if (error) membersError(error.message);
 
   revalidatePath("/dashboard/admin/members");
 }

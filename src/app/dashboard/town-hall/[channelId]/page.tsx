@@ -9,8 +9,9 @@ const REACTIONS: { key: string; label: string }[] = [
   { key: "thumbs_down", label: "👎" },
 ];
 
-export default async function TownHallChannelPage(props: { params: Promise<{ channelId: string }> }) {
+export default async function TownHallChannelPage(props: { params: Promise<{ channelId: string }>; searchParams: Promise<{ error?: string }> }) {
   const params = await props.params;
+  const { error } = await props.searchParams;
   const channelId = Number(params.channelId);
   const supabase = await createClient();
   const {
@@ -85,6 +86,8 @@ export default async function TownHallChannelPage(props: { params: Promise<{ cha
       </p>
       <h1>{channel.name}</h1>
       {channel.description && <p className="muted">{channel.description}</p>}
+
+      {error && <div className="error-banner">{error}</div>}
 
       <div className="card">
         <h2>Post a message</h2>

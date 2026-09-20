@@ -7,7 +7,7 @@ import ActiveClientsList from "./active-clients-list";
 
 export default async function CaseloadPage(
   props: {
-    searchParams: Promise<{ insurance_requested?: string; past_q?: string }>;
+    searchParams: Promise<{ insurance_requested?: string; past_q?: string; error?: string }>;
   }
 ) {
   const searchParams = await props.searchParams;
@@ -63,6 +63,8 @@ export default async function CaseloadPage(
           Export CSV
         </a>
       </div>
+
+      {searchParams.error && <div className="error-banner">{searchParams.error}</div>}
 
       {searchParams.insurance_requested === "1" && (
         <div className="message-banner">

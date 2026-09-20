@@ -4,6 +4,16 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+// A plain `throw` inside a server action wired to a bare <form action={fn}>
+// crashes the whole page with Next.js's generic error screen instead of showing
+// anything useful. Every validation/DB-error path in this file routes through
+// this instead, so a bad input or a failed insert sends the user back to the
+// relevant page (the inbox, or the specific thread) with an inline banner
+// rather than taking the page down.
+function messagesError(path: string, message: string): never {
+  redirect(`${path}?error=${encodeURIComponent(message)}`);
+}
+
 // Finds "@Full Name" occurrences in a message body against the other
 // participants in the conversation, and returns the set of profile ids
 // mentioned - answers Nick's own open question in the spec notes ("How hard
@@ -42,7 +52,7 @@ async function postInitialMessage(
     body,
     mentioned_profile_ids: mentioned,
   });
-  if (messageError) throw new Error(messageError.message);
+  if (messageError) messagesError("/dashboard/messages", messageError.message);
 
   await supabase
     .from("conversations")
@@ -130,12 +140,12 @@ export async function startConversation(formData: FormData) {
     .insert({ created_by: user.id, title })
     .select("id")
     .single();
-  if (convError) throw new Error(convError.message);
+  if (convError) messagesError("/dashboard/messages", convError.message);
 
   const { error: participantsError } = await supabase
     .from("conversation_participants")
     .insert(allParticipantIds.map((profile_id) => ({ conversation_id: conversation.id, profile_id })));
-  if (participantsError) throw new Error(participantsError.message);
+  if (participantsError) messagesError("/dashboard/messages", participantsError.message);
 
   if (body) {
     await postInitialMessage(supabase, conversation.id, user.id, body, participantIds);
@@ -171,7 +181,7 @@ export async function sendMessage(formData: FormData) {
     body,
     mentioned_profile_ids: mentioned,
   });
-  if (error) throw new Error(error.message);
+  if (error) messagesError(`/dashboard/messages/${conversationId}`, error.message);
 
   await supabase
     .from("conversations")
@@ -207,14 +217,14 @@ export async function setConversationReadState(formData: FormData) {
 
   const conversationId = Number(formData.get("conversation_id"));
   const state = String(formData.get("state") || "");
-  if (state !== "read" && state !== "unread") throw new Error("Invalid state");
+  if (state !== "read" && state !== "unread") messagesError("/dashboard/messages", "Invalid state");
 
   const { error } = await supabase
     .from("conversation_participants")
     .update({ last_read_at: state === "unread" ? FORCE_UNREAD_SENTINEL : new Date().toISOString() })
     .eq("conversation_id", conversationId)
     .eq("profile_id", user.id);
-  if (error) throw new Error(error.message);
+  if (error) messagesError("/dashboard/messages", error.message);
 
   revalidatePath("/dashboard/messages");
   revalidatePath("/dashboard");
@@ -243,14 +253,14 @@ export async function setNotificationReadState(formData: FormData) {
 
   const id = Number(formData.get("id"));
   const state = String(formData.get("state") || "");
-  if (state !== "read" && state !== "unread") throw new Error("Invalid state");
+  if (state !== "read" && state !== "unread") messagesError("/dashboard/messages", "Invalid state");
 
   const { error } = await supabase
     .from("system_notifications")
     .update({ read_at: state === "unread" ? null : new Date().toISOString() })
     .eq("id", id)
     .eq("profile_id", user.id);
-  if (error) throw new Error(error.message);
+  if (error) messagesError("/dashboard/messages", error.message);
 
   revalidatePath("/dashboard/messages");
   revalidatePath("/dashboard");

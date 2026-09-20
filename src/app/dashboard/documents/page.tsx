@@ -40,7 +40,7 @@ function renderAreas(d: { areas: { id: number; value: string }[]; is_general?: b
 
 export default async function DocumentsPage(
   props: {
-    searchParams: Promise<{ q?: string; from?: string; area?: string; where?: string; sort?: string; folder?: string; uploaded?: string }>;
+    searchParams: Promise<{ q?: string; from?: string; area?: string; where?: string; sort?: string; folder?: string; uploaded?: string; error?: string }>;
   }
 ) {
   const searchParams = await props.searchParams;
@@ -151,6 +151,8 @@ export default async function DocumentsPage(
         guides, session frameworks, regulatory references) are visible to any signed-in
         colleague, and can be rated so the most useful ones surface.
       </p>
+
+      {searchParams?.error && <div className="error-banner">{searchParams.error}</div>}
 
       {searchParams?.uploaded === "1" && (
         <div className="message-banner">Document uploaded successfully.</div>

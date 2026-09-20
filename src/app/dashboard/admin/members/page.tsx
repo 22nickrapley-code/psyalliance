@@ -6,7 +6,7 @@ import { professionFor, professionLabel } from "@/lib/profession";
 import UsStateDatalist from "@/components/us-state-datalist";
 
 export default async function AdminMembersPage(
-  props: { searchParams: Promise<{ q?: string; state?: string; status?: string }> }
+  props: { searchParams: Promise<{ q?: string; state?: string; status?: string; error?: string }> }
 ) {
   const supabase = await createClient();
   const redirectPath = await requireAdminOrRedirectPath(supabase);
@@ -40,6 +40,8 @@ export default async function AdminMembersPage(
         accounts (used for your own network/matching testing) are marked so you don't mistake
         them for real signups.
       </p>
+
+      {searchParams?.error && <div className="error-banner">{searchParams.error}</div>}
 
       <div className="card">
         <form method="GET" className="field-row" style={{ alignItems: "flex-end", flexWrap: "wrap" }}>

@@ -4,6 +4,15 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+// A plain `throw` inside a server action wired to a bare <form action={fn}>
+// crashes the whole page with Next.js's generic error screen instead of showing
+// anything useful. Every validation/DB-error path in this file routes through
+// this instead, so a bad input or a failed insert sends the user back to this
+// same page with an inline banner rather than taking the page down.
+function capacityError(message: string): never {
+  redirect(`/dashboard/capacity?error=${encodeURIComponent(message)}`);
+}
+
 export async function saveCapacitySettings(formData: FormData) {
   const supabase = await createClient();
   const {
@@ -18,7 +27,7 @@ export async function saveCapacitySettings(formData: FormData) {
     no_show_rate_pct: parseFloat(String(formData.get("no_show_rate_pct") || "0")) || null,
     missed_session_charge_pct: parseFloat(String(formData.get("missed_session_charge_pct") || "0")) || null,
   });
-  if (error) throw new Error(error.message);
+  if (error) capacityError(error.message);
 
   revalidatePath("/dashboard/capacity");
   redirect("/dashboard/capacity?saved=1");
@@ -46,7 +55,7 @@ export async function addOverheadExpense(formData: FormData) {
     monthly_cost: monthlyCost,
     notes: String(formData.get("notes") || "") || null,
   });
-  if (error) throw new Error(error.message);
+  if (error) capacityError(error.message);
 
   revalidatePath("/dashboard/capacity");
   revalidatePath("/dashboard/income");
@@ -57,7 +66,7 @@ export async function deleteOverheadExpense(formData: FormData) {
   const id = Number(formData.get("id"));
 
   const { error } = await supabase.from("practice_overhead_expenses").delete().eq("id", id);
-  if (error) throw new Error(error.message);
+  if (error) capacityError(error.message);
 
   revalidatePath("/dashboard/capacity");
   revalidatePath("/dashboard/income");

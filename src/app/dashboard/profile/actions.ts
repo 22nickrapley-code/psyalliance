@@ -5,6 +5,15 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { extractStructuredData, AiNotConfiguredError } from "@/lib/ai/anthropic";
 
+// A plain `throw` inside a server action wired to a bare <form action={fn}>
+// crashes the whole page with Next.js's generic error screen instead of showing
+// anything useful. Every validation/DB-error path in this file routes through
+// this instead, so a bad input or a failed insert sends the user back to this
+// same page with an inline banner rather than taking the page down.
+function profileError(message: string): never {
+  redirect(`/dashboard/profile?error=${encodeURIComponent(message)}`);
+}
+
 // Categories the AI import is allowed to auto-check from a pasted bio. The
 // self-disclosure categories (ethnicity, gender identity, sex) are
 // deliberately excluded even though they're plain lookup_values too - those
@@ -61,7 +70,7 @@ export async function saveProfile(formData: FormData) {
 
   const { error: upsertError } = await supabase.from("profiles").upsert(profileRow);
   if (upsertError) {
-    throw new Error(upsertError.message);
+    profileError(upsertError.message);
   }
 
   // Rebuild the profile's lookup-value associations from scratch each save -
@@ -95,7 +104,7 @@ export async function saveProfile(formData: FormData) {
   if (rows.length > 0) {
     const { error: insertError } = await supabase.from("profile_lookup_values").insert(rows);
     if (insertError) {
-      throw new Error(insertError.message);
+      profileError(insertError.message);
     }
   }
 
@@ -118,7 +127,7 @@ export async function saveAvailability(formData: FormData) {
     const { error } = await supabase
       .from("profile_availability")
       .insert(days.map((day_of_week) => ({ profile_id: user.id, day_of_week })));
-    if (error) throw new Error(error.message);
+    if (error) profileError(error.message);
   }
 
   revalidatePath("/dashboard/profile");
@@ -327,7 +336,7 @@ export async function submitCredentialVerification(formData: FormData) {
     state: String(formData.get("state") || "") || null,
     license_number: String(formData.get("license_number") || ""),
   });
-  if (error) throw new Error(error.message);
+  if (error) profileError(error.message);
 
   revalidatePath("/dashboard/profile");
 }

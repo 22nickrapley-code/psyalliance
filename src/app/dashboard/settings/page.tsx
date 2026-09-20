@@ -7,8 +7,8 @@ import {
   removeFromBlocklist,
 } from "./actions";
 
-export default async function SettingsPage(props: { searchParams: Promise<{ saved?: string }> }) {
-  const { saved } = await props.searchParams;
+export default async function SettingsPage(props: { searchParams: Promise<{ saved?: string; error?: string }> }) {
+  const { saved, error } = await props.searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -51,6 +51,8 @@ export default async function SettingsPage(props: { searchParams: Promise<{ save
         Notification preferences, your emergency-cover contact, and a private list of colleagues to
         exclude from your own search and recommendations. None of this is visible to anyone else.
       </p>
+
+      {error && <div className="error-banner">{error}</div>}
 
       {saved === "1" && (
         <div className="card" style={{ borderColor: "var(--accent, #2a7)", background: "rgba(34,170,119,0.08)" }}>
@@ -182,14 +184,16 @@ export default async function SettingsPage(props: { searchParams: Promise<{ save
           information automatically.
         </p>
         {emergencyContact ? (
-          <div className="checkbox-row" style={{ justifyContent: "space-between" }}>
-            <span>
+          <div className="person-row">
+            <span className="person-row-info">
               {emergencyContact.contact?.credential_prefix} {emergencyContact.contact?.full_name}
               {emergencyContact.notes ? `, ${emergencyContact.notes}` : ""}
             </span>
-            <form action={removeEmergencyContact}>
-              <button type="submit" className="secondary">Remove</button>
-            </form>
+            <span className="person-row-actions">
+              <form action={removeEmergencyContact}>
+                <button type="submit" className="secondary">Remove</button>
+              </form>
+            </span>
           </div>
         ) : (
           <p className="muted">No emergency contact set yet.</p>
@@ -223,12 +227,14 @@ export default async function SettingsPage(props: { searchParams: Promise<{ save
           results, and predictive search. This is on your side only; they're never notified.
         </p>
         {(blocklist || []).map((b: any) => (
-          <div key={b.blocked_profile_id} className="checkbox-row" style={{ justifyContent: "space-between" }}>
-            <span>{b.blocked?.credential_prefix} {b.blocked?.full_name}</span>
-            <form action={removeFromBlocklist}>
-              <input type="hidden" name="blocked_profile_id" value={b.blocked_profile_id} />
-              <button type="submit" className="secondary">Remove</button>
-            </form>
+          <div key={b.blocked_profile_id} className="person-row">
+            <span className="person-row-info">{b.blocked?.credential_prefix} {b.blocked?.full_name}</span>
+            <span className="person-row-actions">
+              <form action={removeFromBlocklist}>
+                <input type="hidden" name="blocked_profile_id" value={b.blocked_profile_id} />
+                <button type="submit" className="secondary">Remove</button>
+              </form>
+            </span>
           </div>
         ))}
         {(blocklist || []).length === 0 && <p className="muted">Nobody on this list.</p>}

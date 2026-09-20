@@ -3,10 +3,13 @@ import { redirect } from "next/navigation";
 import { requireAdminOrRedirectPath } from "@/lib/admin";
 import { reviewCredential, setProfileVerificationStatus } from "./actions";
 
-export default async function AdminVerificationsPage() {
+export default async function AdminVerificationsPage(
+  props: { searchParams: Promise<{ error?: string }> }
+) {
   const supabase = await createClient();
   const redirectPath = await requireAdminOrRedirectPath(supabase);
   if (redirectPath) redirect(redirectPath);
+  const { error } = await props.searchParams;
 
   const { data: profiles } = await supabase
     .from("profiles")
@@ -26,6 +29,8 @@ export default async function AdminVerificationsPage() {
         against the source before marking it matched.
       </p>
 
+      {error && <div className="error-banner">{error}</div>}
+
       <div className="card">
         <h2>Awaiting review ({pending.length})</h2>
         {pending.map((p: any) => (
@@ -35,19 +40,19 @@ export default async function AdminVerificationsPage() {
               <span className="tag">{p.verification_status}</span>
             </div>
             {(p.credential_verifications || []).map((v: any) => (
-              <div key={v.id} className="checkbox-row" style={{ justifyContent: "space-between" }}>
-                <span>
+              <div key={v.id} className="person-row">
+                <span className="person-row-info">
                   {v.source} · {v.state || "-"} · #{v.license_number} ·{" "}
                   {v.matched ? "matched" : v.flagged_reason ? `flagged: ${v.flagged_reason}` : "unreviewed"}
                 </span>
                 {!v.matched && (
-                  <span>
-                    <form action={reviewCredential} style={{ display: "inline" }}>
+                  <span className="person-row-actions">
+                    <form action={reviewCredential}>
                       <input type="hidden" name="id" value={v.id} />
                       <input type="hidden" name="decision" value="matched" />
                       <button type="submit">Mark matched</button>
-                    </form>{" "}
-                    <form action={reviewCredential} style={{ display: "inline" }}>
+                    </form>
+                    <form action={reviewCredential}>
                       <input type="hidden" name="id" value={v.id} />
                       <input type="hidden" name="decision" value="flagged" />
                       <input type="hidden" name="flagged_reason" value="needs follow-up" />

@@ -162,9 +162,140 @@ a {
 
 .checkbox-row {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 0.5rem;
   margin-bottom: 0.75rem;
+}
+
+/* A person/connection list row: avatar + name on the left, one or two
+   action buttons on the right. On a narrow screen there often isn't room
+   for both on one line - flex-wrap on the ROW (rather than letting each
+   button wrap independently, which is what produced full-width stacked
+   buttons before) means the whole actions group drops to its own line as
+   a unit, buttons still sitting side by side within it. */
+.person-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 0.75rem;
+  padding: 0.65rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.person-row:last-child {
+  border-bottom: none;
+}
+
+.person-row-info {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-width: 0;
+  flex: 1 1 200px;
+}
+
+.person-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 0 0 auto;
+}
+
+.person-row-actions form {
+  display: inline-flex;
+}
+
+.person-row-actions button {
+  white-space: nowrap;
+}
+
+@media (max-width: 600px) {
+  .person-row-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
+
+/* Inbox row (Messages page): avatar + name + preview text on the left, a
+   date and a mark-read button on the right. The bug this fixes: with no
+   truncation, a long message preview squeezed into a narrow flex child
+   wraps one word per line all the way down the screen on mobile. The fix
+   is the same shape as .person-row (group the non-shrinking bits so they
+   drop to their own line as a unit instead of forcing the row wider) PLUS
+   single-line ellipsis truncation on the preview text itself, so the
+   preview never wraps - it just quietly cuts off with "…". */
+.inbox-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 0.5rem;
+  margin-bottom: 0.3rem;
+}
+
+.inbox-row-link {
+  flex: 1 1 240px;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.75rem 0.85rem;
+  border-radius: var(--radius);
+  text-decoration: none;
+  color: inherit;
+}
+
+.inbox-row-main {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.inbox-row-text {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.inbox-row-text strong {
+  color: var(--text);
+}
+
+.inbox-preview {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+.inbox-row-date {
+  white-space: nowrap;
+  flex: 0 0 auto;
+  margin-left: auto;
+}
+
+.inbox-row-actions {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+}
+
+.inbox-row-actions button {
+  white-space: nowrap;
+}
+
+@media (max-width: 600px) {
+  .inbox-row-link {
+    flex-wrap: wrap;
+    padding: 0.65rem 0.75rem;
+  }
+
+  .inbox-row-date {
+    margin-left: calc(2rem + 0.7rem);
+  }
 }
 
 button, .btn {
@@ -1048,7 +1179,7 @@ a.person-link.tier-recommended {
 
 .case-row {
   display: grid;
-  grid-template-columns: 56px minmax(120px, 1.3fr) minmax(110px, 1fr) 76px 84px auto;
+  grid-template-columns: 56px minmax(120px, 1.3fr) minmax(180px, 1.4fr) auto;
   align-items: center;
   gap: 0.6rem;
   padding: 0.6rem 0.1rem;
@@ -1074,12 +1205,28 @@ a.person-link.tier-recommended {
   white-space: nowrap;
 }
 
+/* Practice, rate, and session frequency used to be three separate grid
+   columns - fine on a wide desktop row, but on mobile (where the row drops
+   to two columns) each one became a grid item in its own right and landed
+   on its own line, so a single client row sprawled across four lines of
+   near-empty space. Grouping them into one flex-wrapping cell means mobile
+   only ever needs to place ONE grid item for all three, so they naturally
+   sit on a single compact line together instead. */
+.case-meta {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.15rem 0.5rem;
+  min-width: 0;
+}
+
 .case-row .case-org {
   color: var(--text-soft);
   font-size: 0.82rem;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  max-width: 100%;
 }
 
 .case-row .case-rate {
@@ -1087,20 +1234,42 @@ a.person-link.tier-recommended {
   white-space: nowrap;
 }
 
+.case-row .case-sessions {
+  white-space: nowrap;
+}
+
 .case-row-actions {
   display: flex;
   justify-content: flex-end;
+  gap: 0.35rem;
 }
 
 @media (max-width: 760px) {
   .case-row {
     grid-template-columns: 1fr auto;
-    row-gap: 0.25rem;
+    row-gap: 0.3rem;
+    align-items: start;
+    padding: 0.75rem 0.1rem;
   }
-  .case-row .case-org,
-  .case-row .case-rate,
-  .case-row .case-sessions {
+  .case-row .case-num {
     grid-column: 1;
+  }
+  .case-row .case-label {
+    grid-column: 1;
+    white-space: normal;
+  }
+  .case-meta {
+    grid-column: 1;
+    font-size: 0.82rem;
+  }
+  .case-row .case-org {
+    max-width: 100%;
+  }
+  .case-row-actions {
+    grid-column: 2;
+    grid-row: 1 / span 3;
+    align-items: flex-start;
+    flex-direction: column;
   }
 }
 
@@ -1939,6 +2108,250 @@ a.person-link.tier-recommended {
 
 .product-preview-row:nth-child(3) {
   width: 70%;
+}
+
+.marketing-nav-links {
+  display: flex;
+  gap: 1.75rem;
+  align-items: center;
+}
+
+.marketing-nav-links a {
+  color: var(--text-soft);
+  text-decoration: none;
+  font-size: 0.88rem;
+  font-weight: 500;
+}
+
+.marketing-nav-links a:hover {
+  color: var(--accent);
+}
+
+/* "How verification works" - three numbered steps, deliberately plain
+   (no icons, no illustration) so the copy itself carries the trust signal
+   rather than decoration standing in for it. */
+.verify-steps {
+  max-width: 900px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.5rem;
+}
+
+.verify-step {
+  text-align: center;
+  padding: 0 0.5rem;
+}
+
+.verify-step-num {
+  width: 36px;
+  height: 36px;
+  margin: 0 auto 0.85rem;
+  border-radius: 50%;
+  border: 2px solid var(--accent);
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display, Georgia, serif);
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+
+.verify-step h3 {
+  font-size: 0.98rem;
+  margin-bottom: 0.35rem;
+}
+
+.verify-step p {
+  color: var(--text-soft);
+  font-size: 0.88rem;
+  margin: 0;
+  line-height: 1.55;
+}
+
+/* Directories-vs-psyalliance comparison. The highlighted column carries a
+   deliberately warmer, more confident treatment (accent border + soft
+   accent tint) so the eye lands on it first without needing a "winner"
+   label. */
+.compare-grid {
+  max-width: 860px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.25rem;
+}
+
+.compare-col {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.75rem 1.75rem 1.5rem;
+}
+
+.compare-col-highlight {
+  border: 2px solid var(--accent);
+  background: var(--accent-soft);
+  box-shadow: var(--shadow);
+}
+
+.compare-col h3 {
+  margin-bottom: 1rem;
+  font-size: 1.02rem;
+}
+
+.compare-col ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.compare-col li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  font-size: 0.9rem;
+  color: var(--text-soft);
+  line-height: 1.5;
+}
+
+.compare-col .x,
+.compare-col .check {
+  flex: 0 0 auto;
+  font-size: 0.8rem;
+  font-weight: 700;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 0.1rem;
+}
+
+.compare-col .x {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.compare-col .check {
+  background: var(--accent);
+  color: #fff;
+}
+
+.compare-col-highlight li {
+  color: var(--text);
+}
+
+/* Founder / origin-story section. */
+.founder-block {
+  display: flex;
+  gap: 2.25rem;
+  align-items: flex-start;
+  justify-content: center;
+  flex-wrap: wrap;
+  max-width: 780px;
+  margin: 0 auto;
+}
+
+.founder-photo {
+  width: 160px;
+  height: 200px;
+  object-fit: cover;
+  border-radius: var(--radius);
+  flex-shrink: 0;
+  box-shadow: var(--shadow);
+}
+
+.founder-copy {
+  max-width: 520px;
+  min-width: 260px;
+}
+
+.founder-copy p {
+  color: var(--text-soft);
+  font-size: 0.95rem;
+  line-height: 1.7;
+  margin: 0 0 1rem;
+}
+
+.founder-copy p:last-child {
+  margin-bottom: 0;
+}
+
+/* Closing conversion band - the last thing before the footer, so anyone
+   who's read this far and hasn't clicked yet gets one more clear ask. */
+.cta-band {
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%);
+  padding: 3.5rem 1.75rem;
+  text-align: center;
+}
+
+.cta-band h2 {
+  color: #fff;
+  font-size: 1.6rem;
+  margin-bottom: 0.6rem;
+}
+
+.cta-band p {
+  color: rgba(255, 255, 255, 0.85);
+  max-width: 480px;
+  margin: 0 auto 1.75rem;
+  font-size: 1rem;
+}
+
+.cta-band-btn {
+  background: #fff;
+  color: var(--accent);
+  padding: 0.85rem 1.9rem;
+  font-size: 0.98rem;
+}
+
+.cta-band-btn:hover {
+  background: var(--gold-soft);
+}
+
+.marketing-sticky-cta {
+  display: none;
+}
+
+@media (max-width: 720px) {
+  .marketing-nav-links {
+    display: none;
+  }
+
+  .marketing-sticky-cta {
+    display: block;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 50;
+    padding: 0.75rem 1rem calc(0.75rem + env(safe-area-inset-bottom, 0px));
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    box-shadow: 0 -4px 16px rgba(32, 31, 28, 0.08);
+  }
+
+  .marketing-sticky-cta .btn {
+    display: block;
+    width: 100%;
+    text-align: center;
+    padding: 0.85rem 1rem;
+  }
+
+  .marketing-shell {
+    padding-bottom: 68px;
+  }
+
+  .founder-block {
+    flex-direction: column;
+    align-items: center;
+    text-align: left;
+  }
 }
 
 .auth-shell {
