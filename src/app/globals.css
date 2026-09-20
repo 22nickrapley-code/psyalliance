@@ -837,6 +837,24 @@ a.person-link.tier-recommended {
   }
 }
 
+.case-row-edit {
+  border-bottom: 1px solid var(--border);
+  padding: 0.75rem 0.1rem 1rem;
+  background: var(--bg);
+  border-radius: var(--radius-sm);
+  margin: 0.2rem 0;
+  padding-left: 0.6rem;
+  padding-right: 0.6rem;
+}
+
+.case-row-edit .field-row {
+  margin-bottom: 0.5rem;
+}
+
+.case-row-edit .field {
+  margin-bottom: 0;
+}
+
 .case-accordion {
   margin-top: 0.4rem;
   border-top: 1px solid var(--border);

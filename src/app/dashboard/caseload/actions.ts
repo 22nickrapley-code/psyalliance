@@ -242,6 +242,49 @@ export async function requestNewInsurance(formData: FormData) {
   redirect("/dashboard/caseload?insurance_requested=1");
 }
 
+// Nick's Sept 20 feedback: once a client was added, nothing about them
+// could be changed - rate, sessions/week, organization, etc. were locked
+// in forever. This lets every field on an active client be edited in
+// place from the Active clients list, like editing a row in a
+// spreadsheet. Income/Capacity/Overview all compute their numbers live
+// from these same columns on every page load, so saving a new rate or
+// sessions/week here is immediately reflected everywhere else - no
+// separate "recalculate" step needed.
+export async function updateCase(formData: FormData) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not signed in");
+
+  const id = Number(formData.get("id"));
+  const bookId = formData.get("book_of_business_id");
+
+  const { error } = await supabase
+    .from("caseload_clients")
+    .update({
+      book_of_business_id: bookId ? Number(bookId) : null,
+      private_label: String(formData.get("private_label") || "") || null,
+      state: String(formData.get("state") || "") || null,
+      city: String(formData.get("city") || "") || null,
+      session_type: String(formData.get("session_type") || "") || null,
+      insurance: String(formData.get("insurance") || "") || null,
+      primary_need: String(formData.get("primary_need") || "") || null,
+      secondary_need: String(formData.get("secondary_need") || "") || null,
+      tertiary_need: String(formData.get("tertiary_need") || "") || null,
+      rate_per_session: parseFloat(String(formData.get("rate_per_session") || "0")) || null,
+      sessions_per_week: parseFloat(String(formData.get("sessions_per_week") || "0")) || null,
+    })
+    .eq("id", id)
+    .eq("profile_id", user.id);
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/dashboard/caseload");
+  revalidatePath("/dashboard/income");
+  revalidatePath("/dashboard/capacity");
+  revalidatePath("/dashboard");
+}
+
 export async function archiveCase(formData: FormData) {
   const supabase = await createClient();
   const id = Number(formData.get("id"));

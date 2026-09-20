@@ -1,7 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
-import { createBookOfBusiness, createCase, archiveCase, reactivateCase, deleteOrganization, requestNewInsurance } from "./actions";
+import { createBookOfBusiness, createCase, archiveCase, updateCase, reactivateCase, deleteOrganization, requestNewInsurance } from "./actions";
 import CaseloadImportBox from "./import";
 import UsStateDatalist from "@/components/us-state-datalist";
+import CaseRow from "./case-row";
 
 export default async function CaseloadPage(
   props: {
@@ -77,19 +78,15 @@ export default async function CaseloadPage(
         ) : (
           <>
             {topActiveCases.map((c: any) => (
-              <div key={c.id} className="case-row">
-                <span className="case-num">#{c.id}</span>
-                <span className="case-label">{c.private_label || <span className="muted">Unlabeled</span>}</span>
-                <span className="case-org">{c.books_of_business?.name || <span className="muted">-</span>}{c.state ? ` · ${c.state}` : ""}</span>
-                <span className="case-rate">{c.rate_per_session ? `$${c.rate_per_session}` : "-"}</span>
-                <span className="case-sessions muted">{c.sessions_per_week ?? "-"}/wk</span>
-                <span className="case-row-actions">
-                  <form action={archiveCase}>
-                    <input type="hidden" name="id" value={c.id} />
-                    <button type="submit" className="secondary" style={{ padding: "0.3rem 0.6rem", fontSize: "0.78rem" }}>Archive</button>
-                  </form>
-                </span>
-              </div>
+              <CaseRow
+                key={c.id}
+                c={c}
+                books={books || []}
+                insuranceOptions={insuranceOptions || []}
+                specialisms={specialisms || []}
+                updateCase={updateCase}
+                archiveCase={archiveCase}
+              />
             ))}
             {remainingActiveCases.length > 0 && (
               <details className="case-accordion">
@@ -97,19 +94,15 @@ export default async function CaseloadPage(
                   Show {remainingActiveCases.length} more active client{remainingActiveCases.length === 1 ? "" : "s"}
                 </summary>
                 {remainingActiveCases.map((c: any) => (
-                  <div key={c.id} className="case-row">
-                    <span className="case-num">#{c.id}</span>
-                    <span className="case-label">{c.private_label || <span className="muted">Unlabeled</span>}</span>
-                    <span className="case-org">{c.books_of_business?.name || <span className="muted">-</span>}{c.state ? ` · ${c.state}` : ""}</span>
-                    <span className="case-rate">{c.rate_per_session ? `$${c.rate_per_session}` : "-"}</span>
-                    <span className="case-sessions muted">{c.sessions_per_week ?? "-"}/wk</span>
-                    <span className="case-row-actions">
-                      <form action={archiveCase}>
-                        <input type="hidden" name="id" value={c.id} />
-                        <button type="submit" className="secondary" style={{ padding: "0.3rem 0.6rem", fontSize: "0.78rem" }}>Archive</button>
-                      </form>
-                    </span>
-                  </div>
+                  <CaseRow
+                    key={c.id}
+                    c={c}
+                    books={books || []}
+                    insuranceOptions={insuranceOptions || []}
+                    specialisms={specialisms || []}
+                    updateCase={updateCase}
+                    archiveCase={archiveCase}
+                  />
                 ))}
               </details>
             )}
