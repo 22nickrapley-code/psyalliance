@@ -1675,3 +1675,118 @@ a.person-link.tier-recommended {
 .auth-card-wrap .card {
   box-shadow: var(--shadow-lg);
 }
+
+/* ---------- Messages: mainstream-messaging-app pass ---------- */
+/* Small round avatar chip used in the inbox row list and the thread view -
+   initials on a soft accent fill, matching the same visual language as
+   .ov-avatar on the Overview page. A gold variant is reserved for the
+   "PsyAlliance Team" system-notification rows, so a company notice reads as
+   visually distinct from a real colleague's message at a glance. */
+.msg-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.8rem;
+  flex: 0 0 auto;
+}
+
+.msg-avatar.system {
+  background: var(--gold);
+  color: #2a2313;
+}
+
+.chat-thread {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.chat-bubble-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.6rem;
+}
+
+.chat-bubble-row.mine {
+  flex-direction: row-reverse;
+  text-align: right;
+}
+
+.chat-bubble-row.mine .msg-avatar {
+  background: var(--accent);
+  color: #fff;
+}
+
+.chat-author {
+  font-size: 0.78rem;
+  font-weight: 700;
+  margin-bottom: 0.2rem;
+}
+
+.chat-bubble {
+  display: inline-block;
+  max-width: 100%;
+  padding: 0.6rem 0.9rem;
+  border-radius: 1rem;
+  border-bottom-left-radius: 0.25rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  font-size: 0.92rem;
+  line-height: 1.45;
+  text-align: left;
+}
+
+.chat-bubble-row.mine .chat-bubble {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+  border-bottom-left-radius: 1rem;
+  border-bottom-right-radius: 0.25rem;
+}
+
+.chat-bubble-row.mine .chat-bubble .tag {
+  background: rgba(255, 255, 255, 0.22);
+  color: #fff;
+}
+
+.chat-meta {
+  font-size: 0.7rem;
+  color: var(--muted);
+  margin: 0.25rem 0.2rem 0;
+}
+
+.chat-composer {
+  display: flex;
+  gap: 0.6rem;
+  align-items: flex-end;
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+@media (max-width: 640px) {
+  .chat-bubble {
+    max-width: 88%;
+  }
+}
+
+/* ---------- Caseload import: drag-and-drop dropzone ---------- */
+.import-dropzone {
+  border: 2px dashed var(--border-strong);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  text-align: center;
+  transition: border-color 0.15s ease, background 0.15s ease;
+  margin-top: 0.5rem;
+}
+
+.import-dropzone.active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}

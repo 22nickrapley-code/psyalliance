@@ -1,7 +1,22 @@
 import { createClient } from "@/lib/supabase/server";
-import { startConversation, setConversationReadState } from "./actions";
+import { startConversation, setConversationReadState, setNotificationReadState } from "./actions";
 import { professionFor } from "@/lib/profession";
 import UsStateDatalist from "@/components/us-state-datalist";
+
+// Same initials logic used in the sidebar/Overview avatar chips, kept local
+// here since it's tiny and this page has its own avatar list (other
+// conversation participants + the "PA" notification badge) rather than the
+// signed-in user's own name.
+function initialsOf(name: string) {
+  return (
+    name
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((p) => p[0]?.toUpperCase())
+      .join("") || "?"
+  );
+}
 
 type Tier = "partner" | "bench" | "recommended" | "none";
 
@@ -30,7 +45,7 @@ const TIER_SORT_ORDER: Record<Tier, number> = { partner: 0, bench: 1, recommende
 
 export default async function MessagesPage(
   props: {
-    searchParams: Promise<{ q?: string; degree?: string; state?: string; specialism?: string; profession?: string; sort?: string; box?: string }>;
+    searchParams: Promise<{ q?: string; degree?: string; state?: string; specialism?: string; profession?: string; sort?: string; box?: string; error?: string }>;
   }
 ) {
   const searchParams = await props.searchParams;
@@ -47,6 +62,7 @@ export default async function MessagesPage(
     { data: myLookups },
     { data: blocklist },
     { data: allSpecialisms },
+    { data: notifications },
   ] = await Promise.all([
     supabase.from("conversation_participants").select("conversation_id, last_read_at").eq("profile_id", myself),
     supabase
@@ -63,6 +79,11 @@ export default async function MessagesPage(
       .eq("profile_id", myself),
     supabase.from("do_not_work_with").select("blocked_profile_id").eq("profile_id", myself),
     supabase.from("lookup_values").select("value").eq("category", "treatment_specialism").order("value"),
+    supabase
+      .from("system_notifications")
+      .select("id, title, body, created_at, read_at")
+      .eq("profile_id", myself)
+      .order("created_at", { ascending: false }),
   ]);
 
   const conversationIds = (myParticipantRows || []).map((r) => r.conversation_id);
@@ -183,7 +204,31 @@ export default async function MessagesPage(
   const box = searchParams?.box === "sent" ? "sent" : "inbox";
   const inboxConversations = (conversations || []).filter((c: any) => c.created_by !== myself);
   const sentConversations = (conversations || []).filter((c: any) => c.created_by === myself);
-  const boxConversations = box === "sent" ? sentConversations : inboxConversations;
+
+  // The inbox mixes two kinds of rows: real conversations with other
+  // members, and company/admin notices (system_notifications) - e.g. "You're
+  // approved!" when an admin verifies someone. Sent only ever shows
+  // conversations you started; a notice was never "sent" by you, so it has
+  // no place there. Merged and re-sorted by date so a fresh notice surfaces
+  // at the top of the inbox exactly like a fresh message would, instead of
+  // being tacked on at the end.
+  type InboxRow =
+    | { kind: "conversation"; sortDate: string; data: any }
+    | { kind: "notification"; sortDate: string; data: any };
+
+  const inboxRows: InboxRow[] = [
+    ...inboxConversations.map((c: any) => ({ kind: "conversation" as const, sortDate: c.last_message_at || "", data: c })),
+    ...(notifications || []).map((n: any) => ({ kind: "notification" as const, sortDate: n.created_at, data: n })),
+  ].sort((a, b) => new Date(b.sortDate).getTime() - new Date(a.sortDate).getTime());
+
+  const sentRows: InboxRow[] = sentConversations.map((c: any) => ({
+    kind: "conversation" as const,
+    sortDate: c.last_message_at || "",
+    data: c,
+  }));
+
+  const boxRows = box === "sent" ? sentRows : inboxRows;
+  const unreadNotificationCount = (notifications || []).filter((n: any) => !n.read_at).length;
 
   const filteredContacts = Array.from(contacts.values())
     .filter((c) => !q || c.full_name.toLowerCase().includes(q))
@@ -213,6 +258,8 @@ export default async function MessagesPage(
         open specialism channels.
       </p>
 
+      {searchParams?.error && <div className="error-banner">{searchParams.error}</div>}
+
       <div className="card">
         <div className="widget-header">
           <h2>Your conversations</h2>
@@ -222,20 +269,67 @@ export default async function MessagesPage(
               className={`btn ${box === "inbox" ? "" : "secondary"}`}
               style={{ padding: "0.35rem 0.75rem", fontSize: "0.85rem" }}
             >
-              Inbox ({inboxConversations.length})
+              Inbox ({inboxRows.length})
             </a>
             <a
               href="/dashboard/messages?box=sent"
               className={`btn ${box === "sent" ? "" : "secondary"}`}
               style={{ padding: "0.35rem 0.75rem", fontSize: "0.85rem" }}
             >
-              Sent ({sentConversations.length})
+              Sent ({sentRows.length})
             </a>
           </div>
         </div>
-        {boxConversations.map((c: any) => {
+        {boxRows.map((row) => {
+          if (row.kind === "notification") {
+            const n = row.data;
+            const unread = !n.read_at;
+            return (
+              <div key={`n-${n.id}`} style={{ display: "flex", alignItems: "stretch", gap: "0.5rem", marginBottom: "0.3rem" }}>
+                <div
+                  style={{
+                    flex: 1,
+                    minWidth: 0,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.7rem",
+                    padding: "0.75rem 0.85rem",
+                    borderRadius: "var(--radius)",
+                    borderLeft: "3px solid var(--gold)",
+                    background: "var(--gold-soft)",
+                  }}
+                >
+                  <div className="msg-avatar system">PA</div>
+                  <span style={{ minWidth: 0, flex: 1 }}>
+                    <strong style={{ color: "var(--text)" }}>{n.title}</strong>
+                    <span className="tag gold" style={{ marginLeft: "0.5rem" }}>PsyAlliance Team</span>
+                    {unread && <span className="tag" style={{ marginLeft: "0.3rem" }}>Unread</span>}
+                    <br />
+                    <span className="muted" style={{ fontWeight: unread ? 600 : 400 }}>{n.body}</span>
+                  </span>
+                  <span className="muted" style={{ whiteSpace: "nowrap", marginLeft: "1rem" }}>
+                    {new Date(n.created_at).toLocaleDateString()}
+                  </span>
+                </div>
+                <form action={setNotificationReadState} style={{ display: "flex", alignItems: "center" }}>
+                  <input type="hidden" name="id" value={n.id} />
+                  <input type="hidden" name="state" value={unread ? "read" : "unread"} />
+                  <button
+                    type="submit"
+                    className="btn secondary"
+                    style={{ whiteSpace: "nowrap", fontSize: "0.78rem", padding: "0.4rem 0.65rem" }}
+                  >
+                    {unread ? "Mark read" : "Mark unread"}
+                  </button>
+                </form>
+              </div>
+            );
+          }
+
+          const c = row.data;
           const others = otherParticipantsByConversation.get(c.id) || [];
           const label = c.title || others.map((o) => o.name).join(", ") || "Conversation";
+          const avatarLabel = others.length === 1 ? initialsOf(others[0].name) : others.length > 1 ? String(others.length) : "?";
           const latest = latestMessageByConversation.get(c.id);
           const lastRead = lastReadByConversation.get(c.id);
           const unread = !!latest && (!lastRead || new Date(latest.created_at) > new Date(lastRead));
@@ -248,8 +342,9 @@ export default async function MessagesPage(
                   flex: 1,
                   minWidth: 0,
                   display: "flex",
-                  justifyContent: "space-between",
                   alignItems: "center",
+                  gap: "0.7rem",
+                  justifyContent: "space-between",
                   padding: "0.75rem 0.85rem",
                   borderRadius: "var(--radius)",
                   borderLeft: needsReply ? "3px solid var(--tier-recommended)" : "3px solid transparent",
@@ -258,17 +353,20 @@ export default async function MessagesPage(
                   color: "inherit",
                 }}
               >
-                <span style={{ minWidth: 0 }}>
-                  <strong style={{ color: "var(--text)" }}>{label}</strong>
-                  {needsReply && (
-                    <span className="tag tier-recommended" style={{ marginLeft: "0.5rem" }}>Needs your reply</span>
-                  )}
-                  {unread && !needsReply && (
-                    <span className="tag" style={{ marginLeft: "0.5rem" }}>Unread</span>
-                  )}
-                  <br />
-                  <span className="muted" style={{ fontWeight: unread ? 600 : 400 }}>
-                    {latest ? (latest.body as string).slice(0, 90) : "No messages yet"}
+                <span style={{ display: "flex", alignItems: "center", gap: "0.7rem", minWidth: 0, flex: 1 }}>
+                  <div className="msg-avatar">{avatarLabel}</div>
+                  <span style={{ minWidth: 0 }}>
+                    <strong style={{ color: "var(--text)" }}>{label}</strong>
+                    {needsReply && (
+                      <span className="tag tier-recommended" style={{ marginLeft: "0.5rem" }}>Needs your reply</span>
+                    )}
+                    {unread && !needsReply && (
+                      <span className="tag" style={{ marginLeft: "0.5rem" }}>Unread</span>
+                    )}
+                    <br />
+                    <span className="muted" style={{ fontWeight: unread ? 600 : 400 }}>
+                      {latest ? (latest.body as string).slice(0, 90) : "No messages yet"}
+                    </span>
                   </span>
                 </span>
                 <span className="muted" style={{ whiteSpace: "nowrap", marginLeft: "1rem" }}>
@@ -291,46 +389,12 @@ export default async function MessagesPage(
             </div>
           );
         })}
-        {boxConversations.length === 0 && (
+        {boxRows.length === 0 && (
           <p className="muted">
             {box === "sent" ? "You haven't started any conversations yet." : "Nothing in your inbox yet."}
           </p>
         )}
       </div>
-
-      {partnerIds.length > 0 && (
-        <div className="card">
-          <h2>Start Partner group consultation</h2>
-          <p className="muted">
-            Starts one conversation with all your Partners who are open to group consultation.
-          </p>
-          {excludedPartners.length > 0 && (
-            <div className="message-banner">
-              {excludedPartners.length} colleague{excludedPartners.length === 1 ? "" : "s"} not
-              included because they've opted out of Partner group consultation:{" "}
-              {excludedPartners.map((p) => p.full_name).join(", ")}.
-            </div>
-          )}
-          {eligiblePartners.length > 0 ? (
-            <form action={startConversation}>
-              {eligiblePartners.map((p) => (
-                <input key={p.id} type="hidden" name="participant_ids" value={p.id} />
-              ))}
-              <input type="hidden" name="title" value="Partner group consultation" />
-              <p className="muted">
-                Including: {eligiblePartners.map((p) => p.full_name).join(", ")}
-              </p>
-              <div className="field">
-                <label htmlFor="group_body">Message</label>
-                <textarea id="group_body" name="body" rows={2} placeholder="Kicking off a group consultation about…" />
-              </div>
-              <button type="submit" className="secondary">Start group consultation</button>
-            </form>
-          ) : (
-            <p className="muted">None of your Partners are currently open to group consultation.</p>
-          )}
-        </div>
-      )}
 
       <div className="card">
         <h2>Send a New Message</h2>
@@ -444,6 +508,40 @@ export default async function MessagesPage(
           }}
         />
       </div>
+
+      {partnerIds.length > 0 && (
+        <div className="card">
+          <h2>Start Partner group consultation</h2>
+          <p className="muted">
+            Starts one conversation with all your Partners who are open to group consultation.
+          </p>
+          {excludedPartners.length > 0 && (
+            <div className="message-banner">
+              {excludedPartners.length} colleague{excludedPartners.length === 1 ? "" : "s"} not
+              included because they've opted out of Partner group consultation:{" "}
+              {excludedPartners.map((p) => p.full_name).join(", ")}.
+            </div>
+          )}
+          {eligiblePartners.length > 0 ? (
+            <form action={startConversation}>
+              {eligiblePartners.map((p) => (
+                <input key={p.id} type="hidden" name="participant_ids" value={p.id} />
+              ))}
+              <input type="hidden" name="title" value="Partner group consultation" />
+              <p className="muted">
+                Including: {eligiblePartners.map((p) => p.full_name).join(", ")}
+              </p>
+              <div className="field">
+                <label htmlFor="group_body">Message</label>
+                <textarea id="group_body" name="body" rows={2} placeholder="Kicking off a group consultation about…" />
+              </div>
+              <button type="submit" className="secondary">Start group consultation</button>
+            </form>
+          ) : (
+            <p className="muted">None of your Partners are currently open to group consultation.</p>
+          )}
+        </div>
+      )}
     </div>
   );
 }

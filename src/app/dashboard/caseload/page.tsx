@@ -111,71 +111,82 @@ export default async function CaseloadPage(
       </div>
 
       <div className="card">
-        <h2>Organizations</h2>
+        <h2>Past clients ({(pastCases || []).length})</h2>
         <p className="muted">
-          Your own private practice, or a group practice/consultancy you're employed by or
-          contracted to, each keeps a different share of the billed rate.
+          Anyone archived from your caseload. Re-add a past client and their record keeps the same
+          number and details, no need to re-enter anything.
         </p>
-        <table style={{ marginBottom: "1rem" }}>
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Share you keep</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            {(books || []).map((b) => (
-              <tr key={b.id}>
-                <td>{b.name}</td>
-                <td>{Math.round(b.expense_burden_pct * 100)}%</td>
-                <td>
-                  <form action={deleteOrganization}>
-                    <input type="hidden" name="id" value={b.id} />
-                    <button type="submit" className="secondary">Delete</button>
-                  </form>
-                </td>
-              </tr>
-            ))}
-            {(books || []).length === 0 && (
-              <tr>
-                <td colSpan={3} className="muted">No organizations yet, add one below.</td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-        <form action={createBookOfBusiness} className="field-row" style={{ alignItems: "flex-end" }}>
-          <div className="field">
-            <label htmlFor="name">Organization name</label>
-            <input id="name" name="name" type="text" placeholder="e.g. my own practice, or the consultancy's name" required />
-          </div>
-          <div className="field" style={{ maxWidth: 220 }}>
-            <label htmlFor="expense_burden_pct">Share of hourly rate you keep</label>
-            <input id="expense_burden_pct" name="expense_burden_pct" type="number" step="0.01" min="0" max="1" defaultValue="0.85" required />
-            <p className="muted" style={{ marginTop: "0.3rem", marginBottom: 0, fontSize: "0.78rem" }}>
-              As a decimal, not a percent — 0.85 = 85%.
-            </p>
-          </div>
-          <div className="field" style={{ flex: "0 0 auto" }}>
-            <button type="submit">Add</button>
-          </div>
-        </form>
-        <p className="muted" style={{ marginTop: "0.75rem", marginBottom: 0 }}>
-          For your own private practice this is usually 1 (100%) — you keep everything you bill.
-          If you're employed by or contracted to a group practice or consultancy, enter the share
-          of the billed hourly rate you take home after their cut, e.g. if they bill $200/hr and
-          you're paid $140, enter 0.70.
-        </p>
+        {(pastCases || []).length > 0 ? (
+          <details className="case-accordion">
+            <summary>
+              Show past client{(pastCases || []).length === 1 ? "" : "s"} ({(pastCases || []).length})
+            </summary>
+            <form method="GET" className="field-row" style={{ alignItems: "flex-end", marginTop: "0.75rem", marginBottom: "0.75rem" }}>
+              <div className="field" style={{ flex: "1 1 240px" }}>
+                <label htmlFor="past_q">Search past clients</label>
+                <input
+                  id="past_q"
+                  name="past_q"
+                  type="text"
+                  defaultValue={searchParams.past_q || ""}
+                  placeholder="Label, organization, state, or client #"
+                />
+              </div>
+              <div className="field" style={{ flex: "0 0 auto" }}>
+                <button type="submit" className="secondary">Search</button>
+              </div>
+              {pastQ && (
+                <div className="field" style={{ flex: "0 0 auto" }}>
+                  <a href="/dashboard/caseload" className="btn secondary" style={{ display: "inline-block" }}>Clear</a>
+                </div>
+              )}
+            </form>
+            <table>
+              <thead>
+                <tr>
+                  <th>Client #</th>
+                  <th>Label</th>
+                  <th>Organization</th>
+                  <th>State</th>
+                  <th>Rate</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredPastCases.map((c: any) => (
+                  <tr key={c.id}>
+                    <td>#{c.id}</td>
+                    <td>{c.private_label || <span className="muted">-</span>}</td>
+                    <td>{c.books_of_business?.name || <span className="muted">-</span>}</td>
+                    <td>{c.state || "-"}</td>
+                    <td>{c.rate_per_session ? `$${c.rate_per_session}` : "-"}</td>
+                    <td>
+                      <form action={reactivateCase}>
+                        <input type="hidden" name="id" value={c.id} />
+                        <button type="submit" className="secondary">Re-add to caseload</button>
+                      </form>
+                    </td>
+                  </tr>
+                ))}
+                {filteredPastCases.length === 0 && (
+                  <tr>
+                    <td colSpan={6} className="muted">No past clients match that search.</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </details>
+        ) : (
+          <p className="muted">No archived clients yet.</p>
+        )}
       </div>
-
-      <CaseloadImportBox />
 
       <div className="card">
         <h2>Add a client</h2>
         <form action={createCase}>
           <div className="field-row">
             <div className="field">
-              <label htmlFor="book_of_business_id">Organization</label>
+              <label htmlFor="book_of_business_id">Practice</label>
               <select id="book_of_business_id" name="book_of_business_id">
                 <option value="">-</option>
                 {(books || []).map((b) => (
@@ -289,68 +300,64 @@ export default async function CaseloadPage(
       </div>
 
       <div className="card">
-        <h2>Past clients ({(pastCases || []).length})</h2>
+        <h2>Practices</h2>
         <p className="muted">
-          Anyone archived from your caseload. Re-add a past client and their record keeps the same
-          number and details, no need to re-enter anything.
+          Your own private practice, or a group practice/consultancy you're employed by or
+          contracted to, each keeps a different share of the billed rate.
         </p>
-        <form method="GET" className="field-row" style={{ alignItems: "flex-end", marginBottom: "0.75rem" }}>
-          <div className="field" style={{ flex: "1 1 240px" }}>
-            <label htmlFor="past_q">Search past clients</label>
-            <input
-              id="past_q"
-              name="past_q"
-              type="text"
-              defaultValue={searchParams.past_q || ""}
-              placeholder="Label, organization, state, or client #"
-            />
-          </div>
-          <div className="field" style={{ flex: "0 0 auto" }}>
-            <button type="submit" className="secondary">Search</button>
-          </div>
-          {pastQ && (
-            <div className="field" style={{ flex: "0 0 auto" }}>
-              <a href="/dashboard/caseload" className="btn secondary" style={{ display: "inline-block" }}>Clear</a>
-            </div>
-          )}
-        </form>
-        <table>
+        <table style={{ marginBottom: "1rem" }}>
           <thead>
             <tr>
-              <th>Client #</th>
-              <th>Label</th>
-              <th>Organization</th>
-              <th>State</th>
-              <th>Rate</th>
+              <th>Name</th>
+              <th>Share you keep</th>
               <th></th>
             </tr>
           </thead>
           <tbody>
-            {filteredPastCases.map((c: any) => (
-              <tr key={c.id}>
-                <td>#{c.id}</td>
-                <td>{c.private_label || <span className="muted">-</span>}</td>
-                <td>{c.books_of_business?.name || <span className="muted">-</span>}</td>
-                <td>{c.state || "-"}</td>
-                <td>{c.rate_per_session ? `$${c.rate_per_session}` : "-"}</td>
+            {(books || []).map((b) => (
+              <tr key={b.id}>
+                <td>{b.name}</td>
+                <td>{Math.round(b.expense_burden_pct * 100)}%</td>
                 <td>
-                  <form action={reactivateCase}>
-                    <input type="hidden" name="id" value={c.id} />
-                    <button type="submit" className="secondary">Re-add to caseload</button>
+                  <form action={deleteOrganization}>
+                    <input type="hidden" name="id" value={b.id} />
+                    <button type="submit" className="secondary">Delete</button>
                   </form>
                 </td>
               </tr>
             ))}
-            {filteredPastCases.length === 0 && (
+            {(books || []).length === 0 && (
               <tr>
-                <td colSpan={6} className="muted">
-                  {pastQ ? "No past clients match that search." : "No archived clients yet."}
-                </td>
+                <td colSpan={3} className="muted">No practices yet, add one below.</td>
               </tr>
             )}
           </tbody>
         </table>
+        <form action={createBookOfBusiness} className="field-row" style={{ alignItems: "flex-end" }}>
+          <div className="field">
+            <label htmlFor="name">Practice name</label>
+            <input id="name" name="name" type="text" placeholder="e.g. my own practice, or the consultancy's name" required />
+          </div>
+          <div className="field" style={{ maxWidth: 220 }}>
+            <label htmlFor="expense_burden_pct">Share of hourly rate you keep</label>
+            <input id="expense_burden_pct" name="expense_burden_pct" type="number" step="0.01" min="0" max="1" defaultValue="0.85" required />
+            <p className="muted" style={{ marginTop: "0.3rem", marginBottom: 0, fontSize: "0.78rem" }}>
+              As a decimal, not a percent — 0.85 = 85%.
+            </p>
+          </div>
+          <div className="field" style={{ flex: "0 0 auto" }}>
+            <button type="submit">Add</button>
+          </div>
+        </form>
+        <p className="muted" style={{ marginTop: "0.75rem", marginBottom: 0 }}>
+          For your own private practice this is usually 1 (100%) — you keep everything you bill.
+          If you're employed by or contracted to a group practice or consultancy, enter the share
+          of the billed hourly rate you take home after their cut, e.g. if they bill $200/hr and
+          you're paid $140, enter 0.70.
+        </p>
       </div>
+
+      <CaseloadImportBox />
     </div>
   );
 }

@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { assertIsAdmin } from "@/lib/admin";
+import { notifyProfile } from "@/lib/notifications";
 import { revalidatePath } from "next/cache";
 
 export async function setMemberVerificationStatus(formData: FormData) {
@@ -15,6 +16,14 @@ export async function setMemberVerificationStatus(formData: FormData) {
   const profileId = String(formData.get("profile_id") || "");
   const status = String(formData.get("status") || "");
 
+  // See the identical check in verifications/actions.ts - only a genuine
+  // transition into 'verified' should send the "you're approved" notice.
+  const { data: before } = await supabase
+    .from("profiles")
+    .select("verification_status")
+    .eq("id", profileId)
+    .maybeSingle();
+
   const { error } = await supabase
     .from("profiles")
     .update({
@@ -24,9 +33,20 @@ export async function setMemberVerificationStatus(formData: FormData) {
     .eq("id", profileId);
   if (error) throw new Error(error.message);
 
+  if (status === "verified" && before?.verification_status !== "verified") {
+    await notifyProfile(supabase, {
+      profileId,
+      title: "You're approved!",
+      body: "Your credential verification is complete and your PsyAlliance membership is now approved. You have full access to the network - Caseload, Messages, Network, and every other tool.",
+      createdBy: user.id,
+    });
+  }
+
   revalidatePath("/dashboard/admin/members");
   revalidatePath("/dashboard/admin/verifications");
   revalidatePath("/dashboard/admin");
+  revalidatePath("/dashboard/messages");
+  revalidatePath("/dashboard");
 }
 
 // Lets an existing admin (Nick) promote a trusted co-reviewer (e.g. Rena) to

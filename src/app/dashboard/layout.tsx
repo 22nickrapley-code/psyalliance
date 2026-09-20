@@ -30,14 +30,24 @@ export default async function DashboardLayout({
   // not awaited-critical, but kept simple and correct rather than clever.
   supabase.from("profiles").update({ last_active_at: new Date().toISOString() }).eq("id", user.id).then(() => {});
 
-  const { data: myConversationRows } = await supabase
-    .from("conversation_participants")
-    .select("last_read_at, conversation:conversation_id(last_message_at)")
-    .eq("profile_id", user.id);
-  const unreadMessageCount = (myConversationRows || []).filter((r: any) => {
+  const [{ data: myConversationRows }, { count: unreadNotificationCount }] = await Promise.all([
+    supabase
+      .from("conversation_participants")
+      .select("last_read_at, conversation:conversation_id(last_message_at)")
+      .eq("profile_id", user.id),
+    supabase
+      .from("system_notifications")
+      .select("id", { count: "exact", head: true })
+      .eq("profile_id", user.id)
+      .is("read_at", null),
+  ]);
+  const unreadConversationCount = (myConversationRows || []).filter((r: any) => {
     if (!r.conversation) return false;
     return new Date(r.conversation.last_message_at) > new Date(r.last_read_at);
   }).length;
+  // The Messages nav badge now covers the whole inbox - real conversations
+  // plus company/admin notices - since a notice shows up in that same inbox.
+  const unreadMessageCount = unreadConversationCount + (unreadNotificationCount || 0);
 
   const displayName = profile?.full_name || user.email || "";
   const initials = displayName

@@ -16,6 +16,7 @@ export default function CaseloadImportBox() {
   const [message, setMessage] = useState<string | null>(null);
   const [isError, setIsError] = useState(false);
   const [isReadingFile, setIsReadingFile] = useState(false);
+  const [isDragActive, setIsDragActive] = useState(false);
 
   function handleFile(file: File) {
     const isExcel = /\.(xlsx|xls)$/i.test(file.name);
@@ -103,6 +104,30 @@ export default function CaseloadImportBox() {
     });
   }
 
+  // Dropping a file anywhere in the browser window that isn't a registered
+  // drop target makes the browser navigate the whole tab to that file
+  // (or does nothing visible) - which is almost certainly what "I dragged a
+  // file in and nothing happened" was actually describing. Both handlers
+  // below are needed: dragOver has to preventDefault too, or the browser
+  // never even allows the drop to fire.
+  function handleDragOver(e: React.DragEvent<HTMLDivElement>) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!isDragActive) setIsDragActive(true);
+  }
+  function handleDragLeave(e: React.DragEvent<HTMLDivElement>) {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragActive(false);
+  }
+  function handleDrop(e: React.DragEvent<HTMLDivElement>) {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragActive(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) handleFile(file);
+  }
+
   return (
     <div className="card">
       <h2>Or import from a file (optional)</h2>
@@ -112,18 +137,29 @@ export default function CaseloadImportBox() {
         added. Client names are never stored: anything that looks like a name is converted to
         initials only. This is just a shortcut alongside "Add a case" below, not a requirement.
       </p>
-      <div className="field-row" style={{ alignItems: "flex-end" }}>
-        <div className="field">
-          <label htmlFor="caseload_import_file">Excel, CSV, or text file</label>
-          <input
-            id="caseload_import_file"
-            type="file"
-            accept=".csv,.txt,.xlsx,.xls"
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) handleFile(file);
-            }}
-          />
+      <div
+        className={`import-dropzone${isDragActive ? " active" : ""}`}
+        onDragEnter={handleDragOver}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+      >
+        <p className="muted" style={{ margin: "0 0 0.6rem" }}>
+          {isDragActive ? "Drop the file to load it" : "Drag a file here, or choose one below"}
+        </p>
+        <div className="field-row" style={{ alignItems: "flex-end", justifyContent: "center" }}>
+          <div className="field" style={{ flex: "0 0 auto" }}>
+            <label htmlFor="caseload_import_file">Excel, CSV, or text file</label>
+            <input
+              id="caseload_import_file"
+              type="file"
+              accept=".csv,.txt,.xlsx,.xls"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) handleFile(file);
+              }}
+            />
+          </div>
         </div>
       </div>
       <textarea

@@ -3,6 +3,7 @@ import { computeRankedCandidates } from "@/lib/server-matching";
 import { setProfileFlag } from "./actions";
 import { professionFor, professionLabel } from "@/lib/profession";
 import UsStateDatalist from "@/components/us-state-datalist";
+import { caseMonthlyGross, caseMonthlyNet, currency } from "@/lib/finance";
 
 const PIE_COLORS = ["#1f4d3f", "#b08d57", "#6b4c6b", "#2456a6", "#a3372c", "#4a4842", "#7a3fa0"];
 
@@ -66,6 +67,8 @@ export default async function DashboardHome(
     { data: activeCases },
     { data: recentPersonalDocs },
     { data: recentSharedDocs },
+    { data: incomeBooks },
+    { data: overheadExpenses },
   ] = await Promise.all([
     supabase.from("profiles").select("*").eq("id", myself).maybeSingle(),
     supabase.from("caseload_clients").select("id", { count: "exact", head: true }).eq("profile_id", myself).eq("is_active", true),
@@ -106,9 +109,15 @@ export default async function DashboardHome(
       .is("deleted_at", null)
       .order("created_at", { ascending: false })
       .limit(6),
-    supabase.from("caseload_clients").select("id, state, primary_need").eq("profile_id", myself).eq("is_active", true),
+    supabase
+      .from("caseload_clients")
+      .select("id, state, primary_need, rate_per_session, sessions_per_week, book_of_business_id")
+      .eq("profile_id", myself)
+      .eq("is_active", true),
     supabase.from("documents").select("id, title, created_at").eq("profile_id", myself).eq("owner_scope", "personal").order("created_at", { ascending: false }).limit(4),
     supabase.from("documents").select("id, title, created_at, uploader:uploaded_by(full_name)").eq("owner_scope", "world").order("created_at", { ascending: false }).limit(4),
+    supabase.from("books_of_business").select("id, name, expense_burden_pct").eq("profile_id", myself),
+    supabase.from("practice_overhead_expenses").select("monthly_cost").eq("profile_id", myself),
   ]);
 
   const expiringLicenseCount = expiringLicenseCountRaw ?? 0;
@@ -236,6 +245,16 @@ export default async function DashboardHome(
   pieGradient = pieSlices.length > 0
     ? `conic-gradient(${pieSlices.map((s) => `${s.color} ${s.start}% ${s.end}%`).join(", ")})`
     : "var(--bg-alt)";
+
+  // ---------- Annual income (same math as the Income page, just rolled up
+  // to a single annualized true-net figure for a quick-glance widget) ----------
+  const incomeBooksList = incomeBooks || [];
+  const monthlyGross = (activeCases || []).reduce((sum, c: any) => sum + caseMonthlyGross(c), 0);
+  const monthlyNet = (activeCases || []).reduce((sum, c: any) => sum + caseMonthlyNet(c, incomeBooksList), 0);
+  const monthlyOverhead = (overheadExpenses || []).reduce((sum, o) => sum + Number(o.monthly_cost || 0), 0);
+  const monthlyTrueNet = monthlyNet - monthlyOverhead;
+  const annualGross = monthlyGross * 12;
+  const annualTrueNet = monthlyTrueNet * 12;
 
   // ---------- Recent documents ----------
   const recentDocs = [
@@ -509,6 +528,28 @@ export default async function DashboardHome(
             ) : (
               <p className="muted">Add active clients on the Caseload page to see your distribution here.</p>
             )}
+          </div>
+
+          <div className="ov-card">
+            <div className="widget-header">
+              <h2>Annual income</h2>
+              <GoLink href="/dashboard/income" />
+            </div>
+            <div className="ov-mini-stats">
+              <div className="ov-mini-stat">
+                <div className="value">{currency(annualGross)}</div>
+                <div className="label">Annual gross</div>
+              </div>
+              <div className="ov-mini-stat">
+                <div className="value">{currency(annualTrueNet)}</div>
+                <div className="label">Annual true net</div>
+              </div>
+            </div>
+            <p className="muted" style={{ marginTop: "0.6rem", marginBottom: 0, fontSize: "0.76rem" }}>
+              Projected from your active caseload, after each practice's retention split and your
+              recurring overhead. See <a href="/dashboard/income">Income</a> for the full breakdown
+              by practice.
+            </p>
           </div>
 
           <div className="ov-card">

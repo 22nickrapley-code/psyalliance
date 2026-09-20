@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { assertIsAdmin } from "@/lib/admin";
+import { notifyProfile } from "@/lib/notifications";
 import { revalidatePath } from "next/cache";
 
 export async function reviewCredential(formData: FormData) {
@@ -41,6 +42,16 @@ export async function setProfileVerificationStatus(formData: FormData) {
   const profileId = String(formData.get("profile_id") || "");
   const status = String(formData.get("status") || "");
 
+  // Read the current status first so re-saving an already-verified profile
+  // (or moving between any two non-verified statuses) never fires a
+  // duplicate "you're approved" notification - only a genuine transition
+  // into 'verified' should notify.
+  const { data: before } = await supabase
+    .from("profiles")
+    .select("verification_status")
+    .eq("id", profileId)
+    .maybeSingle();
+
   const { error } = await supabase
     .from("profiles")
     .update({
@@ -50,7 +61,18 @@ export async function setProfileVerificationStatus(formData: FormData) {
     .eq("id", profileId);
   if (error) throw new Error(error.message);
 
+  if (status === "verified" && before?.verification_status !== "verified") {
+    await notifyProfile(supabase, {
+      profileId,
+      title: "You're approved!",
+      body: "Your credential verification is complete and your PsyAlliance membership is now approved. You have full access to the network - Caseload, Messages, Network, and every other tool.",
+      createdBy: user.id,
+    });
+  }
+
   revalidatePath("/dashboard/admin/verifications");
   revalidatePath("/dashboard/admin/members");
   revalidatePath("/dashboard/admin");
+  revalidatePath("/dashboard/messages");
+  revalidatePath("/dashboard");
 }

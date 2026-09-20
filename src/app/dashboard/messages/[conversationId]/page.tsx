@@ -2,6 +2,17 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { sendMessage } from "../actions";
 
+function initialsOf(name: string) {
+  return (
+    name
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((p) => p[0]?.toUpperCase())
+      .join("") || "?"
+  );
+}
+
 // Renders a message body, turning any "@Full Name" substring that matches a
 // mentioned participant into a highlighted span - simple text-based
 // rendering rather than a rich editor, matching how the message was parsed
@@ -91,44 +102,54 @@ export default async function ConversationPage(
       </p>
 
       <div className="card">
-        {(messages || []).map((m: any) => {
-          const mentionedNames = (m.mentioned_profile_ids || [])
-            .map((id: string) => nameById.get(id))
-            .filter(Boolean) as string[];
-          return (
-            <div key={m.id} style={{ marginBottom: "1.1rem", paddingBottom: "1.1rem", borderBottom: "1px solid var(--border)" }}>
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <strong>
-                  {m.author_id === myself ? (
-                    <>
-                      {m.author?.credential_prefix ? `${m.author.credential_prefix} ` : ""}
-                      {m.author?.full_name || "Colleague"}
-                      <span className="tag" style={{ marginLeft: "0.4rem" }}>You</span>
-                    </>
-                  ) : (
-                    <a href={`/dashboard/people/${m.author_id}`} className="person-link">
-                      {m.author?.credential_prefix ? `${m.author.credential_prefix} ` : ""}
-                      {m.author?.full_name || "Colleague"}
-                    </a>
+        <div className="chat-thread">
+          {(messages || []).map((m: any) => {
+            const mentionedNames = (m.mentioned_profile_ids || [])
+              .map((id: string) => nameById.get(id))
+              .filter(Boolean) as string[];
+            const mine = m.author_id === myself;
+            const authorName = m.author?.full_name || "Colleague";
+            return (
+              <div key={m.id} className={`chat-bubble-row${mine ? " mine" : ""}`}>
+                <div className="msg-avatar" aria-hidden="true">{initialsOf(authorName)}</div>
+                <div style={{ minWidth: 0 }}>
+                  {!mine && (
+                    <div className="chat-author">
+                      <a href={`/dashboard/people/${m.author_id}`} className="person-link">
+                        {m.author?.credential_prefix ? `${m.author.credential_prefix} ` : ""}
+                        {authorName}
+                      </a>
+                    </div>
                   )}
-                </strong>
-                <span className="muted">{new Date(m.created_at).toLocaleString()}</span>
+                  <div className="chat-bubble">
+                    {m.deleted_at ? <em className="muted">Message deleted</em> : renderBody(m.body, mentionedNames)}
+                  </div>
+                  <div className="chat-meta">
+                    {mine && "You · "}
+                    {new Date(m.created_at).toLocaleString()}
+                  </div>
+                </div>
               </div>
-              <p style={{ margin: "0.35rem 0 0" }}>
-                {m.deleted_at ? <em className="muted">Message deleted</em> : renderBody(m.body, mentionedNames)}
-              </p>
-            </div>
-          );
-        })}
-        {(messages || []).length === 0 && <p className="muted">No messages yet.</p>}
+            );
+          })}
+          {(messages || []).length === 0 && <p className="muted">No messages yet - say hello.</p>}
+        </div>
 
-        <form action={sendMessage} style={{ marginTop: "1rem" }}>
+        <form action={sendMessage} className="chat-composer">
           <input type="hidden" name="conversation_id" value={conversationId} />
-          <div className="field">
-            <label htmlFor="body">
-              Reply {others.length > 0 && <span className="muted">(type @{(others[0]?.profile as any)?.full_name} to mention someone)</span>}
-            </label>
-            <textarea id="body" name="body" rows={3} required />
+          <div className="field" style={{ flex: 1, marginBottom: 0 }}>
+            <textarea
+              id="body"
+              name="body"
+              rows={2}
+              required
+              placeholder={others.length > 0 ? `Message ${(others[0]?.profile as any)?.full_name}…` : "Write a message…"}
+            />
+            {others.length > 0 && (
+              <p className="muted" style={{ margin: "0.3rem 0 0", fontSize: "0.72rem" }}>
+                Type @{(others[0]?.profile as any)?.full_name} to mention someone
+              </p>
+            )}
           </div>
           <button type="submit">Send</button>
         </form>

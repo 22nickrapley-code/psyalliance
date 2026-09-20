@@ -61,8 +61,15 @@ export async function startConversation(formData: FormData) {
   const title = String(formData.get("title") || "").trim() || null;
   const body = String(formData.get("body") || "").trim();
 
+  // A plain `throw` here used to take down the whole page with the generic
+  // "Something went wrong / Server Components render" crash screen, because
+  // an uncaught error thrown inside a server action bubbles up to the
+  // nearest error boundary instead of being shown inline. redirect()-with-a-
+  // query-param is the same pattern already used elsewhere in this app
+  // (see requestNewInsurance's ?insurance_requested=1) - it fails gracefully
+  // back to this same page with a friendly banner instead of crashing it.
   if (participantIds.length === 0) {
-    throw new Error("Choose at least one colleague to message");
+    redirect(`/dashboard/messages?error=${encodeURIComponent("Choose at least one colleague to message before sending.")}`);
   }
 
   const allParticipantIds = Array.from(new Set([user.id, ...participantIds]));
@@ -220,4 +227,31 @@ export async function setConversationReadState(formData: FormData) {
   // out of the thread.
   const redirectTo = String(formData.get("redirect_to") || "");
   if (redirectTo) redirect(redirectTo);
+}
+
+// Mark-read/unread for the company/admin notices that now show up in the
+// inbox alongside real conversations (see system_notifications). Same shape
+// as setConversationReadState above, but read_at is a plain nullable
+// timestamp here rather than the epoch-sentinel trick, since there's no
+// existing "last read" computation on this table to stay compatible with.
+export async function setNotificationReadState(formData: FormData) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not signed in");
+
+  const id = Number(formData.get("id"));
+  const state = String(formData.get("state") || "");
+  if (state !== "read" && state !== "unread") throw new Error("Invalid state");
+
+  const { error } = await supabase
+    .from("system_notifications")
+    .update({ read_at: state === "unread" ? null : new Date().toISOString() })
+    .eq("id", id)
+    .eq("profile_id", user.id);
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/dashboard/messages");
+  revalidatePath("/dashboard");
 }

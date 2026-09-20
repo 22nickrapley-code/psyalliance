@@ -81,7 +81,7 @@ export default function CaseRow({
           <input name="private_label" type="text" maxLength={24} defaultValue={c.private_label || ""} />
         </div>
         <div className="field">
-          <label>Organization</label>
+          <label>Practice</label>
           <select name="book_of_business_id" defaultValue={c.book_of_business_id ?? ""}>
             <option value="">-</option>
             {books.map((b) => (
