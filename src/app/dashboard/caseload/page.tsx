@@ -3,6 +3,7 @@ import { createBookOfBusiness, createCase, archiveCase, updateCase, reactivateCa
 import CaseloadImportBox from "./import";
 import UsStateDatalist from "@/components/us-state-datalist";
 import CaseRow from "./case-row";
+import ActiveClientsList from "./active-clients-list";
 
 export default async function CaseloadPage(
   props: {
@@ -76,37 +77,15 @@ export default async function CaseloadPage(
         {activeCases.length === 0 ? (
           <p className="muted">No active clients yet, add one below.</p>
         ) : (
-          <>
-            {topActiveCases.map((c: any) => (
-              <CaseRow
-                key={c.id}
-                c={c}
-                books={books || []}
-                insuranceOptions={insuranceOptions || []}
-                specialisms={specialisms || []}
-                updateCase={updateCase}
-                archiveCase={archiveCase}
-              />
-            ))}
-            {remainingActiveCases.length > 0 && (
-              <details className="case-accordion">
-                <summary>
-                  Show {remainingActiveCases.length} more active client{remainingActiveCases.length === 1 ? "" : "s"}
-                </summary>
-                {remainingActiveCases.map((c: any) => (
-                  <CaseRow
-                    key={c.id}
-                    c={c}
-                    books={books || []}
-                    insuranceOptions={insuranceOptions || []}
-                    specialisms={specialisms || []}
-                    updateCase={updateCase}
-                    archiveCase={archiveCase}
-                  />
-                ))}
-              </details>
-            )}
-          </>
+          <ActiveClientsList
+            topCases={topActiveCases}
+            remainingCases={remainingActiveCases}
+            books={books || []}
+            insuranceOptions={insuranceOptions || []}
+            specialisms={specialisms || []}
+            updateCase={updateCase}
+            archiveCase={archiveCase}
+          />
         )}
       </div>
 

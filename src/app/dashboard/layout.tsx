@@ -61,34 +61,14 @@ export default async function DashboardLayout({
 
   return (
     <div className="app-shell">
-      <aside className="sidebar">
-        <a href="/dashboard" className="brand">
-          psyalliance.org
-          <span>Practice network</span>
-        </a>
-
-        <SidebarNav groups={groups} />
-
-        <div className="sidebar-footer">
-          <div className="user-chip">
-            {avatarUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={avatarUrl} alt="" className="avatar" style={{ objectFit: "cover" }} />
-            ) : (
-              <div className="avatar">{initials}</div>
-            )}
-            <div className="who">
-              <div className="name">{displayName}</div>
-              {profile?.verification_status && (
-                <div className="status">{profile.verification_status}</div>
-              )}
-            </div>
-          </div>
-          <form action={signOutAction}>
-            <button type="submit">Sign out</button>
-          </form>
-        </div>
-      </aside>
+      <SidebarNav
+        groups={groups}
+        displayName={displayName}
+        initials={initials}
+        avatarUrl={avatarUrl}
+        verificationStatus={profile?.verification_status ?? null}
+        signOutAction={signOutAction}
+      />
       <main className="app-main">
         <div className="container">{children}</div>
       </main>

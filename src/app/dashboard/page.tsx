@@ -459,7 +459,13 @@ export default async function DashboardHome(
               );
             })}
             {sortedConversationRows.length === 0 && (
-              <p className="muted">{messagesBox === "sent" ? "You haven't started any conversations yet." : "Nothing in your inbox yet."}</p>
+              <p className="muted">
+                {messagesBox === "sent" ? (
+                  <>You haven't started any conversations yet. <a href="/dashboard/messages">Send a new message</a> to a colleague.</>
+                ) : (
+                  <>Nothing in your inbox yet. <a href="/dashboard/messages">Send a new message</a> to get a conversation going.</>
+                )}
+              </p>
             )}
           </div>
 
@@ -474,7 +480,31 @@ export default async function DashboardHome(
                 <span className="snippet">{m.body}</span>
               </a>
             ))}
-            {townHallGrouped.length === 0 && <p className="muted">No conversations yet.</p>}
+            {townHallGrouped.length === 0 && (
+              <p className="muted">
+                No conversations yet. <a href="/dashboard/town-hall">Visit Town Hall</a> to see what
+                your specialism channels are talking about.
+              </p>
+            )}
+          </div>
+
+          <div className="ov-card">
+            <div className="widget-header">
+              <h2>Recent documents</h2>
+              <GoLink href="/dashboard/documents" />
+            </div>
+            {recentDocs.map((d: any) => (
+              <a key={`${d.scope}-${d.id}`} href="/dashboard/documents" className="ov-feed-row">
+                <span className="title">{d.title}</span>
+                <span className="snippet">{d.scope}{d.uploaderName ? ` · ${d.uploaderName}` : ""}</span>
+              </a>
+            ))}
+            {recentDocs.length === 0 && (
+              <p className="muted">
+                No documents yet. <a href="/dashboard/documents">Upload one</a> to share with the
+                network or keep for yourself.
+              </p>
+            )}
           </div>
         </div>
 
@@ -550,20 +580,6 @@ export default async function DashboardHome(
               recurring overhead. See <a href="/dashboard/income">Income</a> for the full breakdown
               by practice.
             </p>
-          </div>
-
-          <div className="ov-card">
-            <div className="widget-header">
-              <h2>Recent documents</h2>
-              <GoLink href="/dashboard/documents" />
-            </div>
-            {recentDocs.map((d: any) => (
-              <a key={`${d.scope}-${d.id}`} href="/dashboard/documents" className="ov-feed-row">
-                <span className="title">{d.title}</span>
-                <span className="snippet">{d.scope}{d.uploaderName ? ` · ${d.uploaderName}` : ""}</span>
-              </a>
-            ))}
-            {recentDocs.length === 0 && <p className="muted">No documents yet.</p>}
           </div>
 
           <details className="ov-card ov-quick-search" open={hasSearchInputs}>

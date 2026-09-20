@@ -4,6 +4,18 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+// A plain `throw` inside a server action wired to a bare <form action={fn}>
+// (no client-side handling) crashes the whole page with Next.js's generic
+// "Something went wrong / Server Components render" screen instead of
+// showing anything useful - this is the same failure Nick hit on Messages
+// (see startConversation) and then again here on the NPI pre-check form.
+// Every validation/DB-error path in this file routes through this instead,
+// so a bad input or a failed insert sends the user back to this same page
+// with a friendly inline banner rather than taking the page down.
+function credentialsError(message: string): never {
+  redirect(`/dashboard/credentials?error=${encodeURIComponent(message)}`);
+}
+
 export async function addLicense(formData: FormData) {
   const supabase = await createClient();
   const {
@@ -20,7 +32,7 @@ export async function addLicense(formData: FormData) {
     expiration_date: String(formData.get("expiration_date") || "") || null,
     notes: String(formData.get("notes") || "") || null,
   });
-  if (error) throw new Error(error.message);
+  if (error) credentialsError(error.message);
 
   revalidatePath("/dashboard/credentials");
 }
@@ -29,7 +41,7 @@ export async function deleteLicense(formData: FormData) {
   const supabase = await createClient();
   const id = Number(formData.get("id"));
   const { error } = await supabase.from("licenses").delete().eq("id", id);
-  if (error) throw new Error(error.message);
+  if (error) credentialsError(error.message);
   revalidatePath("/dashboard/credentials");
 }
 
@@ -49,7 +61,7 @@ export async function addCeCredit(formData: FormData) {
     completed_date: String(formData.get("completed_date") || ""),
     license_id: formData.get("license_id") ? Number(formData.get("license_id")) : null,
   });
-  if (error) throw new Error(error.message);
+  if (error) credentialsError(error.message);
 
   revalidatePath("/dashboard/credentials");
 }
@@ -58,7 +70,7 @@ export async function deleteCeCredit(formData: FormData) {
   const supabase = await createClient();
   const id = Number(formData.get("id"));
   const { error } = await supabase.from("continuing_education_credits").delete().eq("id", id);
-  if (error) throw new Error(error.message);
+  if (error) credentialsError(error.message);
   revalidatePath("/dashboard/credentials");
 }
 
@@ -76,7 +88,7 @@ export async function addInsurancePanel(formData: FormData) {
     effective_date: String(formData.get("effective_date") || "") || null,
     renewal_date: String(formData.get("renewal_date") || "") || null,
   });
-  if (error) throw new Error(error.message);
+  if (error) credentialsError(error.message);
 
   revalidatePath("/dashboard/credentials");
 }
@@ -87,7 +99,7 @@ export async function updateInsurancePanelStatus(formData: FormData) {
   const status = String(formData.get("status") || "");
 
   const { error } = await supabase.from("insurance_panels").update({ status }).eq("id", id);
-  if (error) throw new Error(error.message);
+  if (error) credentialsError(error.message);
 
   revalidatePath("/dashboard/credentials");
 }
@@ -96,7 +108,7 @@ export async function deleteInsurancePanel(formData: FormData) {
   const supabase = await createClient();
   const id = Number(formData.get("id"));
   const { error } = await supabase.from("insurance_panels").delete().eq("id", id);
-  if (error) throw new Error(error.message);
+  if (error) credentialsError(error.message);
   revalidatePath("/dashboard/credentials");
 }
 
@@ -108,13 +120,13 @@ export async function saveNpiNumber(formData: FormData) {
   if (!user) throw new Error("Not signed in");
 
   const npiNumber = String(formData.get("npi_number") || "").replace(/\D/g, "");
-  if (npiNumber && npiNumber.length !== 10) throw new Error("An NPI number is 10 digits");
+  if (npiNumber && npiNumber.length !== 10) credentialsError("An NPI number is 10 digits");
 
   const { error } = await supabase
     .from("profiles")
     .update({ npi_number: npiNumber || null })
     .eq("id", user.id);
-  if (error) throw new Error(error.message);
+  if (error) credentialsError(error.message);
 
   revalidatePath("/dashboard/credentials");
   redirect("/dashboard/credentials?saved=1");
@@ -137,7 +149,7 @@ export async function saveCaqhInfo(formData: FormData) {
       caqh_last_attested_date: lastAttestedDate || null,
     })
     .eq("id", user.id);
-  if (error) throw new Error(error.message);
+  if (error) credentialsError(error.message);
 
   revalidatePath("/dashboard/credentials");
   redirect("/dashboard/credentials?saved=1");
@@ -158,7 +170,7 @@ export async function checkNpiRegistry() {
     .select("npi_number, full_name, states_qualified")
     .eq("id", user.id)
     .maybeSingle();
-  if (!profile?.npi_number) throw new Error("Add your NPI number first");
+  if (!profile?.npi_number) credentialsError("Add your NPI number first");
 
   let raw: any = null;
   let fetchError: string | null = null;
@@ -214,7 +226,7 @@ export async function checkNpiRegistry() {
     matched,
     flagged_reason: matched ? null : flaggedReason,
   });
-  if (error) throw new Error(error.message);
+  if (error) credentialsError(error.message);
 
   revalidatePath("/dashboard/credentials");
   revalidatePath("/dashboard/profile");

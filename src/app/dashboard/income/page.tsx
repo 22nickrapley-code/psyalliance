@@ -29,6 +29,7 @@ export default async function IncomePage() {
   });
 
   const unassigned = casesList.filter((c) => !c.book_of_business_id);
+  const hasRows = byBook.length > 0 || unassigned.length > 0;
 
   return (
     <div>
@@ -37,7 +38,7 @@ export default async function IncomePage() {
           <h1>Income &amp; revenue</h1>
           <p className="muted">
             Projected from your active caseload: rate × sessions/week × 4.3 weeks/month, net of
-            each organization's retention share.
+            each practice's retention share and your recurring overhead.
           </p>
         </div>
         <a href="/api/export/caseload" className="btn secondary" style={{ flex: "0 0 auto" }}>
@@ -45,86 +46,64 @@ export default async function IncomePage() {
         </a>
       </div>
 
-      <div className="stat-grid">
-        <div className="stat">
-          <div className="value">{currency(totalGross)}</div>
-          <div className="label">Monthly gross</div>
-        </div>
-        <div className="stat">
-          <div className="value">{currency(totalNet)}</div>
-          <div className="label">Monthly net (after retention split)</div>
-        </div>
-        <div className="stat">
-          <div className="value">{currency(totalOverhead)}</div>
-          <div className="label">Recurring overhead</div>
-        </div>
-        <div className="stat">
-          <div className="value">{currency(trueNet)}</div>
-          <div className="label">True net income</div>
-        </div>
-        <div className="stat">
-          <div className="value">{currency(trueNet * 12)}</div>
+      {/* One headline figure - what you actually take home over a year -
+          with the figures behind it as smaller supporting stats, rather
+          than five same-weight boxes with no hierarchy between them. */}
+      <div className="income-hero">
+        <div className="income-hero-primary">
           <div className="label">Annual true net income</div>
+          <div className="value">{currency(trueNet * 12)}</div>
+          <div className="sub">
+            {currency(trueNet)}/mo, after retention splits and {currency(totalOverhead)}/mo of
+            recurring overhead
+          </div>
         </div>
-      </div>
-
-      <div className="card" style={{ marginTop: "1.5rem" }}>
-        <h2>By organization</h2>
-        <table>
-          <thead>
-            <tr>
-              <th>Organization</th>
-              <th>Active cases</th>
-              <th>Gross</th>
-              <th>Net</th>
-            </tr>
-          </thead>
-          <tbody>
-            {byBook.map(({ book, count, gross, net }) => (
-              <tr key={book.id}>
-                <td>{book.name}</td>
-                <td>{count}</td>
-                <td>{currency(gross)}</td>
-                <td>{currency(net)}</td>
-              </tr>
-            ))}
-            {unassigned.length > 0 && (
-              <tr>
-                <td className="muted">Unassigned</td>
-                <td>{unassigned.length}</td>
-                <td>{currency(unassigned.reduce((s, c) => s + caseMonthlyGross(c), 0))}</td>
-                <td>{currency(unassigned.reduce((s, c) => s + caseMonthlyNet(c, booksList), 0))}</td>
-              </tr>
-            )}
-            {byBook.length === 0 && unassigned.length === 0 && (
-              <tr>
-                <td colSpan={4} className="muted">No active cases yet, add some on the Caseload page.</td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+        <div className="income-hero-secondary">
+          <div className="stat">
+            <div className="value">{currency(totalGross)}</div>
+            <div className="label">Monthly gross</div>
+          </div>
+          <div className="stat">
+            <div className="value">{currency(totalNet)}</div>
+            <div className="label">Monthly net</div>
+          </div>
+          <div className="stat">
+            <div className="value">{currency(totalOverhead)}</div>
+            <div className="label">Overhead</div>
+          </div>
+          <div className="stat">
+            <div className="value">{currency(trueNet)}</div>
+            <div className="label">Monthly true net</div>
+          </div>
+        </div>
       </div>
 
       <div className="card">
-        <h2>Annual income by organization</h2>
-        <p className="muted">
-          Same figures, annualized (× 12) and split out per organization, so you can see where
-          your income actually comes from over a full year - not just this month.
+        <div className="widget-header">
+          <h2>Income by practice</h2>
+        </div>
+        <p className="muted" style={{ marginTop: "-0.4rem" }}>
+          This month's figures alongside the annualized (× 12) projection, so you can see both
+          where your income comes from and what it adds up to over a full year.
         </p>
-        <table>
+        <table className="income-table">
           <thead>
             <tr>
-              <th>Organization</th>
-              <th>Active cases</th>
+              <th>Practice</th>
+              <th>Active</th>
+              <th>Monthly gross</th>
+              <th>Monthly net</th>
               <th>Annual gross</th>
               <th>Annual net</th>
             </tr>
           </thead>
           <tbody>
             {byBook.map(({ book, count, gross, net }) => (
-              <tr key={book.id}>
+              <tr key={book.id} className={count === 0 ? "muted-row" : undefined}>
                 <td>{book.name}</td>
                 <td>{count}</td>
+                <td>{currency(gross)}</td>
+                <td>{currency(net)}</td>
                 <td>{currency(gross * 12)}</td>
                 <td>{currency(net * 12)}</td>
               </tr>
@@ -133,19 +112,23 @@ export default async function IncomePage() {
               <tr>
                 <td className="muted">Unassigned</td>
                 <td>{unassigned.length}</td>
+                <td>{currency(unassigned.reduce((s, c) => s + caseMonthlyGross(c), 0))}</td>
+                <td>{currency(unassigned.reduce((s, c) => s + caseMonthlyNet(c, booksList), 0))}</td>
                 <td>{currency(unassigned.reduce((s, c) => s + caseMonthlyGross(c), 0) * 12)}</td>
                 <td>{currency(unassigned.reduce((s, c) => s + caseMonthlyNet(c, booksList), 0) * 12)}</td>
               </tr>
             )}
-            {byBook.length === 0 && unassigned.length === 0 && (
+            {!hasRows && (
               <tr>
-                <td colSpan={4} className="muted">No active cases yet, add some on the Caseload page.</td>
+                <td colSpan={6} className="muted">No active cases yet, add some on the Caseload page.</td>
               </tr>
             )}
-            {(byBook.length > 0 || unassigned.length > 0) && (
-              <tr style={{ fontWeight: 700, borderTop: "2px solid var(--border-strong)" }}>
+            {hasRows && (
+              <tr className="income-table-total">
                 <td>Total</td>
                 <td>{casesList.length}</td>
+                <td>{currency(totalGross)}</td>
+                <td>{currency(totalNet)}</td>
                 <td>{currency(totalGross * 12)}</td>
                 <td>{currency(totalNet * 12)}</td>
               </tr>

@@ -24,8 +24,8 @@ function daysUntil(dateStr: string | null): number | null {
   return Math.round(diffMs / (1000 * 60 * 60 * 24));
 }
 
-export default async function CredentialsPage(props: { searchParams: Promise<{ saved?: string }> }) {
-  const { saved } = await props.searchParams;
+export default async function CredentialsPage(props: { searchParams: Promise<{ saved?: string; error?: string }> }) {
+  const { saved, error } = await props.searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -65,6 +65,8 @@ export default async function CredentialsPage(props: { searchParams: Promise<{ s
         Track your licenses, continuing-education hours, and insurance-panel status in one place,
         with expiration reminders so nothing lapses unnoticed.
       </p>
+
+      {error && <div className="error-banner">{error}</div>}
 
       {saved === "1" && (
         <div className="card" style={{ borderColor: "var(--accent, #2a7)", background: "rgba(34,170,119,0.08)" }}>

@@ -375,25 +375,209 @@ button.danger:hover {
   min-width: 0;
 }
 
+/* ---------- Mobile nav: top bar + off-canvas drawer + bottom tab bar ----------
+   Replaces the old approach (every single nav item, from every group,
+   wrapped into a row across the top of the page - meaning the user had to
+   scroll past the whole thing to reach any page's actual content). Below
+   860px: a slim fixed top bar (brand + hamburger) and a fixed bottom tab
+   bar (the 4 most-used destinations + "More") stay out of the way of
+   content; the full grouped nav lives in an off-canvas drawer opened by
+   either the hamburger or "More", the same pattern LinkedIn/Instagram/
+   Facebook use on mobile. Above 860px none of this renders - .mobile-topbar/
+   .mobile-tabbar/.sidebar-backdrop are display:none by default. */
+.mobile-topbar,
+.mobile-tabbar,
+.sidebar-backdrop {
+  display: none;
+}
+
 @media (max-width: 860px) {
   .app-shell {
     flex-direction: column;
   }
-  .sidebar {
-    position: static;
-    width: 100%;
-    flex: none;
-    height: auto;
-    flex-direction: row;
-    flex-wrap: wrap;
+
+  .mobile-topbar {
+    display: flex;
     align-items: center;
-    padding: 0.9rem 1rem;
+    justify-content: space-between;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 54px;
+    padding: 0 0.5rem 0 1rem;
+    background: var(--accent);
+    z-index: 60;
+    box-shadow: var(--shadow-sm);
   }
-  .sidebar .brand { padding: 0 0.6rem 0 0; }
-  .sidebar nav { flex-direction: row; flex-wrap: wrap; gap: 0.5rem; }
-  .sidebar .nav-group-label { display: none; }
-  .sidebar .nav-links { flex-direction: row; flex-wrap: wrap; }
-  .sidebar .sidebar-footer { display: none; }
+
+  .mobile-topbar .brand {
+    font-family: var(--font-display, Georgia, serif);
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #fff;
+    text-decoration: none;
+  }
+
+  .mobile-topbar-menu-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+  }
+
+  .mobile-topbar-menu-btn:hover {
+    background: rgba(255, 255, 255, 0.14);
+  }
+
+  .sidebar-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(20, 20, 18, 0.45);
+    z-index: 90;
+  }
+
+  /* The desktop sidebar becomes the drawer's panel: fixed off-canvas,
+     slides in from the left when .open is toggled. Its own internal
+     structure (brand, grouped nav, footer) is unchanged - only its
+     positioning changes here. */
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    width: min(300px, 84vw);
+    flex: none;
+    transform: translateX(-100%);
+    transition: transform 0.22s ease;
+    z-index: 100;
+    box-shadow: var(--shadow-lg);
+  }
+
+  .sidebar.open {
+    transform: translateX(0);
+  }
+
+  .sidebar-drawer-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+  }
+
+  .sidebar-drawer-head .brand {
+    padding: 0;
+  }
+
+  .sidebar-close-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-sm);
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    flex: 0 0 auto;
+  }
+
+  .sidebar-close-btn:hover {
+    background: rgba(255, 255, 255, 0.18);
+  }
+
+  /* Full vertical room in the drawer, unlike the old horizontal-bar
+     squeeze - the user chip + sign out are shown again here. */
+  .sidebar .sidebar-footer {
+    display: block;
+  }
+
+  .mobile-tabbar {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    z-index: 60;
+    padding: 0.3rem 0.2rem calc(0.3rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  .mobile-tab {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.15rem;
+    padding: 0.3rem 0.2rem;
+    color: var(--muted);
+    text-decoration: none;
+    background: none;
+    border: none;
+    font-family: inherit;
+    cursor: pointer;
+  }
+
+  .mobile-tab.active {
+    color: var(--accent);
+  }
+
+  .mobile-tab-icon {
+    position: relative;
+    display: flex;
+  }
+
+  .mobile-tab-label {
+    font-size: 0.62rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .mobile-tab-badge {
+    position: absolute;
+    top: -4px;
+    right: -8px;
+    background: var(--gold);
+    color: #2a2313;
+    font-size: 0.6rem;
+    font-weight: 700;
+    border-radius: 999px;
+    padding: 0 4px;
+    min-width: 14px;
+    text-align: center;
+    line-height: 14px;
+  }
+
+  /* Keeps page content clear of the fixed top bar and bottom tab bar -
+     .container's own padding stays untouched, this is purely the extra
+     offset the fixed chrome needs. */
+  .app-main {
+    padding-top: 54px;
+    padding-bottom: 64px;
+  }
+
+  .container {
+    padding: 1.25rem 1.1rem 2rem;
+  }
+
+  .widget-header {
+    flex-wrap: wrap;
+  }
+
+  table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
 }
 
 /* ---------- Tables ---------- */
@@ -473,6 +657,89 @@ tbody tr:hover {
   font-size: 0.78rem;
   color: var(--muted);
   margin-top: 0.15rem;
+}
+
+/* ---------- Income page: one hero figure + supporting stats ----------
+   A financial summary reads as more professional with a clear hierarchy -
+   one number that matters most, everything else smaller and secondary -
+   rather than a flat grid of same-weight boxes. */
+.income-hero {
+  display: flex;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+  align-items: stretch;
+  margin-bottom: 1.5rem;
+}
+
+.income-hero-primary {
+  flex: 1 1 260px;
+  background: linear-gradient(135deg, var(--accent), #2f6b57);
+  color: #fff;
+  border-radius: var(--radius-lg);
+  padding: 1.75rem 2rem;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.income-hero-primary .label {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: rgba(255, 255, 255, 0.75);
+  margin-bottom: 0.4rem;
+}
+
+.income-hero-primary .value {
+  font-family: var(--font-display, Georgia, serif);
+  font-size: clamp(2rem, 4vw, 2.6rem);
+  font-weight: 700;
+  line-height: 1.05;
+}
+
+.income-hero-primary .sub {
+  margin-top: 0.65rem;
+  font-size: 0.83rem;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.income-hero-secondary {
+  flex: 1 1 340px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 0.75rem;
+}
+
+.income-hero-secondary .stat {
+  padding: 0.85rem 1rem;
+}
+
+.income-hero-secondary .stat .value {
+  font-size: 1.35rem;
+}
+
+/* Consolidated by-practice table: monthly + annual side by side instead of
+   two near-duplicate tables stacked one after the other. */
+.income-table th:not(:first-child),
+.income-table td:not(:first-child) {
+  text-align: right;
+}
+
+.income-table .muted-row td {
+  color: var(--muted);
+}
+
+.income-table-total td {
+  font-weight: 700;
+  border-top: 2px solid var(--border-strong);
+  border-bottom: none;
+}
+
+@media (max-width: 860px) {
+  .income-hero-secondary {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 .tag {
@@ -853,6 +1120,36 @@ a.person-link.tier-recommended {
 
 .case-row-edit .field {
   margin-bottom: 0;
+}
+
+/* Active-clients "show more": a real button that always renders after
+   every currently-visible row (collapsed or expanded), never wedged
+   between the top-3 preview and the rest the way the old <details>
+   accordion put it - see ActiveClientsList. Visually it still reads the
+   same as the .case-accordion summary below (same arrow-rotate treatment),
+   just driven by React state instead of the details[open] pseudo-class. */
+.case-list-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  width: 100%;
+  margin-top: 0.5rem;
+  padding: 0.6rem 0.1rem 0.2rem;
+  border: none;
+  border-top: 1px solid var(--border);
+  background: none;
+  color: var(--accent);
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 0.85rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.case-list-toggle-arrow {
+  font-size: 0.7rem;
+  display: inline-block;
+  transition: transform 0.15s ease;
 }
 
 .case-accordion {
