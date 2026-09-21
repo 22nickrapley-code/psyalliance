@@ -87,3 +87,67 @@ export function rankCandidates(
       return a.fullName.localeCompare(b.fullName);
     });
 }
+
+// --- Match Grid scoring, per Nick's supplied "Matching sequence" rules ---
+// Used by Caseload Quick Match, the Planner recommendation table, and the
+// Single Patient Referral tool. Kept separate from rankCandidates() above,
+// which continues to power the existing coverage-plan flow unchanged.
+//
+// Sequence:
+//   1. Rule out candidates not qualified for the client's state (in-state,
+//      or PSYPACT-participating for cross-state telehealth authority) and
+//      candidates who don't offer the client's session type.
+//   2. Score the remainder on the Match Grid: relationship tier (Partner=3
+//      / Bench=2 / Recommended=1 / none=0) + (6 - specialty rating), where
+//      specialty rating is the candidate's own 1 (best) - 5 (worst) rank
+//      for that treatment need. Range: 2 (Recommended, rank 5) - 8
+//      (Partner, rank 1), matching Nick's supplied grid.
+//   3. Tie-break, in order: relationship tier, then specialty rating, then
+//      most community endorsements, then most recent last-active, then
+//      alphabetical by name.
+const GRID_TIER_VALUE: Record<ConnectionTier, number> = { partner: 3, bench: 2, recommended: 1, none: 0 };
+
+export interface GridCandidate {
+  profileId: string;
+  fullName: string;
+  connectionTier: ConnectionTier;
+  specialtyRank: number | null; // 1 (best) - 5 (worst); null = unranked for this need
+  endorsementScore: number;
+  lastActiveAt: string | null;
+  qualifiedForState: boolean;
+  sessionTypeMatch: boolean;
+  meta?: Record<string, unknown>;
+}
+
+export interface GridScoredCandidate extends GridCandidate {
+  gridScore: number;
+}
+
+export function computeGridScore(tier: ConnectionTier, specialtyRank: number | null): number {
+  const rank = specialtyRank != null ? Math.min(5, Math.max(1, specialtyRank)) : 5;
+  return GRID_TIER_VALUE[tier] + (6 - rank);
+}
+
+export function rankCandidatesByGrid(candidates: GridCandidate[]): GridScoredCandidate[] {
+  return candidates
+    .filter((c) => c.qualifiedForState && c.sessionTypeMatch)
+    .map((c) => ({ ...c, gridScore: computeGridScore(c.connectionTier, c.specialtyRank) }))
+    .sort((a, b) => {
+      if (b.gridScore !== a.gridScore) return b.gridScore - a.gridScore;
+
+      const tierDiff = GRID_TIER_VALUE[b.connectionTier] - GRID_TIER_VALUE[a.connectionTier];
+      if (tierDiff !== 0) return tierDiff;
+
+      const rankA = a.specialtyRank ?? 99;
+      const rankB = b.specialtyRank ?? 99;
+      if (rankA !== rankB) return rankA - rankB;
+
+      if (b.endorsementScore !== a.endorsementScore) return b.endorsementScore - a.endorsementScore;
+
+      const lastA = a.lastActiveAt ? new Date(a.lastActiveAt).getTime() : 0;
+      const lastB = b.lastActiveAt ? new Date(b.lastActiveAt).getTime() : 0;
+      if (lastB !== lastA) return lastB - lastA;
+
+      return a.fullName.localeCompare(b.fullName);
+    });
+}

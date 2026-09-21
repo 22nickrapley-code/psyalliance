@@ -165,6 +165,7 @@ export function buildNavGroups(isAdmin: boolean, unreadMessageCount = 0): NavGro
         { href: "/dashboard/town-hall", label: "Town Hall", icon: icon.townhall },
         { href: "/dashboard/referrals", label: "Referrals", icon: icon.referrals },
         { href: "/dashboard/planner", label: "Planner", icon: icon.planner },
+        { href: "/dashboard/planner/coverage-plans", label: "Coverage plans", icon: icon.planner },
         { href: "/dashboard/supervision", label: "Supervision", icon: icon.supervision },
       ],
     },

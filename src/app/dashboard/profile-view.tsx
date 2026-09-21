@@ -58,49 +58,94 @@ export function ProfileView({
   data,
   tierBadge,
   relevantSpecialisms,
+  highlightValues,
+  locationMatch,
+  matchToggle,
   actions,
+  sidebarExtra,
+  belowHeader,
 }: {
   data: ProfileViewData;
   tierBadge?: React.ReactNode;
   relevantSpecialisms?: string[];
+  // Additional values (any specialism category, lower-cased match is
+  // case-insensitive) to highlight as chips without adding them to the
+  // "Recommended for you" banner sentence - used by the Match me / Match my
+  // caseload toggle, which can span categories the banner text isn't
+  // written to describe.
+  highlightValues?: string[];
+  // True when the viewer's own location (or the aggregate of their
+  // caseload's locations, depending which toggle is active) overlaps this
+  // person's city/state - highlights the location line to match the chip
+  // highlighting on shared specialisms below.
+  locationMatch?: boolean;
+  // "Match me" / "Match my caseload" toggle control, rendered by the caller
+  // (people/[id]/page.tsx) since it's just navigation between two query-
+  // param states - kept out of this presentational component.
+  matchToggle?: React.ReactNode;
   actions?: React.ReactNode;
+  // Extra sidebar cards (Endorsements) rendered by the caller, appended
+  // after the built-in Contact/Open-to/Availability cards.
+  sidebarExtra?: React.ReactNode;
+  // Extra content rendered directly under the header, above the relevance
+  // banner - used for the "Assign to Patient" quick-assign panel.
+  belowHeader?: React.ReactNode;
 }) {
   const profession = professionFor(data.qualificationLevel);
-  const relevantSet = new Set((relevantSpecialisms || []).map((s) => s.toLowerCase()));
+  const relevantSet = new Set(
+    [...(relevantSpecialisms || []), ...(highlightValues || [])].map((s) => s.toLowerCase())
+  );
+  const hasLocation = !!(data.city || data.state);
 
   return (
     <div className="profile-view-card">
-      <div className="profile-view-banner" />
-      <div className="profile-view-header">
-        <Avatar url={data.avatarUrl} name={data.fullName} size={88} />
+      <div className="profile-view-banner">
+        <div className="profile-view-avatar-ring">
+          <Avatar url={data.avatarUrl} name={data.fullName} size={92} />
+        </div>
         <div className="profile-view-heading">
           <h1>
             {data.credentialPrefix ? `${data.credentialPrefix} ` : ""}
             {data.fullName}
           </h1>
-          <div className="profile-view-meta">
+          <div className="profile-view-role">
             {data.qualificationLevel}
-            {data.city ? ` · ${data.city}` : ""}
-            {data.state ? `, ${data.state}` : ""}
           </div>
-          <div className="profile-view-badges">
-            <span className={`tag${profession === "psychiatrist" ? " psychiatrist" : ""}`}>
-              {professionLabel(profession)}
-            </span>
-            {tierBadge}
-            {data.boardCertified && <span className="tag gold">Board certified</span>}
-            {data.acceptingReferrals && <span className="tag">Accepting referrals</span>}
-            {data.psypactParticipating && (
-              <span className="tag" title="Holds PSYPACT Authority to Practice Interjurisdictional Telepsychology">
-                PSYPACT
-              </span>
-            )}
-          </div>
+          {hasLocation && (
+            <div className={`profile-view-location${locationMatch ? " match" : ""}`}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" style={{ flex: "0 0 auto" }}>
+                <path d="M12 21s-7-6.1-7-11a7 7 0 0 1 14 0c0 4.9-7 11-7 11z" />
+                <circle cx="12" cy="10" r="2.5" />
+              </svg>
+              {data.city}
+              {data.city && data.state ? ", " : ""}
+              {data.state}
+              {locationMatch && <span className="location-match-tag">Overlaps with you</span>}
+            </div>
+          )}
         </div>
-        {actions && <div className="profile-view-actions">{actions}</div>}
+        {matchToggle && <div className="profile-view-match-toggle">{matchToggle}</div>}
       </div>
 
-      <div style={{ padding: "0 1.75rem 1.75rem" }}>
+      <div style={{ padding: "1rem 1.75rem 1.75rem" }}>
+        <div className="profile-view-badges" style={{ marginBottom: "0.9rem" }}>
+          <span className={`tag${profession === "psychiatrist" ? " psychiatrist" : ""}`}>
+            {professionLabel(profession)}
+          </span>
+          {tierBadge}
+          {data.boardCertified && <span className="tag gold">Board certified</span>}
+          {data.acceptingReferrals && <span className="tag">Accepting referrals</span>}
+          {data.psypactParticipating && (
+            <span className="tag" title="Holds PSYPACT Authority to Practice Interjurisdictional Telepsychology">
+              PSYPACT
+            </span>
+          )}
+        </div>
+
+        {actions && <div className="profile-view-actions">{actions}</div>}
+
+        {belowHeader}
+
         {relevantSpecialisms && relevantSpecialisms.length > 0 && (
           <div className="relevance-banner">
             Recommended for you: shares your {relevantSpecialisms.join(", ")} specialism
@@ -168,6 +213,8 @@ export function ProfileView({
                 </div>
               </div>
             )}
+
+            {sidebarExtra}
           </div>
 
           <div>

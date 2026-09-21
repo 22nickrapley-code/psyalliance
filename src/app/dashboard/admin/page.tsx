@@ -17,6 +17,7 @@ export default async function AdminOverviewPage() {
     { data: recentSignups },
     { count: unmatchedCredentialCount },
     { count: pendingInsuranceRequestCount },
+    { count: pendingChannelRequestCount },
   ] = await Promise.all([
     supabase.from("profiles").select("*", { count: "exact", head: true }),
     supabase.from("profiles").select("*", { count: "exact", head: true }).eq("verification_status", "verified"),
@@ -31,6 +32,7 @@ export default async function AdminOverviewPage() {
       .limit(8),
     supabase.from("credential_verifications").select("*", { count: "exact", head: true }).eq("matched", false),
     supabase.from("insurance_requests").select("*", { count: "exact", head: true }).eq("status", "pending"),
+    supabase.from("channel_requests").select("*", { count: "exact", head: true }).eq("status", "pending"),
   ]);
 
   const stateCounts = new Map<string, number>();
@@ -49,7 +51,9 @@ export default async function AdminOverviewPage() {
         Platform-wide stats and quick links for running admin tasks. Credential review lives in{" "}
         <a href="/dashboard/admin/verifications">Verification queue</a>, requests to add a new
         insurance provider are under{" "}
-        <a href="/dashboard/admin/insurance-requests">Insurance requests</a>, and the full member
+        <a href="/dashboard/admin/insurance-requests">Insurance requests</a>, requests for a new
+        Town Hall channel are under{" "}
+        <a href="/dashboard/admin/channel-requests">Channel requests</a>, and the full member
         list (search, verify, flag, promote to admin) is under{" "}
         <a href="/dashboard/admin/members">All members</a>.
       </p>
@@ -85,6 +89,10 @@ export default async function AdminOverviewPage() {
             <div className="value">{pendingInsuranceRequestCount ?? 0}</div>
             <div className="label">Pending insurance requests</div>
           </div>
+          <div className="stat">
+            <div className="value">{pendingChannelRequestCount ?? 0}</div>
+            <div className="label">Pending channel requests</div>
+          </div>
         </div>
         {(pendingCount ?? 0) > 0 && (
           <p style={{ marginTop: "0.75rem" }}>
@@ -97,6 +105,13 @@ export default async function AdminOverviewPage() {
           <p style={{ marginTop: "0.5rem" }}>
             <a href="/dashboard/admin/insurance-requests" className="btn secondary">
               Review {pendingInsuranceRequestCount} insurance request{pendingInsuranceRequestCount === 1 ? "" : "s"}
+            </a>
+          </p>
+        )}
+        {(pendingChannelRequestCount ?? 0) > 0 && (
+          <p style={{ marginTop: "0.5rem" }}>
+            <a href="/dashboard/admin/channel-requests" className="btn secondary">
+              Review {pendingChannelRequestCount} channel request{pendingChannelRequestCount === 1 ? "" : "s"}
             </a>
           </p>
         )}

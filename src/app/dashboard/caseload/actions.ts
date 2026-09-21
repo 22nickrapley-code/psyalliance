@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { extractStructuredData, AiNotConfiguredError } from "@/lib/ai/anthropic";
+import { computeGridRankedCandidates } from "@/lib/server-matching";
 
 // A plain `throw` inside a server action wired to a bare <form action={fn}>
 // crashes the whole page with Next.js's generic error screen instead of showing
@@ -73,6 +74,10 @@ export async function deleteOrganization(formData: FormData) {
   revalidatePath("/dashboard/income");
 }
 
+// Every active client must belong to a practice, or be archived - there is
+// no accepted "unassigned" state (Nick's explicit rule). createCase and
+// updateCase below both reject a missing book_of_business_id rather than
+// silently allowing null the way they used to.
 export async function createCase(formData: FormData) {
   const supabase = await createClient();
   const {
@@ -81,10 +86,13 @@ export async function createCase(formData: FormData) {
   if (!user) throw new Error("Not signed in");
 
   const bookId = formData.get("book_of_business_id");
+  if (!bookId) {
+    caseloadError("Pick a practice for this client first - add one below under Practices if you haven't yet.");
+  }
 
   const { error } = await supabase.from("caseload_clients").insert({
     profile_id: user.id,
-    book_of_business_id: bookId ? Number(bookId) : null,
+    book_of_business_id: Number(bookId),
     private_label: String(formData.get("private_label") || "") || null,
     state: String(formData.get("state") || "") || null,
     city: String(formData.get("city") || "") || null,
@@ -188,6 +196,15 @@ export async function parseCaseloadImport(rawText: string): Promise<{
 
 // The practitioner's own review/confirm step - only rows they kept checked
 // in the import preview reach here, and only then does anything get written.
+//
+// Every imported row needs a practice, same rule as createCase/updateCase.
+// Matches the extracted organization_name against an existing practice
+// (case-insensitively), auto-creates a new practice for any name that
+// doesn't match one yet, and falls back to the practitioner's sole existing
+// practice for rows where the source didn't name an organization at all.
+// Only fails outright if there are zero practices to fall back to, or a
+// row's organization can't be resolved and there's more than one practice
+// to guess between.
 export async function bulkImportCases(rows: ImportedCaseRow[]): Promise<{ imported?: number; error?: string }> {
   const supabase = await createClient();
   const {
@@ -201,22 +218,64 @@ export async function bulkImportCases(rows: ImportedCaseRow[]): Promise<{ import
     .select("id, name")
     .eq("profile_id", user.id)
     .eq("is_active", true);
-  const orgIdByLowerName = new Map((orgs || []).map((o) => [o.name.toLowerCase(), o.id]));
+  const orgList = orgs || [];
+  if (orgList.length === 0) {
+    return { error: "Add at least one practice under Practices before importing - every client needs one." };
+  }
+  const orgIdByLowerName = new Map(orgList.map((o) => [o.name.toLowerCase(), o.id as number]));
+  const soleBookId = orgList.length === 1 ? orgList[0].id : null;
 
-  const insertRows = rows.slice(0, 200).map((r) => ({
-    profile_id: user.id,
-    book_of_business_id: r.organization_name ? orgIdByLowerName.get(r.organization_name.toLowerCase()) ?? null : null,
-    private_label: r.private_label,
-    state: r.state,
-    city: r.city,
-    session_type: r.session_type,
-    insurance: r.insurance,
-    primary_need: r.primary_need,
-    secondary_need: r.secondary_need,
-    tertiary_need: r.tertiary_need,
-    rate_per_session: r.rate_per_session,
-    sessions_per_week: r.sessions_per_week,
-  }));
+  const newOrgNamesNeeded = new Set<string>();
+  for (const r of rows) {
+    if (r.organization_name && !orgIdByLowerName.has(r.organization_name.toLowerCase())) {
+      newOrgNamesNeeded.add(r.organization_name);
+    }
+  }
+  if (newOrgNamesNeeded.size > 0) {
+    const { data: created, error: createErr } = await supabase
+      .from("books_of_business")
+      .insert(
+        Array.from(newOrgNamesNeeded).map((name) => ({
+          profile_id: user.id,
+          name,
+          expense_burden_pct: 0.85,
+        }))
+      )
+      .select("id, name");
+    if (createErr) return { error: createErr.message };
+    for (const o of created || []) orgIdByLowerName.set(o.name.toLowerCase(), o.id);
+  }
+
+  const unresolved: string[] = [];
+  const insertRows = rows.slice(0, 200).map((r) => {
+    let bookId = r.organization_name ? orgIdByLowerName.get(r.organization_name.toLowerCase()) ?? null : null;
+    if (!bookId) bookId = soleBookId;
+    if (!bookId) unresolved.push(r.private_label || r.organization_name || "an unlabeled row");
+    return {
+      profile_id: user.id,
+      book_of_business_id: bookId,
+      private_label: r.private_label,
+      state: r.state,
+      city: r.city,
+      session_type: r.session_type,
+      insurance: r.insurance,
+      primary_need: r.primary_need,
+      secondary_need: r.secondary_need,
+      tertiary_need: r.tertiary_need,
+      rate_per_session: r.rate_per_session,
+      sessions_per_week: r.sessions_per_week,
+    };
+  });
+
+  if (unresolved.length > 0) {
+    return {
+      error:
+        `Couldn't tell which practice ${unresolved.length === 1 ? "this client belongs" : "these clients belong"} to ` +
+        `(no organization in the source data, and you have more than one practice): ${unresolved.slice(0, 5).join(", ")}` +
+        `${unresolved.length > 5 ? ", …" : ""}. Add the practice name to that row's data and re-import, or import ` +
+        `one practice at a time.`,
+    };
+  }
 
   const { error } = await supabase.from("caseload_clients").insert(insertRows);
   if (error) return { error: error.message };
@@ -268,11 +327,14 @@ export async function updateCase(formData: FormData) {
 
   const id = Number(formData.get("id"));
   const bookId = formData.get("book_of_business_id");
+  if (!bookId) {
+    caseloadError("Every client needs a practice - pick one, or archive this client instead.");
+  }
 
   const { error } = await supabase
     .from("caseload_clients")
     .update({
-      book_of_business_id: bookId ? Number(bookId) : null,
+      book_of_business_id: Number(bookId),
       private_label: String(formData.get("private_label") || "") || null,
       state: String(formData.get("state") || "") || null,
       city: String(formData.get("city") || "") || null,
@@ -313,6 +375,44 @@ export async function archiveCase(formData: FormData) {
 // number and all its details (organization, rate, needs, etc.) rather than
 // inserting a fresh row - RLS ("own cases only") already scopes this to the
 // caller's own rows, .eq("profile_id", ...) below is belt-and-braces.
+// "Quick Match" on the Caseload (Data) section - given a treatment area
+// (from clicking a pie slice), returns the practitioner's top ranked
+// colleagues for that specialism via the Match Grid (relationship tier +
+// specialty rating), so they can see who to route similar cases to or loop
+// in for a consult. No state/session-type filtering here - this is a
+// caseload-wide "who treats this" view, not a single-client match (that's
+// the Single Patient Referral tool and the Planner recommendation table).
+export async function getCaseloadQuickMatch(specialismValue: string): Promise<{
+  candidates?: Array<{
+    profileId: string;
+    fullName: string;
+    connectionTier: string;
+    gridScore: number;
+    city: string | null;
+    state: string | null;
+  }>;
+  error?: string;
+}> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not signed in" };
+  if (!specialismValue) return { error: "Pick a treatment area first." };
+
+  const ranked = await computeGridRankedCandidates(supabase, user.id, { specialismValue });
+  return {
+    candidates: ranked.slice(0, 8).map((c) => ({
+      profileId: c.profileId,
+      fullName: c.fullName,
+      connectionTier: c.connectionTier,
+      gridScore: c.gridScore,
+      city: c.city,
+      state: c.state,
+    })),
+  };
+}
+
 export async function reactivateCase(formData: FormData) {
   const supabase = await createClient();
   const {

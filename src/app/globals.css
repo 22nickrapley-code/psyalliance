@@ -1102,10 +1102,25 @@ a.person-link.tier-recommended {
 
 /* ---------- Polished profile view (read-only) ---------- */
 
+/* The name, qualification and location now live inside the banner itself
+   (rather than straddling the boundary between the green banner and the
+   white card, which used to leave the name rendering in dark, low-contrast
+   text over green) - so everything in here is set to white/near-white
+   explicitly instead of inheriting the page's default text color. */
 .profile-view-banner {
-  height: 64px;
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+  padding: 1.5rem 1.75rem;
   border-radius: var(--radius-lg) var(--radius-lg) 0 0;
   background: linear-gradient(120deg, var(--accent), #2f6b57);
+}
+
+.profile-view-avatar-ring {
+  flex: 0 0 auto;
+  border-radius: 50%;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.9), var(--shadow-sm);
 }
 
 .profile-view-card {
@@ -1117,36 +1132,77 @@ a.person-link.tier-recommended {
   margin-bottom: 1.25rem;
 }
 
-.profile-view-header {
-  display: flex;
-  align-items: flex-end;
-  gap: 1.25rem;
-  padding: 0 1.75rem 1.25rem;
-  margin-top: -34px;
-  flex-wrap: wrap;
-}
-
-.profile-view-avatar {
-  border: 4px solid var(--surface);
-  border-radius: 50%;
-  box-shadow: var(--shadow-sm);
-  flex: 0 0 auto;
-}
-
 .profile-view-heading {
   flex: 1 1 260px;
-  padding-bottom: 0.15rem;
 }
 
 .profile-view-heading h1 {
   margin: 0 0 0.2rem;
-  font-size: 1.5rem;
+  font-size: 1.6rem;
+  color: #fff;
 }
 
-.profile-view-meta {
-  color: var(--muted);
-  font-size: 0.88rem;
-  margin-bottom: 0.4rem;
+.profile-view-role {
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.9rem;
+  margin-bottom: 0.35rem;
+}
+
+/* More prominent than the old inline meta text: its own line, a location
+   pin icon, and a bold highlight pill when it overlaps the viewer's own
+   (or their caseload's) city/state. */
+.profile-view-location {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: #fff;
+  font-size: 0.98rem;
+  font-weight: 600;
+}
+
+.profile-view-location.match {
+  color: #fff;
+}
+
+.location-match-tag {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 0.4rem;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  color: #1f5c46;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.profile-view-match-toggle {
+  flex: 0 0 auto;
+  margin-left: auto;
+}
+
+.match-toggle-group {
+  display: inline-flex;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: var(--radius-md, 8px);
+  overflow: hidden;
+}
+
+.match-toggle-group a {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.85);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.match-toggle-group a.active {
+  background: #fff;
+  color: #1f5c46;
 }
 
 .profile-view-badges {
@@ -1159,7 +1215,7 @@ a.person-link.tier-recommended {
   display: flex;
   gap: 0.5rem;
   flex-wrap: wrap;
-  padding-bottom: 0.3rem;
+  margin-bottom: 0.9rem;
 }
 
 .profile-view-body {
@@ -2585,4 +2641,208 @@ a.person-link.tier-recommended {
 .import-dropzone.active {
   border-color: var(--accent);
   background: var(--accent-soft);
+}
+
+/* ---------- Caseload: add-client collapsible box ---------- */
+.caseload-add-box {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem;
+  margin-bottom: 1rem;
+  background: var(--bg-alt);
+}
+
+.caseload-import-fold {
+  margin-top: 1rem;
+  border-top: 1px solid var(--border);
+  padding-top: 0.75rem;
+}
+
+.caseload-import-fold summary {
+  cursor: pointer;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+/* ---------- Caseload: per-organization spreadsheet-style tables ---------- */
+.caseload-org-table {
+  margin-bottom: 1.5rem;
+}
+
+.caseload-org-table:last-child {
+  margin-bottom: 0;
+}
+
+.caseload-org-table h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+}
+
+.caseload-org-table-warn h3 {
+  color: #b3392c;
+}
+
+.caseload-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.caseload-table th {
+  text-align: left;
+  padding: 0.4rem 0.5rem;
+  border-bottom: 1px solid var(--border-strong);
+  white-space: nowrap;
+}
+
+.caseload-table td {
+  padding: 0.4rem 0.5rem;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+
+.caseload-row-match {
+  background: var(--accent-soft);
+}
+
+.caseload-cell-match {
+  background: var(--tier-recommended-soft);
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+/* ---------- Caseload (Data): pie chart + Quick Match ---------- */
+.pie-chart-wrap {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  margin: 1rem 0;
+}
+
+.pie-slice {
+  cursor: pointer;
+  stroke: var(--bg);
+  stroke-width: 1.5;
+  transition: opacity 0.15s ease;
+}
+
+.pie-slice:hover {
+  opacity: 0.85;
+}
+
+.pie-slice-selected {
+  stroke: var(--text);
+  stroke-width: 2.5;
+}
+
+.pie-legend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+}
+
+.pie-legend li {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.pie-legend-selected {
+  font-weight: 600;
+}
+
+.pie-legend-swatch {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+}
+
+.caseload-data-detail {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.quick-match-list {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.quick-match-list li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+
+.quick-match-rank {
+  font-weight: 700;
+  color: var(--muted);
+  min-width: 1.75rem;
+}
+
+/* ---------- Planner recommendation table ---------- */
+
+.icon-btn-assign,
+.icon-btn-reject {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: none;
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+}
+
+.icon-btn-assign {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.icon-btn-assign:hover {
+  background: var(--accent);
+  color: #fff;
+}
+
+.icon-btn-reject {
+  background: #f6e3df;
+  color: var(--danger);
+}
+
+.icon-btn-reject:hover {
+  background: var(--danger);
+  color: #fff;
+}
+
+.icon-btn-rating {
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  padding: 0.1rem 0.35rem;
+  cursor: pointer;
+  font-size: 0.95rem;
+  line-height: 1;
+}
+
+.icon-btn-rating.active {
+  border-color: var(--border-strong);
+  background: var(--bg-alt);
 }

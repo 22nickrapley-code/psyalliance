@@ -1,10 +1,11 @@
 import { createClient } from "@/lib/supabase/server";
-import { sendConnectionRequest, respondToConnection, removeConnection } from "./actions";
+import { sendConnectionRequest, respondToConnection, removeConnection, sendDueConnectionReminders } from "./actions";
 import { startConversation } from "../messages/actions";
 import { resolveAvatarUrls } from "@/lib/avatars";
 import Avatar from "../avatar";
 import { professionFor, professionLabel, type Profession } from "@/lib/profession";
-import UsStateDatalist from "@/components/us-state-datalist";
+import DirectoryFilterForm from "./directory-filter-form";
+import ExpandableList from "@/components/expandable-list";
 
 type DirectoryPerson = {
   id: string;
@@ -56,6 +57,11 @@ export default async function NetworkPage(
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  // Lazy reminder sweep for this user's own outgoing requests - see
+  // sendDueConnectionReminders for why this runs inline on page load rather
+  // than on a schedule.
+  await sendDueConnectionReminders(supabase, user!.id);
 
   const [
     { data: directoryRows },
@@ -192,26 +198,51 @@ export default async function NetworkPage(
 
       {incoming.length > 0 && (
         <div className="card">
-          <h2>Pending requests to you</h2>
-          {incoming.map((c: any) => (
-            <div key={c.id} className="person-row">
-              <span className="person-row-info">
-                <PersonLink id={otherIdOf(c)} name={nameOf(c) || ""} /> wants to connect as <TierTag tier={c.tier} />
-              </span>
-              <span className="person-row-actions">
-                <form action={respondToConnection}>
-                  <input type="hidden" name="id" value={c.id} />
-                  <input type="hidden" name="decision" value="accepted" />
-                  <button type="submit">Accept</button>
-                </form>
-                <form action={respondToConnection}>
-                  <input type="hidden" name="id" value={c.id} />
-                  <input type="hidden" name="decision" value="declined" />
-                  <button type="submit" className="secondary">Decline</button>
-                </form>
-              </span>
-            </div>
-          ))}
+          <h2>Pending requests to you ({incoming.length})</h2>
+          <ExpandableList
+            items={incoming.map((c: any) => (
+              <div key={c.id} className="person-row">
+                <span className="person-row-info">
+                  <Avatar url={avatarOf(c)} name={nameOf(c) || ""} />
+                  <PersonLink id={otherIdOf(c)} name={nameOf(c) || ""} /> wants to connect as <TierTag tier={c.tier} />
+                </span>
+                <span className="person-row-actions">
+                  <form action={respondToConnection}>
+                    <input type="hidden" name="id" value={c.id} />
+                    <input type="hidden" name="decision" value="accepted" />
+                    <button type="submit">Accept</button>
+                  </form>
+                  <form action={respondToConnection}>
+                    <input type="hidden" name="id" value={c.id} />
+                    <input type="hidden" name="decision" value="declined" />
+                    <button type="submit" className="secondary">Decline</button>
+                  </form>
+                </span>
+              </div>
+            ))}
+          />
+        </div>
+      )}
+
+      {outgoing.length > 0 && (
+        <div className="card">
+          <h2>Sent requests, awaiting response ({outgoing.length})</h2>
+          <ExpandableList
+            items={outgoing.map((c: any) => (
+              <div key={c.id} className="person-row">
+                <span className="person-row-info">
+                  <Avatar url={avatarOf(c)} name={nameOf(c) || ""} />
+                  <PersonLink id={otherIdOf(c)} name={nameOf(c) || ""} /> - request sent as <TierTag tier={c.tier} />
+                </span>
+                <span className="person-row-actions">
+                  <form action={removeConnection}>
+                    <input type="hidden" name="id" value={c.id} />
+                    <button type="submit" className="secondary">Remove request</button>
+                  </form>
+                </span>
+              </div>
+            ))}
+          />
         </div>
       )}
 
@@ -276,21 +307,6 @@ export default async function NetworkPage(
         })}
         {bench.length === 0 && <p className="muted">No bench connections yet.</p>}
       </div>
-
-      {outgoing.length > 0 && (
-        <div className="card">
-          <h2>Sent requests, awaiting response</h2>
-          {outgoing.map((c: any) => (
-            <div key={c.id} className="checkbox-row" style={{ justifyContent: "space-between" }}>
-              <span style={{ display: "flex", alignItems: "center", gap: "0.55rem" }}>
-                <Avatar url={avatarOf(c)} name={nameOf(c) || ""} />
-                <PersonLink id={otherIdOf(c)} name={nameOf(c) || ""} />
-              </span>
-              <TierTag tier={c.tier} />
-            </div>
-          ))}
-        </div>
-      )}
 
       <div className="card">
         <h2>Recommended for you</h2>
@@ -363,58 +379,15 @@ export default async function NetworkPage(
 
       <div className="card">
         <h2>Full verified directory ({filteredDirectory.length} of {people.size})</h2>
-        <form method="GET" className="field-row" style={{ alignItems: "flex-end", flexWrap: "wrap", marginBottom: "1rem" }}>
-          <div className="field">
-            <label htmlFor="q">Name</label>
-            <input id="q" name="q" type="text" defaultValue={searchParams?.q || ""} placeholder="Search by name" />
-          </div>
-          <div className="field" style={{ maxWidth: 100 }}>
-            <label htmlFor="state">State</label>
-            <input id="state" name="state" type="text" maxLength={24} defaultValue={searchParams?.state || ""} placeholder="TX or Texas" list="us-states" autoComplete="off" />
-            <UsStateDatalist />
-          </div>
-          <div className="field">
-            <label htmlFor="specialism">Specialism</label>
-            <select id="specialism" name="specialism" defaultValue={specialismFilter}>
-              <option value="">Any</option>
-              {(allSpecialisms || []).map((s) => (
-                <option key={s.value} value={s.value}>{s.value}</option>
-              ))}
-            </select>
-          </div>
-          <div className="field">
-            <label htmlFor="degree">Connection</label>
-            <select id="degree" name="degree" defaultValue={degreeFilter}>
-              <option value="all">All</option>
-              <option value="partner">Partner</option>
-              <option value="bench">Bench</option>
-              <option value="recommended">Recommended</option>
-              <option value="none">Not yet connected</option>
-            </select>
-          </div>
-          <div className="field">
-            <label htmlFor="profession">Profession</label>
-            <select id="profession" name="profession" defaultValue={professionFilter}>
-              <option value="">Any</option>
-              <option value="psychologist">Psychologist</option>
-              <option value="psychiatrist">Psychiatrist</option>
-            </select>
-          </div>
-          <div className="field checkbox-row" style={{ flex: "0 0 auto", alignSelf: "center" }}>
-            <input id="psypact" name="psypact" type="checkbox" value="1" defaultChecked={psypactFilter} />
-            <label htmlFor="psypact" style={{ margin: 0, fontWeight: 400, color: "var(--text)" }}>
-              PSYPACT only
-            </label>
-          </div>
-          <div className="field" style={{ flex: "0 0 auto" }}>
-            <button type="submit" className="secondary">Filter</button>
-          </div>
-          {(q || stateFilter || specialismFilter || degreeFilter || psypactFilter || professionFilter) && (
-            <div className="field" style={{ flex: "0 0 auto" }}>
-              <a href="/dashboard/network" className="btn secondary" style={{ display: "inline-block" }}>Clear</a>
-            </div>
-          )}
-        </form>
+        <DirectoryFilterForm
+          q={q}
+          stateFilter={stateFilter}
+          specialismFilter={specialismFilter}
+          degreeFilter={degreeFilter}
+          psypactFilter={psypactFilter}
+          professionFilter={professionFilter}
+          allSpecialisms={allSpecialisms || []}
+        />
         <table>
           <thead>
             <tr>
@@ -422,7 +395,7 @@ export default async function NetworkPage(
               <th>Profession</th>
               <th>City / state</th>
               <th>Specialisms</th>
-              <th>Degree</th>
+              <th>Connection status</th>
               <th></th>
             </tr>
           </thead>
@@ -433,7 +406,7 @@ export default async function NetworkPage(
               <tr key={p.id}>
                 <td>
                   <span style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                    <Avatar url={avatarUrlByPath.get(p.avatar_path || "") || null} name={p.full_name} size={24} />
+                    <Avatar url={avatarUrlByPath.get(p.avatar_path || "") || null} name={p.full_name} size={30} />
                     <PersonLink
                       id={p.id}
                       name={`${p.credential_prefix ? p.credential_prefix + " " : ""}${p.full_name}`}
@@ -448,7 +421,15 @@ export default async function NetworkPage(
                 </td>
                 <td><ProfessionTag profession={professionFor(p.qualification_level)} /></td>
                 <td>{p.primary_practice_city || "-"}{p.primary_state ? `, ${p.primary_state}` : ""}</td>
-                <td>{[...p.specialisms].slice(0, 3).map((s) => <span key={s} className="tag">{s}</span>)}</td>
+                <td style={{ display: "flex", flexWrap: "wrap", gap: "0.25rem" }}>
+                  {[...p.specialisms].slice(0, 3).map((s) => <span key={s} className="tag">{s}</span>)}
+                  {p.specialisms.size > 3 && (
+                    <span className="tag muted" title={[...p.specialisms].slice(3).join(", ")}>
+                      +{p.specialisms.size - 3} more
+                    </span>
+                  )}
+                  {p.specialisms.size === 0 && <span className="muted">-</span>}
+                </td>
                 <td><TierTag tier={degree} /></td>
                 <td>
                   {connectionByOtherId.has(p.id) ? (

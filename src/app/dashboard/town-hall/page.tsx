@@ -1,10 +1,10 @@
 import { createClient } from "@/lib/supabase/server";
-import { joinChannel, leaveChannel } from "./actions";
+import { joinChannel, leaveChannel, requestNewChannel } from "./actions";
 import Link from "next/link";
 
 export default async function TownHallIndexPage(
   props: {
-    searchParams: Promise<{ q?: string; error?: string }>;
+    searchParams: Promise<{ q?: string; error?: string; channel_requested?: string }>;
   }
 ) {
   const searchParams = await props.searchParams;
@@ -73,6 +73,11 @@ export default async function TownHallIndexPage(
       </p>
 
       {searchParams?.error && <div className="error-banner">{searchParams.error}</div>}
+      {searchParams?.channel_requested === "1" && (
+        <div className="message-banner">
+          Request sent to an admin for review. You'll get a message once it's decided.
+        </div>
+      )}
 
       <div className="card">
         <h2>Search Town Hall</h2>
@@ -118,7 +123,7 @@ export default async function TownHallIndexPage(
               <Link href={`/dashboard/town-hall/${c.id}`}>{c.name}</Link>
               <form action={leaveChannel}>
                 <input type="hidden" name="channel_id" value={c.id} />
-                <button type="submit" className="secondary" style={{ padding: "0.15rem 0.5rem", fontSize: "0.8rem" }}>
+                <button type="submit" className="danger" style={{ padding: "0.15rem 0.5rem", fontSize: "0.8rem" }}>
                   Leave
                 </button>
               </form>
@@ -159,7 +164,7 @@ export default async function TownHallIndexPage(
               ) : (
                 <form action={joinChannel}>
                   <input type="hidden" name="channel_id" value={c.id} />
-                  <button type="submit" className="secondary" style={{ padding: "0.15rem 0.5rem", fontSize: "0.8rem" }}>
+                  <button type="submit" style={{ padding: "0.15rem 0.5rem", fontSize: "0.8rem" }}>
                     Join
                   </button>
                 </form>
@@ -167,6 +172,27 @@ export default async function TownHallIndexPage(
             </div>
           ))}
         </div>
+      </div>
+
+      <div className="card">
+        <h2>Request a new channel</h2>
+        <p className="muted">
+          Don't see a channel you need? Ask for one - an admin reviews every request before it's
+          created, and you'll get a message once it's decided.
+        </p>
+        <form action={requestNewChannel} className="field-row" style={{ alignItems: "flex-end" }}>
+          <div className="field">
+            <label htmlFor="channel_name">Channel name</label>
+            <input id="channel_name" name="channel_name" type="text" maxLength={80} placeholder="e.g. Perinatal Mental Health" required />
+          </div>
+          <div className="field" style={{ flex: "1 1 240px" }}>
+            <label htmlFor="reason">Why (optional)</label>
+            <input id="reason" name="reason" type="text" maxLength={200} placeholder="Briefly, what would this cover?" />
+          </div>
+          <div className="field" style={{ flex: "0 0 auto" }}>
+            <button type="submit" className="secondary">Request channel</button>
+          </div>
+        </form>
       </div>
     </div>
   );

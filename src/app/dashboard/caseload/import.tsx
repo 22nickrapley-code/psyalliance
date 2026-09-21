@@ -8,7 +8,7 @@ import { parseCaseloadImport, bulkImportCases, type ImportedCaseRow } from "./ac
 // panel's dashboard) and get a reviewable list of candidate cases instead
 // of typing each one in by hand. Nothing reaches the database until the
 // practitioner reviews the parsed rows and clicks "Import selected".
-export default function CaseloadImportBox() {
+export default function CaseloadImportBox({ embedded = false }: { embedded?: boolean } = {}) {
   const [rawText, setRawText] = useState("");
   const [rows, setRows] = useState<ImportedCaseRow[] | null>(null);
   const [checked, setChecked] = useState<boolean[]>([]);
@@ -128,14 +128,14 @@ export default function CaseloadImportBox() {
     if (file) handleFile(file);
   }
 
-  return (
-    <div className="card">
-      <h2>Or import from a file (optional)</h2>
+  const content = (
+    <>
+      {!embedded && <h2>Or import from a file (optional)</h2>}
       <p className="muted">
         Drop in an Excel workbook or CSV export (from Excel, or copied out of an insurance
         panel's dashboard) and we'll propose a list of cases for you to review before anything is
         added. Client names are never stored: anything that looks like a name is converted to
-        initials only. This is just a shortcut alongside "Add a case" below, not a requirement.
+        initials only. This is just a shortcut alongside the form above, not a requirement.
       </p>
       <div
         className={`import-dropzone${isDragActive ? " active" : ""}`}
@@ -231,6 +231,8 @@ export default function CaseloadImportBox() {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
+
+  return embedded ? content : <div className="card">{content}</div>;
 }

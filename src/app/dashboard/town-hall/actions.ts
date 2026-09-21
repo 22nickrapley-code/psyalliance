@@ -136,6 +136,32 @@ export async function joinChannel(formData: FormData) {
   revalidatePath("/dashboard/town-hall");
 }
 
+// Self-service "request a new channel" - same reviewed-request pattern as
+// requestNewInsurance on Caseload. Goes to admin review rather than
+// auto-creating, so the channel list stays curated.
+export async function requestNewChannel(formData: FormData) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not signed in");
+
+  const channelName = String(formData.get("channel_name") || "").trim();
+  const reason = String(formData.get("reason") || "").trim() || null;
+  if (!channelName) townHallError("/dashboard/town-hall", "Enter a name for the channel you'd like to see.");
+  if (channelName.length > 80) townHallError("/dashboard/town-hall", "That channel name is too long.");
+
+  const { error } = await supabase.from("channel_requests").insert({
+    requested_by: user.id,
+    channel_name: channelName,
+    reason,
+  });
+  if (error) townHallError("/dashboard/town-hall", error.message);
+
+  revalidatePath("/dashboard/town-hall");
+  redirect("/dashboard/town-hall?channel_requested=1");
+}
+
 export async function leaveChannel(formData: FormData) {
   const supabase = await createClient();
   const {

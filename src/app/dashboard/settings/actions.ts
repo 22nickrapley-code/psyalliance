@@ -94,6 +94,8 @@ export async function addToBlocklist(formData: FormData) {
   if (error) settingsError(error.message);
 
   revalidatePath("/dashboard/settings");
+  revalidatePath("/dashboard/network");
+  revalidatePath(`/dashboard/people/${blockedProfileId}`);
 }
 
 export async function removeFromBlocklist(formData: FormData) {
@@ -113,4 +115,6 @@ export async function removeFromBlocklist(formData: FormData) {
   if (error) settingsError(error.message);
 
   revalidatePath("/dashboard/settings");
+  revalidatePath("/dashboard/network");
+  revalidatePath(`/dashboard/people/${blockedProfileId}`);
 }

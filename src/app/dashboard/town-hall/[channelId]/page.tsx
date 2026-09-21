@@ -43,7 +43,13 @@ export default async function TownHallChannelPage(props: { params: Promise<{ cha
     if (r.reactor_id === myself) entry.mine = r.reaction;
   }
 
-  const topLevel = (messages || []).filter((m) => !m.parent_message_id);
+  // Newest conversation first (matches Nick's spec), but each thread's own
+  // replies stay in chronological order underneath it - built from the
+  // ascending-ordered `messages` fetch below, before this reverses only the
+  // top-level list.
+  const topLevel = (messages || [])
+    .filter((m) => !m.parent_message_id)
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
   const repliesByParent = new Map<number, any[]>();
   for (const m of messages || []) {
     if (m.parent_message_id) {
@@ -102,7 +108,7 @@ export default async function TownHallChannelPage(props: { params: Promise<{ cha
 
       {topLevel.map((m) => (
         <div className="card" key={m.id}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: "0.4rem" }}>
             <strong>{authorName(m)}</strong>
             <span className="muted" style={{ fontSize: "0.8rem" }}>
               {new Date(m.created_at).toLocaleString()}
@@ -143,7 +149,7 @@ export default async function TownHallChannelPage(props: { params: Promise<{ cha
           <div style={{ marginLeft: "1.5rem", marginTop: "0.75rem", borderLeft: "2px solid var(--border, #e5e7eb)", paddingLeft: "0.75rem" }}>
             {(repliesByParent.get(m.id) || []).map((reply) => (
               <div key={reply.id} style={{ marginBottom: "0.75rem" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: "0.4rem" }}>
                   <strong style={{ fontSize: "0.9rem" }}>{authorName(reply)}</strong>
                   <span className="muted" style={{ fontSize: "0.75rem" }}>
                     {new Date(reply.created_at).toLocaleString()}
