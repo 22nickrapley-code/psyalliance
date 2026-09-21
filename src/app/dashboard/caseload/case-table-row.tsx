@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import UsStateDatalist from "@/components/us-state-datalist";
 import { requestNewInsurance } from "./actions";
-import { useCaseloadHighlight, matchesHighlight } from "./caseload-context";
+import { useCaseloadHighlight, matchesHighlight, hexToRgba } from "./caseload-context";
 
 type Org = { id: number; name: string };
 type LookupOption = { id: number; value: string };
@@ -33,26 +33,35 @@ export default function CaseTableRow({
   const [pending, startTransition] = useTransition();
   const { highlight } = useCaseloadHighlight();
   const isHighlighted = matchesHighlight(c, highlight);
+  const rowStyle = isHighlighted && highlight.color ? { backgroundColor: hexToRgba(highlight.color, 0.14) } : undefined;
 
-  function cellClass(field: "primary_need" | "secondary_need" | "tertiary_need") {
-    if (!highlight.value) return undefined;
+  function cellHighlighted(field: "primary_need" | "secondary_need" | "tertiary_need") {
+    if (!highlight.value) return false;
     const areaMatches = highlight.area === "all" || highlight.area === field.replace("_need", "");
-    return areaMatches && c[field] === highlight.value ? "caseload-cell-match" : undefined;
+    return areaMatches && c[field] === highlight.value;
+  }
+
+  function cellProps(field: "primary_need" | "secondary_need" | "tertiary_need") {
+    const matched = cellHighlighted(field);
+    return {
+      className: matched ? "caseload-cell-match" : undefined,
+      style: matched && highlight.color ? { backgroundColor: hexToRgba(highlight.color, 0.28) } : undefined,
+    };
   }
 
   if (!editing) {
     return (
-      <tr className={isHighlighted ? "caseload-row-match" : undefined}>
+      <tr className={isHighlighted ? "caseload-row-match" : undefined} style={rowStyle}>
         <td>#{c.id}</td>
         <td>{c.private_label || <span className="muted">Unlabeled</span>}</td>
         <td>{c.state || <span className="muted">-</span>}</td>
         <td>{c.session_type === "Virtual" ? "Virtual" : c.session_type === "F2F" ? "In-person" : <span className="muted">-</span>}</td>
         <td>{c.insurance || <span className="muted">-</span>}</td>
-        <td className={cellClass("primary_need")}>{c.primary_need || <span className="muted">-</span>}</td>
-        <td className={cellClass("secondary_need")}>{c.secondary_need || <span className="muted">-</span>}</td>
-        <td className={cellClass("tertiary_need")}>{c.tertiary_need || <span className="muted">-</span>}</td>
         <td>{c.rate_per_session ? `$${c.rate_per_session}` : <span className="muted">-</span>}</td>
         <td>{c.sessions_per_week ?? <span className="muted">-</span>}</td>
+        <td {...cellProps("primary_need")}>{c.primary_need || <span className="muted">-</span>}</td>
+        <td {...cellProps("secondary_need")}>{c.secondary_need || <span className="muted">-</span>}</td>
+        <td {...cellProps("tertiary_need")}>{c.tertiary_need || <span className="muted">-</span>}</td>
         <td className="case-row-actions">
           <button
             type="button"

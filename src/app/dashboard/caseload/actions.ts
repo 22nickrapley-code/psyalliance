@@ -401,8 +401,12 @@ export async function getCaseloadQuickMatch(specialismValue: string): Promise<{
   if (!specialismValue) return { error: "Pick a treatment area first." };
 
   const ranked = await computeGridRankedCandidates(supabase, user.id, { specialismValue });
+  // Slice a bit deeper than before (was 8) so there's enough to split into
+  // in-state and out-of-state groups on the client without either group
+  // coming up empty just because the flat top-8 happened to be all one or
+  // the other.
   return {
-    candidates: ranked.slice(0, 8).map((c) => ({
+    candidates: ranked.slice(0, 16).map((c) => ({
       profileId: c.profileId,
       fullName: c.fullName,
       connectionTier: c.connectionTier,

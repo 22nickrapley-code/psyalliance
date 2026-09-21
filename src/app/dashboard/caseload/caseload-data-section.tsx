@@ -27,7 +27,7 @@ type QuickMatchCandidate = {
   state: string | null;
 };
 
-export default function CaseloadDataSection({ cases }: { cases: any[] }) {
+export default function CaseloadDataSection({ cases, myState }: { cases: any[]; myState: string | null }) {
   const { highlight, setHighlight, clearHighlight } = useCaseloadHighlight();
   const [area, setArea] = useState<NeedArea>("all");
   const [candidates, setCandidates] = useState<QuickMatchCandidate[] | null>(null);
@@ -83,7 +83,8 @@ export default function CaseloadDataSection({ cases }: { cases: any[] }) {
       setCandidates(null);
       return;
     }
-    setHighlight({ area, value: key });
+    const slice = distribution.find((d) => d.key === key);
+    setHighlight({ area, value: key, color: slice?.color || null });
     setCandidates(null);
     setMatchError(null);
   }
@@ -93,6 +94,12 @@ export default function CaseloadDataSection({ cases }: { cases: any[] }) {
     clearHighlight();
     setCandidates(null);
   }
+
+  // Split ranked candidates into in-state first, then out-of-state - per
+  // Nick's note that Quick Match should prioritize and clearly label same-
+  // state colleagues before anyone further away.
+  const inStateCandidates = (candidates || []).filter((c) => myState && c.state === myState);
+  const outOfStateCandidates = (candidates || []).filter((c) => !(myState && c.state === myState));
 
   function handleRefreshMatches() {
     if (!selectedValue) return;
@@ -142,7 +149,7 @@ export default function CaseloadDataSection({ cases }: { cases: any[] }) {
 
       {selectedSlice && (
         <div className="caseload-data-detail">
-          <h3>{selectedSlice.label} — by state</h3>
+          <h3>{selectedSlice.label}, by state</h3>
           <table style={{ maxWidth: 420 }}>
             <thead>
               <tr>
@@ -161,7 +168,7 @@ export default function CaseloadDataSection({ cases }: { cases: any[] }) {
           </table>
 
           <div className="widget-header" style={{ marginTop: "1.25rem" }}>
-            <h3 style={{ margin: 0 }}>Quick Match — colleagues who treat {selectedSlice.label}</h3>
+            <h3 style={{ margin: 0 }}>Quick Match: colleagues who treat {selectedSlice.label}</h3>
             <button type="button" className="secondary" onClick={handleRefreshMatches} disabled={isPending}>
               {isPending ? "Matching…" : "Refresh"}
             </button>
@@ -171,22 +178,57 @@ export default function CaseloadDataSection({ cases }: { cases: any[] }) {
             <p className="muted">No connected or directory colleagues treat this area yet.</p>
           )}
           {candidates && candidates.length > 0 && (
-            <ul className="quick-match-list">
-              {candidates.map((c, i) => (
-                <li key={c.profileId}>
-                  <span className="quick-match-rank">#{i + 1}</span>
-                  <Link href={`/dashboard/people/${c.profileId}`}>{c.fullName}</Link>
-                  <span className={`tag tier-${c.connectionTier}`}>
-                    {c.connectionTier === "none" ? "Directory" : c.connectionTier[0].toUpperCase() + c.connectionTier.slice(1)}
-                  </span>
-                  {c.city || c.state ? (
-                    <span className="muted" style={{ fontSize: "0.8rem" }}>
-                      {[c.city, c.state].filter(Boolean).join(", ")}
-                    </span>
-                  ) : null}
-                </li>
-              ))}
-            </ul>
+            <>
+              <h4 className="quick-match-group-label">
+                In state{myState ? ` (${myState})` : ""} <span className="muted" style={{ fontWeight: 400 }}>({inStateCandidates.length})</span>
+              </h4>
+              {inStateCandidates.length > 0 ? (
+                <ul className="quick-match-list">
+                  {inStateCandidates.map((c, i) => (
+                    <li key={c.profileId}>
+                      <span className="quick-match-rank">#{i + 1}</span>
+                      <Link href={`/dashboard/people/${c.profileId}`}>{c.fullName}</Link>
+                      <span className={`tag tier-${c.connectionTier}`}>
+                        {c.connectionTier === "none" ? "Directory" : c.connectionTier[0].toUpperCase() + c.connectionTier.slice(1)}
+                      </span>
+                      {c.city || c.state ? (
+                        <span className="muted" style={{ fontSize: "0.8rem" }}>
+                          {[c.city, c.state].filter(Boolean).join(", ")}
+                        </span>
+                      ) : null}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="muted" style={{ fontSize: "0.85rem" }}>
+                  {myState ? "No in-state colleagues found for this area." : "Set your primary state on your profile to see in-state matches first."}
+                </p>
+              )}
+
+              <h4 className="quick-match-group-label" style={{ marginTop: "0.9rem" }}>
+                Out of state <span className="muted" style={{ fontWeight: 400 }}>({outOfStateCandidates.length})</span>
+              </h4>
+              {outOfStateCandidates.length > 0 ? (
+                <ul className="quick-match-list">
+                  {outOfStateCandidates.map((c, i) => (
+                    <li key={c.profileId}>
+                      <span className="quick-match-rank">#{i + 1}</span>
+                      <Link href={`/dashboard/people/${c.profileId}`}>{c.fullName}</Link>
+                      <span className={`tag tier-${c.connectionTier}`}>
+                        {c.connectionTier === "none" ? "Directory" : c.connectionTier[0].toUpperCase() + c.connectionTier.slice(1)}
+                      </span>
+                      {c.city || c.state ? (
+                        <span className="muted" style={{ fontSize: "0.8rem" }}>
+                          {[c.city, c.state].filter(Boolean).join(", ")}
+                        </span>
+                      ) : null}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="muted" style={{ fontSize: "0.85rem" }}>No out-of-state colleagues found for this area.</p>
+              )}
+            </>
           )}
           {!candidates && !matchError && (
             <p className="muted">Click Refresh to see your top ranked colleagues for this specialism.</p>

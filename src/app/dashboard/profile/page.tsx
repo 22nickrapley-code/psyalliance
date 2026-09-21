@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { saveProfile, submitCredentialVerification, saveAvailability, uploadAvatar } from "./actions";
+import { saveProfile, submitCredentialVerification, saveAvailability, uploadAvatar, toggleOpenToField } from "./actions";
 import { resolveAvatarUrl } from "@/lib/avatars";
 import BioImportBox from "./bio-import";
 import { ProfileView, type SpecialismValue } from "../profile-view";
@@ -201,6 +201,7 @@ export default async function ProfilePage({
             specialismsByCategory,
           }}
           actions={<a href="/dashboard/profile?edit=1" className="btn secondary">Edit profile</a>}
+          onToggleOpenTo={toggleOpenToField}
         />
 
         {credentialVerificationCard}

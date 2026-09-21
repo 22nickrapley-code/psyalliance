@@ -13,6 +13,11 @@ export type NeedArea = "all" | "primary" | "secondary" | "tertiary";
 type CaseloadHighlight = {
   area: NeedArea;
   value: string | null;
+  // The exact pie-slice color for the selected value, so the matching rows/
+  // cells up in Active Clients highlight in that same color rather than a
+  // fixed generic one - per Nick's request that clicking chronic illness
+  // (blue on the chart) highlights chronic illness clients in that same blue.
+  color: string | null;
 };
 
 type CaseloadContextValue = {
@@ -24,18 +29,31 @@ type CaseloadContextValue = {
 const CaseloadContext = createContext<CaseloadContextValue | null>(null);
 
 export function CaseloadProvider({ children }: { children: React.ReactNode }) {
-  const [highlight, setHighlightState] = useState<CaseloadHighlight>({ area: "all", value: null });
+  const [highlight, setHighlightState] = useState<CaseloadHighlight>({ area: "all", value: null, color: null });
 
   const value = useMemo<CaseloadContextValue>(
     () => ({
       highlight,
       setHighlight: (h) => setHighlightState(h),
-      clearHighlight: () => setHighlightState({ area: "all", value: null }),
+      clearHighlight: () => setHighlightState({ area: "all", value: null, color: null }),
     }),
     [highlight]
   );
 
   return <CaseloadContext.Provider value={value}>{children}</CaseloadContext.Provider>;
+}
+
+// Converts a "#rrggbb" (or "#rgb") pie-slice color into an rgba() string at
+// the given alpha, for use as a highlight background that exactly matches
+// the slice color instead of a fixed CSS class color.
+export function hexToRgba(hex: string, alpha: number): string {
+  let h = hex.replace("#", "");
+  if (h.length === 3) h = h.split("").map((c) => c + c).join("");
+  const num = parseInt(h, 16);
+  const r = (num >> 16) & 255;
+  const g = (num >> 8) & 255;
+  const b = num & 255;
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
 export function useCaseloadHighlight() {

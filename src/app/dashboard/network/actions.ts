@@ -100,30 +100,47 @@ export async function sendConnectionRequest(formData: FormData) {
   const addresseeId = String(formData.get("addressee_id") || "");
   const tier = String(formData.get("tier") || "partner");
 
+  // Bench is a one-sided, personal list - per Nick's spec, adding someone to
+  // your Bench needs no confirmation from them (only Partner is mutual-
+  // consent). So a bench add goes straight to "accepted" instead of
+  // "pending", with no accept/decline step on their end - just an FYI
+  // notice, not an actionable request.
   const { data: inserted, error } = await supabase
     .from("connections")
     .insert({
       requester_id: user.id,
       addressee_id: addresseeId,
       tier,
-      status: "pending",
+      status: tier === "bench" ? "accepted" : "pending",
+      ...(tier === "bench" ? { responded_at: new Date().toISOString() } : {}),
     })
     .select("id")
     .single();
   // 23505 = Postgres unique-violation - a request between these two people
   // already exists (in either direction, per the table's unique constraint).
-  // Treat re-clicking "Connect" as a harmless no-op instead of a hard error.
+  // Treat re-clicking "Connect"/"Add to Bench" as a harmless no-op instead
+  // of a hard error.
   if (error && error.code !== "23505") networkError(error.message);
 
   if (inserted) {
     const { data: me } = await supabase.from("profiles").select("full_name").eq("id", user.id).single();
-    await sendNetworkNotice(
-      supabase,
-      user.id,
-      addresseeId,
-      "Connection request",
-      `${me?.full_name || "A colleague"} would like to connect with you as ${tier === "partner" ? "a Partner" : "a Bench"} colleague on PsyAlliance. Visit your Network page to accept or decline.`
-    );
+    if (tier === "bench") {
+      await sendNetworkNotice(
+        supabase,
+        user.id,
+        addresseeId,
+        "Added to a Bench",
+        `${me?.full_name || "A colleague"} added you to their Bench on PsyAlliance - a looser "known" tier they may loop you in on. No action needed from you.`
+      );
+    } else {
+      await sendNetworkNotice(
+        supabase,
+        user.id,
+        addresseeId,
+        "Connection request",
+        `${me?.full_name || "A colleague"} would like to connect with you as a Partner colleague on PsyAlliance. Visit your Network page to accept or decline.`
+      );
+    }
   }
 
   revalidatePath("/dashboard/network");

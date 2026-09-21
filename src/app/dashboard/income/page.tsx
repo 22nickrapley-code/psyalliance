@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { caseMonthlyGross, caseMonthlyNet, currency } from "@/lib/finance";
+import InfoTooltip from "@/components/info-tooltip";
 
 export default async function IncomePage() {
   const supabase = await createClient();
@@ -33,9 +34,9 @@ export default async function IncomePage() {
 
   return (
     <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "0.75rem" }}>
         <div>
-          <h1>Income &amp; revenue</h1>
+          <h1>Income &amp; Revenue</h1>
           <p className="muted">
             Projected from your active caseload: rate × sessions/week × 4.3 weeks/month, net of
             each practice's retention share and your recurring overhead.
@@ -51,7 +52,13 @@ export default async function IncomePage() {
           than five same-weight boxes with no hierarchy between them. */}
       <div className="income-hero">
         <div className="income-hero-primary">
-          <div className="label">Annual true net income</div>
+          <div className="label">
+            Annual true net income
+            <InfoTooltip
+              dark
+              text="Your monthly true net (after retention splits and overhead) times 12 - the closest single number to what you actually take home over a year."
+            />
+          </div>
           <div className="value">{currency(trueNet * 12)}</div>
           <div className="sub">
             {currency(trueNet)}/mo, after retention splits and {currency(totalOverhead)}/mo of
@@ -61,19 +68,31 @@ export default async function IncomePage() {
         <div className="income-hero-secondary">
           <div className="stat">
             <div className="value">{currency(totalGross)}</div>
-            <div className="label">Monthly gross</div>
+            <div className="label">
+              Monthly gross
+              <InfoTooltip text="Total billed this month across all active clients: rate per session × sessions/week × 4.3 weeks/month, before any practice retention split or overhead is taken out." />
+            </div>
           </div>
           <div className="stat">
             <div className="value">{currency(totalNet)}</div>
-            <div className="label">Monthly net</div>
+            <div className="label">
+              Monthly net
+              <InfoTooltip text="Monthly gross minus each practice's retention share (what a group practice keeps from the billed rate for cases under it). This does not yet subtract your recurring overhead - see Monthly true net for that." />
+            </div>
           </div>
           <div className="stat">
             <div className="value">{currency(totalOverhead)}</div>
-            <div className="label">Overhead</div>
+            <div className="label">
+              Overhead
+              <InfoTooltip text="Your recurring monthly practice expenses - insurance, EHR/video platform, HIPAA-compliant email, licensing fees, and anything else logged on the Capacity & Overhead page." />
+            </div>
           </div>
           <div className="stat">
             <div className="value">{currency(trueNet)}</div>
-            <div className="label">Monthly true net</div>
+            <div className="label">
+              Monthly true net
+              <InfoTooltip text="Monthly net minus overhead - what you actually keep this month after both practice retention splits and your recurring expenses. This is the difference from Monthly net: true net also subtracts overhead." />
+            </div>
           </div>
         </div>
       </div>
@@ -139,7 +158,7 @@ export default async function IncomePage() {
 
       <p className="muted">
         "True net income" also subtracts your recurring practice overhead, see{" "}
-        <a href="/dashboard/capacity">Capacity &amp; overhead</a> to add or edit those expenses.
+        <a href="/dashboard/capacity">Capacity &amp; Overhead</a> to add or edit those expenses.
       </p>
     </div>
   );

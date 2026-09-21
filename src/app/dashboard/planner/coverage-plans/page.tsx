@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { createPlannerProject, respondToPlannerOffer, advanceToNextCandidate, cancelPlannerProject } from "../actions";
+import CaseSelectionGrid from "./case-selection-grid";
 
 // The original project-based coverage-plan tool (pick a date range, select
 // cases, Planner offers them to ranked colleagues one at a time). Moved out
@@ -70,24 +71,28 @@ export default async function CoveragePlansPage(
             const caseInfo = o.planner_assignments?.caseload_clients;
             const requester = project?.profiles;
             return (
-              <div key={o.id} style={{ borderBottom: "1px solid var(--border)", paddingBottom: "0.75rem", marginBottom: "0.75rem" }}>
-                <div>
-                  <strong>{requester?.credential_prefix} {requester?.full_name}</strong> needs coverage on{" "}
-                  <span className="tag">{caseInfo?.primary_need || "a case"}</span>
-                  {caseInfo?.city || caseInfo?.state ? ` · ${[caseInfo?.city, caseInfo?.state].filter(Boolean).join(", ")}` : ""}
-                  {" "}for <strong>{project?.name}</strong> ({project?.start_date} – {project?.end_date})
-                </div>
-                <p className="muted">"{o.message}"</p>
-                <form action={respondToPlannerOffer} style={{ display: "inline" }}>
-                  <input type="hidden" name="offer_id" value={o.id} />
-                  <input type="hidden" name="decision" value="accepted" />
-                  <button type="submit">Accept</button>
-                </form>{" "}
-                <form action={respondToPlannerOffer} style={{ display: "inline" }}>
-                  <input type="hidden" name="offer_id" value={o.id} />
-                  <input type="hidden" name="decision" value="declined" />
-                  <button type="submit" className="secondary">Decline</button>
-                </form>
+              <div key={o.id} className="person-row">
+                <span className="person-row-info" style={{ flexDirection: "column", alignItems: "flex-start", gap: "0.3rem" }}>
+                  <span>
+                    <strong>{requester?.credential_prefix} {requester?.full_name}</strong> needs coverage on{" "}
+                    <span className="tag">{caseInfo?.primary_need || "a case"}</span>
+                    {caseInfo?.city || caseInfo?.state ? `, ${[caseInfo?.city, caseInfo?.state].filter(Boolean).join(", ")}` : ""}
+                    {" "}for <strong>{project?.name}</strong> ({project?.start_date} – {project?.end_date})
+                  </span>
+                  <span className="muted">"{o.message}"</span>
+                </span>
+                <span className="person-row-actions">
+                  <form action={respondToPlannerOffer}>
+                    <input type="hidden" name="offer_id" value={o.id} />
+                    <input type="hidden" name="decision" value="accepted" />
+                    <button type="submit">Accept</button>
+                  </form>
+                  <form action={respondToPlannerOffer}>
+                    <input type="hidden" name="offer_id" value={o.id} />
+                    <input type="hidden" name="decision" value="declined" />
+                    <button type="submit" className="secondary">Decline</button>
+                  </form>
+                </span>
               </div>
             );
           })}
@@ -117,16 +122,7 @@ export default async function CoveragePlansPage(
           </div>
           <div className="field">
             <label>Which active cases need covering?</label>
-            <div className="checkbox-grid">
-              {(myCases || []).map((c) => (
-                <label key={c.id}>
-                  <input type="checkbox" name="case_ids" value={c.id} />
-                  Case #{c.id}{c.private_label ? ` (${c.private_label})` : ""}, {c.primary_need || "no need set"}
-                  {c.state ? `, ${c.state}` : ""}
-                </label>
-              ))}
-              {(myCases || []).length === 0 && <p className="muted">No active cases yet.</p>}
-            </div>
+            <CaseSelectionGrid cases={myCases || []} />
           </div>
           <button type="submit" style={{ marginTop: "0.75rem" }}>Create plan &amp; send first offers</button>
         </form>
@@ -136,9 +132,11 @@ export default async function CoveragePlansPage(
         <h2>Your coverage plans</h2>
         {(myProjects || []).map((p: any) => (
           <div key={p.id} style={{ borderBottom: "1px solid var(--border)", paddingBottom: "1rem", marginBottom: "1rem" }}>
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
+            <div className="widget-header">
               <strong>{p.name}</strong>
-              <span className="muted">{p.start_date} – {p.end_date} · <span className="tag">{p.status}</span></span>
+              <span className="muted" style={{ flex: "0 0 auto" }}>
+                {p.start_date} – {p.end_date} <span className="tag">{p.status}</span>
+              </span>
             </div>
             {p.notes && <p className="muted">{p.notes}</p>}
             {(p.planner_assignments || []).map((a: any) => {

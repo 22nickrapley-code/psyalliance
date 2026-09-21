@@ -71,7 +71,7 @@ export default function PracticesBox({ books }: { books: Book[] }) {
               <label htmlFor="expense_burden_pct">% of hourly client rate retained</label>
               <input id="expense_burden_pct" name="expense_burden_pct" type="number" step="0.01" min="0" max="1" defaultValue="0.85" required />
               <p className="muted" style={{ marginTop: "0.3rem", marginBottom: 0, fontSize: "0.78rem" }}>
-                As a decimal, not a percent — 0.85 = 85%.
+                As a decimal, not a percent: 0.85 = 85%.
               </p>
             </div>
             <div className="field" style={{ flex: "0 0 auto" }}>
@@ -79,7 +79,7 @@ export default function PracticesBox({ books }: { books: Book[] }) {
             </div>
           </form>
           <p className="muted" style={{ marginTop: "0.75rem", marginBottom: 0 }}>
-            For your own private practice this is usually 1 (100%) — you keep everything you bill.
+            For your own private practice this is usually 1 (100%), you keep everything you bill.
             If you're employed by or contracted to a group practice or consultancy, enter the share
             of the billed hourly rate you take home after their cut, e.g. if they bill $200/hr and
             you're paid $140, enter 0.70.

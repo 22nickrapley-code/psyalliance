@@ -4,8 +4,22 @@ import { setProfileFlag } from "./actions";
 import { professionFor, professionLabel } from "@/lib/profession";
 import UsStateDatalist from "@/components/us-state-datalist";
 import { caseMonthlyGross, caseMonthlyNet, currency } from "@/lib/finance";
+import { buildTierMap, rankRecommended, type Tier } from "@/lib/tiers";
+import ToggleBox from "@/components/toggle-box";
 
 const PIE_COLORS = ["#1f4d3f", "#b08d57", "#6b4c6b", "#2456a6", "#a3372c", "#4a4842", "#7a3fa0"];
+
+function TierName({ id, name, tier }: { id: string; name: string; tier: Tier }) {
+  if (tier === "none") {
+    return <a href={`/dashboard/people/${id}`} className="person-link">{name}</a>;
+  }
+  return (
+    <a href={`/dashboard/people/${id}`} className={`person-link tier-${tier}`}>
+      <span className={`tier-dot tier-dot-${tier}`} />
+      {name}
+    </a>
+  );
+}
 
 function ToggleButton({ flag, value, label, compact }: { flag: string; value: boolean; label: string; compact?: boolean }) {
   return (
@@ -143,47 +157,59 @@ export default async function DashboardHome(
     unreadMessageCount > 0;
 
   // ---------- My World: Partners / Bench / Recommended ----------
-  const partners: string[] = [];
-  const bench: string[] = [];
+  const partners: { id: string; name: string }[] = [];
+  const bench: { id: string; name: string }[] = [];
   const connectedIds = new Set<string>();
   for (const c of acceptedConnections || []) {
     const name = c.requester_id === myself ? (c.addressee as any)?.full_name : (c.requester as any)?.full_name;
     const otherId = c.requester_id === myself ? c.addressee_id : c.requester_id;
     connectedIds.add(otherId);
-    if (c.tier === "partner") partners.push(name);
-    else bench.push(name);
+    if (c.tier === "partner") partners.push({ id: otherId, name });
+    else bench.push({ id: otherId, name });
   }
+  const tierByOtherId = buildTierMap(acceptedConnections as any, myself);
   const mySpecialisms = new Set(
     (myLookups || []).filter((l: any) => l.lookup_values?.category === "treatment_specialism").map((l: any) => l.lookup_values.value)
   );
   const blockedIds = new Set((blocklist || []).map((b) => b.blocked_profile_id));
   // A lighter version of Network's "recommended" computation - just enough
-  // to show a sample of names and a count on the Overview widget; the full
-  // interactive list with actions lives on the Network page itself.
+  // to show the top 5 (ranked by shared-specialism overlap, then recent
+  // activity - see rankRecommended) on the Overview widget; the full
+  // interactive list with actions lives on the Network page itself. Nick's
+  // rule: recommended never shows more than 5 anywhere, recomputed live
+  // rather than a fixed list.
   const { data: directoryForRecommended } = mySpecialisms.size > 0
-    ? await supabase.from("public_directory").select("id, full_name, category, value")
+    ? await supabase.from("public_directory").select("id, full_name, category, value, last_active_at")
     : { data: [] as any[] };
-  const recommendedNames = new Map<string, string>();
+  const recommendedCandidates = new Map<string, { id: string; name: string; sharedCount: number; lastActiveAt: string | null }>();
   for (const row of directoryForRecommended || []) {
     if (row.id === myself || connectedIds.has(row.id) || blockedIds.has(row.id)) continue;
     if (row.category === "treatment_specialism" && mySpecialisms.has(row.value)) {
-      recommendedNames.set(row.id, row.full_name);
+      const entry = recommendedCandidates.get(row.id) || { id: row.id, name: row.full_name, sharedCount: 0, lastActiveAt: row.last_active_at };
+      entry.sharedCount += 1;
+      recommendedCandidates.set(row.id, entry);
     }
   }
+  const recommendedTotal = recommendedCandidates.size;
+  const recommendedTop5 = rankRecommended(Array.from(recommendedCandidates.values()), 5);
+  const recommendedNames = new Map(recommendedTop5.map((r) => [r.id, r.name]));
 
   // ---------- Town Hall preview ----------
   const townHallGrouped = (townHallRecent || []).slice(0, 5);
 
   // ---------- Messages preview ----------
-  // Same Inbox/Sent split as the full Messages page, so the quick-glance
-  // widget here behaves the same way: Sent = threads I started.
-  const messagesBox = searchParams.box === "sent" ? "sent" : "inbox";
-  const inboxRows = (myConversationRows || []).filter((r: any) => r.conversation && r.conversation.created_by !== myself);
-  const sentRows = (myConversationRows || []).filter((r: any) => r.conversation && r.conversation.created_by === myself);
-  const sortedConversationRows = [...(messagesBox === "sent" ? sentRows : inboxRows)]
+  // Same Inbox/Sent split as the full Messages page. Both lists are fetched
+  // and rendered up front (not just whichever box the URL says), so the
+  // Inbox/Sent toggle below can be a client-side swap with no page reload.
+  const inboxRows = [...(myConversationRows || [])]
+    .filter((r: any) => r.conversation && r.conversation.created_by !== myself)
     .sort((a: any, b: any) => new Date(b.conversation.last_message_at).getTime() - new Date(a.conversation.last_message_at).getTime())
     .slice(0, 4);
-  const previewConversationIds = sortedConversationRows.map((r: any) => r.conversation.id);
+  const sentRows = [...(myConversationRows || [])]
+    .filter((r: any) => r.conversation && r.conversation.created_by === myself)
+    .sort((a: any, b: any) => new Date(b.conversation.last_message_at).getTime() - new Date(a.conversation.last_message_at).getTime())
+    .slice(0, 4);
+  const previewConversationIds = [...inboxRows, ...sentRows].map((r: any) => r.conversation.id);
   const [{ data: previewParticipants }, { data: previewMessages }] = await Promise.all([
     previewConversationIds.length
       ? supabase.from("conversation_participants").select("conversation_id, profile_id, profile:profile_id(full_name)").in("conversation_id", previewConversationIds)
@@ -197,16 +223,54 @@ export default async function DashboardHome(
           .order("created_at", { ascending: false })
       : Promise.resolve({ data: [] as any[] }),
   ]);
-  const otherNamesByConversation = new Map<number, string[]>();
+  const otherPeopleByConversation = new Map<number, { id: string; name: string }[]>();
   for (const p of previewParticipants || []) {
     if (p.profile_id === myself) continue;
-    const list = otherNamesByConversation.get(p.conversation_id) || [];
-    list.push((p.profile as any)?.full_name || "Colleague");
-    otherNamesByConversation.set(p.conversation_id, list);
+    const list = otherPeopleByConversation.get(p.conversation_id) || [];
+    list.push({ id: p.profile_id, name: (p.profile as any)?.full_name || "Colleague" });
+    otherPeopleByConversation.set(p.conversation_id, list);
   }
   const latestByConversation = new Map<number, any>();
   for (const m of previewMessages || []) {
     if (!latestByConversation.has(m.conversation_id)) latestByConversation.set(m.conversation_id, m);
+  }
+  const tierOf = (id: string): Tier => tierByOtherId.get(id) || (recommendedCandidates.has(id) ? "recommended" : "none");
+
+  function renderMessageRows(rows: any[]) {
+    return (
+      <>
+        {rows.map((r: any) => {
+          const conv = r.conversation;
+          const others = otherPeopleByConversation.get(conv.id) || [];
+          const latest = latestByConversation.get(conv.id);
+          const needsReply = !!latest && latest.author_id !== myself && (!r.last_read_at || new Date(latest.created_at) > new Date(r.last_read_at));
+          const when = latest ? new Date(latest.created_at) : conv.last_message_at ? new Date(conv.last_message_at) : null;
+          return (
+            <a key={conv.id} href={`/dashboard/messages/${conv.id}`} className={`ov-feed-row${needsReply ? " needs-reply" : ""}`}>
+              <span className="title" style={{ display: "flex", justifyContent: "space-between", gap: "0.5rem" }}>
+                <span>
+                  {conv.title || (others.length > 0
+                    ? others.map((o, i) => <span key={o.id}>{i > 0 && ", "}<TierName id={o.id} name={o.name} tier={tierOf(o.id)} /></span>)
+                    : "Conversation")}
+                  {needsReply && <span className="tag gold" style={{ marginLeft: "0.4rem" }}>Needs your reply</span>}
+                </span>
+                {when && (
+                  <span className="muted" style={{ fontSize: "0.7rem", flex: "0 0 auto" }}>
+                    {when.toLocaleDateString()} {when.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                  </span>
+                )}
+              </span>
+              <span className="snippet">{latest ? latest.body : "No messages yet"}</span>
+            </a>
+          );
+        })}
+        {rows.length === 0 && (
+          <p className="muted">
+            Nothing here yet. <a href="/dashboard/messages">Send a new message</a> to get a conversation going.
+          </p>
+        )}
+      </>
+    );
   }
 
   // ---------- Caseload distribution + auto-matched professionals ----------
@@ -312,7 +376,7 @@ export default async function DashboardHome(
           <h1>Overview</h1>
           <p className="sub">
             {profile?.credential_prefix ? `${profile.credential_prefix} ` : ""}{displayName || "Welcome"}
-            {profile?.qualification_level ? ` · ${profile.qualification_level}` : ""} — here's where things stand.
+            {profile?.qualification_level ? ` · ${profile.qualification_level}` : ""}, here's where things stand.
           </p>
         </div>
         <div className="overview-stat-strip">
@@ -415,18 +479,31 @@ export default async function DashboardHome(
               <span className="tag tier-partner">Partners</span>
               <strong>{partners.length}</strong>
             </div>
-            <p className="ov-tier-names">{partners.slice(0, 4).join(", ") || "None yet"}</p>
+            <p className="ov-tier-names">
+              {partners.length > 0 ? partners.slice(0, 4).map((p, i) => (
+                <span key={p.id}>{i > 0 && ", "}<TierName id={p.id} name={p.name} tier="partner" /></span>
+              )) : "None yet"}
+            </p>
             <div className="ov-tier-line">
               <span className="tag tier-bench">Bench</span>
               <strong>{bench.length}</strong>
             </div>
-            <p className="ov-tier-names">{bench.slice(0, 4).join(", ") || "None yet"}</p>
+            <p className="ov-tier-names">
+              {bench.length > 0 ? bench.slice(0, 4).map((p, i) => (
+                <span key={p.id}>{i > 0 && ", "}<TierName id={p.id} name={p.name} tier="bench" /></span>
+              )) : "None yet"}
+            </p>
             <div className="ov-tier-line">
               <span className="tag tier-recommended">Recommended</span>
-              <strong>{recommendedNames.size}</strong>
+              <strong>
+                {recommendedTop5.length}
+                {recommendedTotal > recommendedTop5.length && <span className="muted" style={{ fontWeight: 400, fontSize: "0.7rem" }}> of {recommendedTotal}</span>}
+              </strong>
             </div>
             <p className="ov-tier-names" style={{ marginBottom: 0 }}>
-              {Array.from(recommendedNames.values()).slice(0, 4).join(", ") || "None yet"}
+              {recommendedTop5.length > 0 ? recommendedTop5.map((p, i) => (
+                <span key={p.id}>{i > 0 && ", "}<TierName id={p.id} name={p.name} tier="recommended" /></span>
+              )) : "None yet"}
             </p>
           </div>
         </div>
@@ -436,39 +513,15 @@ export default async function DashboardHome(
           <div className="ov-card">
             <div className="widget-header">
               <h2>My messages</h2>
-              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                <div className="ov-box-toggle">
-                  <a href="/dashboard?box=inbox" className={messagesBox === "inbox" ? "active" : ""}>Inbox ({inboxRows.length})</a>
-                  <a href="/dashboard?box=sent" className={messagesBox === "sent" ? "active" : ""}>Sent ({sentRows.length})</a>
-                </div>
-                <GoLink href="/dashboard/messages" />
-              </div>
+              <GoLink href="/dashboard/messages" />
             </div>
-            {sortedConversationRows.map((r: any) => {
-              const conv = r.conversation;
-              const others = otherNamesByConversation.get(conv.id) || [];
-              const label = conv.title || others.join(", ") || "Conversation";
-              const latest = latestByConversation.get(conv.id);
-              const unread = latest && (!r.last_read_at || new Date(latest.created_at) > new Date(r.last_read_at));
-              return (
-                <a key={conv.id} href={`/dashboard/messages/${conv.id}`} className="ov-feed-row">
-                  <span className="title">
-                    {label}
-                    {unread && <span className="tag tier-recommended" style={{ marginLeft: "0.4rem" }}>Unread</span>}
-                  </span>
-                  <span className="snippet">{latest ? latest.body : "No messages yet"}</span>
-                </a>
-              );
-            })}
-            {sortedConversationRows.length === 0 && (
-              <p className="muted">
-                {messagesBox === "sent" ? (
-                  <>You haven't started any conversations yet. <a href="/dashboard/messages">Send a new message</a> to a colleague.</>
-                ) : (
-                  <>Nothing in your inbox yet. <a href="/dashboard/messages">Send a new message</a> to get a conversation going.</>
-                )}
-              </p>
-            )}
+            <ToggleBox
+              defaultTab="inbox"
+              tabs={[
+                { key: "inbox", label: `Inbox (${inboxRows.length})`, content: renderMessageRows(inboxRows) },
+                { key: "sent", label: `Sent (${sentRows.length})`, content: renderMessageRows(sentRows) },
+              ]}
+            />
           </div>
 
           <div className="ov-card">
@@ -478,7 +531,10 @@ export default async function DashboardHome(
             </div>
             {townHallGrouped.map((m: any) => (
               <a key={m.id} href={`/dashboard/town-hall/${m.channel_id}`} className="ov-feed-row">
-                <span className="title">{m.author?.full_name || "Colleague"} in {m.channel?.name || "Town Hall"}</span>
+                <span className="title">
+                  <span className="tag" style={{ marginRight: "0.4rem" }}>{m.channel?.name || "Town Hall"}</span>
+                  <TierName id={m.author?.id || ""} name={m.author?.full_name || "Colleague"} tier={m.author?.id ? tierOf(m.author.id) : "none"} />
+                </span>
                 <span className="snippet">{m.body}</span>
               </a>
             ))}

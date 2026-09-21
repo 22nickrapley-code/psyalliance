@@ -79,7 +79,7 @@ export async function reviewInsuranceRequest(formData: FormData) {
     const { error: messageError } = await supabase.from("conversation_messages").insert({
       conversation_id: conversation.id,
       author_id: user.id,
-      body: `Your request to add "${reqRow.requested_value}" as an insurance option has been approved — it's now available in the Insurance dropdown on Caseload.`,
+      body: `Your request to add "${reqRow.requested_value}" as an insurance option has been approved. It's now available in the Insurance dropdown on Caseload.`,
     });
     if (messageError) insuranceRequestsError(messageError.message);
 

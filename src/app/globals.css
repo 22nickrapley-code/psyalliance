@@ -1,5 +1,5 @@
 :root {
-  /* Core palette — deep forest/teal reads as clinical trust without being
+  /* Core palette - deep forest/teal reads as clinical trust without being
      cold; warm cream background rather than stark white or grey keeps it
      from feeling like a bare admin panel. */
   --bg: #f6f4ee;
@@ -40,7 +40,7 @@
   --shadow: 0 2px 8px rgba(32, 31, 28, 0.06), 0 1px 2px rgba(32, 31, 28, 0.04);
   --shadow-lg: 0 12px 32px rgba(32, 31, 28, 0.10), 0 2px 6px rgba(32, 31, 28, 0.06);
   --sidebar-width: 244px;
-  /* Self-hosted via @fontsource (see layout.tsx) — real family names, so no
+  /* Self-hosted via @fontsource (see layout.tsx) - real family names, so no
      font-loader variable indirection is needed; the safe system-font
      fallback chains stay in place wherever these are referenced. */
   --font-display: "Fraunces", Georgia, serif;
@@ -358,6 +358,29 @@ button.danger {
 
 button.danger:hover {
   background: #822c23;
+}
+
+/* Tier-colored action buttons - "Connect (Partner)" and "Add to Bench"
+   match their tier's color exactly, same blue/purple used on names and
+   tags everywhere else, so the action itself signals which list it adds
+   someone to before you even read the label. */
+button.btn-tier-partner, .btn.btn-tier-partner {
+  background: var(--tier-partner);
+}
+
+button.btn-tier-partner:hover, .btn.btn-tier-partner:hover {
+  background: #1c4685;
+}
+
+button.btn-tier-bench, .btn.btn-tier-bench {
+  background: var(--tier-bench);
+  color: #fff;
+  border: none;
+  box-shadow: var(--shadow-sm);
+}
+
+button.btn-tier-bench:hover, .btn.btn-tier-bench:hover {
+  background: #602f80;
 }
 
 /* ---------- Dashboard shell: sidebar + content ---------- */
@@ -808,6 +831,77 @@ tbody tr:hover {
   margin-top: 0.15rem;
 }
 
+/* Hover/focus tooltip - a small "?" badge that reveals an explanation
+   bubble, pure CSS so it works from a server component with no client JS.
+   Used on the Income & Revenue stat labels. */
+.info-tooltip {
+  position: relative;
+  display: inline-flex;
+  vertical-align: middle;
+  margin-left: 0.35rem;
+}
+
+.info-tooltip-icon {
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: var(--border-strong);
+  color: var(--surface);
+  font-size: 0.64rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: help;
+  user-select: none;
+}
+
+.info-tooltip-dark .info-tooltip-icon {
+  background: rgba(255, 255, 255, 0.35);
+  color: #fff;
+}
+
+.info-tooltip-bubble {
+  position: absolute;
+  bottom: 135%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--text);
+  color: #fff;
+  font-size: 0.74rem;
+  font-weight: 400;
+  line-height: 1.35;
+  padding: 0.5rem 0.65rem;
+  border-radius: 6px;
+  width: 220px;
+  text-align: left;
+  text-transform: none;
+  letter-spacing: normal;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.12s ease;
+  pointer-events: none;
+  z-index: 30;
+  box-shadow: var(--shadow);
+}
+
+.info-tooltip-bubble::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: var(--text);
+}
+
+.info-tooltip:hover .info-tooltip-bubble,
+.info-tooltip:focus .info-tooltip-bubble,
+.info-tooltip:focus-within .info-tooltip-bubble {
+  opacity: 1;
+  visibility: visible;
+}
+
 /* ---------- Income page: one hero figure + supporting stats ----------
    A financial summary reads as more professional with a clear hierarchy -
    one number that matters most, everything else smaller and secondary -
@@ -856,7 +950,10 @@ tbody tr:hover {
 .income-hero-secondary {
   flex: 1 1 340px;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  /* A fixed 2x2 grid for exactly four stats reads cleaner than auto-fit,
+     which could stretch to 3 columns + a lone 4th on some widths and leave
+     an awkward gap - Nick's exact complaint about the old layout. */
+  grid-template-columns: repeat(2, 1fr);
   gap: 0.75rem;
 }
 
@@ -1024,6 +1121,112 @@ a.person-link.tier-recommended {
   color: var(--tier-recommended);
 }
 
+/* Small colored dot before a name in list/text contexts without an avatar
+   (Messages preview, Town Hall author lines, My World name lists) - the
+   text-only equivalent of the colored ring around an avatar. */
+.tier-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  margin-right: 0.32rem;
+  flex: 0 0 auto;
+}
+
+.tier-dot-partner {
+  background: var(--tier-partner);
+}
+
+.tier-dot-bench {
+  background: var(--tier-bench);
+}
+
+.tier-dot-recommended {
+  background: var(--tier-recommended);
+}
+
+/* Colored ring around an avatar circle - "circle around them" for partner/
+   bench/recommended people, wherever an Avatar renders next to a name. */
+.tier-ring {
+  display: inline-flex;
+  border-radius: 50%;
+}
+
+.tier-ring-partner {
+  box-shadow: 0 0 0 2px var(--tier-partner);
+}
+
+.tier-ring-bench {
+  box-shadow: 0 0 0 2px var(--tier-bench);
+}
+
+.tier-ring-recommended {
+  box-shadow: 0 0 0 2px var(--tier-recommended);
+}
+
+/* Unread / "needs your reply" row highlight - deliberately gold, not the
+   tier-recommended orange, so the two meanings (unread vs. connection tier)
+   never collide on the same row. */
+.needs-reply {
+  background: var(--gold-soft);
+  border-radius: var(--radius-md, 8px);
+  padding-left: 0.5rem;
+  margin-left: -0.5rem;
+}
+
+.needs-reply .title {
+  color: #7a5f30 !important;
+}
+
+/* Plain (non-link) inline name text colored by tier - for contexts like the
+   recipient picker where the name isn't clickable (it's inside a form
+   label), so it can't use a.person-link. */
+.person-link-inline {
+  font-weight: 600;
+}
+
+.person-link-inline.tier-partner {
+  color: var(--tier-partner);
+}
+
+.person-link-inline.tier-bench {
+  color: var(--tier-bench);
+}
+
+.person-link-inline.tier-recommended {
+  color: var(--tier-recommended);
+}
+
+/* Compact recipient picker (Messages "Send a New Message"): a single
+   scrollable column of rows rather than a wide checkbox grid, since Nick
+   found the old grid "messy" and "too much to take in" - one row per
+   colleague reads faster than a multi-column wall of checkboxes. */
+.recipient-picker-list {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.recipient-picker-row {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.42rem 0.6rem;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.85rem;
+  font-weight: 400;
+  cursor: pointer;
+}
+
+.recipient-picker-row:last-child {
+  border-bottom: none;
+}
+
+.recipient-picker-row:hover {
+  background: var(--bg-alt);
+}
+
 /* Directory-style row (Recommended for you, full directory, suggested
    colleagues, etc): a three-column grid so the person block, badge block,
    and action-button block always line up, regardless of how many badges a
@@ -1097,6 +1300,69 @@ a.person-link.tier-recommended {
   }
   .directory-row-actions {
     justify-content: flex-start;
+  }
+}
+
+/* Condensed directory browser rows (Full verified directory) - two lines
+   per profile (name/badges, then location + top specialisms) instead of a
+   wide multi-column table, so a page of 15 reads as a quick scan rather
+   than "too much to take in" per Nick's note. */
+.directory-condensed-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.directory-condensed-row {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.55rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.directory-condensed-row:last-child {
+  border-bottom: none;
+}
+
+.directory-condensed-main {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.directory-condensed-line1 {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  font-weight: 600;
+}
+
+.directory-condensed-line2 {
+  font-size: 0.8rem;
+  margin-top: 0.1rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.directory-condensed-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 0 0 auto;
+}
+
+@media (max-width: 720px) {
+  .directory-condensed-row {
+    flex-wrap: wrap;
+  }
+  .directory-condensed-line2 {
+    white-space: normal;
+  }
+  .directory-condensed-actions {
+    width: 100%;
+    justify-content: flex-start;
+    margin-left: calc(38px + 0.65rem);
   }
 }
 
@@ -1696,17 +1962,22 @@ a.person-link.tier-recommended {
   gap: 0.3rem;
 }
 
-.ov-box-toggle a {
+.ov-box-toggle a,
+.ov-box-toggle button {
   font-size: 0.7rem;
   font-weight: 700;
   padding: 0.16rem 0.55rem;
   border-radius: 999px;
   text-decoration: none;
   border: 1px solid var(--border-strong);
+  background: var(--surface);
   color: var(--text-soft);
+  cursor: pointer;
+  font-family: inherit;
 }
 
-.ov-box-toggle a.active {
+.ov-box-toggle a.active,
+.ov-box-toggle button.active {
   background: var(--accent);
   border-color: var(--accent);
   color: #fff;
@@ -2665,8 +2936,16 @@ a.person-link.tier-recommended {
 }
 
 /* ---------- Caseload: per-organization spreadsheet-style tables ---------- */
+/* Each organization gets its own visually separate boxed card - a border,
+   soft background, and padding - rather than just a heading and a flat
+   list, so multiple practices read as clearly distinct groups at a glance. */
 .caseload-org-table {
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.25rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md, 10px);
+  background: var(--surface);
+  padding: 1rem 1rem 0.5rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
 }
 
 .caseload-org-table:last-child {
@@ -2674,8 +2953,13 @@ a.person-link.tier-recommended {
 }
 
 .caseload-org-table h3 {
-  margin: 0 0 0.5rem;
+  margin: 0 0 0.6rem;
   font-size: 1rem;
+}
+
+.caseload-org-table-warn {
+  border-color: #b3392c;
+  background: rgba(179, 57, 44, 0.04);
 }
 
 .caseload-org-table-warn h3 {
@@ -2689,7 +2973,7 @@ a.person-link.tier-recommended {
 }
 
 .caseload-table th {
-  text-align: left;
+  text-align: center;
   padding: 0.4rem 0.5rem;
   border-bottom: 1px solid var(--border-strong);
   white-space: nowrap;
@@ -2698,7 +2982,23 @@ a.person-link.tier-recommended {
 .caseload-table td {
   padding: 0.4rem 0.5rem;
   border-bottom: 1px solid var(--border);
-  vertical-align: top;
+  vertical-align: middle;
+  text-align: center;
+}
+
+/* Narrow columns (No., State, session type, rate, sessions/wk, actions)
+   never need more than a few characters or a short button - capping their
+   width keeps the wide specialism columns from being squeezed off-screen,
+   cutting down how much anyone has to scroll left-right. */
+.caseload-table th.caseload-col-narrow {
+  max-width: 78px;
+}
+
+/* Row banding - alternating a faint tint - so a long table stays readable
+   at a glance without following gridlines row by row. Skipped on a
+   highlighted row, whose own tier-matched color takes priority. */
+.caseload-table tbody tr:nth-child(even) {
+  background: var(--bg-alt);
 }
 
 .caseload-row-match {
@@ -2706,7 +3006,6 @@ a.person-link.tier-recommended {
 }
 
 .caseload-cell-match {
-  background: var(--tier-recommended-soft);
   border-radius: 4px;
   font-weight: 600;
 }
@@ -2794,6 +3093,14 @@ a.person-link.tier-recommended {
   min-width: 1.75rem;
 }
 
+.quick-match-group-label {
+  margin: 0.6rem 0 0;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: var(--muted);
+}
+
 /* ---------- Planner recommendation table ---------- */
 
 .icon-btn-assign,
@@ -2845,4 +3152,75 @@ a.person-link.tier-recommended {
 .icon-btn-rating.active {
   border-color: var(--border-strong);
   background: var(--bg-alt);
+}
+
+.th-pill-group {
+  margin-bottom: 1.1rem;
+}
+
+.th-pill-group h3 {
+  margin: 0 0 0.5rem;
+  font-size: 0.95rem;
+}
+
+.th-pill-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.th-pill {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.9rem;
+  border-radius: 999px;
+  border: 1px solid var(--border-strong);
+  background: var(--bg, #fff);
+  color: var(--text, #1f2933);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.th-pill:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.th-pill-active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.th-pill-active:hover {
+  color: #fff;
+}
+
+.th-pill-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  padding: 0 0.3rem;
+  border-radius: 999px;
+  background: var(--danger, #b3591a);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.th-pill-active .th-pill-badge {
+  background: #fff;
+  color: var(--accent);
+}
+
+.th-conversation {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
 }

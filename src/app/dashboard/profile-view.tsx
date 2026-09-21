@@ -54,6 +54,29 @@ function ToggleBadge({ value }: { value: boolean }) {
   return <span className={`toggle-badge ${value ? "yes" : "no"}`}>{value ? "Yes" : "No"}</span>;
 }
 
+// One-click version of the same badge, used only on your own profile view -
+// clicking it flips the field immediately via the server action passed in,
+// no need to open Edit Profile just to change a yes/no.
+function ToggleBadgeButton({
+  field,
+  value,
+  onToggleOpenTo,
+}: {
+  field: string;
+  value: boolean;
+  onToggleOpenTo: (formData: FormData) => void;
+}) {
+  return (
+    <form action={onToggleOpenTo}>
+      <input type="hidden" name="field" value={field} />
+      <input type="hidden" name="current" value={String(value)} />
+      <button type="submit" className={`toggle-badge toggle-badge-btn ${value ? "yes" : "no"}`}>
+        {value ? "Yes" : "No"}
+      </button>
+    </form>
+  );
+}
+
 export function ProfileView({
   data,
   tierBadge,
@@ -64,6 +87,7 @@ export function ProfileView({
   actions,
   sidebarExtra,
   belowHeader,
+  onToggleOpenTo,
 }: {
   data: ProfileViewData;
   tierBadge?: React.ReactNode;
@@ -90,6 +114,11 @@ export function ProfileView({
   // Extra content rendered directly under the header, above the relevance
   // banner - used for the "Assign to Patient" quick-assign panel.
   belowHeader?: React.ReactNode;
+  // When set, this is the viewer's own profile: the four "Open to" badges
+  // become one-click toggle buttons wired to this server action instead of
+  // static yes/no text. Left unset (viewing someone else's profile) they
+  // stay read-only.
+  onToggleOpenTo?: (formData: FormData) => void;
 }) {
   const profession = professionFor(data.qualificationLevel);
   const relevantSet = new Set(
@@ -188,15 +217,44 @@ export function ProfileView({
 
             <div className="card">
               <h3 style={{ marginTop: 0, fontSize: "0.95rem" }}>Open to</h3>
+              {onToggleOpenTo && (
+                <p className="muted" style={{ marginTop: "-0.3rem", fontSize: "0.78rem" }}>
+                  Click a Yes/No to flip it instantly.
+                </p>
+              )}
               <dl>
                 <dt>Incoming referrals</dt>
-                <dd><ToggleBadge value={data.acceptingReferrals} /></dd>
+                <dd>
+                  {onToggleOpenTo ? (
+                    <ToggleBadgeButton field="accepting_referrals" value={data.acceptingReferrals} onToggleOpenTo={onToggleOpenTo} />
+                  ) : (
+                    <ToggleBadge value={data.acceptingReferrals} />
+                  )}
+                </dd>
                 <dt>Giving supervision</dt>
-                <dd><ToggleBadge value={data.openToGiveSupervision} /></dd>
+                <dd>
+                  {onToggleOpenTo ? (
+                    <ToggleBadgeButton field="open_to_give_supervision" value={data.openToGiveSupervision} onToggleOpenTo={onToggleOpenTo} />
+                  ) : (
+                    <ToggleBadge value={data.openToGiveSupervision} />
+                  )}
+                </dd>
                 <dt>Receiving supervision</dt>
-                <dd><ToggleBadge value={data.openToReceiveSupervision} /></dd>
+                <dd>
+                  {onToggleOpenTo ? (
+                    <ToggleBadgeButton field="open_to_receive_supervision" value={data.openToReceiveSupervision} onToggleOpenTo={onToggleOpenTo} />
+                  ) : (
+                    <ToggleBadge value={data.openToReceiveSupervision} />
+                  )}
+                </dd>
                 <dt>Group consultation</dt>
-                <dd><ToggleBadge value={data.openToGroupConsultation} /></dd>
+                <dd>
+                  {onToggleOpenTo ? (
+                    <ToggleBadgeButton field="open_to_group_consultation" value={data.openToGroupConsultation} onToggleOpenTo={onToggleOpenTo} />
+                  ) : (
+                    <ToggleBadge value={data.openToGroupConsultation} />
+                  )}
+                </dd>
               </dl>
             </div>
 

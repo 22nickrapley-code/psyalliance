@@ -1,5 +1,16 @@
 import { createClient } from "@/lib/supabase/server";
-import { joinChannel, leaveChannel, requestNewChannel } from "./actions";
+import {
+  joinChannel,
+  leaveChannel,
+  requestNewChannel,
+  postMessage,
+  reactToMessage,
+  editMessage,
+  deleteMessage,
+  getChannelSnapshot,
+} from "./actions";
+import { buildTierMap } from "@/lib/tiers";
+import ChannelBrowser, { type ChannelPill } from "./channel-browser";
 import Link from "next/link";
 
 export default async function TownHallIndexPage(
@@ -53,15 +64,64 @@ export default async function TownHallIndexPage(
     );
   }
 
-  const [{ data: channels }, { data: memberships }] = await Promise.all([
+  const [{ data: channels }, { data: memberships }, { data: connections }] = await Promise.all([
     supabase.from("town_hall_channels").select("*").order("is_general", { ascending: false }).order("name"),
-    supabase.from("town_hall_memberships").select("channel_id").eq("profile_id", myself),
+    supabase.from("town_hall_memberships").select("channel_id, last_read_at").eq("profile_id", myself),
+    supabase
+      .from("connections")
+      .select("requester_id, addressee_id, tier, status")
+      .or(`requester_id.eq.${myself},addressee_id.eq.${myself}`)
+      .eq("status", "accepted"),
   ]);
 
   const memberChannelIds = new Set((memberships || []).map((m) => m.channel_id));
+  const lastReadByChannel = new Map((memberships || []).map((m) => [m.channel_id, m.last_read_at]));
   const general = (channels || []).filter((c) => c.is_general);
   const specialismChannels = (channels || []).filter((c) => !c.is_general);
   const myChannels = (channels || []).filter((c) => memberChannelIds.has(c.id));
+
+  const tierMap = buildTierMap(connections, myself);
+  const tierByAuthorId: Record<string, "partner" | "bench" | "recommended" | "none"> = Object.fromEntries(tierMap);
+
+  // Unread badges: for each channel the user belongs to, count messages from
+  // OTHER authors posted since that membership's last_read_at (set whenever
+  // the user opens the channel inline via getChannelSnapshot, or leaves the
+  // dedicated page). One query for all member channels, counted client-side.
+  const { data: unreadCandidates } = memberChannelIds.size
+    ? await supabase
+        .from("town_hall_messages")
+        .select("channel_id, created_at, author_id")
+        .in("channel_id", Array.from(memberChannelIds))
+        .is("deleted_at", null)
+        .neq("author_id", myself)
+    : { data: [] as { channel_id: number; created_at: string; author_id: string }[] };
+
+  const unreadByChannel = new Map<number, number>();
+  for (const msg of unreadCandidates || []) {
+    const lastRead = lastReadByChannel.get(msg.channel_id);
+    if (!lastRead || new Date(msg.created_at) > new Date(lastRead)) {
+      unreadByChannel.set(msg.channel_id, (unreadByChannel.get(msg.channel_id) || 0) + 1);
+    }
+  }
+
+  const yourChannelPills: ChannelPill[] = myChannels.map((c) => ({
+    id: c.id,
+    name: c.name,
+    joined: true,
+    unread: unreadByChannel.get(c.id) || 0,
+  }));
+  const generalChannelPills: ChannelPill[] = general.map((c) => ({
+    id: c.id,
+    name: c.name,
+    joined: memberChannelIds.has(c.id),
+    unread: unreadByChannel.get(c.id) || 0,
+  }));
+  const specialismChannelPills: ChannelPill[] = specialismChannels.map((c) => ({
+    id: c.id,
+    name: c.name,
+    joined: memberChannelIds.has(c.id),
+    unread: unreadByChannel.get(c.id) || 0,
+  }));
 
   return (
     <div>
@@ -110,68 +170,26 @@ export default async function TownHallIndexPage(
       </div>
 
       <div className="card">
-        <h2>Your channels ({myChannels.length})</h2>
         {myChannels.length === 0 && (
           <p className="muted">
             You're not in any channels yet. Set your specialisms on your{" "}
             <Link href="/dashboard/profile">profile</Link> to auto-join, or join one below.
           </p>
         )}
-        <div className="checkbox-grid">
-          {myChannels.map((c) => (
-            <div key={c.id} className="checkbox-row" style={{ justifyContent: "space-between" }}>
-              <Link href={`/dashboard/town-hall/${c.id}`}>{c.name}</Link>
-              <form action={leaveChannel}>
-                <input type="hidden" name="channel_id" value={c.id} />
-                <button type="submit" className="danger" style={{ padding: "0.15rem 0.5rem", fontSize: "0.8rem" }}>
-                  Leave
-                </button>
-              </form>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="card">
-        <h2>General channels</h2>
-        <div className="checkbox-grid">
-          {general.map((c) => (
-            <div key={c.id} className="checkbox-row" style={{ justifyContent: "space-between" }}>
-              <Link href={`/dashboard/town-hall/${c.id}`}>{c.name}</Link>
-              {memberChannelIds.has(c.id) ? (
-                <span className="tag" style={{ flex: "0 0 auto" }}>Joined</span>
-              ) : (
-                <form action={joinChannel}>
-                  <input type="hidden" name="channel_id" value={c.id} />
-                  <button type="submit" style={{ padding: "0.15rem 0.5rem", fontSize: "0.8rem" }}>
-                    Join
-                  </button>
-                </form>
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="card">
-        <h2>All specialism channels ({specialismChannels.length})</h2>
-        <div className="checkbox-grid">
-          {specialismChannels.map((c) => (
-            <div key={c.id} className="checkbox-row" style={{ justifyContent: "space-between" }}>
-              <Link href={`/dashboard/town-hall/${c.id}`}>{c.name}</Link>
-              {memberChannelIds.has(c.id) ? (
-                <span className="tag" style={{ flex: "0 0 auto" }}>Joined</span>
-              ) : (
-                <form action={joinChannel}>
-                  <input type="hidden" name="channel_id" value={c.id} />
-                  <button type="submit" style={{ padding: "0.15rem 0.5rem", fontSize: "0.8rem" }}>
-                    Join
-                  </button>
-                </form>
-              )}
-            </div>
-          ))}
-        </div>
+        <ChannelBrowser
+          yourChannels={yourChannelPills}
+          generalChannels={generalChannelPills}
+          specialismChannels={specialismChannelPills}
+          tierByAuthorId={tierByAuthorId}
+          myself={myself}
+          getChannelSnapshot={getChannelSnapshot}
+          joinChannel={joinChannel}
+          leaveChannel={leaveChannel}
+          postMessage={postMessage}
+          reactToMessage={reactToMessage}
+          editMessage={editMessage}
+          deleteMessage={deleteMessage}
+        />
       </div>
 
       <div className="card">

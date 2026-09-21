@@ -113,6 +113,42 @@ export async function saveProfile(formData: FormData) {
   redirect("/dashboard/profile?saved=1");
 }
 
+// The four "Open to" flags shown on the profile view, keyed to their exact
+// profiles column name so the toggle below can update any of them with one
+// shared function instead of four near-identical ones.
+const OPEN_TO_FIELDS = new Set([
+  "accepting_referrals",
+  "open_to_give_supervision",
+  "open_to_receive_supervision",
+  "open_to_group_consultation",
+]);
+
+// One-click "Open to" toggle from the read-only profile view - per Nick's
+// note, these four should flip with a single click right there, not require
+// the full Edit Profile flow just to change a yes/no. Takes the field name
+// and its current value (so it can flip it) via hidden form inputs.
+export async function toggleOpenToField(formData: FormData) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not signed in");
+
+  const field = String(formData.get("field") || "");
+  if (!OPEN_TO_FIELDS.has(field)) profileError("Unknown toggle field.");
+
+  const current = formData.get("current") === "true";
+  const { error } = await supabase
+    .from("profiles")
+    .update({ [field]: !current, updated_at: new Date().toISOString() })
+    .eq("id", user.id);
+  if (error) profileError(error.message);
+
+  revalidatePath("/dashboard/profile");
+  revalidatePath("/dashboard");
+  revalidatePath(`/dashboard/people/${user.id}`);
+}
+
 export async function saveAvailability(formData: FormData) {
   const supabase = await createClient();
   const {

@@ -5,19 +5,25 @@ import CaseTableRow from "./case-table-row";
 
 type Org = { id: number; name: string };
 
+// Order matches Nick's spec: identity/logistics columns first, treatment
+// areas last, since those are the columns someone scans first when looking
+// a client up, and the ones that need the least horizontal room come
+// narrowest (Sessions/wk only ever holds up to two decimal places).
 const COLUMNS = [
   "No.",
   "Client Identifier",
   "State",
   "Sesh Type",
   "Insurance",
+  "Rate/session",
+  "Sessions/wk",
   "Primary",
   "Secondary",
   "Tertiary",
-  "Rate/session",
-  "Sessions/wk",
   "",
 ];
+
+const NARROW_COLUMNS = new Set(["No.", "State", "Sesh Type", "Rate/session", "Sessions/wk", ""]);
 
 function OrgTable({
   title,
@@ -58,7 +64,7 @@ function OrgTable({
           <thead>
             <tr>
               {COLUMNS.map((col, i) => (
-                <th key={i}>{col}</th>
+                <th key={i} className={NARROW_COLUMNS.has(col) ? "caseload-col-narrow" : undefined}>{col}</th>
               ))}
             </tr>
           </thead>

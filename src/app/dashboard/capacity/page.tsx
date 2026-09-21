@@ -28,7 +28,7 @@ export default async function CapacityPage(props: { searchParams: Promise<{ save
 
   return (
     <div>
-      <h1>Capacity &amp; overhead</h1>
+      <h1>Capacity &amp; Overhead</h1>
 
       {error && <div className="error-banner">{error}</div>}
 
@@ -136,41 +136,43 @@ export default async function CapacityPage(props: { searchParams: Promise<{ save
             )}
           </tbody>
         </table>
-        <form action={addOverheadExpense} className="field-row" style={{ alignItems: "flex-end", flexWrap: "wrap" }}>
-          <div className="field">
-            <label htmlFor="expense_name">Expense</label>
-            <input id="expense_name" name="expense_name" type="text" required />
-          </div>
-          <div className="field">
-            <label htmlFor="book_of_business_id">Organization</label>
-            <select id="book_of_business_id" name="book_of_business_id" defaultValue="">
-              <option value="">General</option>
-              {(books || []).map((b) => (
-                <option key={b.id} value={b.id}>{b.name}</option>
-              ))}
-            </select>
-            <p className="muted" style={{ marginTop: "0.3rem", marginBottom: 0, fontSize: "0.78rem" }}>
-              Most expenses are your own private practice - only pick one here if it's specific to
-              a particular organization.
-            </p>
-          </div>
-          <div className="field">
-            <label htmlFor="vendor">Vendor</label>
-            <input id="vendor" name="vendor" type="text" />
-          </div>
-          <div className="field" style={{ maxWidth: 140 }}>
-            <label htmlFor="cadence">Cadence</label>
-            <select id="cadence" name="cadence" defaultValue="monthly">
-              <option value="monthly">Monthly</option>
-              <option value="annual">Annual</option>
-            </select>
-          </div>
-          <div className="field" style={{ maxWidth: 140 }}>
-            <label htmlFor="amount">Amount ($)</label>
-            <input id="amount" name="amount" type="number" step="0.01" min="0" required />
-          </div>
-          <div className="field" style={{ flex: "0 0 auto" }}>
-            <button type="submit">Add expense</button>
+        <form action={addOverheadExpense}>
+          <p className="muted" style={{ marginTop: 0, marginBottom: "0.5rem", fontSize: "0.78rem" }}>
+            Most expenses are your own private practice - only pick an organization below if it's
+            specific to a particular one.
+          </p>
+          <div className="field-row" style={{ alignItems: "flex-end", flexWrap: "wrap" }}>
+            <div className="field">
+              <label htmlFor="expense_name">Expense</label>
+              <input id="expense_name" name="expense_name" type="text" required />
+            </div>
+            <div className="field">
+              <label htmlFor="book_of_business_id">Organization</label>
+              <select id="book_of_business_id" name="book_of_business_id" defaultValue="">
+                <option value="">General</option>
+                {(books || []).map((b) => (
+                  <option key={b.id} value={b.id}>{b.name}</option>
+                ))}
+              </select>
+            </div>
+            <div className="field">
+              <label htmlFor="vendor">Vendor</label>
+              <input id="vendor" name="vendor" type="text" />
+            </div>
+            <div className="field" style={{ maxWidth: 140 }}>
+              <label htmlFor="cadence">Cadence</label>
+              <select id="cadence" name="cadence" defaultValue="monthly">
+                <option value="monthly">Monthly</option>
+                <option value="annual">Annual</option>
+              </select>
+            </div>
+            <div className="field" style={{ maxWidth: 140 }}>
+              <label htmlFor="amount">Amount ($)</label>
+              <input id="amount" name="amount" type="number" step="0.01" min="0" required />
+            </div>
+            <div className="field" style={{ flex: "0 0 auto" }}>
+              <button type="submit">Add expense</button>
+            </div>
           </div>
         </form>
       </div>

@@ -102,7 +102,7 @@ export default function HomePage() {
         </span>
         <h1>Never scramble to cover your caseload again.</h1>
         <p className="lede">
-          Supporting psychology, strengthening care — psyalliance.org is the credential-verified
+          Supporting psychology, strengthening care: psyalliance.org is the credential-verified
           network and virtual-practice toolkit built exclusively for doctoral-level psychologists
           and psychiatrists. Manage your caseload, get matched with coverage when you're away, and
           receive referrals from colleagues who know your credentials are real. Free, forever.
@@ -114,7 +114,7 @@ export default function HomePage() {
       </header>
 
       <p className="trust-strip">
-        <strong>Built by <a href="#founders">a psychologist</a>, with feedback from her peers</strong> — not by an ad platform.
+        <strong>Built by <a href="#founders">a psychologist</a>, with feedback from her peers</strong>, not by an ad platform.
         <span className="dot">·</span>
         No data sold, no attention monetized, no premium tier.
       </p>
@@ -140,7 +140,7 @@ export default function HomePage() {
           <div className="letter">C</div>
           <h3>Coverage when you're away</h3>
           <p>
-            Parental leave, illness, vacation — post a coverage need and a weighted matching
+            Parental leave, illness, vacation: post a coverage need and a weighted matching
             engine ranks the colleagues best placed to help, by location, specialism, and
             relationship, so no client is left without care.
           </p>
@@ -178,7 +178,7 @@ export default function HomePage() {
             <div className="verify-step">
               <div className="verify-step-num">3</div>
               <h3>A human signs off</h3>
-              <p>Verification isn't fully automated — every submission gets a final human review before you appear in the directory.</p>
+              <p>Verification isn't fully automated: every submission gets a final human review before you appear in the directory.</p>
             </div>
           </div>
         </div>
@@ -307,13 +307,13 @@ export default function HomePage() {
               <p>
                 psyalliance.org started as the answer to one problem Rena, a licensed
                 psychologist, couldn't find anywhere: when she went on maternity leave, she needed
-                her caseload covered by someone qualified — and there was no way to do that.
+                her caseload covered by someone qualified, and there was no way to do that.
               </p>
               <p>
                 Directories like Psychology Today are built for clients to find a therapist, not
                 for one psychologist to find another. There was nowhere to search specifically for
                 verified colleagues who could take on her clients while she was out, reach out to
-                them directly, and manage the handoff — and no single place to keep her own
+                them directly, and manage the handoff, and no single place to keep her own
                 caseload organized in the first place.
               </p>
               <p>
@@ -331,7 +331,7 @@ export default function HomePage() {
         <h2>Ready to stop practicing alone?</h2>
         <p>
           Join a closed, credential-verified network built for doctoral-level psychologists and
-          psychiatrists — free, forever.
+          psychiatrists, free, forever.
         </p>
         <a href="/auth/sign-up" className="btn cta-band-btn">Create your free profile</a>
       </section>

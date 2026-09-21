@@ -250,12 +250,12 @@ export default async function PersonProfilePage({
                   <form action={sendConnectionRequest} style={{ display: "inline" }}>
                     <input type="hidden" name="addressee_id" value={first.id} />
                     <input type="hidden" name="tier" value="partner" />
-                    <button type="submit">Connect (Partner)</button>
+                    <button type="submit" className="btn-tier-partner">Connect (Partner)</button>
                   </form>
                   <form action={sendConnectionRequest} style={{ display: "inline" }}>
                     <input type="hidden" name="addressee_id" value={first.id} />
                     <input type="hidden" name="tier" value="bench" />
-                    <button type="submit" className="secondary">Add to Bench</button>
+                    <button type="submit" className="btn-tier-bench">Add to Bench</button>
                   </form>
                 </>
               )}

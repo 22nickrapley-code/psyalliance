@@ -4,8 +4,10 @@ import { startConversation } from "../messages/actions";
 import { resolveAvatarUrls } from "@/lib/avatars";
 import Avatar from "../avatar";
 import { professionFor, professionLabel, type Profession } from "@/lib/profession";
-import DirectoryFilterForm from "./directory-filter-form";
 import ExpandableList from "@/components/expandable-list";
+import ToggleBox from "@/components/toggle-box";
+import { rankRecommended } from "@/lib/tiers";
+import DirectoryBrowser, { type DirectoryEntry } from "./directory-browser";
 
 type DirectoryPerson = {
   id: string;
@@ -18,7 +20,22 @@ type DirectoryPerson = {
   psypact_participating: boolean;
   avatar_path: string | null;
   specialisms: Set<string>;
+  last_active_at: string | null;
 };
+
+// "Connected N months/days ago", for the Partners list - so an established
+// relationship reads differently from one made yesterday.
+function connectedDuration(sinceIso: string | null | undefined): string | null {
+  if (!sinceIso) return null;
+  const since = new Date(sinceIso).getTime();
+  const days = Math.floor((Date.now() - since) / (1000 * 60 * 60 * 24));
+  if (days < 1) return "Connected today";
+  if (days < 30) return `Connected ${days} day${days === 1 ? "" : "s"}`;
+  const months = Math.floor(days / 30);
+  if (months < 12) return `Connected ${months} month${months === 1 ? "" : "s"}`;
+  const years = Math.floor(months / 12);
+  return `Connected ${years} year${years === 1 ? "" : "s"}`;
+}
 
 type Tier = "partner" | "bench" | "recommended" | "none";
 
@@ -49,7 +66,7 @@ function PersonLink({ id, name, tier }: { id: string; name: string; tier?: Tier 
 
 export default async function NetworkPage(
   props: {
-    searchParams: Promise<{ q?: string; state?: string; specialism?: string; degree?: string; psypact?: string; profession?: string; error?: string }>;
+    searchParams: Promise<{ error?: string }>;
   }
 ) {
   const searchParams = await props.searchParams;
@@ -111,6 +128,7 @@ export default async function NetworkPage(
         psypact_participating: row.psypact_participating,
         avatar_path: row.avatar_path,
         specialisms: new Set(),
+        last_active_at: (row as any).last_active_at ?? null,
       });
     }
     if (row.category === "treatment_specialism") {
@@ -148,10 +166,16 @@ export default async function NetworkPage(
   const incoming = (connections || []).filter((c: any) => c.status === "pending" && c.addressee_id === myself);
   const outgoing = (connections || []).filter((c: any) => c.status === "pending" && c.requester_id === myself);
 
-  const recommended = Array.from(people.values())
+  // Ranked by shared-specialism overlap, then recent activity, capped to 10
+  // total (shown 5 at a time with an expand) - same "top N, recomputed live"
+  // approach as Overview's My World, so this never balloons to the dozens
+  // and naturally shifts as people's data changes rather than being a fixed
+  // list.
+  const recommendedCandidates = Array.from(people.values())
     .filter((p) => !connectionByOtherId.has(p.id))
-    .filter((p) => sharedSpecialismsWith(p).length > 0)
-    .slice(0, 10);
+    .map((p) => ({ person: p, sharedCount: sharedSpecialismsWith(p).length, lastActiveAt: p.last_active_at }))
+    .filter((c) => c.sharedCount > 0);
+  const recommended = rankRecommended(recommendedCandidates, 10).map((c) => c.person);
 
   const nameOf = (c: any) => (c.requester_id === myself ? c.addressee?.full_name : c.requester?.full_name);
   const otherIdOf = (c: any) => (c.requester_id === myself ? c.addressee_id : c.requester_id);
@@ -165,22 +189,28 @@ export default async function NetworkPage(
     return "none";
   }
 
-  const q = (searchParams?.q || "").trim().toLowerCase();
-  const stateFilter = (searchParams?.state || "").trim().toUpperCase();
-  const specialismFilter = searchParams?.specialism || "";
-  const degreeFilter = searchParams?.degree || "";
-  const psypactFilter = searchParams?.psypact === "1";
-  const professionFilter = searchParams?.profession || "";
-
-  const filteredDirectory = Array.from(people.values()).filter((p) => {
-    if (q && !p.full_name.toLowerCase().includes(q)) return false;
-    if (stateFilter && p.primary_state !== stateFilter) return false;
-    if (specialismFilter && !p.specialisms.has(specialismFilter)) return false;
-    if (degreeFilter && degreeFilter !== "all" && connectionDegree(p) !== degreeFilter) return false;
-    if (psypactFilter && !p.psypact_participating) return false;
-    if (professionFilter && professionFor(p.qualification_level) !== professionFilter) return false;
-    return true;
+  // Full plain-serializable directory list for the client-side browser -
+  // every filter, search, and page turn happens in local state from here on
+  // (see directory-browser.tsx), so there's no server round-trip and no
+  // page reload for any of it.
+  const directoryEntries: DirectoryEntry[] = Array.from(people.values()).map((p) => {
+    const conn = connectionByOtherId.get(p.id);
+    return {
+      id: p.id,
+      name: p.full_name,
+      credentialPrefix: p.credential_prefix,
+      profession: professionFor(p.qualification_level),
+      qualificationLevel: p.qualification_level,
+      city: p.primary_practice_city,
+      state: p.primary_state,
+      specialisms: Array.from(p.specialisms),
+      psypact: p.psypact_participating,
+      avatarUrl: avatarUrlByPath.get(p.avatar_path || "") || null,
+      tier: connectionDegree(p),
+      connectionStatus: conn ? (conn.status === "accepted" ? "accepted" : "pending") : null,
+    };
   });
+  const specialismOptions = (allSpecialisms || []).map((s) => s.value);
 
   return (
     <div>
@@ -196,52 +226,69 @@ export default async function NetworkPage(
 
       {searchParams?.error && <div className="error-banner">{searchParams.error}</div>}
 
-      {incoming.length > 0 && (
+      {(incoming.length > 0 || outgoing.length > 0) && (
         <div className="card">
-          <h2>Pending requests to you ({incoming.length})</h2>
-          <ExpandableList
-            items={incoming.map((c: any) => (
-              <div key={c.id} className="person-row">
-                <span className="person-row-info">
-                  <Avatar url={avatarOf(c)} name={nameOf(c) || ""} />
-                  <PersonLink id={otherIdOf(c)} name={nameOf(c) || ""} /> wants to connect as <TierTag tier={c.tier} />
-                </span>
-                <span className="person-row-actions">
-                  <form action={respondToConnection}>
-                    <input type="hidden" name="id" value={c.id} />
-                    <input type="hidden" name="decision" value="accepted" />
-                    <button type="submit">Accept</button>
-                  </form>
-                  <form action={respondToConnection}>
-                    <input type="hidden" name="id" value={c.id} />
-                    <input type="hidden" name="decision" value="declined" />
-                    <button type="submit" className="secondary">Decline</button>
-                  </form>
-                </span>
-              </div>
-            ))}
-          />
-        </div>
-      )}
-
-      {outgoing.length > 0 && (
-        <div className="card">
-          <h2>Sent requests, awaiting response ({outgoing.length})</h2>
-          <ExpandableList
-            items={outgoing.map((c: any) => (
-              <div key={c.id} className="person-row">
-                <span className="person-row-info">
-                  <Avatar url={avatarOf(c)} name={nameOf(c) || ""} />
-                  <PersonLink id={otherIdOf(c)} name={nameOf(c) || ""} /> - request sent as <TierTag tier={c.tier} />
-                </span>
-                <span className="person-row-actions">
-                  <form action={removeConnection}>
-                    <input type="hidden" name="id" value={c.id} />
-                    <button type="submit" className="secondary">Remove request</button>
-                  </form>
-                </span>
-              </div>
-            ))}
+          <div className="widget-header">
+            <h2 style={{ margin: 0 }}>Requests</h2>
+          </div>
+          <ToggleBox
+            defaultTab="incoming"
+            tabs={[
+              {
+                key: "incoming",
+                label: `Incoming (${incoming.length})`,
+                content: incoming.length > 0 ? (
+                  <ExpandableList
+                    items={incoming.map((c: any) => (
+                      <div key={c.id} className="person-row">
+                        <span className="person-row-info">
+                          <Avatar url={avatarOf(c)} name={nameOf(c) || ""} />
+                          <PersonLink id={otherIdOf(c)} name={nameOf(c) || ""} /> wants to connect as <TierTag tier={c.tier} />
+                        </span>
+                        <span className="person-row-actions">
+                          <form action={respondToConnection}>
+                            <input type="hidden" name="id" value={c.id} />
+                            <input type="hidden" name="decision" value="accepted" />
+                            <button type="submit">Accept</button>
+                          </form>
+                          <form action={respondToConnection}>
+                            <input type="hidden" name="id" value={c.id} />
+                            <input type="hidden" name="decision" value="declined" />
+                            <button type="submit" className="secondary">Decline</button>
+                          </form>
+                        </span>
+                      </div>
+                    ))}
+                  />
+                ) : (
+                  <p className="muted">No incoming requests.</p>
+                ),
+              },
+              {
+                key: "sent",
+                label: `Sent (${outgoing.length})`,
+                content: outgoing.length > 0 ? (
+                  <ExpandableList
+                    items={outgoing.map((c: any) => (
+                      <div key={c.id} className="person-row">
+                        <span className="person-row-info">
+                          <Avatar url={avatarOf(c)} name={nameOf(c) || ""} />
+                          <PersonLink id={otherIdOf(c)} name={nameOf(c) || ""} /> - request sent as <TierTag tier={c.tier} />
+                        </span>
+                        <span className="person-row-actions">
+                          <form action={removeConnection}>
+                            <input type="hidden" name="id" value={c.id} />
+                            <button type="submit" className="secondary">Remove request</button>
+                          </form>
+                        </span>
+                      </div>
+                    ))}
+                  />
+                ) : (
+                  <p className="muted">No sent requests awaiting a response.</p>
+                ),
+              },
+            ]}
           />
         </div>
       )}
@@ -253,11 +300,13 @@ export default async function NetworkPage(
         </h2>
         {partners.map((c: any) => {
           const otherId = otherIdOf(c);
+          const duration = connectedDuration(c.responded_at || c.created_at);
           return (
           <div key={c.id} className="person-row">
             <span className="person-row-info">
               <Avatar url={avatarOf(c)} name={nameOf(c) || ""} />
               <PersonLink id={otherId} name={nameOf(c) || ""} tier="partner" />
+              {duration && <span className="muted" style={{ marginLeft: "0.5rem", fontSize: "0.8rem" }}>{duration}</span>}
             </span>
             <span className="person-row-actions">
               <form action={startConversation}>
@@ -284,11 +333,19 @@ export default async function NetworkPage(
         </h2>
         {bench.map((c: any) => {
           const otherId = otherIdOf(c);
+          const arrivedNote = c.requester_id === myself ? "You added them" : "They added you";
+          const badge = engagementBadge(otherId);
           return (
           <div key={c.id} className="person-row">
             <span className="person-row-info">
               <Avatar url={avatarOf(c)} name={nameOf(c) || ""} />
               <PersonLink id={otherId} name={nameOf(c) || ""} tier="bench" />
+              <span className="muted" style={{ marginLeft: "0.5rem", fontSize: "0.8rem" }}>{arrivedNote}</span>
+              {badge && (
+                <span className="tag gold" style={{ marginLeft: "0.4rem" }} title={`Community score: ${badge.score}`}>
+                  {badge.label}
+                </span>
+              )}
             </span>
             <span className="person-row-actions">
               <form action={startConversation}>
@@ -310,8 +367,14 @@ export default async function NetworkPage(
 
       <div className="card">
         <h2>Recommended for you</h2>
-        <p className="muted">Colleagues who share at least one of your treatment specialisms.</p>
-        {recommended.map((p) => {
+        <p className="muted">
+          Colleagues who share at least one of your treatment specialisms. Capped to the top 10,
+          recomputed live from shared specialisms and recent activity.
+        </p>
+        <ExpandableList
+          max={5}
+          moreLabel={(n) => `Show ${Math.min(n, recommended.length - 5)} more (up to 10)`}
+          items={recommended.map((p) => {
           const badge = engagementBadge(p.id);
           const shared = sharedSpecialismsWith(p);
           return (
@@ -355,12 +418,12 @@ export default async function NetworkPage(
               <form action={sendConnectionRequest} style={{ display: "inline" }}>
                 <input type="hidden" name="addressee_id" value={p.id} />
                 <input type="hidden" name="tier" value="partner" />
-                <button type="submit">Connect (Partner)</button>
+                <button type="submit" className="btn-tier-partner">Connect (Partner)</button>
               </form>
               <form action={sendConnectionRequest} style={{ display: "inline" }}>
                 <input type="hidden" name="addressee_id" value={p.id} />
                 <input type="hidden" name="tier" value="bench" />
-                <button type="submit" className="secondary">Add to Bench</button>
+                <button type="submit" className="btn-tier-bench">Add to Bench</button>
               </form>
             </div>
             {shared.length > 0 && (
@@ -372,99 +435,20 @@ export default async function NetworkPage(
           </div>
           );
         })}
+        />
         {recommended.length === 0 && (
           <p className="muted">No matches yet. Verified colleagues with overlapping specialisms will show up here.</p>
         )}
       </div>
 
       <div className="card">
-        <h2>Full verified directory ({filteredDirectory.length} of {people.size})</h2>
-        <DirectoryFilterForm
-          q={q}
-          stateFilter={stateFilter}
-          specialismFilter={specialismFilter}
-          degreeFilter={degreeFilter}
-          psypactFilter={psypactFilter}
-          professionFilter={professionFilter}
-          allSpecialisms={allSpecialisms || []}
+        <h2>Full verified directory ({people.size})</h2>
+        <DirectoryBrowser
+          people={directoryEntries}
+          specialismOptions={specialismOptions}
+          sendConnectionRequest={sendConnectionRequest}
+          startConversation={startConversation}
         />
-        <table>
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Profession</th>
-              <th>City / state</th>
-              <th>Specialisms</th>
-              <th>Connection status</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredDirectory.map((p) => {
-              const degree = connectionDegree(p);
-              return (
-              <tr key={p.id}>
-                <td>
-                  <span style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                    <Avatar url={avatarUrlByPath.get(p.avatar_path || "") || null} name={p.full_name} size={30} />
-                    <PersonLink
-                      id={p.id}
-                      name={`${p.credential_prefix ? p.credential_prefix + " " : ""}${p.full_name}`}
-                      tier={degree}
-                    />
-                  </span>
-                  {p.psypact_participating && (
-                    <span className="tag" style={{ marginLeft: "0.4rem" }} title="Holds PSYPACT Authority to Practice Interjurisdictional Telepsychology">
-                      PSYPACT
-                    </span>
-                  )}
-                </td>
-                <td><ProfessionTag profession={professionFor(p.qualification_level)} /></td>
-                <td>{p.primary_practice_city || "-"}{p.primary_state ? `, ${p.primary_state}` : ""}</td>
-                <td style={{ display: "flex", flexWrap: "wrap", gap: "0.25rem" }}>
-                  {[...p.specialisms].slice(0, 3).map((s) => <span key={s} className="tag">{s}</span>)}
-                  {p.specialisms.size > 3 && (
-                    <span className="tag muted" title={[...p.specialisms].slice(3).join(", ")}>
-                      +{p.specialisms.size - 3} more
-                    </span>
-                  )}
-                  {p.specialisms.size === 0 && <span className="muted">-</span>}
-                </td>
-                <td><TierTag tier={degree} /></td>
-                <td>
-                  {connectionByOtherId.has(p.id) ? (
-                    connectionByOtherId.get(p.id).status === "accepted" ? (
-                      <form action={startConversation} style={{ display: "inline" }}>
-                        <input type="hidden" name="participant_ids" value={p.id} />
-                        <input type="hidden" name="title" value={`${p.credential_prefix || ""} ${p.full_name}`.trim()} />
-                        <input type="hidden" name="body" value={`Hi ${p.full_name}, `} />
-                        <button type="submit" className="secondary" style={{ padding: "0.15rem 0.5rem", fontSize: "0.8rem" }}>
-                          Message
-                        </button>
-                      </form>
-                    ) : (
-                      <span className="muted">{connectionByOtherId.get(p.id).status}</span>
-                    )
-                  ) : (
-                    <form action={sendConnectionRequest} style={{ display: "inline" }}>
-                      <input type="hidden" name="addressee_id" value={p.id} />
-                      <input type="hidden" name="tier" value="partner" />
-                      <button type="submit" className="secondary">Connect</button>
-                    </form>
-                  )}
-                </td>
-              </tr>
-              );
-            })}
-            {filteredDirectory.length === 0 && (
-              <tr>
-                <td colSpan={6} className="muted">
-                  {people.size === 0 ? "No verified colleagues yet." : "No colleagues match those filters."}
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
       </div>
     </div>
   );
