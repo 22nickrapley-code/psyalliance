@@ -133,12 +133,14 @@ export default async function SupervisionPage(
             {supervisors.map((p) => (
               <tr key={p.id}>
                 <td>
-                  <span style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                  <span style={{ display: "flex", alignItems: "center", gap: "0.5rem", minWidth: 0 }}>
                     <Avatar url={avatarUrlByPath.get(p.avatar_path || "") || null} name={p.full_name} size={24} />
-                    <a href={`/dashboard/people/${p.id}`} className="person-link">
-                      {p.credential_prefix} {p.full_name}
-                    </a>
-                    , {p.qualification_level}
+                    <span style={{ minWidth: 0 }}>
+                      <a href={`/dashboard/people/${p.id}`} className="person-link">
+                        {p.credential_prefix} {p.full_name}
+                      </a>
+                      {", " + p.qualification_level}
+                    </span>
                   </span>
                 </td>
                 <td>{p.primary_practice_city || "-"}{p.primary_state ? `, ${p.primary_state}` : ""}</td>
@@ -185,12 +187,14 @@ export default async function SupervisionPage(
             {supervisees.map((p) => (
               <tr key={p.id}>
                 <td>
-                  <span style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                  <span style={{ display: "flex", alignItems: "center", gap: "0.5rem", minWidth: 0 }}>
                     <Avatar url={avatarUrlByPath.get(p.avatar_path || "") || null} name={p.full_name} size={24} />
-                    <a href={`/dashboard/people/${p.id}`} className="person-link">
-                      {p.credential_prefix} {p.full_name}
-                    </a>
-                    , {p.qualification_level}
+                    <span style={{ minWidth: 0 }}>
+                      <a href={`/dashboard/people/${p.id}`} className="person-link">
+                        {p.credential_prefix} {p.full_name}
+                      </a>
+                      {", " + p.qualification_level}
+                    </span>
                   </span>
                 </td>
                 <td>{p.primary_practice_city || "-"}{p.primary_state ? `, ${p.primary_state}` : ""}</td>

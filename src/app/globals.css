@@ -168,6 +168,24 @@ a {
   margin-bottom: 0.75rem;
 }
 
+/* Without this, a label long enough to need two lines has no min-width or
+   flex-basis of its own, so its hypothetical (single-line, unwrapped) width
+   doesn't fit next to the checkbox - flex-wrap then bumps the WHOLE label
+   down to its own line as a unit rather than letting it wrap in place, so
+   the checkbox ends up sitting alone with the label orphaned as a separate
+   paragraph below it. Giving the label room to shrink and wrap on the same
+   line fixes it, matching the fix already applied to .person-row-info /
+   .inbox-row-text elsewhere. */
+.checkbox-row label {
+  flex: 1 1 240px;
+  min-width: 0;
+}
+
+.checkbox-row > a {
+  flex: 1 1 150px;
+  min-width: 0;
+}
+
 /* A person/connection list row: avatar + name on the left, one or two
    action buttons on the right. On a narrow screen there often isn't room
    for both on one line - flex-wrap on the ROW (rather than letting each
@@ -889,6 +907,61 @@ tbody tr:hover {
   color: #7a5f30;
 }
 
+/* Tag-toggle picker: a searchable set of pill buttons used in place of a
+   native <select multiple> for choosing several items from a longer list
+   (e.g. Documents' treatment-area picker). A native multi-select needs
+   ctrl/cmd-click to pick more than one and gives no visual sense of what's
+   already selected without scrolling through it - this reads instantly and
+   matches the tag styling used everywhere else in the app. */
+.tag-picker-search {
+  width: 100%;
+  margin-bottom: 0.5rem;
+}
+
+.tag-picker {
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: 0.4rem;
+  max-height: 190px;
+  overflow-y: auto;
+  padding: 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-alt);
+}
+
+.tag-toggle {
+  display: inline-flex;
+  align-items: center;
+  background: #fff;
+  color: var(--text);
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  padding: 0.28rem 0.7rem;
+  font-size: 0.76rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+  white-space: nowrap;
+}
+
+.tag-toggle:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.tag-toggle.selected {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  font-weight: 600;
+}
+
+.tag-toggle.selected:hover {
+  color: #fff;
+}
+
 /* Psychologist / psychiatrist split - kept visually distinct (not red/
    green-alert colors, which already mean something else in this UI) since
    the two professions can't treat each other's patient types and routinely
@@ -978,6 +1051,19 @@ a.person-link.tier-recommended {
 }
 
 .directory-row-person .name {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.directory-row-person .name-primary {
+  overflow-wrap: break-word;
+}
+
+.directory-row-person .name-meta {
+  font-size: 0.8rem;
+  color: var(--muted);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

@@ -56,15 +56,23 @@ export default function UploadForm({
     applyFile(file);
   }
 
-  function handleAreaSelectChange(e: React.ChangeEvent<HTMLSelectElement>) {
-    const values = Array.from(e.target.selectedOptions).map((o) => o.value);
-    const generalJustPicked = values.includes("general") && !selectedAreaValues.includes("general");
-    if (generalJustPicked) {
-      setSelectedAreaValues(["general"]);
-    } else {
-      setSelectedAreaValues(values.filter((v) => v !== "general"));
+  function toggleArea(value: string) {
+    if (value === "general") {
+      setSelectedAreaValues((prev) => (prev.includes("general") ? [] : ["general"]));
+      return;
     }
+    setSelectedAreaValues((prev) => {
+      const withoutGeneral = prev.filter((v) => v !== "general");
+      return withoutGeneral.includes(value)
+        ? withoutGeneral.filter((v) => v !== value)
+        : [...withoutGeneral, value];
+    });
   }
+
+  const [areaFilter, setAreaFilter] = useState("");
+  const filteredAreas = treatmentAreas.filter((t) =>
+    t.value.toLowerCase().includes(areaFilter.trim().toLowerCase())
+  );
 
   return (
     <div className="card">
@@ -110,24 +118,49 @@ export default function UploadForm({
             </div>
           </div>
 
-          <div className="field" style={{ maxWidth: 220 }}>
-            <label htmlFor="treatment_area_ids">Treatment areas</label>
-            <select
-              id="treatment_area_ids"
-              name="treatment_area_ids"
-              multiple
-              size={5}
-              value={isGeneral ? ["general"] : selectedAreaValues}
-              onChange={handleAreaSelectChange}
-              style={{ fontSize: "0.85rem" }}
-            >
-              <option value="general">General (not area-specific)</option>
-              {treatmentAreas.map((t) => (
-                <option key={t.id} value={t.id}>{t.value}</option>
-              ))}
-            </select>
+          <div className="field" style={{ maxWidth: 280 }}>
+            <label htmlFor="treatment_area_search">Treatment areas</label>
+            <input
+              id="treatment_area_search"
+              type="text"
+              placeholder="Search areas…"
+              value={areaFilter}
+              onChange={(e) => setAreaFilter(e.target.value)}
+              className="tag-picker-search"
+              disabled={isGeneral}
+            />
+            <div className="tag-picker">
+              <button
+                type="button"
+                className={`tag-toggle${isGeneral ? " selected" : ""}`}
+                onClick={() => toggleArea("general")}
+              >
+                General (not area-specific)
+              </button>
+              {!isGeneral &&
+                filteredAreas.map((t) => {
+                  const idStr = String(t.id);
+                  const selected = selectedAreaValues.includes(idStr);
+                  return (
+                    <button
+                      key={t.id}
+                      type="button"
+                      className={`tag-toggle${selected ? " selected" : ""}`}
+                      onClick={() => toggleArea(idStr)}
+                    >
+                      {t.value}
+                    </button>
+                  );
+                })}
+              {!isGeneral && filteredAreas.length === 0 && (
+                <span className="muted" style={{ fontSize: "0.78rem" }}>No areas match "{areaFilter}".</span>
+              )}
+            </div>
+            {(isGeneral ? ["general"] : selectedAreaValues).map((v) => (
+              <input key={v} type="hidden" name="treatment_area_ids" value={v} />
+            ))}
             <p className="muted" style={{ marginTop: "0.3rem", marginBottom: 0, fontSize: "0.78rem" }}>
-              {isGeneral ? "Marked General - not tied to any specific area." : "Ctrl/Cmd-click for more than one."}
+              {isGeneral ? "Marked General - not tied to any specific area." : `${selectedAreaValues.length} selected · click to toggle, pick as many as apply.`}
             </p>
 
             <div style={{ marginTop: "1rem" }}>

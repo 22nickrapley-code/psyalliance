@@ -133,7 +133,9 @@ export default async function TownHallIndexPage(
           {general.map((c) => (
             <div key={c.id} className="checkbox-row" style={{ justifyContent: "space-between" }}>
               <Link href={`/dashboard/town-hall/${c.id}`}>{c.name}</Link>
-              {!memberChannelIds.has(c.id) && (
+              {memberChannelIds.has(c.id) ? (
+                <span className="tag" style={{ flex: "0 0 auto" }}>Joined</span>
+              ) : (
                 <form action={joinChannel}>
                   <input type="hidden" name="channel_id" value={c.id} />
                   <button type="submit" style={{ padding: "0.15rem 0.5rem", fontSize: "0.8rem" }}>
@@ -152,7 +154,9 @@ export default async function TownHallIndexPage(
           {specialismChannels.map((c) => (
             <div key={c.id} className="checkbox-row" style={{ justifyContent: "space-between" }}>
               <Link href={`/dashboard/town-hall/${c.id}`}>{c.name}</Link>
-              {!memberChannelIds.has(c.id) && (
+              {memberChannelIds.has(c.id) ? (
+                <span className="tag" style={{ flex: "0 0 auto" }}>Joined</span>
+              ) : (
                 <form action={joinChannel}>
                   <input type="hidden" name="channel_id" value={c.id} />
                   <button type="submit" className="secondary" style={{ padding: "0.15rem 0.5rem", fontSize: "0.8rem" }}>

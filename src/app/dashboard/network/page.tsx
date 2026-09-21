@@ -303,10 +303,17 @@ export default async function NetworkPage(
             <div className="directory-row-person">
               <Avatar url={avatarUrlByPath.get(p.avatar_path || "") || null} name={p.full_name} />
               <span className="name">
-                <PersonLink id={p.id} name={`${p.credential_prefix ? p.credential_prefix + " " : ""}${p.full_name}`} tier="recommended" />
-                {p.qualification_level ? `, ${p.qualification_level}` : ""}
-                {p.primary_practice_city ? `, ${p.primary_practice_city}` : ""}
-                {p.primary_state ? `, ${p.primary_state}` : ""}
+                <span className="name-primary">
+                  <PersonLink id={p.id} name={`${p.credential_prefix ? p.credential_prefix + " " : ""}${p.full_name}`} tier="recommended" />
+                  {p.qualification_level ? `, ${p.qualification_level}` : ""}
+                </span>
+                {(p.primary_practice_city || p.primary_state) && (
+                  <span className="name-meta">
+                    {p.primary_practice_city}
+                    {p.primary_practice_city && p.primary_state ? ", " : ""}
+                    {p.primary_state}
+                  </span>
+                )}
               </span>
             </div>
             <div className="directory-row-badges">
