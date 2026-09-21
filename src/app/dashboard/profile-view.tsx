@@ -51,12 +51,17 @@ export type ProfileViewData = {
 };
 
 function ToggleBadge({ value }: { value: boolean }) {
-  return <span className={`toggle-badge ${value ? "yes" : "no"}`}>{value ? "Yes" : "No"}</span>;
+  return (
+    <span className="oswitch-row">
+      <span className={`oswitch-text ${value ? "yes" : "no"}`}>{value ? "Yes" : "No"}</span>
+      <span className={`oswitch ${value ? "yes" : "no"}`} aria-hidden="true" />
+    </span>
+  );
 }
 
-// One-click version of the same badge, used only on your own profile view -
-// clicking it flips the field immediately via the server action passed in,
-// no need to open Edit Profile just to change a yes/no.
+// One-click version of the same control, used only on your own profile view -
+// clicking the switch flips the field immediately via the server action
+// passed in, no need to open Edit Profile just to change a yes/no.
 function ToggleBadgeButton({
   field,
   value,
@@ -70,8 +75,9 @@ function ToggleBadgeButton({
     <form action={onToggleOpenTo}>
       <input type="hidden" name="field" value={field} />
       <input type="hidden" name="current" value={String(value)} />
-      <button type="submit" className={`toggle-badge toggle-badge-btn ${value ? "yes" : "no"}`}>
-        {value ? "Yes" : "No"}
+      <button type="submit" className="oswitch-row" style={{ background: "none", border: "none", padding: 0, cursor: "pointer" }} aria-pressed={value} title="Click to toggle">
+        <span className={`oswitch-text ${value ? "yes" : "no"}`}>{value ? "Yes" : "No"}</span>
+        <span className={`oswitch oswitch-btn ${value ? "yes" : "no"}`} />
       </button>
     </form>
   );
@@ -219,7 +225,7 @@ export function ProfileView({
               <h3 style={{ marginTop: 0, fontSize: "0.95rem" }}>Open to</h3>
               {onToggleOpenTo && (
                 <p className="muted" style={{ marginTop: "-0.3rem", fontSize: "0.78rem" }}>
-                  Click a Yes/No to flip it instantly.
+                  Flip a switch to change it instantly.
                 </p>
               )}
               <dl>

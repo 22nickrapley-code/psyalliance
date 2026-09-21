@@ -49,19 +49,26 @@ export default function CaseTableRow({
     };
   }
 
+  // Same as cellProps, plus a fixed extra class (used for Primary's left
+  // divider border, which always applies regardless of highlight state).
+  function cellPropsWithClass(field: "primary_need" | "secondary_need" | "tertiary_need", extraClass: string) {
+    const base = cellProps(field);
+    return { ...base, className: [base.className, extraClass].filter(Boolean).join(" ") };
+  }
+
   if (!editing) {
     return (
       <tr className={isHighlighted ? "caseload-row-match" : undefined} style={rowStyle}>
         <td>#{c.id}</td>
-        <td>{c.private_label || <span className="muted">Unlabeled</span>}</td>
+        <td><div className="cl-cell-clamp">{c.private_label || <span className="muted">Unlabeled</span>}</div></td>
         <td>{c.state || <span className="muted">-</span>}</td>
         <td>{c.session_type === "Virtual" ? "Virtual" : c.session_type === "F2F" ? "In-person" : <span className="muted">-</span>}</td>
-        <td>{c.insurance || <span className="muted">-</span>}</td>
+        <td><div className="cl-cell-clamp">{c.insurance || <span className="muted">-</span>}</div></td>
         <td>{c.rate_per_session ? `$${c.rate_per_session}` : <span className="muted">-</span>}</td>
         <td>{c.sessions_per_week ?? <span className="muted">-</span>}</td>
-        <td {...cellProps("primary_need")}>{c.primary_need || <span className="muted">-</span>}</td>
-        <td {...cellProps("secondary_need")}>{c.secondary_need || <span className="muted">-</span>}</td>
-        <td {...cellProps("tertiary_need")}>{c.tertiary_need || <span className="muted">-</span>}</td>
+        <td {...cellPropsWithClass("primary_need", "caseload-col-divide")}><div className="cl-cell-clamp">{c.primary_need || <span className="muted">-</span>}</div></td>
+        <td {...cellProps("secondary_need")}><div className="cl-cell-clamp">{c.secondary_need || <span className="muted">-</span>}</div></td>
+        <td {...cellProps("tertiary_need")}><div className="cl-cell-clamp">{c.tertiary_need || <span className="muted">-</span>}</div></td>
         <td className="case-row-actions">
           <button
             type="button"

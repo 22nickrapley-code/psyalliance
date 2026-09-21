@@ -25,6 +25,11 @@ const COLUMNS = [
 
 const NARROW_COLUMNS = new Set(["No.", "State", "Sesh Type", "Rate/session", "Sessions/wk", ""]);
 
+// A divider separates the identity/logistics columns from the clinical
+// Primary/Secondary/Tertiary need columns - drawn as a left border on the
+// Primary column only, so it reads as a single seam rather than three.
+const DIVIDE_BEFORE = new Set(["Primary"]);
+
 function OrgTable({
   title,
   cases,
@@ -63,9 +68,15 @@ function OrgTable({
         <table className="caseload-table">
           <thead>
             <tr>
-              {COLUMNS.map((col, i) => (
-                <th key={i} className={NARROW_COLUMNS.has(col) ? "caseload-col-narrow" : undefined}>{col}</th>
-              ))}
+              {COLUMNS.map((col, i) => {
+                const classes = [
+                  NARROW_COLUMNS.has(col) ? "caseload-col-narrow" : null,
+                  DIVIDE_BEFORE.has(col) ? "caseload-col-divide" : null,
+                ].filter(Boolean).join(" ") || undefined;
+                return (
+                  <th key={i} className={classes}>{col}</th>
+                );
+              })}
             </tr>
           </thead>
           <tbody>

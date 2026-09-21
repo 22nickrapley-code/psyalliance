@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Avatar from "@/app/dashboard/avatar";
 
 // Client-side "Send a New Message" recipient picker. The full contact list
 // (every colleague, already loaded server-side with zero extra queries per
@@ -19,6 +20,7 @@ export type PickerContact = {
   profession: string;
   specialisms: string[];
   tier: "partner" | "bench" | "recommended" | "none";
+  avatarUrl?: string | null;
 };
 
 const TIER_LABEL: Record<string, string> = {
@@ -169,7 +171,7 @@ export default function RecipientPicker({
         {filtered.map((c) => (
           <label key={c.id} className="recipient-picker-row">
             <input type="checkbox" checked={checked.has(c.id)} onChange={() => toggle(c.id)} />
-            {c.tier !== "none" && <span className={`tier-dot tier-dot-${c.tier}`} />}
+            <Avatar url={c.avatarUrl} name={c.name} size={26} ring={c.tier} />
             <span className={c.tier !== "none" ? `person-link-inline tier-${c.tier}` : "person-link-inline"}>
               {c.credentialPrefix ? `${c.credentialPrefix} ` : ""}
               {c.name}

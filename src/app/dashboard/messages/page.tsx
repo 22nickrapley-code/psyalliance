@@ -1,25 +1,12 @@
 import { createClient } from "@/lib/supabase/server";
 import { startConversation, setConversationReadState, setNotificationReadState } from "./actions";
 import { professionFor } from "@/lib/profession";
+import { resolveAvatarUrls } from "@/lib/avatars";
+import Avatar from "../avatar";
 import UsStateDatalist from "@/components/us-state-datalist";
 import ToggleBox from "@/components/toggle-box";
 import RecipientPicker, { type PickerContact } from "@/components/recipient-picker";
 import type { ReactNode } from "react";
-
-// Same initials logic used in the sidebar/Overview avatar chips, kept local
-// here since it's tiny and this page has its own avatar list (other
-// conversation participants + the "PA" notification badge) rather than the
-// signed-in user's own name.
-function initialsOf(name: string) {
-  return (
-    name
-      .split(/\s+/)
-      .filter(Boolean)
-      .slice(0, 2)
-      .map((p) => p[0]?.toUpperCase())
-      .join("") || "?"
-  );
-}
 
 type Tier = "partner" | "bench" | "recommended" | "none";
 
@@ -29,6 +16,7 @@ type Contact = {
   credential_prefix: string | null;
   qualification_level: string | null;
   primary_state: string | null;
+  avatar_path: string | null;
   specialisms: Set<string>;
 };
 
@@ -38,7 +26,7 @@ type PartnerGroupInfo = {
   open_to_group_consultation: boolean;
 };
 
-// A colleague's name, colored/dotted by connection tier wherever it appears
+// A colleague's name, pill-colored by connection tier wherever it appears
 // in the inbox - same visual language as Overview and Town Hall, so a
 // partner reads blue, bench purple, recommended orange, everywhere at once.
 function TierName({ id, name, tier }: { id: string; name: string; tier: Tier }) {
@@ -47,7 +35,6 @@ function TierName({ id, name, tier }: { id: string; name: string; tier: Tier }) 
   }
   return (
     <a href={`/dashboard/people/${id}`} className={`person-link tier-${tier}`}>
-      <span className={`tier-dot tier-dot-${tier}`} />
       {name}
     </a>
   );
@@ -77,7 +64,7 @@ export default async function MessagesPage(
     supabase.from("conversation_participants").select("conversation_id, last_read_at").eq("profile_id", myself),
     supabase
       .from("public_directory")
-      .select("id, full_name, credential_prefix, qualification_level, primary_state, open_to_group_consultation, category, value"),
+      .select("id, full_name, credential_prefix, qualification_level, primary_state, avatar_path, open_to_group_consultation, category, value"),
     supabase
       .from("connections")
       .select("*")
@@ -110,7 +97,7 @@ export default async function MessagesPage(
     conversationIds.length
       ? supabase
           .from("conversation_participants")
-          .select("conversation_id, profile_id, profile:profile_id(full_name, credential_prefix)")
+          .select("conversation_id, profile_id, profile:profile_id(full_name, credential_prefix, avatar_path)")
           .in("conversation_id", conversationIds)
       : Promise.resolve({ data: [] as any[] }),
     conversationIds.length
@@ -123,13 +110,18 @@ export default async function MessagesPage(
       : Promise.resolve({ data: [] as any[] }),
   ]);
 
-  const otherParticipantsByConversation = new Map<number, { id: string; name: string }[]>();
+  const otherParticipantsByConversation = new Map<number, { id: string; name: string; avatarPath: string | null }[]>();
   for (const p of allParticipants || []) {
     if (p.profile_id === myself) continue;
     const list = otherParticipantsByConversation.get(p.conversation_id) || [];
-    list.push({ id: p.profile_id, name: (p.profile as any)?.full_name || "Unknown" });
+    list.push({ id: p.profile_id, name: (p.profile as any)?.full_name || "Unknown", avatarPath: (p.profile as any)?.avatar_path || null });
     otherParticipantsByConversation.set(p.conversation_id, list);
   }
+
+  const avatarUrlByPath = await resolveAvatarUrls(supabase, [
+    ...(directoryRows || []).map((r: any) => r.avatar_path),
+    ...Array.from(otherParticipantsByConversation.values()).flatMap((list) => list.map((p) => p.avatarPath)),
+  ]);
 
   const latestMessageByConversation = new Map<number, any>();
   for (const m of recentMessages || []) {
@@ -159,6 +151,7 @@ export default async function MessagesPage(
         credential_prefix: row.credential_prefix,
         qualification_level: (row as any).qualification_level,
         primary_state: (row as any).primary_state,
+        avatar_path: (row as any).avatar_path || null,
         specialisms: new Set(),
       });
       groupConsultationById.set(row.id, {
@@ -299,7 +292,8 @@ export default async function MessagesPage(
                 ))
               : "Conversation";
           const singleTier = others.length === 1 ? tierOf(others[0].id) : "none";
-          const avatarLabel = others.length === 1 ? initialsOf(others[0].name) : others.length > 1 ? String(others.length) : "?";
+          const singleAvatarUrl = others.length === 1 ? avatarUrlByPath.get(others[0].avatarPath || "") || null : null;
+          const groupLabel = others.length > 1 ? String(others.length) : "?";
           const latest = latestMessageByConversation.get(c.id);
           const lastRead = lastReadByConversation.get(c.id);
           const unread = !!latest && (!lastRead || new Date(latest.created_at) > new Date(lastRead));
@@ -315,13 +309,14 @@ export default async function MessagesPage(
                 }}
               >
                 <span className="inbox-row-main">
-                  <div
-                    className={`msg-avatar${singleTier === "partner" || singleTier === "bench" ? ` tier-ring-${singleTier}` : ""}`}
-                  >
-                    {avatarLabel}
-                  </div>
+                  {others.length === 1 ? (
+                    <Avatar url={singleAvatarUrl} name={others[0].name} size={38} ring={singleTier} />
+                  ) : (
+                    <div className="msg-avatar">{groupLabel}</div>
+                  )}
                   <span className="inbox-row-text">
-                    <strong>{c.title || nameLabel}</strong>
+                    <strong>{nameLabel}</strong>
+                    {c.title && <span className="muted"> · {c.title}</span>}
                     {needsReply && (
                       <span className="tag gold" style={{ marginLeft: "0.5rem" }}>Needs your reply</span>
                     )}
@@ -374,6 +369,7 @@ export default async function MessagesPage(
     profession: professionFor(c.qualification_level),
     specialisms: Array.from(c.specialisms),
     tier: degreeOf(c),
+    avatarUrl: avatarUrlByPath.get(c.avatar_path || "") || null,
   }));
   const specialismOptions = (allSpecialisms || []).map((s) => s.value);
 

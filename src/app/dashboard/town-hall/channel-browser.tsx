@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import type { ChannelSnapshot, ChannelMessageNode } from "./actions";
+import Avatar from "../avatar";
 
 type Tier = "partner" | "bench" | "recommended" | "none";
 
@@ -114,14 +115,13 @@ export default function ChannelBrowser({
     );
   }
 
-  function AuthorName({ id, name }: { id: string | null; name: string }) {
+  function AuthorName({ id, name, avatarUrl }: { id: string | null; name: string; avatarUrl: string | null }) {
     const tier = id ? tierByAuthorId[id] : undefined;
-    if (!tier || tier === "none") return <strong>{name}</strong>;
     return (
-      <strong className={`tier-${tier}`} style={{ display: "inline-flex", alignItems: "center" }}>
-        <span className={`tier-ring tier-ring-${tier}`} style={{ display: "inline-block", width: 8, height: 8, borderRadius: "50%", marginRight: "0.4rem" }} />
-        {name}
-      </strong>
+      <span style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem" }}>
+        <Avatar url={avatarUrl} name={name} size={24} ring={tier} />
+        {!tier || tier === "none" ? <strong>{name}</strong> : <strong className={`person-link-inline tier-${tier}`}>{name}</strong>}
+      </span>
     );
   }
 
@@ -154,7 +154,7 @@ export default function ChannelBrowser({
     return (
       <div>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: "0.4rem" }}>
-          <AuthorName id={m.authorId} name={m.authorName} />
+          <AuthorName id={m.authorId} name={m.authorName} avatarUrl={m.authorAvatarUrl} />
           <span className="muted" style={{ fontSize: "0.8rem" }}>
             {new Date(m.createdAt).toLocaleString()}
             {m.editedAt && !m.deletedAt ? " (edited)" : ""}
@@ -194,6 +194,13 @@ export default function ChannelBrowser({
     );
   }
 
+  const selectedPill =
+    selectedId != null
+      ? yourChannels.find((c) => c.id === selectedId) ||
+        generalChannels.find((c) => c.id === selectedId) ||
+        specialismChannels.find((c) => c.id === selectedId)
+      : null;
+
   return (
     <div>
       <div className="th-pill-group">
@@ -210,10 +217,24 @@ export default function ChannelBrowser({
         </div>
       </div>
       <div className="th-pill-group">
-        <h3>All specialism channels</h3>
-        <div className="th-pill-row">
-          {specialismChannels.map((c) => <Pill key={c.id} c={c} />)}
-        </div>
+        <label htmlFor="th-specialism-select" style={{ display: "block", fontWeight: 700, marginBottom: "0.4rem" }}>
+          Browse a specialism channel
+        </label>
+        <select
+          id="th-specialism-select"
+          className="th-specialism-select"
+          value={specialismChannels.some((c) => c.id === selectedId) ? String(selectedId) : ""}
+          onChange={(e) => {
+            if (e.target.value) openChannel(Number(e.target.value));
+          }}
+        >
+          <option value="">Choose a specialism channel…</option>
+          {specialismChannels.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}{c.unread > 0 && !readOverrides.has(c.id) ? ` (${c.unread} unread)` : ""}
+            </option>
+          ))}
+        </select>
       </div>
 
       {selectedId != null && (
@@ -224,28 +245,23 @@ export default function ChannelBrowser({
             <>
               <div className="widget-header">
                 <h2 style={{ margin: 0 }}>{snapshot.channel.name}</h2>
-                {(() => {
-                  const pill =
-                    yourChannels.find((c) => c.id === selectedId) ||
-                    generalChannels.find((c) => c.id === selectedId) ||
-                    specialismChannels.find((c) => c.id === selectedId);
-                  if (!pill) return null;
-                  return pill.joined ? (
+                {selectedPill && (
+                  selectedPill.joined ? (
                     <form action={leaveChannel}>
                       <input type="hidden" name="channel_id" value={selectedId} />
-                      <button type="submit" className="secondary" style={{ padding: "0.25rem 0.6rem", fontSize: "0.8rem" }}>
+                      <button type="submit" className="secondary th-join-leave-btn">
                         Leave channel
                       </button>
                     </form>
                   ) : (
                     <form action={joinChannel}>
                       <input type="hidden" name="channel_id" value={selectedId} />
-                      <button type="submit" className="secondary" style={{ padding: "0.25rem 0.6rem", fontSize: "0.8rem" }}>
+                      <button type="submit" className="th-join-leave-btn">
                         Join channel
                       </button>
                     </form>
-                  );
-                })()}
+                  )
+                )}
               </div>
               {snapshot.channel.description && <p className="muted">{snapshot.channel.description}</p>}
 

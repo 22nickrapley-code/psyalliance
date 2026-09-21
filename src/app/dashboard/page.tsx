@@ -6,18 +6,23 @@ import UsStateDatalist from "@/components/us-state-datalist";
 import { caseMonthlyGross, caseMonthlyNet, currency } from "@/lib/finance";
 import { buildTierMap, rankRecommended, type Tier } from "@/lib/tiers";
 import ToggleBox from "@/components/toggle-box";
+import { resolveAvatarUrls } from "@/lib/avatars";
+import Avatar from "./avatar";
 
 const PIE_COLORS = ["#1f4d3f", "#b08d57", "#6b4c6b", "#2456a6", "#a3372c", "#4a4842", "#7a3fa0"];
 
-function TierName({ id, name, tier }: { id: string; name: string; tier: Tier }) {
-  if (tier === "none") {
-    return <a href={`/dashboard/people/${id}`} className="person-link">{name}</a>;
-  }
-  return (
-    <a href={`/dashboard/people/${id}`} className={`person-link tier-${tier}`}>
-      <span className={`tier-dot tier-dot-${tier}`} />
+function TierName({ id, name, tier, avatarUrl }: { id: string; name: string; tier: Tier; avatarUrl?: string | null }) {
+  const link = (
+    <a href={`/dashboard/people/${id}`} className={tier === "none" ? "person-link" : `person-link tier-${tier}`}>
       {name}
     </a>
+  );
+  if (avatarUrl === undefined) return link;
+  return (
+    <span style={{ display: "inline-flex", alignItems: "center", gap: "0.35rem" }}>
+      <Avatar url={avatarUrl} name={name} size={22} ring={tier} />
+      {link}
+    </span>
   );
 }
 
@@ -28,8 +33,9 @@ function ToggleButton({ flag, value, label, compact }: { flag: string; value: bo
       <form action={setProfileFlag} style={{ display: "inline" }}>
         <input type="hidden" name="flag" value={flag} />
         <input type="hidden" name="value" value={(!value).toString()} />
-        <button type="submit" className={`toggle-badge toggle-badge-btn ${value ? "yes" : "no"}`} title="Click to toggle">
-          {value ? "Yes" : "No"}
+        <button type="submit" className="oswitch-row" style={{ background: "none", border: "none", padding: 0, cursor: "pointer" }} aria-pressed={value} title="Click to toggle">
+          <span className={`oswitch-text ${value ? "yes" : "no"}`}>{value ? "Yes" : "No"}</span>
+          <span className={`oswitch oswitch-btn ${value ? "yes" : "no"}`} />
         </button>
       </form>
     </div>
@@ -109,7 +115,7 @@ export default async function DashboardHome(
       .eq("profile_id", myself),
     supabase
       .from("connections")
-      .select("*, requester:requester_id(full_name), addressee:addressee_id(full_name)")
+      .select("*, requester:requester_id(full_name, avatar_path), addressee:addressee_id(full_name, avatar_path)")
       .or(`requester_id.eq.${myself},addressee_id.eq.${myself}`)
       .eq("status", "accepted"),
     supabase.from("profile_lookup_values").select("lookup_value_id, lookup_values(category, value)").eq("profile_id", myself),
@@ -119,7 +125,7 @@ export default async function DashboardHome(
     supabase.from("lookup_values").select("value").eq("category", "session_type").order("value"),
     supabase
       .from("town_hall_messages")
-      .select("id, body, created_at, channel_id, author:author_id(id, full_name), channel:channel_id(name, slug)")
+      .select("id, body, created_at, channel_id, author:author_id(id, full_name, avatar_path), channel:channel_id(name, slug)")
       .is("parent_message_id", null)
       .is("deleted_at", null)
       .order("created_at", { ascending: false })
@@ -157,15 +163,16 @@ export default async function DashboardHome(
     unreadMessageCount > 0;
 
   // ---------- My World: Partners / Bench / Recommended ----------
-  const partners: { id: string; name: string }[] = [];
-  const bench: { id: string; name: string }[] = [];
+  const partners: { id: string; name: string; avatarPath: string | null }[] = [];
+  const bench: { id: string; name: string; avatarPath: string | null }[] = [];
   const connectedIds = new Set<string>();
   for (const c of acceptedConnections || []) {
-    const name = c.requester_id === myself ? (c.addressee as any)?.full_name : (c.requester as any)?.full_name;
+    const other = c.requester_id === myself ? (c.addressee as any) : (c.requester as any);
     const otherId = c.requester_id === myself ? c.addressee_id : c.requester_id;
     connectedIds.add(otherId);
-    if (c.tier === "partner") partners.push({ id: otherId, name });
-    else bench.push({ id: otherId, name });
+    const entry = { id: otherId, name: other?.full_name, avatarPath: other?.avatar_path || null };
+    if (c.tier === "partner") partners.push(entry);
+    else bench.push(entry);
   }
   const tierByOtherId = buildTierMap(acceptedConnections as any, myself);
   const mySpecialisms = new Set(
@@ -179,13 +186,13 @@ export default async function DashboardHome(
   // rule: recommended never shows more than 5 anywhere, recomputed live
   // rather than a fixed list.
   const { data: directoryForRecommended } = mySpecialisms.size > 0
-    ? await supabase.from("public_directory").select("id, full_name, category, value, last_active_at")
+    ? await supabase.from("public_directory").select("id, full_name, category, value, last_active_at, avatar_path")
     : { data: [] as any[] };
-  const recommendedCandidates = new Map<string, { id: string; name: string; sharedCount: number; lastActiveAt: string | null }>();
+  const recommendedCandidates = new Map<string, { id: string; name: string; sharedCount: number; lastActiveAt: string | null; avatarPath: string | null }>();
   for (const row of directoryForRecommended || []) {
     if (row.id === myself || connectedIds.has(row.id) || blockedIds.has(row.id)) continue;
     if (row.category === "treatment_specialism" && mySpecialisms.has(row.value)) {
-      const entry = recommendedCandidates.get(row.id) || { id: row.id, name: row.full_name, sharedCount: 0, lastActiveAt: row.last_active_at };
+      const entry = recommendedCandidates.get(row.id) || { id: row.id, name: row.full_name, sharedCount: 0, lastActiveAt: row.last_active_at, avatarPath: (row as any).avatar_path || null };
       entry.sharedCount += 1;
       recommendedCandidates.set(row.id, entry);
     }
@@ -212,7 +219,7 @@ export default async function DashboardHome(
   const previewConversationIds = [...inboxRows, ...sentRows].map((r: any) => r.conversation.id);
   const [{ data: previewParticipants }, { data: previewMessages }] = await Promise.all([
     previewConversationIds.length
-      ? supabase.from("conversation_participants").select("conversation_id, profile_id, profile:profile_id(full_name)").in("conversation_id", previewConversationIds)
+      ? supabase.from("conversation_participants").select("conversation_id, profile_id, profile:profile_id(full_name, avatar_path)").in("conversation_id", previewConversationIds)
       : Promise.resolve({ data: [] as any[] }),
     previewConversationIds.length
       ? supabase
@@ -223,11 +230,11 @@ export default async function DashboardHome(
           .order("created_at", { ascending: false })
       : Promise.resolve({ data: [] as any[] }),
   ]);
-  const otherPeopleByConversation = new Map<number, { id: string; name: string }[]>();
+  const otherPeopleByConversation = new Map<number, { id: string; name: string; avatarPath: string | null }[]>();
   for (const p of previewParticipants || []) {
     if (p.profile_id === myself) continue;
     const list = otherPeopleByConversation.get(p.conversation_id) || [];
-    list.push({ id: p.profile_id, name: (p.profile as any)?.full_name || "Colleague" });
+    list.push({ id: p.profile_id, name: (p.profile as any)?.full_name || "Colleague", avatarPath: (p.profile as any)?.avatar_path || null });
     otherPeopleByConversation.set(p.conversation_id, list);
   }
   const latestByConversation = new Map<number, any>();
@@ -235,6 +242,19 @@ export default async function DashboardHome(
     if (!latestByConversation.has(m.conversation_id)) latestByConversation.set(m.conversation_id, m);
   }
   const tierOf = (id: string): Tier => tierByOtherId.get(id) || (recommendedCandidates.has(id) ? "recommended" : "none");
+
+  // One batched resolve for every avatar_path referenced anywhere on this
+  // page (My World, Messages preview, Town Hall preview) - per Nick's rule
+  // that a name shown anywhere should carry the person's real picture (or
+  // initials) alongside it, not just colored text.
+  const overviewAvatarUrlByPath = await resolveAvatarUrls(supabase, [
+    ...partners.map((p) => p.avatarPath),
+    ...bench.map((p) => p.avatarPath),
+    ...Array.from(recommendedCandidates.values()).map((r) => r.avatarPath),
+    ...Array.from(otherPeopleByConversation.values()).flatMap((list) => list.map((p) => p.avatarPath)),
+    ...townHallGrouped.map((m: any) => m.author?.avatar_path),
+  ]);
+  const avatarUrlOf = (path: string | null | undefined) => overviewAvatarUrlByPath.get(path || "") || null;
 
   function renderMessageRows(rows: any[]) {
     return (
@@ -249,9 +269,15 @@ export default async function DashboardHome(
             <a key={conv.id} href={`/dashboard/messages/${conv.id}`} className={`ov-feed-row${needsReply ? " needs-reply" : ""}`}>
               <span className="title" style={{ display: "flex", justifyContent: "space-between", gap: "0.5rem" }}>
                 <span>
-                  {conv.title || (others.length > 0
-                    ? others.map((o, i) => <span key={o.id}>{i > 0 && ", "}<TierName id={o.id} name={o.name} tier={tierOf(o.id)} /></span>)
-                    : "Conversation")}
+                  {others.length > 0
+                    ? others.map((o, i) => (
+                        <span key={o.id}>
+                          {i > 0 && ", "}
+                          <TierName id={o.id} name={o.name} tier={tierOf(o.id)} avatarUrl={avatarUrlOf(o.avatarPath)} />
+                        </span>
+                      ))
+                    : "Conversation"}
+                  {conv.title && <span className="muted"> · {conv.title}</span>}
                   {needsReply && <span className="tag gold" style={{ marginLeft: "0.4rem" }}>Needs your reply</span>}
                 </span>
                 {when && (
@@ -283,18 +309,6 @@ export default async function DashboardHome(
   }
   const totalCases = (activeCases || []).length;
   const needEntries = Array.from(needCounts.entries()).sort((a, b) => b[1] - a[1]);
-  const topNeed = needEntries[0]?.[0] || null;
-
-  let caseloadMatches: Array<{ profileId: string; fullName: string; connectionTier: string }> = [];
-  if (topNeed) {
-    const ranked = await computeRankedCandidates(supabase, myself, {
-      specialismValue: topNeed,
-      city: null,
-      state: null,
-      sessionType: null,
-    });
-    caseloadMatches = ranked.slice(0, 5).map((r) => ({ profileId: r.profileId, fullName: r.fullName, connectionTier: r.connectionTier }));
-  }
 
   // Conic-gradient pie built from plain percentages - no charting library
   // needed for a handful of static slices.
@@ -480,8 +494,8 @@ export default async function DashboardHome(
               <strong>{partners.length}</strong>
             </div>
             <p className="ov-tier-names">
-              {partners.length > 0 ? partners.slice(0, 4).map((p, i) => (
-                <span key={p.id}>{i > 0 && ", "}<TierName id={p.id} name={p.name} tier="partner" /></span>
+              {partners.length > 0 ? partners.slice(0, 4).map((p) => (
+                <TierName key={p.id} id={p.id} name={p.name} tier="partner" avatarUrl={avatarUrlOf(p.avatarPath)} />
               )) : "None yet"}
             </p>
             <div className="ov-tier-line">
@@ -489,8 +503,8 @@ export default async function DashboardHome(
               <strong>{bench.length}</strong>
             </div>
             <p className="ov-tier-names">
-              {bench.length > 0 ? bench.slice(0, 4).map((p, i) => (
-                <span key={p.id}>{i > 0 && ", "}<TierName id={p.id} name={p.name} tier="bench" /></span>
+              {bench.length > 0 ? bench.slice(0, 4).map((p) => (
+                <TierName key={p.id} id={p.id} name={p.name} tier="bench" avatarUrl={avatarUrlOf(p.avatarPath)} />
               )) : "None yet"}
             </p>
             <div className="ov-tier-line">
@@ -501,8 +515,8 @@ export default async function DashboardHome(
               </strong>
             </div>
             <p className="ov-tier-names" style={{ marginBottom: 0 }}>
-              {recommendedTop5.length > 0 ? recommendedTop5.map((p, i) => (
-                <span key={p.id}>{i > 0 && ", "}<TierName id={p.id} name={p.name} tier="recommended" /></span>
+              {recommendedTop5.length > 0 ? recommendedTop5.map((p) => (
+                <TierName key={p.id} id={p.id} name={p.name} tier="recommended" avatarUrl={avatarUrlOf(p.avatarPath)} />
               )) : "None yet"}
             </p>
           </div>
@@ -533,7 +547,7 @@ export default async function DashboardHome(
               <a key={m.id} href={`/dashboard/town-hall/${m.channel_id}`} className="ov-feed-row">
                 <span className="title">
                   <span className="tag" style={{ marginRight: "0.4rem" }}>{m.channel?.name || "Town Hall"}</span>
-                  <TierName id={m.author?.id || ""} name={m.author?.full_name || "Colleague"} tier={m.author?.id ? tierOf(m.author.id) : "none"} />
+                  <TierName id={m.author?.id || ""} name={m.author?.full_name || "Colleague"} tier={m.author?.id ? tierOf(m.author.id) : "none"} avatarUrl={avatarUrlOf(m.author?.avatar_path)} />
                 </span>
                 <span className="snippet">{m.body}</span>
               </a>
@@ -600,18 +614,6 @@ export default async function DashboardHome(
                     <div className="label">Needs</div>
                   </div>
                 </div>
-                {caseloadMatches.length > 0 && (
-                  <div style={{ marginTop: "0.75rem" }}>
-                    <h3 style={{ fontSize: "0.78rem", marginBottom: "0.3rem" }}>Matched for {topNeed}</h3>
-                    <div className="ov-chip-list">
-                      {caseloadMatches.slice(0, 4).map((m) => (
-                        <a key={m.profileId} href={`/dashboard/people/${m.profileId}`} className={`chip${m.connectionTier !== "none" ? " chip-match" : ""}`}>
-                          {m.fullName}
-                        </a>
-                      ))}
-                    </div>
-                  </div>
-                )}
               </>
             ) : (
               <p className="muted">Add active clients on the Caseload page to see your distribution here.</p>

@@ -242,7 +242,7 @@ export default async function NetworkPage(
                     items={incoming.map((c: any) => (
                       <div key={c.id} className="person-row">
                         <span className="person-row-info">
-                          <Avatar url={avatarOf(c)} name={nameOf(c) || ""} />
+                          <Avatar url={avatarOf(c)} name={nameOf(c) || ""} ring={c.tier} />
                           <PersonLink id={otherIdOf(c)} name={nameOf(c) || ""} /> wants to connect as <TierTag tier={c.tier} />
                         </span>
                         <span className="person-row-actions">
@@ -272,7 +272,7 @@ export default async function NetworkPage(
                     items={outgoing.map((c: any) => (
                       <div key={c.id} className="person-row">
                         <span className="person-row-info">
-                          <Avatar url={avatarOf(c)} name={nameOf(c) || ""} />
+                          <Avatar url={avatarOf(c)} name={nameOf(c) || ""} ring={c.tier} />
                           <PersonLink id={otherIdOf(c)} name={nameOf(c) || ""} /> - request sent as <TierTag tier={c.tier} />
                         </span>
                         <span className="person-row-actions">
@@ -304,7 +304,7 @@ export default async function NetworkPage(
           return (
           <div key={c.id} className="person-row">
             <span className="person-row-info">
-              <Avatar url={avatarOf(c)} name={nameOf(c) || ""} />
+              <Avatar url={avatarOf(c)} name={nameOf(c) || ""} ring="partner" />
               <PersonLink id={otherId} name={nameOf(c) || ""} tier="partner" />
               {duration && <span className="muted" style={{ marginLeft: "0.5rem", fontSize: "0.8rem" }}>{duration}</span>}
             </span>
@@ -338,7 +338,7 @@ export default async function NetworkPage(
           return (
           <div key={c.id} className="person-row">
             <span className="person-row-info">
-              <Avatar url={avatarOf(c)} name={nameOf(c) || ""} />
+              <Avatar url={avatarOf(c)} name={nameOf(c) || ""} ring="bench" />
               <PersonLink id={otherId} name={nameOf(c) || ""} tier="bench" />
               <span className="muted" style={{ marginLeft: "0.5rem", fontSize: "0.8rem" }}>{arrivedNote}</span>
               {badge && (
@@ -380,7 +380,7 @@ export default async function NetworkPage(
           return (
           <div key={p.id} className="directory-row">
             <div className="directory-row-person">
-              <Avatar url={avatarUrlByPath.get(p.avatar_path || "") || null} name={p.full_name} />
+              <Avatar url={avatarUrlByPath.get(p.avatar_path || "") || null} name={p.full_name} ring="recommended" />
               <span className="name">
                 <span className="name-primary">
                   <PersonLink id={p.id} name={`${p.credential_prefix ? p.credential_prefix + " " : ""}${p.full_name}`} tier="recommended" />

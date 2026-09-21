@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { resolveAvatarUrls } from "@/lib/avatars";
 
 // A plain `throw` inside a server action wired to a bare <form action={fn}>
 // crashes the whole page with Next.js's generic error screen instead of showing
@@ -174,6 +175,7 @@ export type ChannelMessageNode = {
   id: number;
   authorId: string | null;
   authorName: string;
+  authorAvatarUrl: string | null;
   body: string;
   createdAt: string;
   editedAt: string | null;
@@ -210,12 +212,14 @@ export async function getChannelSnapshot(channelId: number): Promise<{
     supabase.from("town_hall_channels").select("id, name, description").eq("id", channelId).maybeSingle(),
     supabase
       .from("town_hall_messages")
-      .select("*, author:author_id(full_name, credential_prefix)")
+      .select("*, author:author_id(full_name, credential_prefix, avatar_path)")
       .eq("channel_id", channelId)
       .order("created_at"),
     supabase.from("town_hall_reactions").select("message_id, reactor_id, reaction"),
   ]);
   if (!channel) return { error: "Channel not found" };
+
+  const avatarUrlByPath = await resolveAvatarUrls(supabase, (messages || []).map((m: any) => m.author?.avatar_path));
 
   const reactionsByMessage = new Map<number, { thumbs_up: number; heart: number; thumbs_down: number; mine: string | null }>();
   for (const r of reactions || []) {
@@ -241,6 +245,7 @@ export async function getChannelSnapshot(channelId: number): Promise<{
     id: m.id,
     authorId: m.author_id,
     authorName: authorNameOf(m),
+    authorAvatarUrl: m.deleted_at ? null : avatarUrlByPath.get(m.author?.avatar_path || "") || null,
     body: m.body,
     createdAt: m.created_at,
     editedAt: m.edited_at,

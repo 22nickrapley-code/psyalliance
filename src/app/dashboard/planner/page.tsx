@@ -157,9 +157,9 @@ export default async function PlannerPage(
 
       <SinglePatientReferral supabase={supabase} myself={myself} query={searchParams.spr || ""} paramName="spr" />
 
-      <div className="card">
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "0.75rem" }}>
-          <h2 style={{ margin: 0 }}>Recommended by PsyAlliance</h2>
+      <div className="panel-card">
+        <div className="panel-card-header">
+          <h2>Recommended by PsyAlliance</h2>
           <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", flexWrap: "wrap" }}>
             <span className="muted" style={{ fontSize: "0.85rem" }}>Match insurance:</span>
             <div className="match-toggle-group" style={{ background: "var(--bg)", border: "1px solid var(--border)" }}>
@@ -185,15 +185,15 @@ export default async function PlannerPage(
         </p>
 
         <div style={{ overflowX: "auto" }}>
-          <table>
+          <table className="caseload-table">
             <thead>
               <tr>
-                <th>No.</th>
+                <th className="caseload-col-narrow">No.</th>
                 <th>Client identifier</th>
                 <th>Recommended #1</th>
                 <th>Recommended #2</th>
                 <th>Recommended #3</th>
-                <th>Assigned</th>
+                <th className="caseload-col-divide">Assigned</th>
                 <th>Message</th>
                 <th>Send Practitioner Details to Patient</th>
               </tr>
@@ -239,7 +239,7 @@ export default async function PlannerPage(
                       </td>
                     );
                   })}
-                  <td>
+                  <td className="caseload-col-divide">
                     {row.assigned ? (
                       <>
                         <a href={`/dashboard/people/${row.assigned.assigned_profile_id}`}>
@@ -305,17 +305,19 @@ export default async function PlannerPage(
         </div>
       </div>
 
-      <div className="card">
-        <h2>Planner (Team)</h2>
+      <div className="panel-card">
+        <div className="panel-card-header">
+          <h2>Planner (Team)</h2>
+        </div>
         <p className="muted">Every colleague currently carrying at least one assigned referral from you.</p>
-        <table>
+        <table className="caseload-table">
           <thead>
             <tr>
-              <th>Relationship</th>
+              <th className="caseload-col-narrow">Relationship</th>
               <th>Team psychologist</th>
-              <th>Total no. patients</th>
+              <th className="caseload-col-narrow">Total no. patients</th>
               <th>Clients</th>
-              <th>Assignment completed satisfactorily</th>
+              <th className="caseload-col-divide">Assignment completed satisfactorily</th>
             </tr>
           </thead>
           <tbody>
@@ -330,7 +332,7 @@ export default async function PlannerPage(
                   ))}
                   {t.clientLabels.length > 5 && <span className="muted">+{t.clientLabels.length - 5} more</span>}
                 </td>
-                <td>
+                <td className="caseload-col-divide">
                   <form action={rateAssignmentSatisfaction} style={{ display: "inline" }}>
                     <input type="hidden" name="id" value={t.latestId} />
                     <input type="hidden" name="rating" value="down" />

@@ -1106,43 +1106,49 @@ a.person-link:hover {
   text-decoration: underline;
 }
 
-/* Name colored by connection tier, for list contexts (My Team-style
-   Partner/Bench/Recommended groupings) where the color itself communicates
-   the tier without a separate tag pill next to every name. */
-a.person-link.tier-partner {
+/* Name pill: a person's name gets the SAME soft-background pill treatment
+   as the Partner/Bench/Recommended tag chips, directly behind the name
+   text, instead of a small dot beside it - this is the one name treatment
+   used everywhere a tier-connected person's name appears (Overview,
+   Messages, Network, Caseload/Planner matches, Town Hall authors, People
+   profile links). Supervision's list is the one deliberate exception - see
+   its own page - names there stay plain. */
+a.person-link.tier-partner,
+.person-link-inline.tier-partner {
+  background: var(--tier-partner-soft);
   color: var(--tier-partner);
 }
 
-a.person-link.tier-bench {
+a.person-link.tier-bench,
+.person-link-inline.tier-bench {
+  background: var(--tier-bench-soft);
   color: var(--tier-bench);
 }
 
-a.person-link.tier-recommended {
+a.person-link.tier-recommended,
+.person-link-inline.tier-recommended {
+  background: var(--tier-recommended-soft);
   color: var(--tier-recommended);
 }
 
-/* Small colored dot before a name in list/text contexts without an avatar
-   (Messages preview, Town Hall author lines, My World name lists) - the
-   text-only equivalent of the colored ring around an avatar. */
-.tier-dot {
-  display: inline-block;
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  margin-right: 0.32rem;
-  flex: 0 0 auto;
+a.person-link.tier-partner,
+a.person-link.tier-bench,
+a.person-link.tier-recommended,
+.person-link-inline.tier-partner,
+.person-link-inline.tier-bench,
+.person-link-inline.tier-recommended {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.1rem 0.55rem;
+  border-radius: 999px;
+  font-weight: 600;
+  line-height: 1.5;
 }
 
-.tier-dot-partner {
-  background: var(--tier-partner);
-}
-
-.tier-dot-bench {
-  background: var(--tier-bench);
-}
-
-.tier-dot-recommended {
-  background: var(--tier-recommended);
+a.person-link.tier-partner:hover,
+a.person-link.tier-bench:hover,
+a.person-link.tier-recommended:hover {
+  text-decoration: underline;
 }
 
 /* Colored ring around an avatar circle - "circle around them" for partner/
@@ -1183,18 +1189,6 @@ a.person-link.tier-recommended {
    label), so it can't use a.person-link. */
 .person-link-inline {
   font-weight: 600;
-}
-
-.person-link-inline.tier-partner {
-  color: var(--tier-partner);
-}
-
-.person-link-inline.tier-bench {
-  color: var(--tier-bench);
-}
-
-.person-link-inline.tier-recommended {
-  color: var(--tier-recommended);
 }
 
 /* Compact recipient picker (Messages "Send a New Message"): a single
@@ -1563,24 +1557,76 @@ a.person-link.tier-recommended {
   margin-bottom: 1.25rem;
 }
 
-.toggle-badge {
+.oswitch-row {
   display: inline-flex;
-  justify-content: center;
-  min-width: 34px;
-  border-radius: 999px;
-  padding: 0.12rem 0.5rem;
-  font-size: 0.72rem;
-  font-weight: 700;
+  align-items: center;
+  gap: 0.5rem;
 }
 
-.toggle-badge.yes {
-  background: var(--success-soft);
+.oswitch-text {
+  font-size: 0.76rem;
+  font-weight: 700;
+  min-width: 24px;
+}
+
+.oswitch-text.yes {
   color: var(--success);
 }
 
-.toggle-badge.no {
-  background: var(--bg-alt);
+.oswitch-text.no {
   color: var(--muted);
+}
+
+/* Visible on/off switch - a track with a sliding knob, used for the four
+   "Open to" fields. .oswitch-btn is the clickable (own-profile) version;
+   plain .oswitch with no -btn modifier is the read-only version shown on
+   someone else's profile, dimmed and inert so it doesn't look clickable. */
+.oswitch {
+  position: relative;
+  display: inline-block;
+  width: 38px;
+  height: 21px;
+  border-radius: 999px;
+  border: none;
+  padding: 0;
+  flex: 0 0 auto;
+  background: var(--border);
+  transition: background 0.15s ease;
+  vertical-align: middle;
+}
+
+.oswitch.yes {
+  background: var(--success);
+}
+
+.oswitch::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  transition: left 0.15s ease;
+}
+
+.oswitch.yes::after {
+  left: 19px;
+}
+
+.oswitch-btn {
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.oswitch-btn:hover {
+  filter: brightness(0.94);
+}
+
+.oswitch:not(.oswitch-btn) {
+  opacity: 0.65;
 }
 
 /* ---------- Caseload: refined active-cases quick reference ---------- */
@@ -1949,12 +1995,19 @@ a.person-link.tier-recommended {
 }
 
 .ov-tier-names {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem;
   color: var(--muted);
   font-size: 0.72rem;
   margin: -0.05rem 0 0.4rem;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+}
+
+.ov-tier-names .person-link,
+.ov-tier-names .person-link-inline {
+  font-size: 0.72rem;
+  padding: 0.05rem 0.4rem;
 }
 
 .ov-box-toggle {
@@ -2159,12 +2212,6 @@ a.person-link.tier-recommended {
   align-items: center;
   padding: 0.3rem 0;
   font-size: 0.85rem;
-}
-
-.toggle-badge-btn {
-  border: none;
-  cursor: pointer;
-  font-family: inherit;
 }
 
 .pie-chart {
@@ -2935,6 +2982,36 @@ a.person-link.tier-recommended {
   color: var(--muted);
 }
 
+/* ---------- Shared "panel card with header bar" - the same boxed-card,
+   bled-edge title bar look as the Caseload org tables below, reused by
+   Planner so its tables read as the same design system with its own
+   distinct columns/actions. ---------- */
+.panel-card {
+  margin-bottom: 1.25rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md, 10px);
+  background: var(--surface);
+  padding: 1rem 1rem 0.75rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.panel-card-header {
+  margin: -1rem -1rem 0.75rem;
+  padding: 0.55rem 1rem;
+  background: var(--bg-alt);
+  border-radius: var(--radius-md, 10px) var(--radius-md, 10px) 0 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.panel-card-header h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+
 /* ---------- Caseload: per-organization spreadsheet-style tables ---------- */
 /* Each organization gets its own visually separate boxed card - a border,
    soft background, and padding - rather than just a heading and a flat
@@ -2953,7 +3030,10 @@ a.person-link.tier-recommended {
 }
 
 .caseload-org-table h3 {
-  margin: 0 0 0.6rem;
+  margin: -1rem -1rem 0.6rem;
+  padding: 0.55rem 1rem;
+  background: var(--bg-alt);
+  border-radius: var(--radius-md, 10px) var(--radius-md, 10px) 0 0;
   font-size: 1rem;
 }
 
@@ -2964,26 +3044,35 @@ a.person-link.tier-recommended {
 
 .caseload-org-table-warn h3 {
   color: #b3392c;
+  background: rgba(179, 57, 44, 0.1);
 }
 
 .caseload-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.85rem;
+  font-size: 0.78rem;
 }
 
+/* white-space was forcing every header onto one line while narrow columns
+   were capped to 78px, so long labels like "Rate/session" spilled past
+   their column and visually overlapped the next one. Letting headers wrap
+   onto two lines keeps each one inside its own column. */
 .caseload-table th {
   text-align: center;
-  padding: 0.4rem 0.5rem;
+  padding: 0.3rem 0.4rem;
   border-bottom: 1px solid var(--border-strong);
-  white-space: nowrap;
+  white-space: normal;
+  font-size: 0.72rem;
+  line-height: 1.2;
+  vertical-align: bottom;
 }
 
 .caseload-table td {
-  padding: 0.4rem 0.5rem;
+  padding: 0.25rem 0.5rem;
   border-bottom: 1px solid var(--border);
   vertical-align: middle;
   text-align: center;
+  line-height: 1.25;
 }
 
 /* Narrow columns (No., State, session type, rate, sessions/wk, actions)
@@ -2994,11 +3083,22 @@ a.person-link.tier-recommended {
   max-width: 78px;
 }
 
-/* Row banding - alternating a faint tint - so a long table stays readable
-   at a glance without following gridlines row by row. Skipped on a
-   highlighted row, whose own tier-matched color takes priority. */
-.caseload-table tbody tr:nth-child(even) {
-  background: var(--bg-alt);
+/* Visual divider ahead of the Primary/Secondary/Tertiary treatment-area
+   columns, separating identity/logistics data from clinical data. */
+.caseload-table th.caseload-col-divide,
+.caseload-table td.caseload-col-divide {
+  border-left: 1px solid var(--border-strong);
+}
+
+/* Clamps any cell's text to at most two lines (row height stays uniform
+   across every row in the table, rather than growing for whichever client
+   happens to have a longer label or need). */
+.cl-cell-clamp {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .caseload-row-match {
@@ -3223,4 +3323,21 @@ a.person-link.tier-recommended {
   margin-top: 1.5rem;
   padding-top: 1.5rem;
   border-top: 1px solid var(--border);
+}
+
+/* All specialism channels collapse to a single dropdown rather than a long
+   pill row - per Nick's note that scrolling past dozens of specialism
+   pills to reach the conversation below made the page hard to use. This
+   keeps the vertical distance from "pick a channel" to "see its
+   conversation" short in the common case. */
+.th-specialism-select {
+  max-width: 420px;
+}
+
+/* Join/Leave needs to read as an obvious, primary action right at the top
+   of the conversation panel - not a small secondary button easy to miss. */
+.th-join-leave-btn {
+  padding: 0.4rem 0.9rem;
+  font-size: 0.85rem;
+  font-weight: 700;
 }

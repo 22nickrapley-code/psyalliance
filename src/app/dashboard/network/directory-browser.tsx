@@ -165,11 +165,10 @@ export default function DirectoryBrowser({
       <div className="directory-condensed-list">
         {pageRows.map((p) => (
           <div key={p.id} className="directory-condensed-row">
-            <Avatar url={p.avatarUrl} name={p.name} size={38} />
+            <Avatar url={p.avatarUrl} name={p.name} size={38} ring={p.tier} />
             <div className="directory-condensed-main">
               <div className="directory-condensed-line1">
                 <a href={`/dashboard/people/${p.id}`} className={p.tier !== "none" ? `person-link tier-${p.tier}` : "person-link"}>
-                  {p.tier !== "none" && <span className={`tier-dot tier-dot-${p.tier}`} />}
                   {p.credentialPrefix ? `${p.credentialPrefix} ` : ""}
                   {p.name}
                 </a>
