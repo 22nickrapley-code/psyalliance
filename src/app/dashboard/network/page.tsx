@@ -373,7 +373,7 @@ export default async function NetworkPage(
         </p>
         <ExpandableList
           max={5}
-          moreLabel={(n) => `Show ${Math.min(n, recommended.length - 5)} more (up to 10)`}
+          moreLabelSuffix=" (up to 10)"
           items={recommended.map((p) => {
           const badge = engagementBadge(p.id);
           const shared = sharedSpecialismsWith(p);

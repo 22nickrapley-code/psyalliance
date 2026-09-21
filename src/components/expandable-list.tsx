@@ -9,12 +9,16 @@ import { useState } from "react";
 export default function ExpandableList({
   items,
   max = 3,
-  moreLabel,
+  moreLabelSuffix = "",
   fewerLabel = "Show fewer",
 }: {
   items: React.ReactNode[];
   max?: number;
-  moreLabel?: (remaining: number) => string;
+  // Plain text appended after "Show N more" (e.g. " (up to 10)") - kept as a
+  // string rather than a callback because this is a client component and a
+  // function prop can't be passed to it from a server component (React
+  // can't serialize a function across that boundary).
+  moreLabelSuffix?: string;
   fewerLabel?: string;
 }) {
   const [expanded, setExpanded] = useState(false);
@@ -29,7 +33,7 @@ export default function ExpandableList({
           <span className="case-list-toggle-arrow" style={{ transform: expanded ? "rotate(90deg)" : "none" }}>
             &#9656;
           </span>
-          {expanded ? fewerLabel : moreLabel ? moreLabel(remaining) : `Show ${remaining} more`}
+          {expanded ? fewerLabel : `Show ${remaining} more${moreLabelSuffix}`}
         </button>
       )}
     </>
