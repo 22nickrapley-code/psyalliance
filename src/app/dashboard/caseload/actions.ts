@@ -417,6 +417,31 @@ export async function getCaseloadQuickMatch(specialismValue: string): Promise<{
   };
 }
 
+// Permanent delete - only ever offered for already-archived clients (Past
+// Clients box), never active ones, and the is_active=false check below
+// enforces that server-side too, not just in the UI, so this can't be used
+// as a backdoor around archiving first.
+export async function deleteCase(formData: FormData) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not signed in");
+
+  const id = Number(formData.get("id"));
+
+  const { error } = await supabase
+    .from("caseload_clients")
+    .delete()
+    .eq("id", id)
+    .eq("profile_id", user.id)
+    .eq("is_active", false);
+  if (error) caseloadError(error.message);
+
+  revalidatePath("/dashboard/caseload");
+  revalidatePath("/dashboard/income");
+}
+
 export async function reactivateCase(formData: FormData) {
   const supabase = await createClient();
   const {

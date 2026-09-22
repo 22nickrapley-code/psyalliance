@@ -33,6 +33,19 @@
   --tier-bench-soft: #f2e8f7;
   --tier-recommended: #b3591a;
   --tier-recommended-soft: #fbeee1;
+  /* A "this is a match" signal - specialism/insurance overlap, ranked
+     candidates, single-patient-referral results - is a different concept
+     from the Recommended connection tier and needs its own color so the
+     two don't read as the same thing (Nick's note: seeing the same orange
+     for "match" and for "Recommended" is confusing). Teal, not used
+     anywhere else in the palette. */
+  --match: #0f766e;
+  --match-soft: #e1f3f1;
+  /* External news, on the Overview ticker - a third, distinct color so
+     "someone in the network did something" (plain --tag colors) and
+     "external psychology news" never look like the same kind of thing. */
+  --news: #2456a6;
+  --news-soft: #e5edf9;
   --radius-sm: 6px;
   --radius: 10px;
   --radius-lg: 16px;
@@ -320,7 +333,11 @@ button, .btn {
   display: inline-block;
   background: var(--accent);
   color: #fff;
-  border: none;
+  /* 1px transparent, not none - .secondary below has a real 1px border, and
+     a mismatched border width is exactly what made buttons sitting side by
+     side (e.g. "+ Add a client" vs "Past clients") render at different
+     heights even with identical padding. */
+  border: 1px solid transparent;
   padding: 0.6rem 1.2rem;
   border-radius: var(--radius-sm);
   font-size: 0.9rem;
@@ -1004,6 +1021,11 @@ tbody tr:hover {
   color: #7a5f30;
 }
 
+.tag.danger {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
 /* Tag-toggle picker: a searchable set of pill buttons used in place of a
    native <select multiple> for choosing several items from a longer list
    (e.g. Documents' treatment-area picker). A native multi-select needs
@@ -1172,16 +1194,15 @@ a.person-link.tier-recommended:hover {
 
 /* Unread / "needs your reply" row highlight - deliberately gold, not the
    tier-recommended orange, so the two meanings (unread vs. connection tier)
-   never collide on the same row. */
+   never collide on the same row. The tan background plus the gold "Needs
+   your reply" tag are the unread signal on their own - no text-color
+   override here, so names keep the exact same tier pill/color and avatar
+   ring whether the row is read or unread. */
 .needs-reply {
   background: var(--gold-soft);
   border-radius: var(--radius-md, 8px);
   padding-left: 0.5rem;
   margin-left: -0.5rem;
-}
-
-.needs-reply .title {
-  color: #7a5f30 !important;
 }
 
 /* Plain (non-link) inline name text colored by tier - for contexts like the
@@ -1205,8 +1226,8 @@ a.person-link.tier-recommended:hover {
 .recipient-picker-row {
   display: flex;
   align-items: center;
-  gap: 0.45rem;
-  padding: 0.42rem 0.6rem;
+  gap: 0.65rem;
+  padding: 0.42rem 0.7rem;
   border-bottom: 1px solid var(--border);
   font-size: 0.85rem;
   font-weight: 400;
@@ -1342,7 +1363,9 @@ a.person-link.tier-recommended:hover {
 .directory-condensed-actions {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.35rem;
   flex: 0 0 auto;
 }
 
@@ -1375,6 +1398,21 @@ a.person-link.tier-recommended:hover {
   padding: 1.5rem 1.75rem;
   border-radius: var(--radius-lg) var(--radius-lg) 0 0;
   background: linear-gradient(120deg, var(--accent), #2f6b57);
+}
+
+/* Blend the connection tier into the banner itself, so it's obvious at a
+   glance (not just from the small "Partner" tag below) - the plain green
+   is reserved for colleagues with no tier relationship yet. */
+.profile-view-banner-partner {
+  background: linear-gradient(120deg, var(--accent), var(--tier-partner));
+}
+
+.profile-view-banner-bench {
+  background: linear-gradient(120deg, var(--accent), var(--tier-bench));
+}
+
+.profile-view-banner-recommended {
+  background: linear-gradient(120deg, var(--accent), var(--tier-recommended));
 }
 
 .profile-view-avatar-ring {
@@ -1424,6 +1462,91 @@ a.person-link.tier-recommended:hover {
   color: #fff;
 }
 
+/* Endorsements - styled like a LinkedIn-style recommendation list instead
+   of a plain stacked text block: each one gets its own soft card, the
+   quote gets a left accent bar, and the "endorse" trigger reads as a real
+   button rather than a bare details/summary link. */
+.endorsement-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.endorsement-item {
+  display: flex;
+  gap: 0.65rem;
+  padding: 0.7rem 0.8rem;
+  background: var(--bg-alt);
+  border-radius: var(--radius-md, 10px);
+}
+
+.endorsement-body-wrap {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.endorsement-author {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.endorsement-date {
+  font-weight: 400;
+  color: var(--muted);
+  font-size: 0.7rem;
+}
+
+.endorsement-body {
+  margin: 0.3rem 0 0;
+  padding-left: 0.6rem;
+  border-left: 2px solid var(--accent-soft-border, var(--border-strong));
+  font-size: 0.85rem;
+  font-style: italic;
+  color: var(--text-soft, var(--text));
+  line-height: 1.4;
+}
+
+.endorsement-compose-trigger summary {
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--accent);
+  list-style: none;
+}
+
+.endorsement-compose-trigger summary::-webkit-details-marker {
+  display: none;
+}
+
+.endorsement-compose-trigger summary::before {
+  content: "+";
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  margin-right: 0.4rem;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.endorsement-compose-panel {
+  margin-top: 0.6rem;
+  padding: 0.7rem 0.8rem;
+  background: var(--bg-alt);
+  border-radius: var(--radius-md, 10px);
+}
+
 .location-match-tag {
   display: inline-flex;
   align-items: center;
@@ -1441,6 +1564,56 @@ a.person-link.tier-recommended:hover {
 .profile-view-match-toggle {
   flex: 0 0 auto;
   margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+/* Small reusable "what does this do" affordance - a circular (?) badge that
+   shows a short explanation on hover/focus, pure CSS (no JS), so it can be
+   dropped in wherever a control's purpose isn't self-evident. */
+.info-tip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.25);
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 700;
+  cursor: help;
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.info-tip::after {
+  content: attr(data-tip);
+  position: absolute;
+  bottom: 135%;
+  right: 0;
+  background: var(--text);
+  color: #fff;
+  padding: 0.45rem 0.65rem;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  font-weight: 400;
+  line-height: 1.35;
+  white-space: normal;
+  width: max-content;
+  max-width: 220px;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.12s ease;
+  z-index: 20;
+}
+
+.info-tip:hover::after,
+.info-tip:focus::after {
+  opacity: 1;
+  visibility: visible;
 }
 
 .match-toggle-group {
@@ -1541,16 +1714,16 @@ a.person-link.tier-recommended:hover {
 }
 
 .chip.chip-match {
-  background: var(--tier-recommended-soft);
-  border-color: var(--tier-recommended);
-  color: var(--tier-recommended);
+  background: var(--match-soft);
+  border-color: var(--match);
+  color: var(--match);
   font-weight: 600;
 }
 
 .relevance-banner {
-  background: var(--tier-recommended-soft);
-  border: 1px solid var(--tier-recommended);
-  color: #7a3d10;
+  background: var(--match-soft);
+  border: 1px solid var(--match);
+  color: #0b5852;
   border-radius: var(--radius);
   padding: 0.65rem 0.9rem;
   font-size: 0.85rem;
@@ -1996,8 +2169,8 @@ a.person-link.tier-recommended:hover {
 
 .ov-tier-names {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
+  flex-direction: column;
+  align-items: flex-start;
   gap: 0.3rem;
   color: var(--muted);
   font-size: 0.72rem;
@@ -3029,12 +3202,54 @@ a.person-link.tier-recommended:hover {
   margin-bottom: 0;
 }
 
-.caseload-org-table h3 {
+/* Title bar for each org table - now a flex row so the org name sits on
+   the left and the small stat boxes (Total Clients / Sessions p.w. / Avg.
+   rate) sit on the right, both inside the same full-bleed background bar. */
+.caseload-org-table-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
   margin: -1rem -1rem 0.6rem;
-  padding: 0.55rem 1rem;
+  padding: 0.5rem 1rem;
   background: var(--bg-alt);
   border-radius: var(--radius-md, 10px) var(--radius-md, 10px) 0 0;
+}
+
+.caseload-org-table-head h3 {
+  margin: 0;
   font-size: 1rem;
+}
+
+.caseload-org-stats {
+  display: flex;
+  gap: 0.5rem;
+  flex: 0 0 auto;
+}
+
+.caseload-org-stat {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.2rem 0.6rem;
+  text-align: center;
+  min-width: 64px;
+}
+
+.caseload-org-stat .value {
+  font-weight: 700;
+  font-size: 0.82rem;
+  color: var(--text);
+  line-height: 1.15;
+}
+
+.caseload-org-stat .label {
+  font-size: 0.6rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  line-height: 1.15;
 }
 
 .caseload-org-table-warn {
@@ -3042,15 +3257,28 @@ a.person-link.tier-recommended:hover {
   background: rgba(179, 57, 44, 0.04);
 }
 
+.caseload-org-table-warn .caseload-org-table-head {
+  background: rgba(179, 57, 44, 0.1);
+}
+
 .caseload-org-table-warn h3 {
   color: #b3392c;
-  background: rgba(179, 57, 44, 0.1);
 }
 
 .caseload-table {
   width: 100%;
   border-collapse: collapse;
   font-size: 0.78rem;
+}
+
+/* Active Clients tables only (not Planner's, which shares .caseload-table
+   but has no colgroup) - fixed layout + the colgroup widths in
+   active-clients-board.tsx are what actually stop "Rate/session" and
+   "Sessions/wk" headers from squeezing into each other; auto-layout kept
+   re-deriving column widths from cell content no matter how narrow the
+   header font got. */
+.caseload-org-fixed {
+  table-layout: fixed;
 }
 
 /* white-space was forcing every header onto one line while narrow columns
@@ -3319,19 +3547,35 @@ a.person-link.tier-recommended:hover {
   color: var(--accent);
 }
 
+/* A channel with messages but nothing unread (already read, or posted by
+   the viewer themselves) still shows a small dot rather than nothing at
+   all, so "quiet" reads as distinct from "nobody has ever posted here." */
+.th-pill-dot {
+  display: inline-block;
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 999px;
+  background: var(--border-strong);
+}
+
+.th-pill-active .th-pill-dot {
+  background: rgba(255, 255, 255, 0.7);
+}
+
 .th-conversation {
   margin-top: 1.5rem;
   padding-top: 1.5rem;
   border-top: 1px solid var(--border);
 }
 
-/* All specialism channels collapse to a single dropdown rather than a long
-   pill row - per Nick's note that scrolling past dozens of specialism
-   pills to reach the conversation below made the page hard to use. This
-   keeps the vertical distance from "pick a channel" to "see its
-   conversation" short in the common case. */
-.th-specialism-select {
+/* Live-filter search for specialism channels, replacing the old dropdown -
+   same instant-narrow-as-you-type pattern as the Full verified directory,
+   which Nick specifically praised. Channels render as the same pill grid
+   as Your/General channels above, just filtered down as you type instead
+   of listed in full, so it never turns into a long scroll either. */
+.th-specialism-search {
   max-width: 420px;
+  margin-bottom: 0.6rem;
 }
 
 /* Join/Leave needs to read as an obvious, primary action right at the top
@@ -3340,4 +3584,145 @@ a.person-link.tier-recommended:hover {
   padding: 0.4rem 0.9rem;
   font-size: 0.85rem;
   font-weight: 700;
+}
+
+/* Overview activity ticker - a single scrolling line mixing relevant member
+   activity with external psychology news, so the app always has something
+   moving on it even on a quiet day. Pure CSS: the track holds the item list
+   twice, animated from 0 to -50% so the loop has no visible seam. */
+.activity-ticker {
+  overflow: hidden;
+  white-space: nowrap;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-alt);
+  margin-bottom: 1.25rem;
+}
+
+.activity-ticker-track {
+  display: inline-flex;
+  align-items: center;
+  animation: activity-ticker-scroll 55s linear infinite;
+}
+
+.activity-ticker:hover .activity-ticker-track {
+  animation-play-state: paused;
+}
+
+@keyframes activity-ticker-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.activity-ticker-entry {
+  display: inline-flex;
+  padding: 0.55rem 2rem 0.55rem 0;
+  flex: 0 0 auto;
+}
+
+.activity-ticker-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.activity-ticker-item a {
+  color: var(--text);
+  text-decoration: underline;
+  text-decoration-color: var(--border-strong);
+}
+
+.activity-ticker-empty {
+  padding: 0.65rem 1rem;
+  margin: 0;
+}
+
+.tag-news {
+  background: var(--news-soft);
+  color: var(--news);
+}
+
+/* ---------- GP/physician referral portal: separate, minimal shell ----------
+   Deliberately not the member SidebarNav - a referring provider only ever
+   has two things to do here, so a plain top bar instead of a full sidebar. */
+.refer-shell {
+  min-height: 100vh;
+  background: var(--bg-alt);
+}
+
+.refer-topbar {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 1rem 1.5rem;
+  background: var(--bg, #fff);
+  border-bottom: 1px solid var(--border);
+}
+
+.refer-topbar .brand {
+  font-family: var(--font-display, Georgia, serif);
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.refer-topbar-nav {
+  display: flex;
+  gap: 1.25rem;
+  flex: 1;
+}
+
+.refer-topbar-nav a {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.refer-topbar-account {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-left: auto;
+}
+
+.refer-main {
+  padding: 1.5rem;
+}
+
+.refer-compose-panel {
+  min-width: 320px;
+  max-width: 420px;
+}
+
+/* Incoming structured referrals on the member-side Referrals page - a
+   distinct inbox section from the peer-to-peer request board below it. */
+.provider-referrals-card {
+  border-left: 3px solid var(--news);
+}
+
+.provider-referral-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.provider-referral-row:last-child {
+  border-bottom: none;
+}
+
+.provider-referral-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.4rem;
+  flex: 0 0 auto;
 }

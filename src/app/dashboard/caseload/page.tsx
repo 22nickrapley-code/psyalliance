@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { archiveCase, updateCase, reactivateCase } from "./actions";
+import { archiveCase, updateCase, reactivateCase, deleteCase } from "./actions";
 import { CaseloadProvider } from "./caseload-context";
 import AddClientBox from "./add-client-box";
 import ActiveClientsBoard from "./active-clients-board";
@@ -47,6 +47,23 @@ export default async function CaseloadPage(
     rate: c.rate_per_session,
   }));
 
+  // Resolves which active client (if any) the Single Patient Referral box
+  // at the bottom of the page just matched, so the table above can highlight
+  // that row - a plain server-side lookup passed down as an id, rather than
+  // routing through the treatment-area highlight context (CaseloadContext),
+  // which is a different mechanism built for the pie-chart click-to-highlight
+  // feature. Mirrors the lookup SinglePatientReferral does itself, scoped to
+  // active clients only since that's all ActiveClientsBoard renders.
+  const sprQuery = (searchParams.spr || "").trim();
+  let highlightedClientId: number | null = null;
+  if (sprQuery) {
+    const asNumber = Number(sprQuery);
+    let hq = supabase.from("caseload_clients").select("id").eq("profile_id", user!.id).eq("is_active", true);
+    hq = Number.isFinite(asNumber) && String(asNumber) === sprQuery ? hq.eq("id", asNumber) : hq.ilike("private_label", `%${sprQuery}%`);
+    const { data: matchRows } = await hq.limit(1);
+    highlightedClientId = matchRows && matchRows.length > 0 ? matchRows[0].id : null;
+  }
+
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
@@ -70,8 +87,6 @@ export default async function CaseloadPage(
         </div>
       )}
 
-      <SinglePatientReferral supabase={supabase} myself={user!.id} query={searchParams.spr || ""} paramName="spr" />
-
       <CaseloadProvider>
         <div className="card">
           <div className="widget-header">
@@ -79,7 +94,7 @@ export default async function CaseloadPage(
           </div>
           <div style={{ display: "flex", gap: "0.6rem", marginBottom: "0.5rem", flexWrap: "wrap" }}>
             <AddClientBox books={books || []} insuranceOptions={insuranceOptions || []} specialisms={specialisms || []} />
-            <PastClientsBox cases={pastClientRows} reactivateCase={reactivateCase} />
+            <PastClientsBox cases={pastClientRows} reactivateCase={reactivateCase} deleteCase={deleteCase} />
           </div>
           <ActiveClientsBoard
             cases={activeCases}
@@ -88,6 +103,7 @@ export default async function CaseloadPage(
             specialisms={specialisms || []}
             updateCase={updateCase}
             archiveCase={archiveCase}
+            highlightedClientId={highlightedClientId}
           />
         </div>
 
@@ -95,6 +111,8 @@ export default async function CaseloadPage(
       </CaseloadProvider>
 
       <PracticesBox books={books || []} />
+
+      <SinglePatientReferral supabase={supabase} myself={user!.id} query={searchParams.spr || ""} paramName="spr" />
     </div>
   );
 }

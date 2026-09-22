@@ -8,6 +8,9 @@ import { buildTierMap, rankRecommended, type Tier } from "@/lib/tiers";
 import ToggleBox from "@/components/toggle-box";
 import { resolveAvatarUrls } from "@/lib/avatars";
 import Avatar from "./avatar";
+import { getActivityTicker } from "@/lib/activity";
+import { refreshNewsCacheIfStale, getRecentNews } from "@/lib/news";
+import ActivityTicker from "./activity-ticker";
 
 const PIE_COLORS = ["#1f4d3f", "#b08d57", "#6b4c6b", "#2456a6", "#a3372c", "#4a4842", "#7a3fa0"];
 
@@ -68,6 +71,10 @@ export default async function DashboardHome(
   } = await supabase.auth.getUser();
   const myself = user!.id;
 
+  // Best-effort, TTL-gated - a no-op on almost every page load (twice-daily
+  // refresh window), so this never meaningfully slows the Overview down.
+  await refreshNewsCacheIfStale(supabase);
+
   const [
     { data: profile },
     { count: caseCount },
@@ -90,6 +97,8 @@ export default async function DashboardHome(
     { data: recentSharedDocs },
     { data: incomeBooks },
     { data: overheadExpenses },
+    activityTicker,
+    newsItems,
   ] = await Promise.all([
     supabase.from("profiles").select("*").eq("id", myself).maybeSingle(),
     supabase.from("caseload_clients").select("id", { count: "exact", head: true }).eq("profile_id", myself).eq("is_active", true),
@@ -139,6 +148,8 @@ export default async function DashboardHome(
     supabase.from("documents").select("id, title, created_at, uploader:uploaded_by(full_name)").eq("owner_scope", "world").order("created_at", { ascending: false }).limit(4),
     supabase.from("books_of_business").select("id, name, expense_burden_pct").eq("profile_id", myself),
     supabase.from("practice_overhead_expenses").select("monthly_cost").eq("profile_id", myself),
+    getActivityTicker(supabase, myself),
+    getRecentNews(supabase),
   ]);
 
   const expiringLicenseCount = expiringLicenseCountRaw ?? 0;
@@ -300,21 +311,19 @@ export default async function DashboardHome(
   }
 
   // ---------- Caseload distribution + auto-matched professionals ----------
-  const stateCounts = new Map<string, number>();
   const needCounts = new Map<string, number>();
   for (const c of activeCases || []) {
-    const st = c.state || "Unspecified";
-    stateCounts.set(st, (stateCounts.get(st) || 0) + 1);
     if (c.primary_need) needCounts.set(c.primary_need, (needCounts.get(c.primary_need) || 0) + 1);
   }
   const totalCases = (activeCases || []).length;
   const needEntries = Array.from(needCounts.entries()).sort((a, b) => b[1] - a[1]);
 
   // Conic-gradient pie built from plain percentages - no charting library
-  // needed for a handful of static slices.
+  // needed for a handful of static slices. Capped at the top 5 primary
+  // treatment areas per Nick's spec.
   let pieGradient = "";
   let cursor = 0;
-  const pieSlices = needEntries.slice(0, 7).map(([need, count], i) => {
+  const pieSlices = needEntries.slice(0, 5).map(([need, count], i) => {
     const pct = totalCases > 0 ? (count / totalCases) * 100 : 0;
     const color = PIE_COLORS[i % PIE_COLORS.length];
     const start = cursor;
@@ -324,6 +333,16 @@ export default async function DashboardHome(
   pieGradient = pieSlices.length > 0
     ? `conic-gradient(${pieSlices.map((s) => `${s.color} ${s.start}% ${s.end}%`).join(", ")})`
     : "var(--bg-alt)";
+
+  // ---------- My caseload widget stats (Active / Sessions p.w. / Avg rate) -
+  // same figures, same math, as the per-organization stat boxes on the
+  // Caseload page, just rolled up across every active client instead of one
+  // organization at a time. ----------
+  const totalSessionsPerWeek = (activeCases || []).reduce((sum, c: any) => sum + (Number(c.sessions_per_week) || 0), 0);
+  const ratedActiveCases = (activeCases || []).filter((c: any) => c.rate_per_session !== null && c.rate_per_session !== undefined);
+  const avgHourlyRate = ratedActiveCases.length > 0
+    ? ratedActiveCases.reduce((sum: number, c: any) => sum + Number(c.rate_per_session), 0) / ratedActiveCases.length
+    : null;
 
   // ---------- Annual income (same math as the Income page, just rolled up
   // to a single annualized true-net figure for a quick-glance widget) ----------
@@ -412,6 +431,8 @@ export default async function DashboardHome(
           </a>
         </div>
       </div>
+
+      <ActivityTicker activity={activityTicker} news={newsItems} />
 
       {!profile && (
         <div className="error-banner">
@@ -592,7 +613,7 @@ export default async function DashboardHome(
                 <div className="ov-pie-row">
                   <div className="ov-mini-pie" style={{ background: pieGradient }} />
                   <div className="ov-pie-legend">
-                    {pieSlices.slice(0, 4).map((s) => (
+                    {pieSlices.map((s) => (
                       <span key={s.need}>
                         <span className="pie-legend-swatch" style={{ background: s.color }} />
                         {s.need} ({Math.round(s.pct)}%)
@@ -603,15 +624,15 @@ export default async function DashboardHome(
                 <div className="ov-mini-stats">
                   <div className="ov-mini-stat">
                     <div className="value">{totalCases}</div>
-                    <div className="label">Active</div>
+                    <div className="label">Active clients</div>
                   </div>
                   <div className="ov-mini-stat">
-                    <div className="value">{stateCounts.size}</div>
-                    <div className="label">States</div>
+                    <div className="value">{Number.isInteger(totalSessionsPerWeek) ? totalSessionsPerWeek : totalSessionsPerWeek.toFixed(1)}</div>
+                    <div className="label">Sessions p.w.</div>
                   </div>
                   <div className="ov-mini-stat">
-                    <div className="value">{needEntries.length}</div>
-                    <div className="label">Needs</div>
+                    <div className="value">{avgHourlyRate !== null ? currency(avgHourlyRate) : "-"}</div>
+                    <div className="label">Avg. rate</div>
                   </div>
                 </div>
               </>

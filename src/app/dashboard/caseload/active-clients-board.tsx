@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import CaseTableRow from "./case-table-row";
+import { currency } from "@/lib/finance";
 
 type Org = { id: number; name: string };
 
@@ -23,12 +24,48 @@ const COLUMNS = [
   "",
 ];
 
+// Explicit per-column widths (percent, sums to 100) paired with
+// table-layout: fixed below - round 1 (white-space: normal + a max-width
+// hint) didn't hold because an auto-layout table still sizes columns from
+// cell content, so "Rate/session" and "Sessions/wk" kept getting squeezed
+// thin enough to visually overlap. A colgroup with fixed widths is the only
+// way to guarantee every header gets a stable box to wrap inside.
+const COLUMN_WIDTHS = [3, 14, 5, 7, 12, 7, 7, 10, 10, 10, 15];
+
 const NARROW_COLUMNS = new Set(["No.", "State", "Sesh Type", "Rate/session", "Sessions/wk", ""]);
 
 // A divider separates the identity/logistics columns from the clinical
 // Primary/Secondary/Tertiary need columns - drawn as a left border on the
 // Primary column only, so it reads as a single seam rather than three.
 const DIVIDE_BEFORE = new Set(["Primary"]);
+
+// Small stat trio shown in each org's title bar - Total Clients was already
+// visible in the "(count)" next to the title, but Nick wanted it repeated
+// here alongside the two new figures so all three read together at a glance.
+function OrgStats({ cases }: { cases: any[] }) {
+  const totalSessions = cases.reduce((sum, c) => sum + (Number(c.sessions_per_week) || 0), 0);
+  const ratedCases = cases.filter((c) => c.rate_per_session !== null && c.rate_per_session !== undefined && c.rate_per_session !== "");
+  const avgRate = ratedCases.length > 0
+    ? ratedCases.reduce((sum, c) => sum + Number(c.rate_per_session), 0) / ratedCases.length
+    : null;
+
+  return (
+    <div className="caseload-org-stats">
+      <div className="caseload-org-stat">
+        <div className="value">{cases.length}</div>
+        <div className="label">Total clients</div>
+      </div>
+      <div className="caseload-org-stat">
+        <div className="value">{Number.isInteger(totalSessions) ? totalSessions : totalSessions.toFixed(1)}</div>
+        <div className="label">Sessions p.w.</div>
+      </div>
+      <div className="caseload-org-stat">
+        <div className="value">{avgRate !== null ? currency(avgRate) : "-"}</div>
+        <div className="label">Avg. rate</div>
+      </div>
+    </div>
+  );
+}
 
 function OrgTable({
   title,
@@ -39,6 +76,7 @@ function OrgTable({
   updateCase,
   archiveCase,
   warn,
+  highlightedClientId,
 }: {
   title: string;
   cases: any[];
@@ -48,16 +86,25 @@ function OrgTable({
   updateCase: (formData: FormData) => Promise<void>;
   archiveCase: (formData: FormData) => Promise<void>;
   warn?: boolean;
+  highlightedClientId?: number | null;
 }) {
-  const [expanded, setExpanded] = useState(false);
+  // Auto-expand when the Single Patient Referral match lives past the first
+  // 6 rows, so "Find matches" always actually reveals the highlighted row
+  // instead of leaving it collapsed out of view.
+  const [expanded, setExpanded] = useState(
+    () => highlightedClientId != null && cases.slice(6).some((c) => c.id === highlightedClientId)
+  );
   const visible = expanded ? cases : cases.slice(0, 6);
   const remaining = cases.length - visible.length;
 
   return (
     <div className={`caseload-org-table${warn ? " caseload-org-table-warn" : ""}`}>
-      <h3>
-        {title} <span className="muted" style={{ fontWeight: 400 }}>({cases.length})</span>
-      </h3>
+      <div className="caseload-org-table-head">
+        <h3>
+          {title} <span className="muted" style={{ fontWeight: 400 }}>({cases.length})</span>
+        </h3>
+        <OrgStats cases={cases} />
+      </div>
       {warn && (
         <p className="error-banner" style={{ marginTop: 0 }}>
           These clients aren't assigned to a practice. Every active client needs one - edit each row
@@ -65,7 +112,12 @@ function OrgTable({
         </p>
       )}
       <div style={{ overflowX: "auto" }}>
-        <table className="caseload-table">
+        <table className="caseload-table caseload-org-fixed">
+          <colgroup>
+            {COLUMN_WIDTHS.map((w, i) => (
+              <col key={i} style={{ width: `${w}%` }} />
+            ))}
+          </colgroup>
           <thead>
             <tr>
               {COLUMNS.map((col, i) => {
@@ -89,6 +141,7 @@ function OrgTable({
                 specialisms={specialisms}
                 updateCase={updateCase}
                 archiveCase={archiveCase}
+                sprMatched={highlightedClientId != null && c.id === highlightedClientId}
               />
             ))}
           </tbody>
@@ -119,6 +172,7 @@ export default function ActiveClientsBoard({
   specialisms,
   updateCase,
   archiveCase,
+  highlightedClientId,
 }: {
   cases: any[];
   books: Org[];
@@ -126,6 +180,7 @@ export default function ActiveClientsBoard({
   specialisms: any[];
   updateCase: (formData: FormData) => Promise<void>;
   archiveCase: (formData: FormData) => Promise<void>;
+  highlightedClientId?: number | null;
 }) {
   const unassigned = cases.filter((c) => !c.book_of_business_id);
   const byBook = new Map<number, any[]>();
@@ -155,6 +210,7 @@ export default function ActiveClientsBoard({
           updateCase={updateCase}
           archiveCase={archiveCase}
           warn
+          highlightedClientId={highlightedClientId}
         />
       )}
       {groups.map((g) => (
@@ -167,6 +223,7 @@ export default function ActiveClientsBoard({
           specialisms={specialisms}
           updateCase={updateCase}
           archiveCase={archiveCase}
+          highlightedClientId={highlightedClientId}
         />
       ))}
       {groups.length === 0 && unassigned.length === 0 && (

@@ -104,23 +104,37 @@ export default async function TownHallIndexPage(
     }
   }
 
+  // "Has any conversation at all" is a separate signal from unread: a
+  // channel someone posted in a year ago, that the viewer has already
+  // read, should still look different from one nobody has ever posted in.
+  // Across every channel (not just ones the viewer belongs to), so General
+  // and specialism channels get the same signal before joining.
+  const { data: allMessages } = await supabase
+    .from("town_hall_messages")
+    .select("channel_id")
+    .is("deleted_at", null);
+  const channelsWithMessages = new Set((allMessages || []).map((m) => m.channel_id));
+
   const yourChannelPills: ChannelPill[] = myChannels.map((c) => ({
     id: c.id,
     name: c.name,
     joined: true,
     unread: unreadByChannel.get(c.id) || 0,
+    hasMessages: channelsWithMessages.has(c.id),
   }));
   const generalChannelPills: ChannelPill[] = general.map((c) => ({
     id: c.id,
     name: c.name,
     joined: memberChannelIds.has(c.id),
     unread: unreadByChannel.get(c.id) || 0,
+    hasMessages: channelsWithMessages.has(c.id),
   }));
   const specialismChannelPills: ChannelPill[] = specialismChannels.map((c) => ({
     id: c.id,
     name: c.name,
     joined: memberChannelIds.has(c.id),
     unread: unreadByChannel.get(c.id) || 0,
+    hasMessages: channelsWithMessages.has(c.id),
   }));
 
   return (
@@ -140,7 +154,30 @@ export default async function TownHallIndexPage(
       )}
 
       <div className="card">
-        <h2>Search Town Hall</h2>
+        {myChannels.length === 0 && (
+          <p className="muted">
+            You're not in any channels yet. Set your specialisms on your{" "}
+            <Link href="/dashboard/profile">profile</Link> to auto-join, or join one below.
+          </p>
+        )}
+        <ChannelBrowser
+          yourChannels={yourChannelPills}
+          generalChannels={generalChannelPills}
+          specialismChannels={specialismChannelPills}
+          tierByAuthorId={tierByAuthorId}
+          myself={myself}
+          getChannelSnapshot={getChannelSnapshot}
+          joinChannel={joinChannel}
+          leaveChannel={leaveChannel}
+          postMessage={postMessage}
+          reactToMessage={reactToMessage}
+          editMessage={editMessage}
+          deleteMessage={deleteMessage}
+        />
+      </div>
+
+      <div className="card">
+        <h3 style={{ marginTop: 0 }}>Search Town Hall</h3>
         <form method="GET" className="field-row" style={{ alignItems: "flex-end" }}>
           <div className="field">
             <label htmlFor="q">Search conversations</label>
@@ -167,29 +204,6 @@ export default async function TownHallIndexPage(
             )}
           </div>
         )}
-      </div>
-
-      <div className="card">
-        {myChannels.length === 0 && (
-          <p className="muted">
-            You're not in any channels yet. Set your specialisms on your{" "}
-            <Link href="/dashboard/profile">profile</Link> to auto-join, or join one below.
-          </p>
-        )}
-        <ChannelBrowser
-          yourChannels={yourChannelPills}
-          generalChannels={generalChannelPills}
-          specialismChannels={specialismChannelPills}
-          tierByAuthorId={tierByAuthorId}
-          myself={myself}
-          getChannelSnapshot={getChannelSnapshot}
-          joinChannel={joinChannel}
-          leaveChannel={leaveChannel}
-          postMessage={postMessage}
-          reactToMessage={reactToMessage}
-          editMessage={editMessage}
-          deleteMessage={deleteMessage}
-        />
       </div>
 
       <div className="card">

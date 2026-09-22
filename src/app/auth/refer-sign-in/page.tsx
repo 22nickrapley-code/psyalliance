@@ -1,10 +1,7 @@
-import { signIn } from "../actions";
-import { GoogleSignInButton } from "../google-button";
+import { signInProvider } from "../../refer/actions";
 
-export default async function SignInPage(
-  props: {
-    searchParams: Promise<{ error?: string; message?: string }>;
-  }
+export default async function ProviderSignInPage(
+  props: { searchParams: Promise<{ error?: string; message?: string }> }
 ) {
   const searchParams = await props.searchParams;
   return (
@@ -15,8 +12,8 @@ export default async function SignInPage(
         {searchParams.error && <div className="error-banner">{searchParams.error}</div>}
         {searchParams.message && <div className="message-banner">{searchParams.message}</div>}
 
-        <form action={signIn} className="card">
-          <h2>Sign in</h2>
+        <form action={signInProvider} className="card">
+          <h2>Referring provider sign-in</h2>
           <div className="field">
             <label htmlFor="email">Email</label>
             <input id="email" name="email" type="email" required />
@@ -31,14 +28,8 @@ export default async function SignInPage(
           </p>
         </form>
 
-        <p className="muted" style={{ textAlign: "center", margin: "1rem 0" }}>or</p>
-        <GoogleSignInButton />
-
         <p className="muted" style={{ textAlign: "center" }}>
-          No account yet? <a href="/auth/sign-up">Create one</a>
-        </p>
-        <p className="muted" style={{ textAlign: "center" }}>
-          A referring physician or GP? <a href="/auth/refer-sign-in">Sign in here</a>
+          No account yet? <a href="/auth/refer-sign-up">Register as a referring provider</a>
         </p>
       </div>
     </div>

@@ -1,5 +1,12 @@
 import { createClient } from "@/lib/supabase/server";
-import { createReferralRequest, offerToHelp, acceptResponse, closeReferralRequest } from "./actions";
+import {
+  createReferralRequest,
+  offerToHelp,
+  acceptResponse,
+  closeReferralRequest,
+  acknowledgeProviderReferral,
+  declineProviderReferral,
+} from "./actions";
 import { startConversation } from "../messages/actions";
 import { rankCandidates, type MatchCandidate, type ConnectionTier } from "@/lib/matching";
 import { resolveAvatarUrls } from "@/lib/avatars";
@@ -26,6 +33,7 @@ export default async function ReferralsPage(
     { data: myConnections },
     { data: scores },
     { data: blocklist },
+    { data: providerReferrals },
   ] = await Promise.all([
     supabase.from("lookup_values").select("id, value").eq("category", "treatment_specialism").order("value"),
     supabase
@@ -52,6 +60,11 @@ export default async function ReferralsPage(
       .or(`requester_id.eq.${myself},addressee_id.eq.${myself}`),
     supabase.from("community_endorsement_scores").select("profile_id, score"),
     supabase.from("do_not_work_with").select("blocked_profile_id").eq("profile_id", myself),
+    supabase
+      .from("provider_referrals")
+      .select("*, referring_providers(full_name, practice_name, phone, email)")
+      .eq("target_profile_id", myself)
+      .order("created_at", { ascending: false }),
   ]);
 
   const { data: myLookupValues } = await supabase
@@ -155,6 +168,58 @@ export default async function ReferralsPage(
       </p>
 
       {error && <div className="error-banner">{error}</div>}
+
+      {(providerReferrals || []).length > 0 && (
+        <div className="card provider-referrals-card">
+          <h2>Referrals from physicians</h2>
+          <p className="muted" style={{ marginTop: "-0.5rem" }}>
+            Structured referrals sent in through the GP/physician portal - a one-way heads-up, not
+            an open conversation. Acknowledge or decline each one; declining lets you leave a note
+            for their office.
+          </p>
+          {(providerReferrals || []).map((r: any) => (
+            <div key={r.id} className="provider-referral-row">
+              <div>
+                <strong>{r.referring_providers?.full_name || "A physician"}</strong>
+                {r.referring_providers?.practice_name ? `, ${r.referring_providers.practice_name}` : ""}
+                {" "}
+                <span className={`tag${r.urgency === "urgent" ? " danger" : ""}`}>{r.urgency}</span>
+                <span className="tag">{r.status}</span>
+                <p className="muted" style={{ margin: "0.25rem 0 0" }}>
+                  {r.patient_initials ? `Patient ${r.patient_initials}` : "Patient"}
+                  {r.patient_age_range ? `, ${r.patient_age_range}` : ""} · {r.reason}
+                </p>
+                <p className="muted" style={{ margin: "0.15rem 0 0", fontSize: "0.82rem" }}>
+                  Contact: {r.contact_details}
+                  {r.referring_providers?.phone ? ` · ${r.referring_providers.phone}` : ""}
+                  {r.referring_providers?.email ? ` · ${r.referring_providers.email}` : ""}
+                </p>
+                {r.status_note && <p className="muted" style={{ margin: "0.15rem 0 0", fontSize: "0.82rem" }}>Your note: "{r.status_note}"</p>}
+              </div>
+              {r.status === "sent" && (
+                <div className="provider-referral-actions">
+                  <form action={acknowledgeProviderReferral}>
+                    <input type="hidden" name="id" value={r.id} />
+                    <button type="submit" className="secondary" style={{ padding: "0.3rem 0.6rem", fontSize: "0.8rem" }}>
+                      Acknowledge
+                    </button>
+                  </form>
+                  <details>
+                    <summary style={{ cursor: "pointer", fontSize: "0.8rem", color: "var(--muted)" }}>Decline</summary>
+                    <form action={declineProviderReferral} style={{ marginTop: "0.4rem" }}>
+                      <input type="hidden" name="id" value={r.id} />
+                      <input name="status_note" type="text" placeholder="Optional note for their office" style={{ fontSize: "0.8rem" }} />
+                      <button type="submit" className="secondary" style={{ padding: "0.3rem 0.6rem", fontSize: "0.8rem", marginTop: "0.3rem" }}>
+                        Confirm decline
+                      </button>
+                    </form>
+                  </details>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
 
       <div className="card">
         <h2>Post a referral need</h2>

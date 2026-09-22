@@ -24,6 +24,20 @@ export default async function DashboardLayout({
     .select("full_name, verification_status, is_admin, avatar_path")
     .eq("id", user.id)
     .maybeSingle();
+
+  // A referring provider (GP/physician portal account) has no `profiles`
+  // row at all - that's what keeps them out of Network/Messages/Town Hall/
+  // Caseload by construction. If one ever lands here (stale link, wrong
+  // sign-in form), send them to their own portal instead of letting them
+  // hit "you haven't set up your profile yet" and wander in.
+  if (!profile) {
+    const { data: provider } = await supabase
+      .from("referring_providers")
+      .select("id")
+      .eq("id", user.id)
+      .maybeSingle();
+    if (provider) redirect("/refer");
+  }
   const avatarUrl = await resolveAvatarUrl(supabase, profile?.avatar_path);
 
   // Cheap presence signal used only for match tie-breaking ("last login") -

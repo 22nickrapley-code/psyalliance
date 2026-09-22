@@ -29,7 +29,7 @@ export default function AddClientBox({
 
   if (!expanded) {
     return (
-      <button type="button" onClick={() => setExpanded(true)} style={{ marginBottom: "0.5rem" }}>
+      <button type="button" onClick={() => setExpanded(true)}>
         + Add a client
       </button>
     );

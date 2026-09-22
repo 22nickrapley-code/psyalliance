@@ -1,10 +1,7 @@
-import { signUp } from "../actions";
-import { GoogleSignInButton } from "../google-button";
+import { signUpProvider } from "../../refer/actions";
 
-export default async function SignUpPage(
-  props: {
-    searchParams: Promise<{ error?: string }>;
-  }
+export default async function ProviderSignUpPage(
+  props: { searchParams: Promise<{ error?: string }> }
 ) {
   const searchParams = await props.searchParams;
   return (
@@ -14,11 +11,12 @@ export default async function SignUpPage(
 
         {searchParams.error && <div className="error-banner">{searchParams.error}</div>}
 
-        <form action={signUp} className="card">
-          <h2>Create your account</h2>
+        <form action={signUpProvider} className="card">
+          <h2>Referring provider sign-up</h2>
           <p className="muted" style={{ marginTop: "-0.5rem" }}>
-            For PhD, PsyD, EdD psychologists and psychiatrists. Credential verification happens
-            after sign-up, from your profile.
+            For family physicians and general practitioners who want to refer patients into
+            PsyAlliance's verified network. An admin reviews every registration before it's
+            approved.
           </p>
           <div className="field">
             <label htmlFor="fullName">Full name</label>
@@ -35,14 +33,11 @@ export default async function SignUpPage(
           <button type="submit" style={{ width: "100%" }}>Create account</button>
         </form>
 
-        <p className="muted" style={{ textAlign: "center", margin: "1rem 0" }}>or</p>
-        <GoogleSignInButton />
-
         <p className="muted" style={{ textAlign: "center" }}>
-          Already have an account? <a href="/auth/sign-in">Sign in</a>
+          Already registered? <a href="/auth/refer-sign-in">Sign in</a>
         </p>
         <p className="muted" style={{ textAlign: "center" }}>
-          A referring physician or GP? <a href="/auth/refer-sign-up">Register here</a>
+          A psychologist or psychiatrist looking to join the network? <a href="/auth/sign-up">Sign up here</a>
         </p>
       </div>
     </div>

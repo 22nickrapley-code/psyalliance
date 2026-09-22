@@ -18,6 +18,7 @@ export default async function AdminOverviewPage() {
     { count: unmatchedCredentialCount },
     { count: pendingInsuranceRequestCount },
     { count: pendingChannelRequestCount },
+    { count: pendingProviderCount },
   ] = await Promise.all([
     supabase.from("profiles").select("*", { count: "exact", head: true }),
     supabase.from("profiles").select("*", { count: "exact", head: true }).eq("verification_status", "verified"),
@@ -33,6 +34,7 @@ export default async function AdminOverviewPage() {
     supabase.from("credential_verifications").select("*", { count: "exact", head: true }).eq("matched", false),
     supabase.from("insurance_requests").select("*", { count: "exact", head: true }).eq("status", "pending"),
     supabase.from("channel_requests").select("*", { count: "exact", head: true }).eq("status", "pending"),
+    supabase.from("referring_providers").select("*", { count: "exact", head: true }).eq("approval_status", "pending"),
   ]);
 
   const stateCounts = new Map<string, number>();
@@ -53,9 +55,11 @@ export default async function AdminOverviewPage() {
         insurance provider are under{" "}
         <a href="/dashboard/admin/insurance-requests">Insurance requests</a>, requests for a new
         Town Hall channel are under{" "}
-        <a href="/dashboard/admin/channel-requests">Channel requests</a>, and the full member
+        <a href="/dashboard/admin/channel-requests">Channel requests</a>, the full member
         list (search, verify, flag, promote to admin) is under{" "}
-        <a href="/dashboard/admin/members">All members</a>.
+        <a href="/dashboard/admin/members">All members</a>, and physician/GP referral-portal
+        registrations are under{" "}
+        <a href="/dashboard/admin/referring-providers">Referring providers</a>.
       </p>
 
       <div className="card">
@@ -93,6 +97,10 @@ export default async function AdminOverviewPage() {
             <div className="value">{pendingChannelRequestCount ?? 0}</div>
             <div className="label">Pending channel requests</div>
           </div>
+          <div className="stat">
+            <div className="value">{pendingProviderCount ?? 0}</div>
+            <div className="label">Pending referring providers</div>
+          </div>
         </div>
         {(pendingCount ?? 0) > 0 && (
           <p style={{ marginTop: "0.75rem" }}>
@@ -112,6 +120,13 @@ export default async function AdminOverviewPage() {
           <p style={{ marginTop: "0.5rem" }}>
             <a href="/dashboard/admin/channel-requests" className="btn secondary">
               Review {pendingChannelRequestCount} channel request{pendingChannelRequestCount === 1 ? "" : "s"}
+            </a>
+          </p>
+        )}
+        {(pendingProviderCount ?? 0) > 0 && (
+          <p style={{ marginTop: "0.5rem" }}>
+            <a href="/dashboard/admin/referring-providers" className="btn secondary">
+              Review {pendingProviderCount} referring provider{pendingProviderCount === 1 ? "" : "s"}
             </a>
           </p>
         )}

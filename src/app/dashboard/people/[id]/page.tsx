@@ -169,15 +169,31 @@ export default async function PersonProfilePage({
 
   const displayName = `${first.credential_prefix ? first.credential_prefix + " " : ""}${first.full_name}`.trim();
 
+  // Banner tint: real connection tier wins; otherwise "Recommended" is the
+  // same shared-specialism-and-not-yet-connected definition used everywhere
+  // else in the app (Overview, Network, Messages), which relevantSpecialisms
+  // above already computes.
+  const bannerTier: "partner" | "bench" | "recommended" | "none" =
+    tier === "partner" ? "partner" : tier === "bench" ? "bench" : !tier && relevantSpecialisms.length > 0 ? "recommended" : "none";
+
   const MatchToggle = () => (
-    <div className="match-toggle-group">
-      <a href={`/dashboard/people/${id}?match=me`} className={matchMode === "me" ? "active" : ""}>
-        Match me
-      </a>
-      <a href={`/dashboard/people/${id}?match=caseload`} className={matchMode === "caseload" ? "active" : ""}>
-        Match my caseload
-      </a>
-    </div>
+    <>
+      <div className="match-toggle-group">
+        <a href={`/dashboard/people/${id}?match=me`} className={matchMode === "me" ? "active" : ""}>
+          Match me
+        </a>
+        <a href={`/dashboard/people/${id}?match=caseload`} className={matchMode === "caseload" ? "active" : ""}>
+          Match my caseload
+        </a>
+      </div>
+      <span
+        className="info-tip"
+        tabIndex={0}
+        data-tip="Match me highlights specialisms you both share. Match my caseload highlights specialisms that overlap with your active clients' needs instead."
+      >
+        ?
+      </span>
+    </>
   );
 
   return (
@@ -226,6 +242,7 @@ export default async function PersonProfilePage({
             specialismsByCategory,
           }}
           tierBadge={<TierBadge tier={tier} />}
+          bannerTier={bannerTier}
           relevantSpecialisms={!tier ? relevantSpecialisms : []}
           highlightValues={highlightValues}
           locationMatch={locationMatch}
@@ -272,124 +289,126 @@ export default async function PersonProfilePage({
               )}
             </>
           }
-          belowHeader={
-            !isBlocked && (
-              <div className="card" style={{ marginBottom: "0.9rem" }}>
-                <details>
-                  <summary style={{ cursor: "pointer", fontWeight: 600 }}>
-                    Assign to Patient
-                  </summary>
-                  <div style={{ marginTop: "0.6rem" }}>
-                    {myActiveCases && myActiveCases.length > 0 ? (
-                      <form action={assignColleagueToClient} className="field-row" style={{ alignItems: "flex-end" }}>
-                        <input type="hidden" name="assigned_profile_id" value={first.id} />
-                        <div className="field">
-                          <label htmlFor="caseload_client_id">Client</label>
-                          <select id="caseload_client_id" name="caseload_client_id" required>
-                            {myActiveCases.map((c: any) => (
-                              <option key={c.id} value={c.id}>
-                                {c.private_label}{c.books_of_business?.name ? ` - ${c.books_of_business.name}` : ""}
-                                {c.primary_need ? ` (${c.primary_need})` : ""}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                        <div className="field" style={{ flex: "1 1 220px" }}>
-                          <label htmlFor="note">Note (optional)</label>
-                          <input id="note" name="note" type="text" maxLength={200} placeholder="Anything to flag for them" />
-                        </div>
-                        <div className="field" style={{ flex: "0 0 auto" }}>
-                          <button type="submit">Assign &amp; notify</button>
-                        </div>
+          sidebarExtra={
+            <>
+              <div className="card">
+                <h3 style={{ marginTop: 0, fontSize: "0.95rem" }}>Endorsements ({(endorsements || []).length})</h3>
+                <details className="endorsement-compose-trigger" style={{ marginBottom: "0.7rem" }}>
+                  <summary>{myEndorsement ? "Edit your endorsement" : "Endorse " + first.full_name}</summary>
+                  <div className="endorsement-compose-panel">
+                    <form action={submitEndorsement}>
+                      <input type="hidden" name="endorsee_id" value={first.id} />
+                      <textarea
+                        name="body"
+                        rows={2}
+                        maxLength={280}
+                        required
+                        defaultValue={myEndorsement?.body || ""}
+                        placeholder={`What's it like working with ${first.full_name}?`}
+                        style={{ width: "100%" }}
+                      />
+                      <button type="submit" className="secondary" style={{ marginTop: "0.35rem" }}>
+                        {myEndorsement ? "Save" : "Post endorsement"}
+                      </button>
+                    </form>
+                    {myEndorsement && (
+                      <form action={deleteEndorsement} style={{ marginTop: "0.35rem" }}>
+                        <input type="hidden" name="endorsee_id" value={first.id} />
+                        <button type="submit" className="secondary" style={{ fontSize: "0.8rem" }}>Remove endorsement</button>
                       </form>
-                    ) : (
-                      <p className="muted">
-                        You don't have any active clients to assign yet - add one on{" "}
-                        <a href="/dashboard/caseload">Caseload</a> first.
-                      </p>
-                    )}
-
-                    {myAssignments && myAssignments.length > 0 && (
-                      <div style={{ marginTop: "0.75rem" }}>
-                        {myAssignments.map((a: any) => (
-                          <div key={a.id} className="person-row">
-                            <span className="person-row-info">
-                              Client {a.caseload_clients?.private_label || "-"}
-                              <span className="muted" style={{ marginLeft: "0.4rem" }}>
-                                assigned {new Date(a.created_at).toLocaleDateString()}
-                              </span>
-                            </span>
-                            <span className="person-row-actions">
-                              {a.sent_to_patient ? (
-                                <span className="tag">Sent to patient</span>
-                              ) : (
-                                <form action={markSentToPatient}>
-                                  <input type="hidden" name="id" value={a.id} />
-                                  <input type="hidden" name="assigned_profile_id" value={first.id} />
-                                  <button type="submit" className="secondary" style={{ padding: "0.15rem 0.5rem", fontSize: "0.8rem" }}>
-                                    Send Practitioner Details to Patient
-                                  </button>
-                                </form>
-                              )}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
                     )}
                   </div>
                 </details>
-              </div>
-            )
-          }
-          sidebarExtra={
-            <div className="card">
-              <h3 style={{ marginTop: 0, fontSize: "0.95rem" }}>Endorsements ({(endorsements || []).length})</h3>
-              <details style={{ marginBottom: "0.6rem" }}>
-                <summary style={{ cursor: "pointer", fontSize: "0.85rem", fontWeight: 600 }}>
-                  {myEndorsement ? "Edit your endorsement" : "Endorse " + first.full_name}
-                </summary>
-                <form action={submitEndorsement} style={{ marginTop: "0.5rem" }}>
-                  <input type="hidden" name="endorsee_id" value={first.id} />
-                  <textarea
-                    name="body"
-                    rows={2}
-                    maxLength={280}
-                    required
-                    defaultValue={myEndorsement?.body || ""}
-                    placeholder={`What's it like working with ${first.full_name}?`}
-                    style={{ width: "100%" }}
-                  />
-                  <button type="submit" className="secondary" style={{ marginTop: "0.35rem" }}>
-                    {myEndorsement ? "Save" : "Post endorsement"}
-                  </button>
-                </form>
-                {myEndorsement && (
-                  <form action={deleteEndorsement} style={{ marginTop: "0.35rem" }}>
-                    <input type="hidden" name="endorsee_id" value={first.id} />
-                    <button type="submit" className="secondary" style={{ fontSize: "0.8rem" }}>Remove endorsement</button>
-                  </form>
-                )}
-              </details>
-              {(endorsements || []).map((e: any) => (
-                <div key={e.id} style={{ display: "flex", gap: "0.5rem", marginBottom: "0.6rem" }}>
-                  <Avatar
-                    url={endorserAvatarByPath.get(e.endorser?.avatar_path || "") || null}
-                    name={e.endorser?.full_name || "?"}
-                    size={26}
-                  />
-                  <div>
-                    <div style={{ fontSize: "0.82rem", fontWeight: 600 }}>
-                      {e.endorser?.credential_prefix ? `${e.endorser.credential_prefix} ` : ""}
-                      {e.endorser?.full_name || "Colleague"}
+                <div className="endorsement-list">
+                  {(endorsements || []).map((e: any) => (
+                    <div key={e.id} className="endorsement-item">
+                      <Avatar
+                        url={endorserAvatarByPath.get(e.endorser?.avatar_path || "") || null}
+                        name={e.endorser?.full_name || "?"}
+                        size={34}
+                      />
+                      <div className="endorsement-body-wrap">
+                        <div className="endorsement-author">
+                          {e.endorser?.credential_prefix ? `${e.endorser.credential_prefix} ` : ""}
+                          {e.endorser?.full_name || "Colleague"}
+                          <span className="endorsement-date">{new Date(e.created_at).toLocaleDateString()}</span>
+                        </div>
+                        <p className="endorsement-body">&ldquo;{e.body}&rdquo;</p>
+                      </div>
                     </div>
-                    <div style={{ fontSize: "0.85rem" }}>{e.body}</div>
-                  </div>
+                  ))}
                 </div>
-              ))}
-              {(endorsements || []).length === 0 && (
-                <p className="muted" style={{ fontSize: "0.85rem" }}>No endorsements yet.</p>
+                {(endorsements || []).length === 0 && (
+                  <p className="muted" style={{ fontSize: "0.85rem" }}>No endorsements yet.</p>
+                )}
+              </div>
+
+              {!isBlocked && (
+                <div className="card">
+                  <details>
+                    <summary style={{ cursor: "pointer", fontWeight: 600 }}>
+                      Assign to Patient
+                    </summary>
+                    <div style={{ marginTop: "0.6rem" }}>
+                      {myActiveCases && myActiveCases.length > 0 ? (
+                        <form action={assignColleagueToClient}>
+                          <div className="field">
+                            <input type="hidden" name="assigned_profile_id" value={first.id} />
+                            <label htmlFor="caseload_client_id">Client</label>
+                            <select id="caseload_client_id" name="caseload_client_id" required>
+                              {myActiveCases.map((c: any) => (
+                                <option key={c.id} value={c.id}>
+                                  {c.private_label}{c.books_of_business?.name ? ` - ${c.books_of_business.name}` : ""}
+                                  {c.primary_need ? ` (${c.primary_need})` : ""}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                          <div className="field">
+                            <label htmlFor="note">Note (optional)</label>
+                            <input id="note" name="note" type="text" maxLength={200} placeholder="Anything to flag for them" />
+                          </div>
+                          <button type="submit">Assign &amp; notify</button>
+                        </form>
+                      ) : (
+                        <p className="muted">
+                          You don't have any active clients to assign yet - add one on{" "}
+                          <a href="/dashboard/caseload">Caseload</a> first.
+                        </p>
+                      )}
+
+                      {myAssignments && myAssignments.length > 0 && (
+                        <div style={{ marginTop: "0.75rem" }}>
+                          {myAssignments.map((a: any) => (
+                            <div key={a.id} className="person-row">
+                              <span className="person-row-info">
+                                Client {a.caseload_clients?.private_label || "-"}
+                                <span className="muted" style={{ marginLeft: "0.4rem" }}>
+                                  assigned {new Date(a.created_at).toLocaleDateString()}
+                                </span>
+                              </span>
+                              <span className="person-row-actions">
+                                {a.sent_to_patient ? (
+                                  <span className="tag">Sent to patient</span>
+                                ) : (
+                                  <form action={markSentToPatient}>
+                                    <input type="hidden" name="id" value={a.id} />
+                                    <input type="hidden" name="assigned_profile_id" value={first.id} />
+                                    <button type="submit" className="secondary" style={{ padding: "0.15rem 0.5rem", fontSize: "0.8rem" }}>
+                                      Send Practitioner Details to Patient
+                                    </button>
+                                  </form>
+                                )}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </details>
+                </div>
               )}
-            </div>
+            </>
           }
         />
       </div>

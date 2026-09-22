@@ -1,6 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { sendMessage } from "../actions";
+import { buildTierMap, type Tier } from "@/lib/tiers";
+import { resolveAvatarUrls } from "@/lib/avatars";
+import Avatar from "../../avatar";
 
 function initialsOf(name: string) {
   return (
@@ -53,16 +56,21 @@ export default async function ConversationPage(
     redirect("/dashboard/messages");
   }
 
-  const [{ data: participants }, { data: messages }] = await Promise.all([
+  const [{ data: participants }, { data: messages }, { data: connections }] = await Promise.all([
     supabase
       .from("conversation_participants")
-      .select("profile_id, profile:profile_id(id, full_name, credential_prefix)")
+      .select("profile_id, profile:profile_id(id, full_name, credential_prefix, avatar_path)")
       .eq("conversation_id", conversationId),
     supabase
       .from("conversation_messages")
-      .select("id, author_id, body, mentioned_profile_ids, created_at, edited_at, deleted_at, author:author_id(full_name, credential_prefix)")
+      .select("id, author_id, body, mentioned_profile_ids, created_at, edited_at, deleted_at, author:author_id(full_name, credential_prefix, avatar_path)")
       .eq("conversation_id", conversationId)
       .order("created_at", { ascending: true }),
+    supabase
+      .from("connections")
+      .select("requester_id, addressee_id, tier, status")
+      .or(`requester_id.eq.${myself},addressee_id.eq.${myself}`)
+      .eq("status", "accepted"),
   ]);
 
   const nameById = new Map<string, string>();
@@ -72,6 +80,18 @@ export default async function ConversationPage(
 
   const others = (participants || []).filter((p) => p.profile_id !== myself);
   const title = conversation.title || others.map((o) => (o.profile as any)?.full_name).join(", ") || "Conversation";
+
+  // Colored by relationship, same as everywhere else in the app (Overview,
+  // Network, Town Hall) - Partner/Bench/Recommended each get their own pill
+  // color and avatar ring, so a colleague's tier is recognizable at a
+  // glance inside the thread too, not just in list views.
+  const tierMap = buildTierMap(connections, myself);
+  const tierOf = (id: string): Tier => tierMap.get(id) || "none";
+  const avatarUrlByPath = await resolveAvatarUrls(supabase, [
+    ...others.map((o) => (o.profile as any)?.avatar_path),
+    ...(messages || []).map((m: any) => m.author?.avatar_path),
+  ]);
+  const avatarUrlOf = (path: string | null | undefined) => avatarUrlByPath.get(path || "") || null;
 
   // Mark read on open. Previously fire-and-forget (a bare .then(() => {}))
   // which let the request race the page response on Cloudflare Workers'
@@ -90,14 +110,17 @@ export default async function ConversationPage(
       <p className="muted">
         With:{" "}
         {others.length > 0
-          ? others.map((o, i) => (
-              <span key={o.profile_id}>
-                <a href={`/dashboard/people/${o.profile_id}`} className="person-link">
-                  {(o.profile as any)?.full_name}
-                </a>
-                {i < others.length - 1 ? ", " : ""}
-              </span>
-            ))
+          ? others.map((o, i) => {
+              const tier = tierOf(o.profile_id);
+              return (
+                <span key={o.profile_id}>
+                  <a href={`/dashboard/people/${o.profile_id}`} className={tier === "none" ? "person-link" : `person-link tier-${tier}`}>
+                    {(o.profile as any)?.full_name}
+                  </a>
+                  {i < others.length - 1 ? ", " : ""}
+                </span>
+              );
+            })
           : "-"}
       </p>
 
@@ -109,13 +132,18 @@ export default async function ConversationPage(
               .filter(Boolean) as string[];
             const mine = m.author_id === myself;
             const authorName = m.author?.full_name || "Colleague";
+            const authorTier = mine ? "none" : tierOf(m.author_id);
             return (
               <div key={m.id} className={`chat-bubble-row${mine ? " mine" : ""}`}>
-                <div className="msg-avatar" aria-hidden="true">{initialsOf(authorName)}</div>
+                {mine ? (
+                  <div className="msg-avatar" aria-hidden="true">{initialsOf(authorName)}</div>
+                ) : (
+                  <Avatar url={avatarUrlOf(m.author?.avatar_path)} name={authorName} size={38} ring={authorTier} />
+                )}
                 <div style={{ minWidth: 0 }}>
                   {!mine && (
                     <div className="chat-author">
-                      <a href={`/dashboard/people/${m.author_id}`} className="person-link">
+                      <a href={`/dashboard/people/${m.author_id}`} className={authorTier === "none" ? "person-link" : `person-link tier-${authorTier}`}>
                         {m.author?.credential_prefix ? `${m.author.credential_prefix} ` : ""}
                         {authorName}
                       </a>

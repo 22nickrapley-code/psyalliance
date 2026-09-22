@@ -136,6 +136,12 @@ const icon = {
       <path d="M14.5 20c.3-2.7 1.7-4.5 3.7-4.9" />
     </svg>
   ),
+  providers: (
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 3 4.5 6v6c0 4.7 3.2 8.4 7.5 9 4.3-.6 7.5-4.3 7.5-9V6L12 3Z" />
+      <path d="M12 8v5M9.5 10.5h5" />
+    </svg>
+  ),
 };
 
 export function buildNavGroups(isAdmin: boolean, unreadMessageCount = 0): NavGroup[] {
@@ -193,6 +199,11 @@ export function buildNavGroups(isAdmin: boolean, unreadMessageCount = 0): NavGro
           href: "/dashboard/admin/members",
           label: "All members",
           icon: icon.members,
+        },
+        {
+          href: "/dashboard/admin/referring-providers",
+          label: "Referring providers",
+          icon: icon.providers,
         },
       ],
     });

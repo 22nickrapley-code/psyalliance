@@ -23,11 +23,6 @@ export type PickerContact = {
   avatarUrl?: string | null;
 };
 
-const TIER_LABEL: Record<string, string> = {
-  partner: "Partner",
-  bench: "Bench",
-  recommended: "Recommended",
-};
 const TIER_ORDER: Record<string, number> = { partner: 0, bench: 1, recommended: 2, none: 3 };
 
 export default function RecipientPicker({
@@ -43,7 +38,10 @@ export default function RecipientPicker({
   const [state, setState] = useState("");
   const [specialism, setSpecialism] = useState("");
   const [profession, setProfession] = useState("");
-  const [tierFilter, setTierFilter] = useState<"all" | "partner" | "bench" | "recommended">("all");
+  // Empty set = ALL (no tier filter). Otherwise each active tier button is
+  // OR'd together, so Partner + Bench (say) shows both at once, letting Nick
+  // message multiple groups in one go instead of picking a single tier.
+  const [tierFilter, setTierFilter] = useState<Set<"partner" | "bench" | "recommended">>(new Set());
   const [sortBy, setSortBy] = useState("alpha");
   const [checked, setChecked] = useState<Set<string>>(new Set());
 
@@ -52,7 +50,7 @@ export default function RecipientPicker({
     const st = state.trim().toUpperCase();
     return contacts
       .filter((c) => !qq || c.name.toLowerCase().includes(qq))
-      .filter((c) => tierFilter === "all" || c.tier === tierFilter)
+      .filter((c) => tierFilter.size === 0 || (c.tier !== "none" && tierFilter.has(c.tier)))
       .filter((c) => !st || c.state === st)
       .filter((c) => !specialism || c.specialisms.includes(specialism))
       .filter((c) => !profession || c.profession === profession)
@@ -70,6 +68,15 @@ export default function RecipientPicker({
         return a.name.localeCompare(b.name);
       });
   }, [contacts, q, state, specialism, profession, tierFilter, sortBy]);
+
+  function toggleTierFilter(tier: "partner" | "bench" | "recommended") {
+    setTierFilter((prev) => {
+      const next = new Set(prev);
+      if (next.has(tier)) next.delete(tier);
+      else next.add(tier);
+      return next;
+    });
+  }
 
   function toggle(id: string) {
     setChecked((prev) => {
@@ -141,19 +148,19 @@ export default function RecipientPicker({
       </div>
 
       <div className="ov-box-toggle" style={{ marginBottom: "0.5rem" }}>
-        <button type="button" className={tierFilter === "all" ? "active" : ""} onClick={() => setTierFilter("all")}>
+        <button type="button" className={tierFilter.size === 0 ? "active" : ""} onClick={() => setTierFilter(new Set())}>
           ALL
         </button>
-        <button type="button" className={tierFilter === "partner" ? "active" : ""} onClick={() => setTierFilter("partner")}>
+        <button type="button" className={tierFilter.has("partner") ? "active" : ""} onClick={() => toggleTierFilter("partner")}>
           Partner
         </button>
-        <button type="button" className={tierFilter === "bench" ? "active" : ""} onClick={() => setTierFilter("bench")}>
+        <button type="button" className={tierFilter.has("bench") ? "active" : ""} onClick={() => toggleTierFilter("bench")}>
           Bench
         </button>
         <button
           type="button"
-          className={tierFilter === "recommended" ? "active" : ""}
-          onClick={() => setTierFilter("recommended")}
+          className={tierFilter.has("recommended") ? "active" : ""}
+          onClick={() => toggleTierFilter("recommended")}
         >
           Recommended
         </button>
@@ -177,7 +184,6 @@ export default function RecipientPicker({
               {c.name}
             </span>
             {c.state && <span className="muted" style={{ marginLeft: "0.35rem" }}>({c.state})</span>}
-            {c.tier !== "none" && <span className="tag tier-none" style={{ marginLeft: "auto" }}>{TIER_LABEL[c.tier]}</span>}
           </label>
         ))}
         {filtered.length === 0 && <p className="muted" style={{ padding: "0.6rem" }}>No colleagues match that search.</p>}

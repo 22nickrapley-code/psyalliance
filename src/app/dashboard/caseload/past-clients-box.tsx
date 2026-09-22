@@ -18,9 +18,11 @@ type PastCase = {
 export default function PastClientsBox({
   cases,
   reactivateCase,
+  deleteCase,
 }: {
   cases: PastCase[];
   reactivateCase: (formData: FormData) => Promise<void>;
+  deleteCase: (formData: FormData) => Promise<void>;
 }) {
   const [expanded, setExpanded] = useState(false);
   const [q, setQ] = useState("");
@@ -87,10 +89,22 @@ export default function PastClientsBox({
                   <td>{c.org || <span className="muted">-</span>}</td>
                   <td>{c.state || "-"}</td>
                   <td>{c.rate ? `$${c.rate}` : "-"}</td>
-                  <td>
-                    <form action={reactivateCase}>
+                  <td style={{ whiteSpace: "nowrap" }}>
+                    <form action={reactivateCase} style={{ display: "inline" }}>
                       <input type="hidden" name="id" value={c.id} />
-                      <button type="submit" className="secondary">Re-add to caseload</button>
+                      <button type="submit" className="secondary" style={{ marginRight: "0.35rem" }}>Re-add to caseload</button>
+                    </form>
+                    <form
+                      action={deleteCase}
+                      style={{ display: "inline" }}
+                      onSubmit={(e) => {
+                        if (!confirm(`Permanently delete client ${c.private_label || `#${c.id}`}? This can't be undone.`)) {
+                          e.preventDefault();
+                        }
+                      }}
+                    >
+                      <input type="hidden" name="id" value={c.id} />
+                      <button type="submit" className="danger">Delete</button>
                     </form>
                   </td>
                 </tr>

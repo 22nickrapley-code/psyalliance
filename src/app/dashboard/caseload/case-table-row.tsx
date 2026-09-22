@@ -21,6 +21,7 @@ export default function CaseTableRow({
   specialisms,
   updateCase,
   archiveCase,
+  sprMatched,
 }: {
   c: any;
   books: Org[];
@@ -28,12 +29,22 @@ export default function CaseTableRow({
   specialisms: LookupOption[];
   updateCase: (formData: FormData) => Promise<void>;
   archiveCase: (formData: FormData) => Promise<void>;
+  // True when this is the client the Single Patient Referral box (bottom of
+  // the page) just matched via "Find matches" - a separate concept from the
+  // treatment-area pie highlight below, so it gets its own color (the same
+  // teal used everywhere else on the site for "this is a match") and always
+  // wins visually if both happen to apply to the same row.
+  sprMatched?: boolean;
 }) {
   const [editing, setEditing] = useState(false);
   const [pending, startTransition] = useTransition();
   const { highlight } = useCaseloadHighlight();
   const isHighlighted = matchesHighlight(c, highlight);
-  const rowStyle = isHighlighted && highlight.color ? { backgroundColor: hexToRgba(highlight.color, 0.14) } : undefined;
+  const rowStyle = sprMatched
+    ? { backgroundColor: "var(--match-soft)", boxShadow: "inset 3px 0 0 var(--match)" }
+    : isHighlighted && highlight.color
+    ? { backgroundColor: hexToRgba(highlight.color, 0.14) }
+    : undefined;
 
   function cellHighlighted(field: "primary_need" | "secondary_need" | "tertiary_need") {
     if (!highlight.value) return false;
@@ -58,9 +69,12 @@ export default function CaseTableRow({
 
   if (!editing) {
     return (
-      <tr className={isHighlighted ? "caseload-row-match" : undefined} style={rowStyle}>
+      <tr className={sprMatched ? "caseload-row-match" : isHighlighted ? "caseload-row-match" : undefined} style={rowStyle}>
         <td>#{c.id}</td>
-        <td><div className="cl-cell-clamp">{c.private_label || <span className="muted">Unlabeled</span>}</div></td>
+        <td>
+          <div className="cl-cell-clamp">{c.private_label || <span className="muted">Unlabeled</span>}</div>
+          {sprMatched && <span className="tag" style={{ background: "var(--match-soft)", color: "var(--match)", marginTop: "0.2rem" }}>Matched</span>}
+        </td>
         <td>{c.state || <span className="muted">-</span>}</td>
         <td>{c.session_type === "Virtual" ? "Virtual" : c.session_type === "F2F" ? "In-person" : <span className="muted">-</span>}</td>
         <td><div className="cl-cell-clamp">{c.insurance || <span className="muted">-</span>}</div></td>

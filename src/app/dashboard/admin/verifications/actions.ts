@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { assertIsAdmin } from "@/lib/admin";
 import { notifyProfile } from "@/lib/notifications";
+import { logActivityEvent } from "@/lib/activity";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
@@ -77,6 +78,26 @@ export async function setProfileVerificationStatus(formData: FormData) {
       title: "You're approved!",
       body: "Your credential verification is complete and your PsyAlliance membership is now approved. You have full access to the network - Caseload, Messages, Network, and every other tool.",
       createdBy: user.id,
+    });
+
+    // Feeds the Overview activity ticker for anyone who shares this new
+    // member's specialisms or state - "someone new joined" is only worth
+    // surfacing once, right at the moment they actually gain access.
+    const [{ data: newMember }, { data: newMemberSpecialisms }] = await Promise.all([
+      supabase.from("profiles").select("full_name, credential_prefix, primary_state").eq("id", profileId).maybeSingle(),
+      supabase
+        .from("profile_lookup_values")
+        .select("lookup_value_id, lookup_values!inner(category)")
+        .eq("profile_id", profileId)
+        .eq("lookup_values.category", "treatment_specialism"),
+    ]);
+    await logActivityEvent(supabase, {
+      eventType: "new_member",
+      actorProfileId: profileId,
+      actorName: `${newMember?.credential_prefix || ""} ${newMember?.full_name || "A colleague"}`.trim(),
+      specialismIds: (newMemberSpecialisms || []).map((s) => s.lookup_value_id),
+      state: newMember?.primary_state || null,
+      summary: "joined PsyAlliance",
     });
   }
 

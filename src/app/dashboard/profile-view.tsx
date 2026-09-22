@@ -86,6 +86,7 @@ function ToggleBadgeButton({
 export function ProfileView({
   data,
   tierBadge,
+  bannerTier,
   relevantSpecialisms,
   highlightValues,
   locationMatch,
@@ -97,6 +98,10 @@ export function ProfileView({
 }: {
   data: ProfileViewData;
   tierBadge?: React.ReactNode;
+  // Tints the banner gradient toward the connection-tier color (blue for
+  // Partner, purple for Bench, orange for Recommended) so the relationship
+  // is obvious from the banner itself, not just the small tag underneath.
+  bannerTier?: "partner" | "bench" | "recommended" | "none";
   relevantSpecialisms?: string[];
   // Additional values (any specialism category, lower-cased match is
   // case-insensitive) to highlight as chips without adding them to the
@@ -134,7 +139,7 @@ export function ProfileView({
 
   return (
     <div className="profile-view-card">
-      <div className="profile-view-banner">
+      <div className={`profile-view-banner${bannerTier && bannerTier !== "none" ? ` profile-view-banner-${bannerTier}` : ""}`}>
         <div className="profile-view-avatar-ring">
           <Avatar url={data.avatarUrl} name={data.fullName} size={92} />
         </div>

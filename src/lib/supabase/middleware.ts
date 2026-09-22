@@ -37,5 +37,16 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  // The GP/physician referral portal's sign-in/sign-up pages live under
+  // /auth (not /refer) specifically so they're never wrapped by the /refer
+  // layout's own "no session -> redirect to sign-in" guard - nesting them
+  // under /refer would self-redirect-loop on that exact page. Every other
+  // /refer/* route does need a session.
+  if (!user && request.nextUrl.pathname.startsWith("/refer")) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/auth/refer-sign-in";
+    return NextResponse.redirect(url);
+  }
+
   return supabaseResponse;
 }

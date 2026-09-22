@@ -11,6 +11,7 @@ export type ChannelPill = {
   name: string;
   joined: boolean;
   unread: number;
+  hasMessages: boolean;
 };
 
 const REACTIONS: { key: "thumbs_up" | "heart" | "thumbs_down"; label: string }[] = [
@@ -58,6 +59,11 @@ export default function ChannelBrowser({
   const [snapshotError, setSnapshotError] = useState<string | null>(null);
   const [readOverrides, setReadOverrides] = useState<Set<number>>(new Set());
   const [isPending, startTransition] = useTransition();
+  const [specialismFilter, setSpecialismFilter] = useState("");
+
+  const filteredSpecialismChannels = specialismChannels.filter((c) =>
+    c.name.toLowerCase().includes(specialismFilter.trim().toLowerCase())
+  );
 
   function openChannel(id: number) {
     setSelectedId(id);
@@ -110,7 +116,11 @@ export default function ChannelBrowser({
         onClick={() => openChannel(c.id)}
       >
         {c.name}
-        {unread > 0 && <span className="th-pill-badge">{unread}</span>}
+        {unread > 0 ? (
+          <span className="th-pill-badge">{unread}</span>
+        ) : (
+          c.hasMessages && <span className="th-pill-dot" title="Has messages" />
+        )}
       </button>
     );
   }
@@ -210,32 +220,6 @@ export default function ChannelBrowser({
           {yourChannels.length === 0 && <p className="muted" style={{ margin: 0 }}>You're not in any channels yet.</p>}
         </div>
       </div>
-      <div className="th-pill-group">
-        <h3>General channels</h3>
-        <div className="th-pill-row">
-          {generalChannels.map((c) => <Pill key={c.id} c={c} />)}
-        </div>
-      </div>
-      <div className="th-pill-group">
-        <label htmlFor="th-specialism-select" style={{ display: "block", fontWeight: 700, marginBottom: "0.4rem" }}>
-          Browse a specialism channel
-        </label>
-        <select
-          id="th-specialism-select"
-          className="th-specialism-select"
-          value={specialismChannels.some((c) => c.id === selectedId) ? String(selectedId) : ""}
-          onChange={(e) => {
-            if (e.target.value) openChannel(Number(e.target.value));
-          }}
-        >
-          <option value="">Choose a specialism channel…</option>
-          {specialismChannels.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name}{c.unread > 0 && !readOverrides.has(c.id) ? ` (${c.unread} unread)` : ""}
-            </option>
-          ))}
-        </select>
-      </div>
 
       {selectedId != null && (
         <div className="th-conversation">
@@ -265,17 +249,6 @@ export default function ChannelBrowser({
               </div>
               {snapshot.channel.description && <p className="muted">{snapshot.channel.description}</p>}
 
-              <div className="card">
-                <h3 style={{ marginTop: 0 }}>Post a message</h3>
-                <form action={handlePost}>
-                  <input type="hidden" name="channel_id" value={selectedId} />
-                  <div className="field">
-                    <textarea name="body" rows={3} required placeholder="Share something with the channel…" />
-                  </div>
-                  <button type="submit">Post</button>
-                </form>
-              </div>
-
               {snapshot.topLevel.map((m) => (
                 <div className="card" key={m.id}>
                   <MessageBlock m={m} channelId={selectedId} myselfActions={m.authorId === myself} />
@@ -303,10 +276,47 @@ export default function ChannelBrowser({
                 </div>
               ))}
               {snapshot.topLevel.length === 0 && <p className="muted">No messages yet, be the first to post in this channel.</p>}
+
+              <div className="card">
+                <h3 style={{ marginTop: 0 }}>Post a message</h3>
+                <form action={handlePost}>
+                  <input type="hidden" name="channel_id" value={selectedId} />
+                  <div className="field">
+                    <textarea name="body" rows={3} required placeholder="Share something with the channel…" />
+                  </div>
+                  <button type="submit">Post</button>
+                </form>
+              </div>
             </>
           )}
         </div>
       )}
+
+      <div className="th-pill-group" style={{ marginTop: "1.5rem" }}>
+        <h3>General channels</h3>
+        <div className="th-pill-row">
+          {generalChannels.map((c) => <Pill key={c.id} c={c} />)}
+        </div>
+      </div>
+      <div className="th-pill-group">
+        <label htmlFor="th-specialism-search" style={{ display: "block", fontWeight: 700, marginBottom: "0.4rem" }}>
+          Browse a specialism channel
+        </label>
+        <input
+          id="th-specialism-search"
+          type="text"
+          className="th-specialism-search"
+          value={specialismFilter}
+          onChange={(e) => setSpecialismFilter(e.target.value)}
+          placeholder="Search specialism channels…"
+        />
+        <div className="th-pill-row">
+          {filteredSpecialismChannels.map((c) => <Pill key={c.id} c={c} />)}
+          {filteredSpecialismChannels.length === 0 && (
+            <p className="muted" style={{ margin: 0 }}>No specialism channels match "{specialismFilter}".</p>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
