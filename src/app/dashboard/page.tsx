@@ -1,15 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
 import { computeRankedCandidates } from "@/lib/server-matching";
-import { setProfileFlag } from "./actions";
-import { professionFor, professionLabel } from "@/lib/profession";
 import UsStateDatalist from "@/components/us-state-datalist";
-import { caseMonthlyGross, caseMonthlyNet, currency } from "@/lib/finance";
 import { buildTierMap, rankRecommended, type Tier } from "@/lib/tiers";
-import ToggleBox from "@/components/toggle-box";
 import { resolveAvatarUrls } from "@/lib/avatars";
 import Avatar from "./avatar";
-
-const PIE_COLORS = ["#1f4d3f", "#b08d57", "#6b4c6b", "#2456a6", "#a3372c", "#4a4842", "#7a3fa0"];
 
 function TierName({ id, name, tier, avatarUrl }: { id: string; name: string; tier: Tier; avatarUrl?: string | null }) {
   const link = (
@@ -26,26 +20,21 @@ function TierName({ id, name, tier, avatarUrl }: { id: string; name: string; tie
   );
 }
 
-function ToggleButton({ flag, value, label, compact }: { flag: string; value: boolean; label: string; compact?: boolean }) {
-  return (
-    <div className={compact ? "ov-toggle-row" : "toggle-row"}>
-      <span>{label}</span>
-      <form action={setProfileFlag} style={{ display: "inline" }}>
-        <input type="hidden" name="flag" value={flag} />
-        <input type="hidden" name="value" value={(!value).toString()} />
-        <button type="submit" className="oswitch-row" style={{ background: "none", border: "none", padding: 0, cursor: "pointer" }} aria-pressed={value} title="Click to toggle">
-          <span className={`oswitch-text ${value ? "yes" : "no"}`}>{value ? "Yes" : "No"}</span>
-          <span className={`oswitch oswitch-btn ${value ? "yes" : "no"}`} />
-        </button>
-      </form>
-    </div>
-  );
-}
-
 function GoLink({ href }: { href: string }) {
   return <a href={href} className="go-link">Go &rarr;</a>;
 }
 
+const AVAILABILITY_STALE_AFTER_MS = 30 * 24 * 60 * 60 * 1000;
+
+// Home (Master Brief #17): "What needs my attention?" first, then "What do
+// you need?", then the professional-opportunity layer ("Relevant to you"),
+// then relationship activity ("Your network"), then Practice Library. This
+// replaces the old Overview page's caseload-pie/annual-income financial
+// widgets - both still live in full on their own Legacy pages (Caseload,
+// Income), just no longer previewed here, since Home's job now is
+// attention and opportunity, not a finance dashboard. The old "My profile"
+// quick-toggle card is dropped for the same reason: every toggle it had
+// already lives on My Profile, one click away in the new nav.
 export default async function DashboardHome(
   props: {
     searchParams: Promise<{
@@ -56,7 +45,6 @@ export default async function DashboardHome(
       ref_primary?: string;
       ref_secondary?: string;
       ref_tertiary?: string;
-      box?: string;
       error?: string;
     }>;
   }
@@ -85,20 +73,21 @@ export default async function DashboardHome(
     { data: allSpecialisms },
     { data: insuranceOptions },
     { data: sessionTypeOptions },
-    { data: townHallRecent },
-    { data: activeCases },
     { data: recentPersonalDocs },
     { data: recentSharedDocs },
-    { data: incomeBooks },
-    { data: overheadExpenses },
+    { data: pendingCoverageRequests },
+    { data: myConsultationsWithReplies },
+    { data: openReferralsFromColleagues },
+    { data: openConsultationsFromColleagues },
   ] = await Promise.all([
     supabase.from("profiles").select("*").eq("id", myself).maybeSingle(),
     supabase.from("caseload_clients").select("id", { count: "exact", head: true }).eq("profile_id", myself).eq("is_active", true),
     supabase.from("documents").select("id", { count: "exact", head: true }).eq("profile_id", myself),
     supabase.from("connections").select("id", { count: "exact", head: true }).eq("addressee_id", myself).eq("status", "pending"),
     supabase.from("referral_requests").select("id, referral_responses(status)").eq("requesting_profile_id", myself).eq("status", "open"),
-    // Physician referrals awaiting a response - shown in the "My messages"
-    // Notices tab below so they're never a blind spot on Overview.
+    // Physician referrals awaiting a response - shown in full on the
+    // Messages "Notices" tab; surfaced here only as an attention count so
+    // it's never a blind spot on Home.
     supabase
       .from("provider_referrals")
       .select("id, reason, urgency, created_at, referring_providers(full_name, practice_name)")
@@ -120,7 +109,7 @@ export default async function DashboardHome(
     supabase.from("planner_offers").select("id", { count: "exact", head: true }).eq("candidate_profile_id", myself).eq("status", "offered"),
     supabase
       .from("conversation_participants")
-      .select("conversation_id, last_read_at, conversation:conversation_id(id, title, last_message_at, created_by)")
+      .select("last_read_at, conversation:conversation_id(last_message_at)")
       .eq("profile_id", myself),
     supabase
       .from("connections")
@@ -132,22 +121,47 @@ export default async function DashboardHome(
     supabase.from("lookup_values").select("id, value").eq("category", "treatment_specialism").order("value"),
     supabase.from("lookup_values").select("value").eq("category", "insurance").order("value"),
     supabase.from("lookup_values").select("value").eq("category", "session_type").order("value"),
+    supabase.from("documents").select("id, title, created_at").eq("profile_id", myself).eq("owner_scope", "personal").order("created_at", { ascending: false }).limit(3),
+    supabase.from("documents").select("id, title, created_at, uploader:uploaded_by(full_name)").eq("owner_scope", "world").order("created_at", { ascending: false }).limit(3),
+    // Requests hub's own attention feed: coverage requests sent to me,
+    // still waiting on a response.
     supabase
-      .from("town_hall_messages")
-      .select("id, body, created_at, channel_id, author:author_id(id, full_name, avatar_path), channel:channel_id(name, slug)")
-      .is("parent_message_id", null)
-      .is("deleted_at", null)
+      .from("coverage_requests")
+      .select("id, sent_at, coverage_plan_cases(case_reference, coverage_plans(title))")
+      .eq("requested_profile_id", myself)
+      .eq("status", "sent")
+      .order("sent_at", { ascending: false })
+      .limit(5),
+    // My own consultations that have at least one reply waiting to be read
+    // ("Sarah replied to your consultation").
+    supabase
+      .from("consultations")
+      .select("id, question, created_at")
+      .eq("author_profile_id", myself)
+      .eq("status", "responses_received")
       .order("created_at", { ascending: false })
-      .limit(6),
+      .limit(5),
+    // Opportunity layer, part 1: open referral requests from colleagues,
+    // RLS already narrows this to whatever audience I'm actually allowed
+    // to see (trusted/selected-me/suggested/wider_network) - matched down
+    // to my own specialisms client-side below.
     supabase
-      .from("caseload_clients")
-      .select("id, state, primary_need, rate_per_session, sessions_per_week, book_of_business_id")
-      .eq("profile_id", myself)
-      .eq("is_active", true),
-    supabase.from("documents").select("id, title, created_at").eq("profile_id", myself).eq("owner_scope", "personal").order("created_at", { ascending: false }).limit(4),
-    supabase.from("documents").select("id, title, created_at, uploader:uploaded_by(full_name)").eq("owner_scope", "world").order("created_at", { ascending: false }).limit(4),
-    supabase.from("books_of_business").select("id, name, expense_burden_pct").eq("profile_id", myself),
-    supabase.from("practice_overhead_expenses").select("monthly_cost").eq("profile_id", myself),
+      .from("referral_requests")
+      .select("id, state, city, created_at, lookup_values(value)")
+      .neq("requesting_profile_id", myself)
+      .in("status", ["open", "sent"])
+      .order("created_at", { ascending: false })
+      .limit(25),
+    // Opportunity layer, part 2: open consultations from colleagues -
+    // there's no specialism field on consultations to match against, so
+    // this is simply "recent and visible to me" rather than ranked.
+    supabase
+      .from("consultations")
+      .select("id, question, consultation_type, audience_type, author_profile_id, author:author_profile_id(full_name)")
+      .neq("author_profile_id", myself)
+      .in("status", ["open", "responses_received"])
+      .order("created_at", { ascending: false })
+      .limit(3),
   ]);
 
   const expiringLicenseCount = expiringLicenseCountRaw ?? 0;
@@ -158,8 +172,6 @@ export default async function DashboardHome(
     0
   );
   const providerReferralsAwaitingDecision = (pendingProviderReferrals || []).length;
-  // Both feed the same "Referral notices" tab in Messages now, so Overview
-  // treats them as one combined attention item rather than two separate ones.
   const offersAwaitingDecision = peerOffersAwaitingDecision + providerReferralsAwaitingDecision;
 
   const unreadMessageCount = (myConversationRows || []).filter((r: any) => {
@@ -167,16 +179,25 @@ export default async function DashboardHome(
     return new Date(r.conversation.last_message_at) > new Date(r.last_read_at);
   }).length;
 
+  const pendingCoverageRequestCount = (pendingCoverageRequests || []).length;
+  const consultationRepliesCount = (myConsultationsWithReplies || []).length;
+  const availabilityStale =
+    !profile?.availability_confirmed_at ||
+    Date.now() - new Date(profile.availability_confirmed_at).getTime() > AVAILABILITY_STALE_AFTER_MS;
+
   const hasAttentionItems =
     (pendingConnectionCount ?? 0) > 0 ||
     offersAwaitingDecision > 0 ||
     expiringLicenseCount > 0 ||
     expiringPanelCount > 0 ||
     (plannerOfferCount ?? 0) > 0 ||
-    unreadMessageCount > 0;
+    unreadMessageCount > 0 ||
+    pendingCoverageRequestCount > 0 ||
+    consultationRepliesCount > 0 ||
+    availabilityStale;
 
-  // ---------- My World: Partners / Bench / Recommended ----------
-  const partners: { id: string; name: string; avatarPath: string | null }[] = [];
+  // ---------- Your network: Trusted Colleagues / Bench / Recommended ----------
+  const trustedColleagues: { id: string; name: string; avatarPath: string | null }[] = [];
   const bench: { id: string; name: string; avatarPath: string | null }[] = [];
   const connectedIds = new Set<string>();
   for (const c of acceptedConnections || []) {
@@ -184,7 +205,7 @@ export default async function DashboardHome(
     const otherId = c.requester_id === myself ? c.addressee_id : c.requester_id;
     connectedIds.add(otherId);
     const entry = { id: otherId, name: other?.full_name, avatarPath: other?.avatar_path || null };
-    if (c.tier === "partner") partners.push(entry);
+    if (c.tier === "trusted_colleague" || c.tier === "partner") trustedColleagues.push(entry);
     else bench.push(entry);
   }
   const tierByOtherId = buildTierMap(acceptedConnections as any, myself);
@@ -192,12 +213,8 @@ export default async function DashboardHome(
     (myLookups || []).filter((l: any) => l.lookup_values?.category === "treatment_specialism").map((l: any) => l.lookup_values.value)
   );
   const blockedIds = new Set((blocklist || []).map((b) => b.blocked_profile_id));
-  // A lighter version of Network's "recommended" computation - just enough
-  // to show the top 5 (ranked by shared-specialism overlap, then recent
-  // activity - see rankRecommended) on the Overview widget; the full
-  // interactive list with actions lives on the Network page itself. Nick's
-  // rule: recommended never shows more than 5 anywhere, recomputed live
-  // rather than a fixed list.
+  // Same "top 5, recomputed live" rule as everywhere else recommended
+  // colleagues show up - see Network page for the full interactive list.
   const { data: directoryForRecommended } = mySpecialisms.size > 0
     ? await supabase.from("public_directory").select("id, full_name, category, value, last_active_at, avatar_path")
     : { data: [] as any[] };
@@ -212,200 +229,34 @@ export default async function DashboardHome(
   }
   const recommendedTotal = recommendedCandidates.size;
   const recommendedTop5 = rankRecommended(Array.from(recommendedCandidates.values()), 5);
-  const recommendedNames = new Map(recommendedTop5.map((r) => [r.id, r.name]));
 
-  // ---------- Town Hall preview ----------
-  const townHallGrouped = (townHallRecent || []).slice(0, 5);
-
-  // ---------- Messages preview ----------
-  // Same Inbox/Sent split as the full Messages page. Both lists are fetched
-  // and rendered up front (not just whichever box the URL says), so the
-  // Inbox/Sent toggle below can be a client-side swap with no page reload.
-  const inboxRows = [...(myConversationRows || [])]
-    .filter((r: any) => r.conversation && r.conversation.created_by !== myself)
-    .sort((a: any, b: any) => new Date(b.conversation.last_message_at).getTime() - new Date(a.conversation.last_message_at).getTime())
-    .slice(0, 4);
-  const sentRows = [...(myConversationRows || [])]
-    .filter((r: any) => r.conversation && r.conversation.created_by === myself)
-    .sort((a: any, b: any) => new Date(b.conversation.last_message_at).getTime() - new Date(a.conversation.last_message_at).getTime())
-    .slice(0, 4);
-  const previewConversationIds = [...inboxRows, ...sentRows].map((r: any) => r.conversation.id);
-  const [{ data: previewParticipants }, { data: previewMessages }] = await Promise.all([
-    previewConversationIds.length
-      ? supabase.from("conversation_participants").select("conversation_id, profile_id, profile:profile_id(full_name, avatar_path)").in("conversation_id", previewConversationIds)
-      : Promise.resolve({ data: [] as any[] }),
-    previewConversationIds.length
-      ? supabase
-          .from("conversation_messages")
-          .select("conversation_id, body, author_id, created_at")
-          .in("conversation_id", previewConversationIds)
-          .is("deleted_at", null)
-          .order("created_at", { ascending: false })
-      : Promise.resolve({ data: [] as any[] }),
-  ]);
-  const otherPeopleByConversation = new Map<number, { id: string; name: string; avatarPath: string | null }[]>();
-  for (const p of previewParticipants || []) {
-    if (p.profile_id === myself) continue;
-    const list = otherPeopleByConversation.get(p.conversation_id) || [];
-    list.push({ id: p.profile_id, name: (p.profile as any)?.full_name || "Colleague", avatarPath: (p.profile as any)?.avatar_path || null });
-    otherPeopleByConversation.set(p.conversation_id, list);
-  }
-  const latestByConversation = new Map<number, any>();
-  for (const m of previewMessages || []) {
-    if (!latestByConversation.has(m.conversation_id)) latestByConversation.set(m.conversation_id, m);
-  }
-  const tierOf = (id: string): Tier => tierByOtherId.get(id) || (recommendedCandidates.has(id) ? "recommended" : "none");
+  // ---------- Relevant to you: opportunity layer ----------
+  const matchingReferrals = (openReferralsFromColleagues || [])
+    .filter((r: any) => !r.lookup_values?.value || mySpecialisms.has(r.lookup_values.value))
+    .slice(0, 3);
+  const consultQuestions = openConsultationsFromColleagues || [];
+  const hasRelevantItems = matchingReferrals.length > 0 || consultQuestions.length > 0;
 
   // One batched resolve for every avatar_path referenced anywhere on this
-  // page (My World, Messages preview, Town Hall preview) - per Nick's rule
-  // that a name shown anywhere should carry the person's real picture (or
-  // initials) alongside it, not just colored text.
-  const overviewAvatarUrlByPath = await resolveAvatarUrls(supabase, [
-    ...partners.map((p) => p.avatarPath),
+  // page, so a name shown anywhere carries the person's real picture (or
+  // initials), not just colored text.
+  const homeAvatarUrlByPath = await resolveAvatarUrls(supabase, [
+    ...trustedColleagues.map((p) => p.avatarPath),
     ...bench.map((p) => p.avatarPath),
     ...Array.from(recommendedCandidates.values()).map((r) => r.avatarPath),
-    ...Array.from(otherPeopleByConversation.values()).flatMap((list) => list.map((p) => p.avatarPath)),
-    ...townHallGrouped.map((m: any) => m.author?.avatar_path),
   ]);
-  const avatarUrlOf = (path: string | null | undefined) => overviewAvatarUrlByPath.get(path || "") || null;
+  const avatarUrlOf = (path: string | null | undefined) => homeAvatarUrlByPath.get(path || "") || null;
 
-  function renderMessageRows(rows: any[]) {
-    return (
-      <>
-        {rows.map((r: any) => {
-          const conv = r.conversation;
-          const others = otherPeopleByConversation.get(conv.id) || [];
-          const latest = latestByConversation.get(conv.id);
-          const needsReply = !!latest && latest.author_id !== myself && (!r.last_read_at || new Date(latest.created_at) > new Date(r.last_read_at));
-          const when = latest ? new Date(latest.created_at) : conv.last_message_at ? new Date(conv.last_message_at) : null;
-          return (
-            <a key={conv.id} href={`/dashboard/messages/${conv.id}`} className={`ov-feed-row${needsReply ? " needs-reply" : ""}`}>
-              <span className="title" style={{ display: "flex", justifyContent: "space-between", gap: "0.5rem" }}>
-                <span>
-                  {others.length > 0
-                    ? others.map((o, i) => (
-                        <span key={o.id}>
-                          {i > 0 && ", "}
-                          <TierName id={o.id} name={o.name} tier={tierOf(o.id)} avatarUrl={avatarUrlOf(o.avatarPath)} />
-                        </span>
-                      ))
-                    : "Conversation"}
-                  {conv.title && <span className="muted"> · {conv.title}</span>}
-                  {needsReply && <span className="tag gold" style={{ marginLeft: "0.4rem" }}>Needs your reply</span>}
-                </span>
-                {when && (
-                  <span className="muted" style={{ fontSize: "0.7rem", flex: "0 0 auto" }}>
-                    {when.toLocaleDateString()} {when.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                  </span>
-                )}
-              </span>
-              <span className="snippet">{latest ? latest.body : "No messages yet"}</span>
-            </a>
-          );
-        })}
-        {rows.length === 0 && (
-          <p className="muted">
-            Nothing here yet. <a href="/dashboard/messages">Send a new message</a> to get a conversation going.
-          </p>
-        )}
-      </>
-    );
-  }
-
-  // Physician referrals + colleagues' offers, both awaiting a decision -
-  // the same "Referral notices" content that lives in full on Messages,
-  // shown here in miniature so this widget is never a blind spot for them.
-  function renderNoticePreviewRows() {
-    const peerRows = (myOpenRequests || []).flatMap((r: any) =>
-      (r.referral_responses || [])
-        .filter((resp: any) => resp.status === "offered")
-        .map((resp: any) => ({ kind: "peer" as const, requestId: r.id }))
-    );
-    const hasAny = (pendingProviderReferrals || []).length > 0 || peerRows.length > 0;
-    return (
-      <>
-        {(pendingProviderReferrals || []).map((r: any) => (
-          <a key={`pr-${r.id}`} href="/dashboard/messages" className="ov-feed-row needs-reply">
-            <span className="title">
-              <span>
-                {r.referring_providers?.full_name || "A physician"}
-                {r.referring_providers?.practice_name ? `, ${r.referring_providers.practice_name}` : ""}
-                <span className={`tag${r.urgency === "urgent" ? " danger" : ""}`} style={{ marginLeft: "0.4rem" }}>{r.urgency}</span>
-              </span>
-            </span>
-            <span className="snippet">{r.reason}</span>
-          </a>
-        ))}
-        {peerOffersAwaitingDecision > 0 && (
-          <a href="/dashboard/messages" className="ov-feed-row needs-reply">
-            <span className="title"><span>Colleague offers to help</span></span>
-            <span className="snippet">
-              {peerOffersAwaitingDecision} offer{peerOffersAwaitingDecision === 1 ? "" : "s"} on your posted referral requests
-            </span>
-          </a>
-        )}
-        {!hasAny && (
-          <p className="muted">
-            Nothing here yet. Physician referrals and offers on your posted requests will show up here.
-          </p>
-        )}
-      </>
-    );
-  }
-
-  // ---------- Caseload distribution + auto-matched professionals ----------
-  const needCounts = new Map<string, number>();
-  for (const c of activeCases || []) {
-    if (c.primary_need) needCounts.set(c.primary_need, (needCounts.get(c.primary_need) || 0) + 1);
-  }
-  const totalCases = (activeCases || []).length;
-  const needEntries = Array.from(needCounts.entries()).sort((a, b) => b[1] - a[1]);
-
-  // Conic-gradient pie built from plain percentages - no charting library
-  // needed for a handful of static slices. Capped at the top 5 primary
-  // treatment areas per Nick's spec.
-  let pieGradient = "";
-  let cursor = 0;
-  const pieSlices = needEntries.slice(0, 5).map(([need, count], i) => {
-    const pct = totalCases > 0 ? (count / totalCases) * 100 : 0;
-    const color = PIE_COLORS[i % PIE_COLORS.length];
-    const start = cursor;
-    cursor += pct;
-    return { need, count, pct, color, start, end: cursor };
-  });
-  pieGradient = pieSlices.length > 0
-    ? `conic-gradient(${pieSlices.map((s) => `${s.color} ${s.start}% ${s.end}%`).join(", ")})`
-    : "var(--bg-alt)";
-
-  // ---------- My caseload widget stats (Active / Sessions p.w. / Avg rate) -
-  // same figures, same math, as the per-organization stat boxes on the
-  // Caseload page, just rolled up across every active client instead of one
-  // organization at a time. ----------
-  const totalSessionsPerWeek = (activeCases || []).reduce((sum, c: any) => sum + (Number(c.sessions_per_week) || 0), 0);
-  const ratedActiveCases = (activeCases || []).filter((c: any) => c.rate_per_session !== null && c.rate_per_session !== undefined);
-  const avgHourlyRate = ratedActiveCases.length > 0
-    ? ratedActiveCases.reduce((sum: number, c: any) => sum + Number(c.rate_per_session), 0) / ratedActiveCases.length
-    : null;
-
-  // ---------- Annual income (same math as the Income page, just rolled up
-  // to a single annualized true-net figure for a quick-glance widget) ----------
-  const incomeBooksList = incomeBooks || [];
-  const monthlyGross = (activeCases || []).reduce((sum, c: any) => sum + caseMonthlyGross(c), 0);
-  const monthlyNet = (activeCases || []).reduce((sum, c: any) => sum + caseMonthlyNet(c, incomeBooksList), 0);
-  const monthlyOverhead = (overheadExpenses || []).reduce((sum, o) => sum + Number(o.monthly_cost || 0), 0);
-  const monthlyTrueNet = monthlyNet - monthlyOverhead;
-  const annualGross = monthlyGross * 12;
-  const annualTrueNet = monthlyTrueNet * 12;
-
-  // ---------- Recent documents ----------
+  // ---------- Recent documents (Practice Library teaser) ----------
   const recentDocs = [
     ...(recentPersonalDocs || []).map((d) => ({ ...d, scope: "Personal" as const, uploaderName: null as string | null })),
     ...(recentSharedDocs || []).map((d: any) => ({ ...d, scope: "Shared" as const, uploaderName: d.uploader?.full_name || null })),
   ]
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-    .slice(0, 5);
+    .slice(0, 4);
 
-  // ---------- Quick Referral Search ----------
+  // ---------- Quick Referral Search - carried over unchanged from the old
+  // Overview page, just relocated under "For your practice" ----------
   const hasSearchInputs = !!(searchParams.ref_state || searchParams.ref_primary || searchParams.ref_secondary || searchParams.ref_tertiary);
   let quickSearchResults: Array<{ profileId: string; fullName: string; state: string | null; connectionTier: string; acceptsInsurance: boolean | null }> = [];
   if (hasSearchInputs) {
@@ -442,14 +293,13 @@ export default async function DashboardHome(
   }
 
   const displayName = profile?.full_name || "";
-  const initials = displayName.split(/\s+/).filter(Boolean).slice(0, 2).map((p: string) => p[0]?.toUpperCase()).join("") || "?";
 
   return (
     <div className="overview-page">
       {searchParams.error && <div className="error-banner">{searchParams.error}</div>}
       <div className="overview-topline">
         <div>
-          <h1>Overview</h1>
+          <h1>Home</h1>
           <p className="sub">
             {profile?.credential_prefix ? `${profile.credential_prefix} ` : ""}{displayName || "Welcome"}
             {profile?.qualification_level ? ` · ${profile.qualification_level}` : ""}, here's where things stand.
@@ -466,11 +316,11 @@ export default async function DashboardHome(
           </a>
           <a href="/dashboard/network" className="overview-stat-pill">
             <span className="value">{pendingConnectionCount ?? 0}</span>
-            <span className="label">Requests</span>
+            <span className="label">Network</span>
           </a>
           <a href="/dashboard/documents" className="overview-stat-pill">
             <span className="value">{docCount ?? 0}</span>
-            <span className="label">Documents</span>
+            <span className="label">Library</span>
           </a>
         </div>
       </div>
@@ -491,6 +341,16 @@ export default async function DashboardHome(
               <a href="/dashboard/messages">{unreadMessageCount} unread conversation{unreadMessageCount === 1 ? "" : "s"}</a>
             </span>
           )}
+          {pendingCoverageRequestCount > 0 && (
+            <span>
+              <a href="/dashboard/requests">{pendingCoverageRequestCount} coverage request{pendingCoverageRequestCount === 1 ? "" : "s"} waiting on you</a>
+            </span>
+          )}
+          {consultationRepliesCount > 0 && (
+            <span>
+              <a href="/dashboard/consult">{consultationRepliesCount} consultation repl{consultationRepliesCount === 1 ? "y" : "ies"} to review</a>
+            </span>
+          )}
           {(pendingConnectionCount ?? 0) > 0 && (
             <span>
               <a href="/dashboard/network">{pendingConnectionCount} pending connection{pendingConnectionCount === 1 ? "" : "s"}</a>
@@ -503,7 +363,7 @@ export default async function DashboardHome(
           )}
           {(plannerOfferCount ?? 0) > 0 && (
             <span>
-              <a href="/dashboard/planner">{plannerOfferCount} coverage request{plannerOfferCount === 1 ? "" : "s"}</a>
+              <a href="/dashboard/planner">{plannerOfferCount} coverage offer{plannerOfferCount === 1 ? "" : "s"} (legacy Planner)</a>
             </span>
           )}
           {expiringLicenseCount > 0 && (
@@ -516,48 +376,101 @@ export default async function DashboardHome(
               <a href="/dashboard/credentials">{expiringPanelCount} panel{expiringPanelCount === 1 ? "" : "s"} renewing</a>
             </span>
           )}
+          {availabilityStale && (
+            <span>
+              <a href="/dashboard/availability">Availability not confirmed recently</a>
+            </span>
+          )}
         </div>
       )}
 
+      <h2 style={{ fontSize: "0.95rem", margin: "0 0 0.6rem" }}>What do you need?</h2>
+      <div className="home-action-grid">
+        <a href="/dashboard/requests?tab=coverage" className="home-action-tile">
+          <div className="home-action-title">Find cover</div>
+          <div className="home-action-sub">Line up appropriate clinicians for a coverage plan</div>
+        </a>
+        <a href="/dashboard/requests?tab=referrals" className="home-action-tile">
+          <div className="home-action-title">Refer a patient</div>
+          <div className="home-action-sub">Post a referral request to your network</div>
+        </a>
+        <a href="/dashboard/consult" className="home-action-tile">
+          <div className="home-action-title">Ask colleagues</div>
+          <div className="home-action-sub">Get a second opinion or a clinical question answered</div>
+        </a>
+        <a href="/dashboard/network" className="home-action-tile">
+          <div className="home-action-title">Find a clinician</div>
+          <div className="home-action-sub">Search the directory by specialism, state or PSYPACT</div>
+        </a>
+      </div>
+
       <div className="overview-bento">
-        {/* ---------- Left rail: identity ---------- */}
+        {/* ---------- Left: relevant to you + practice ---------- */}
         <div className="overview-col-left">
           <div className="ov-card">
             <div className="widget-header">
-              <h2>My profile</h2>
-              <GoLink href="/dashboard/profile" />
+              <h2>Relevant to you</h2>
             </div>
-            <div className="ov-profile-head">
-              <div className="ov-avatar">{initials}</div>
-              <div>
-                <div className="name">
-                  {profile?.credential_prefix ? `${profile.credential_prefix} ` : ""}{displayName || "Your name"}
-                </div>
-                {profile?.qualification_level && <div className="degree">{profile.qualification_level}</div>}
-              </div>
-            </div>
-            {profile && (
+            {hasRelevantItems ? (
               <>
-                <ToggleButton compact flag="accepting_referrals" value={!!profile.accepting_referrals} label="Incoming referrals" />
-                <ToggleButton compact flag="open_to_receive_supervision" value={!!profile.open_to_receive_supervision} label="Receiving supervision" />
-                <ToggleButton compact flag="open_to_give_supervision" value={!!profile.open_to_give_supervision} label="Giving supervision" />
-                <ToggleButton compact flag="open_to_group_consultation" value={!!profile.open_to_group_consultation} label="Group consultation" />
+                {matchingReferrals.map((r: any) => (
+                  <a key={`ref-${r.id}`} href="/dashboard/requests?tab=referrals" className="ov-feed-row">
+                    <span className="title">Referral request matches your specialties</span>
+                    <span className="snippet">
+                      {r.lookup_values?.value || "General"}
+                      {r.city || r.state ? ` · ${[r.city, r.state].filter(Boolean).join(", ")}` : ""}
+                    </span>
+                  </a>
+                ))}
+                {consultQuestions.map((c: any) => (
+                  <a key={`con-${c.id}`} href="/dashboard/consult" className="ov-feed-row">
+                    <span className="title">{c.author?.full_name || "A colleague"} asked a question</span>
+                    <span className="snippet">{c.question}</span>
+                  </a>
+                ))}
               </>
+            ) : (
+              <p className="muted">
+                Nothing matching your specialties right now. Check <a href="/dashboard/requests">Requests</a> and{" "}
+                <a href="/dashboard/consult">Consult</a> for everything open across the network.
+              </p>
             )}
           </div>
 
           <div className="ov-card">
             <div className="widget-header">
-              <h2>My world</h2>
+              <h2>For your practice</h2>
+              <GoLink href="/dashboard/documents" />
+            </div>
+            {recentDocs.map((d: any) => (
+              <a key={`${d.scope}-${d.id}`} href="/dashboard/documents" className="ov-feed-row">
+                <span className="title">{d.title}</span>
+                <span className="snippet">{d.scope}{d.uploaderName ? ` · ${d.uploaderName}` : ""}</span>
+              </a>
+            ))}
+            {recentDocs.length === 0 && (
+              <p className="muted">
+                No Library resources yet. <a href="/dashboard/documents">Upload one</a> to share with
+                the network or keep for yourself.
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* ---------- Right: your network + quick tools ---------- */}
+        <div className="overview-col-right">
+          <div className="ov-card">
+            <div className="widget-header">
+              <h2>Your network</h2>
               <GoLink href="/dashboard/network" />
             </div>
             <div className="ov-tier-line">
-              <span className="tag tier-partner">Partners</span>
-              <strong>{partners.length}</strong>
+              <span className="tag tier-trusted_colleague">Trusted Colleagues</span>
+              <strong>{trustedColleagues.length}</strong>
             </div>
             <p className="ov-tier-names">
-              {partners.length > 0 ? partners.slice(0, 4).map((p) => (
-                <TierName key={p.id} id={p.id} name={p.name} tier="partner" avatarUrl={avatarUrlOf(p.avatarPath)} />
+              {trustedColleagues.length > 0 ? trustedColleagues.slice(0, 4).map((p) => (
+                <TierName key={p.id} id={p.id} name={p.name} tier="trusted_colleague" avatarUrl={avatarUrlOf(p.avatarPath)} />
               )) : "None yet"}
             </p>
             <div className="ov-tier-line">
@@ -580,128 +493,6 @@ export default async function DashboardHome(
               {recommendedTop5.length > 0 ? recommendedTop5.map((p) => (
                 <TierName key={p.id} id={p.id} name={p.name} tier="recommended" avatarUrl={avatarUrlOf(p.avatarPath)} />
               )) : "None yet"}
-            </p>
-          </div>
-        </div>
-
-        {/* ---------- Center: activity feed ---------- */}
-        <div className="overview-col-center">
-          <div className="ov-card">
-            <div className="widget-header">
-              <h2>My messages</h2>
-              <GoLink href="/dashboard/messages" />
-            </div>
-            <ToggleBox
-              defaultTab={offersAwaitingDecision > 0 ? "notices" : "inbox"}
-              tabs={[
-                { key: "inbox", label: `Inbox (${inboxRows.length})`, content: renderMessageRows(inboxRows) },
-                { key: "notices", label: `Notices (${offersAwaitingDecision})`, content: renderNoticePreviewRows() },
-                { key: "sent", label: `Sent (${sentRows.length})`, content: renderMessageRows(sentRows) },
-              ]}
-            />
-          </div>
-
-          <div className="ov-card">
-            <div className="widget-header">
-              <h2>Recent Town Hall conversations</h2>
-              <GoLink href="/dashboard/town-hall" />
-            </div>
-            {townHallGrouped.map((m: any) => (
-              <a key={m.id} href={`/dashboard/town-hall/${m.channel_id}`} className="ov-feed-row">
-                <span className="title">
-                  <span className="tag" style={{ marginRight: "0.4rem" }}>{m.channel?.name || "Town Hall"}</span>
-                  <TierName id={m.author?.id || ""} name={m.author?.full_name || "Colleague"} tier={m.author?.id ? tierOf(m.author.id) : "none"} avatarUrl={avatarUrlOf(m.author?.avatar_path)} />
-                </span>
-                <span className="snippet">{m.body}</span>
-              </a>
-            ))}
-            {townHallGrouped.length === 0 && (
-              <p className="muted">
-                No conversations yet. <a href="/dashboard/town-hall">Visit Town Hall</a> to see what
-                your specialism channels are talking about.
-              </p>
-            )}
-          </div>
-
-          <div className="ov-card">
-            <div className="widget-header">
-              <h2>Recent documents</h2>
-              <GoLink href="/dashboard/documents" />
-            </div>
-            {recentDocs.map((d: any) => (
-              <a key={`${d.scope}-${d.id}`} href="/dashboard/documents" className="ov-feed-row">
-                <span className="title">{d.title}</span>
-                <span className="snippet">{d.scope}{d.uploaderName ? ` · ${d.uploaderName}` : ""}</span>
-              </a>
-            ))}
-            {recentDocs.length === 0 && (
-              <p className="muted">
-                No documents yet. <a href="/dashboard/documents">Upload one</a> to share with the
-                network or keep for yourself.
-              </p>
-            )}
-          </div>
-        </div>
-
-        {/* ---------- Right rail: numbers + quick actions ---------- */}
-        <div className="overview-col-right">
-          <div className="ov-card">
-            <div className="widget-header">
-              <h2>My caseload</h2>
-              <GoLink href="/dashboard/caseload" />
-            </div>
-            {totalCases > 0 ? (
-              <>
-                <div className="ov-pie-row">
-                  <div className="ov-mini-pie" style={{ background: pieGradient }} />
-                  <div className="ov-pie-legend">
-                    {pieSlices.map((s) => (
-                      <span key={s.need}>
-                        <span className="pie-legend-swatch" style={{ background: s.color }} />
-                        {s.need} ({Math.round(s.pct)}%)
-                      </span>
-                    ))}
-                  </div>
-                </div>
-                <div className="ov-mini-stats">
-                  <div className="ov-mini-stat">
-                    <div className="value">{totalCases}</div>
-                    <div className="label">Active clients</div>
-                  </div>
-                  <div className="ov-mini-stat">
-                    <div className="value">{Number.isInteger(totalSessionsPerWeek) ? totalSessionsPerWeek : totalSessionsPerWeek.toFixed(1)}</div>
-                    <div className="label">Sessions p.w.</div>
-                  </div>
-                  <div className="ov-mini-stat">
-                    <div className="value">{avgHourlyRate !== null ? currency(avgHourlyRate) : "-"}</div>
-                    <div className="label">Avg. rate</div>
-                  </div>
-                </div>
-              </>
-            ) : (
-              <p className="muted">Add active clients on the Caseload page to see your distribution here.</p>
-            )}
-          </div>
-
-          <div className="ov-card">
-            <div className="widget-header">
-              <h2>Annual income</h2>
-              <GoLink href="/dashboard/income" />
-            </div>
-            <div className="ov-mini-stats">
-              <div className="ov-mini-stat">
-                <div className="value">{currency(annualGross)}</div>
-                <div className="label">Annual gross</div>
-              </div>
-              <div className="ov-mini-stat">
-                <div className="value">{currency(annualTrueNet)}</div>
-                <div className="label">Annual true net</div>
-              </div>
-            </div>
-            <p className="muted" style={{ marginTop: "0.6rem", marginBottom: 0, fontSize: "0.76rem" }}>
-              Projected from your active caseload, after each practice's retention split and your
-              recurring overhead. See <a href="/dashboard/income">Income</a> for the full breakdown
-              by practice.
             </p>
           </div>
 
