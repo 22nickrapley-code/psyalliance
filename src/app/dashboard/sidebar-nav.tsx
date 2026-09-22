@@ -25,11 +25,18 @@ const MoreIcon = (
   </svg>
 );
 
-// The four destinations people hit most, always one tap away on mobile -
-// same reasoning as any mainstream app's bottom tab bar (LinkedIn, IG,
-// Facebook): a handful of primary spots plus a catch-all for everything
-// else, rather than every single nav item competing for the same row.
-const PRIMARY_TAB_HREFS = ["/dashboard", "/dashboard/messages", "/dashboard/caseload", "/dashboard/network"];
+// The primary destinations (Master Brief's Home / Requests / Network /
+// Consult / Messages), always one tap away on mobile - same reasoning as
+// any mainstream app's bottom tab bar (LinkedIn, IG, Facebook): a handful
+// of primary spots plus a catch-all ("More") for everything else, rather
+// than every single nav item competing for the same row.
+const PRIMARY_TAB_HREFS = [
+  "/dashboard",
+  "/dashboard/requests",
+  "/dashboard/network",
+  "/dashboard/consult",
+  "/dashboard/messages",
+];
 
 export default function SidebarNav({
   groups,

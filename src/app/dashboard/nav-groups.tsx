@@ -142,42 +142,83 @@ const icon = {
       <path d="M12 8v5M9.5 10.5h5" />
     </svg>
   ),
+  requests: (
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 21c4-2.6 7.5-5.7 7.5-10A5.5 5.5 0 0 0 12 6.3 5.5 5.5 0 0 0 4.5 11c0 4.3 3.5 7.4 7.5 10Z" />
+      <path d="M9.5 11h5M12 8.5v5" />
+    </svg>
+  ),
+  consult: (
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="7.5" cy="12" r="4.2" />
+      <circle cx="16.5" cy="12" r="4.2" />
+    </svg>
+  ),
+  availability: (
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3.5" y="4.5" width="17" height="16" rx="1.5" />
+      <path d="M3.5 9.5h17" />
+      <path d="M8 3v3M16 3v3" />
+      <path d="m8 14 2.5 2.5L16 11.5" />
+    </svg>
+  ),
+  library: (
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 4.5h4.5v15H4z" />
+      <path d="M10 4.5h4.5v15H10z" />
+      <path d="m16.3 5 3.7 14.5-4.3 1.1L12 6.1z" />
+    </svg>
+  ),
 };
 
-export function buildNavGroups(isAdmin: boolean, unreadMessageCount = 0): NavGroup[] {
+// Rebuild Phase 5 (navigation). Master Brief's new primary destinations:
+// Home / Requests / Network / Consult / Messages - always visible, always
+// first. Everything that used to compete with them for top billing
+// (Caseload, Income, Capacity, Town Hall, the standalone Planner,
+// Supervision, the old bulletin-board Referrals page) is kept reachable
+// under "Legacy" rather than deleted outright - Addendum A8 / Master
+// Brief's own instruction is "do not start by deleting features"; actual
+// removal is Phase 18, once every new module has fully replaced what it's
+// standing in for. "Overview" is relabelled "Home" here at the nav level
+// only - the page itself (dashboard/page.tsx) is still the old Overview
+// content until the Phase 6 Home rebuild.
+export function buildNavGroups(isAdmin: boolean, unreadMessageCount = 0, pendingRequestsCount = 0): NavGroup[] {
   const groups: NavGroup[] = [
     {
-      label: "Overview",
+      label: "PsyAlliance",
       items: [
-        { href: "/dashboard", label: "Overview", icon: icon.overview },
+        { href: "/dashboard", label: "Home", icon: icon.overview },
+        { href: "/dashboard/requests", label: "Requests", icon: icon.requests, badge: pendingRequestsCount },
+        { href: "/dashboard/network", label: "Network", icon: icon.network },
+        { href: "/dashboard/consult", label: "Consult", icon: icon.consult },
         { href: "/dashboard/messages", label: "Messages", icon: icon.messages, badge: unreadMessageCount },
       ],
     },
     {
       label: "My practice",
       items: [
-        { href: "/dashboard/profile", label: "Profile", icon: icon.profile },
-        { href: "/dashboard/caseload", label: "Caseload", icon: icon.caseload },
-        { href: "/dashboard/capacity", label: "Capacity & Overhead", icon: icon.capacity },
-        { href: "/dashboard/income", label: "Income", icon: icon.income },
+        { href: "/dashboard/profile", label: "My Profile", icon: icon.profile },
         { href: "/dashboard/credentials", label: "Credentials", icon: icon.credentials },
-        { href: "/dashboard/documents", label: "Documents", icon: icon.documents },
-      ],
-    },
-    {
-      label: "Network",
-      items: [
-        { href: "/dashboard/network", label: "Network", icon: icon.network },
-        { href: "/dashboard/town-hall", label: "Town Hall", icon: icon.townhall },
-        { href: "/dashboard/referrals", label: "Referrals", icon: icon.referrals },
-        { href: "/dashboard/planner", label: "Planner", icon: icon.planner },
-        { href: "/dashboard/planner/coverage-plans", label: "Coverage plans", icon: icon.planner },
-        { href: "/dashboard/supervision", label: "Supervision", icon: icon.supervision },
+        { href: "/dashboard/availability", label: "Availability", icon: icon.availability },
+        { href: "/dashboard/documents", label: "Library", icon: icon.library },
       ],
     },
     {
       label: "Account",
       items: [{ href: "/dashboard/settings", label: "Settings", icon: icon.settings }],
+    },
+    {
+      label: "Legacy",
+      items: [
+        { href: "/dashboard/caseload", label: "Caseload", icon: icon.caseload },
+        { href: "/dashboard/referrals", label: "Referrals (old)", icon: icon.referrals },
+        { href: "/dashboard/town-hall", label: "Town Hall", icon: icon.townhall },
+        { href: "/dashboard/planner", label: "Planner", icon: icon.planner },
+        { href: "/dashboard/planner/coverage-plans", label: "Coverage plans (old)", icon: icon.planner },
+        { href: "/dashboard/capacity", label: "Capacity & Overhead", icon: icon.capacity },
+        { href: "/dashboard/income", label: "Income", icon: icon.income },
+        { href: "/dashboard/supervision", label: "Supervision", icon: icon.supervision },
+      ],
     },
   ];
 

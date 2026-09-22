@@ -49,6 +49,7 @@ export default async function DashboardLayout({
     { count: unreadNotificationCount },
     { count: pendingProviderReferralCount },
     { data: myOpenRequestsForBadge },
+    { count: pendingCoverageRequestCount },
   ] = await Promise.all([
     supabase
       .from("conversation_participants")
@@ -69,6 +70,13 @@ export default async function DashboardLayout({
       .select("id, referral_responses(status)")
       .eq("requesting_profile_id", user.id)
       .eq("status", "open"),
+    // Requests nav badge (Phase 5): coverage requests sent to me and still
+    // waiting on a response - the Requests hub's own "needs you" count.
+    supabase
+      .from("coverage_requests")
+      .select("id", { count: "exact", head: true })
+      .eq("requested_profile_id", user.id)
+      .eq("status", "sent"),
   ]);
   const unreadConversationCount = (myConversationRows || []).filter((r: any) => {
     if (!r.conversation) return false;
@@ -94,7 +102,7 @@ export default async function DashboardLayout({
     .map((p: string) => p[0]?.toUpperCase())
     .join("") || "U";
 
-  const groups = buildNavGroups(!!profile?.is_admin, unreadMessageCount);
+  const groups = buildNavGroups(!!profile?.is_admin, unreadMessageCount, pendingCoverageRequestCount || 0);
 
   return (
     <div className="app-shell">
