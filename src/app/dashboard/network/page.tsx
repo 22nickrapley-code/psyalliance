@@ -37,7 +37,7 @@ function connectedDuration(sinceIso: string | null | undefined): string | null {
   return `Connected ${years} year${years === 1 ? "" : "s"}`;
 }
 
-type Tier = "partner" | "bench" | "recommended" | "none";
+type Tier = "partner" | "trusted_colleague" | "bench" | "recommended" | "none";
 
 function ProfessionTag({ profession }: { profession: Profession }) {
   return (
@@ -47,11 +47,11 @@ function ProfessionTag({ profession }: { profession: Profession }) {
   );
 }
 
-// Consistent Partner=blue / Bench=purple / Recommended=orange coloring,
-// used everywhere a connection tier shows up on this page.
+// Consistent Trusted Colleague=blue / Bench=purple / Recommended=orange
+// coloring, used everywhere a connection tier shows up on this page.
 function TierTag({ tier }: { tier: Tier }) {
   if (tier === "none") return <span className="tag tier-none">Not yet connected</span>;
-  const label = tier === "partner" ? "Partner" : tier === "bench" ? "Bench" : "Recommended";
+  const label = tier === "partner" || tier === "trusted_colleague" ? "Trusted Colleague" : tier === "bench" ? "Bench" : "Recommended";
   return <span className={`tag tier-${tier}`}>{label}</span>;
 }
 
@@ -106,7 +106,7 @@ export default async function NetworkPage(
   const scoreById = new Map((scores || []).map((s) => [s.profile_id, s.score as number]));
   const engagementBadge = (personId: string) => {
     const score = scoreById.get(personId) || 0;
-    if (score >= 20) return { label: "Highly engaged, consider Partner", score };
+    if (score >= 20) return { label: "Highly engaged, consider Trusted Colleague", score };
     if (score >= 10) return { label: "Community pick, consider Bench", score };
     return null;
   };
@@ -161,7 +161,7 @@ export default async function NetworkPage(
     connectionByOtherId.set(otherId, c);
   }
 
-  const partners = (connections || []).filter((c: any) => c.status === "accepted" && c.tier === "partner");
+  const partners = (connections || []).filter((c: any) => c.status === "accepted" && (c.tier === "trusted_colleague" || c.tier === "partner"));
   const bench = (connections || []).filter((c: any) => c.status === "accepted" && c.tier === "bench");
   const incoming = (connections || []).filter((c: any) => c.status === "pending" && c.addressee_id === myself);
   const outgoing = (connections || []).filter((c: any) => c.status === "pending" && c.requester_id === myself);
@@ -216,7 +216,7 @@ export default async function NetworkPage(
     <div>
       <h1>Network</h1>
       <p className="muted">
-        <span className="tag tier-partner" style={{ marginRight: "0.35rem" }}>Partner</span>
+        <span className="tag tier-trusted_colleague" style={{ marginRight: "0.35rem" }}>Trusted Colleague</span>
         first-degree, mutual-consent connections.
         <span className="tag tier-bench" style={{ margin: "0 0.35rem 0 0.75rem" }}>Bench</span>
         a looser "known, not yet connected" tier.
@@ -295,8 +295,8 @@ export default async function NetworkPage(
 
       <div className="card">
         <h2>
-          <span className="tag tier-partner" style={{ marginRight: "0.5rem" }}>Partner</span>
-          Partners ({partners.length})
+          <span className="tag tier-trusted_colleague" style={{ marginRight: "0.5rem" }}>Trusted Colleague</span>
+          Trusted Colleagues ({partners.length})
         </h2>
         {partners.map((c: any) => {
           const otherId = otherIdOf(c);
@@ -304,8 +304,8 @@ export default async function NetworkPage(
           return (
           <div key={c.id} className="person-row">
             <span className="person-row-info">
-              <Avatar url={avatarOf(c)} name={nameOf(c) || ""} ring="partner" />
-              <PersonLink id={otherId} name={nameOf(c) || ""} tier="partner" />
+              <Avatar url={avatarOf(c)} name={nameOf(c) || ""} ring="trusted_colleague" />
+              <PersonLink id={otherId} name={nameOf(c) || ""} tier="trusted_colleague" />
               {duration && <span className="muted" style={{ marginLeft: "0.5rem", fontSize: "0.8rem" }}>{duration}</span>}
             </span>
             <span className="person-row-actions">
@@ -323,7 +323,7 @@ export default async function NetworkPage(
           </div>
           );
         })}
-        {partners.length === 0 && <p className="muted">No partners yet.</p>}
+        {partners.length === 0 && <p className="muted">No trusted colleagues yet.</p>}
       </div>
 
       <div className="card">
@@ -378,60 +378,48 @@ export default async function NetworkPage(
           const badge = engagementBadge(p.id);
           const shared = sharedSpecialismsWith(p);
           return (
-          <div key={p.id} className="directory-row">
-            <div className="directory-row-person">
-              <Avatar url={avatarUrlByPath.get(p.avatar_path || "") || null} name={p.full_name} ring="recommended" />
-              <span className="name">
-                <span className="name-primary">
-                  <PersonLink id={p.id} name={`${p.credential_prefix ? p.credential_prefix + " " : ""}${p.full_name}`} tier="recommended" />
-                  {p.qualification_level ? `, ${p.qualification_level}` : ""}
-                </span>
-                {(p.primary_practice_city || p.primary_state) && (
-                  <span className="name-meta">
-                    {p.primary_practice_city}
-                    {p.primary_practice_city && p.primary_state ? ", " : ""}
-                    {p.primary_state}
+          <div key={p.id} className="directory-condensed-row">
+            <Avatar url={avatarUrlByPath.get(p.avatar_path || "") || null} name={p.full_name} size={38} ring="recommended" />
+            <div className="directory-condensed-main">
+              <div className="directory-condensed-line1">
+                <PersonLink id={p.id} name={`${p.credential_prefix ? p.credential_prefix + " " : ""}${p.full_name}`} tier="recommended" />
+                <ProfessionTag profession={professionFor(p.qualification_level)} />
+                {p.psypact_participating && <span className="tag" title="Holds PSYPACT Authority to Practice Interjurisdictional Telepsychology">PSYPACT</span>}
+                {badge && (
+                  <span className="tag gold" title={`Community score: ${badge.score}`}>
+                    {badge.label}
                   </span>
                 )}
-              </span>
+              </div>
+              <div className="directory-condensed-line2 muted">
+                {[p.primary_practice_city, p.primary_state].filter(Boolean).join(", ") || "Location not listed"}
+                {shared.length > 0 && (
+                  <>
+                    {" · shares "}
+                    {shared.slice(0, 2).join(", ")}
+                    {shared.length > 2 ? ` +${shared.length - 2} more` : ""}
+                  </>
+                )}
+              </div>
             </div>
-            <div className="directory-row-badges">
-              <ProfessionTag profession={professionFor(p.qualification_level)} />
-              {p.psypact_participating && (
-                <span className="tag" title="Holds PSYPACT Authority to Practice Interjurisdictional Telepsychology">
-                  PSYPACT
-                </span>
-              )}
-              {badge && (
-                <span className="tag" title={`Community score: ${badge.score}`}>
-                  {badge.label}
-                </span>
-              )}
-            </div>
-            <div className="directory-row-actions">
+            <div className="directory-condensed-actions">
               <form action={startConversation} style={{ display: "inline" }}>
                 <input type="hidden" name="participant_ids" value={p.id} />
                 <input type="hidden" name="title" value={`${p.credential_prefix || ""} ${p.full_name}`.trim()} />
                 <input type="hidden" name="body" value={`Hi ${p.full_name}, I noticed we share a specialism and wanted to reach out.`} />
-                <button type="submit" className="secondary">Message</button>
+                <button type="submit" className="secondary" style={{ padding: "0.25rem 0.5rem", fontSize: "0.72rem" }}>Message</button>
               </form>
               <form action={sendConnectionRequest} style={{ display: "inline" }}>
                 <input type="hidden" name="addressee_id" value={p.id} />
-                <input type="hidden" name="tier" value="partner" />
-                <button type="submit" className="btn-tier-partner">Connect (Partner)</button>
+                <input type="hidden" name="tier" value="trusted_colleague" />
+                <button type="submit" className="btn-tier-trusted_colleague" style={{ padding: "0.25rem 0.5rem", fontSize: "0.72rem" }}>Trusted Colleague</button>
               </form>
               <form action={sendConnectionRequest} style={{ display: "inline" }}>
                 <input type="hidden" name="addressee_id" value={p.id} />
                 <input type="hidden" name="tier" value="bench" />
-                <button type="submit" className="btn-tier-bench">Add to Bench</button>
+                <button type="submit" className="btn-tier-bench" style={{ padding: "0.25rem 0.5rem", fontSize: "0.72rem" }}>Bench</button>
               </form>
             </div>
-            {shared.length > 0 && (
-              <div className="directory-row-reason">
-                Recommended because you both work with {shared.slice(0, 3).join(", ")}
-                {shared.length > 3 ? `, and ${shared.length - 3} more` : ""}.
-              </div>
-            )}
           </div>
           );
         })}

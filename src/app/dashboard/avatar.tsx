@@ -1,4 +1,4 @@
-type AvatarTier = "partner" | "bench" | "recommended" | "none" | null | undefined;
+type AvatarTier = "partner" | "trusted_colleague" | "bench" | "recommended" | "none" | null | undefined;
 
 // Small shared avatar chip for directory-style listing rows (Network,
 // Referrals suggestions, Supervision, Messages, Town Hall, Overview) - a

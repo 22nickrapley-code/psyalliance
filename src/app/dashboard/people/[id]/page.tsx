@@ -8,9 +8,9 @@ import { submitEndorsement, deleteEndorsement, assignColleagueToClient, markSent
 import { ProfileView, type SpecialismValue } from "../../profile-view";
 import Avatar from "../../avatar";
 
-function TierBadge({ tier }: { tier: "partner" | "bench" | "pending-out" | "pending-in" | null }) {
+function TierBadge({ tier }: { tier: "partner" | "trusted_colleague" | "bench" | "pending-out" | "pending-in" | null }) {
   if (!tier) return null;
-  if (tier === "partner") return <span className="tag tier-partner">Partner</span>;
+  if (tier === "partner" || tier === "trusted_colleague") return <span className="tag tier-trusted_colleague">Trusted Colleague</span>;
   if (tier === "bench") return <span className="tag tier-bench">Bench</span>;
   if (tier === "pending-out") return <span className="tag">Request sent</span>;
   return <span className="tag">Wants to connect</span>;
@@ -127,7 +127,7 @@ export default async function PersonProfilePage({
     .map((s) => s.value)
     .filter((v) => mySpecialisms.has(v));
 
-  let tier: "partner" | "bench" | "pending-out" | "pending-in" | null = null;
+  let tier: "partner" | "trusted_colleague" | "bench" | "pending-out" | "pending-in" | null = null;
   if (connection) {
     if (connection.status === "accepted") tier = connection.tier;
     else if (connection.status === "pending") {
@@ -173,8 +173,8 @@ export default async function PersonProfilePage({
   // same shared-specialism-and-not-yet-connected definition used everywhere
   // else in the app (Overview, Network, Messages), which relevantSpecialisms
   // above already computes.
-  const bannerTier: "partner" | "bench" | "recommended" | "none" =
-    tier === "partner" ? "partner" : tier === "bench" ? "bench" : !tier && relevantSpecialisms.length > 0 ? "recommended" : "none";
+  const bannerTier: "partner" | "trusted_colleague" | "bench" | "recommended" | "none" =
+    tier === "partner" || tier === "trusted_colleague" ? "trusted_colleague" : tier === "bench" ? "bench" : !tier && relevantSpecialisms.length > 0 ? "recommended" : "none";
 
   const MatchToggle = () => (
     <>
@@ -255,7 +255,7 @@ export default async function PersonProfilePage({
                 <input type="hidden" name="body" value={`Hi ${first.full_name}, `} />
                 <button type="submit" className="secondary">Message</button>
               </form>
-              {tier === "partner" || tier === "bench" ? (
+              {tier === "partner" || tier === "trusted_colleague" || tier === "bench" ? (
                 <form action={removeConnection} style={{ display: "inline" }}>
                   <input type="hidden" name="id" value={connection!.id} />
                   <button type="submit" className="secondary">Remove connection</button>
@@ -266,8 +266,8 @@ export default async function PersonProfilePage({
                 <>
                   <form action={sendConnectionRequest} style={{ display: "inline" }}>
                     <input type="hidden" name="addressee_id" value={first.id} />
-                    <input type="hidden" name="tier" value="partner" />
-                    <button type="submit" className="btn-tier-partner">Connect (Partner)</button>
+                    <input type="hidden" name="tier" value="trusted_colleague" />
+                    <button type="submit" className="btn-tier-trusted_colleague">Connect (Trusted Colleague)</button>
                   </form>
                   <form action={sendConnectionRequest} style={{ display: "inline" }}>
                     <input type="hidden" name="addressee_id" value={first.id} />

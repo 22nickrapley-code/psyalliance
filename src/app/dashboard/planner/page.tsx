@@ -10,11 +10,11 @@ import {
   bulkSendAssignedMessages,
 } from "./actions";
 
-type Tier = "partner" | "bench" | "recommended" | "none";
+type Tier = "partner" | "trusted_colleague" | "bench" | "recommended" | "none";
 
 function TierTag({ tier }: { tier: Tier }) {
   if (tier === "none") return <span className="tag tier-none">Not yet connected</span>;
-  const label = tier === "partner" ? "Partner" : tier === "bench" ? "Bench" : "Recommended";
+  const label = tier === "partner" || tier === "trusted_colleague" ? "Trusted Colleague" : tier === "bench" ? "Bench" : "Recommended";
   return <span className={`tag tier-${tier}`}>{label}</span>;
 }
 

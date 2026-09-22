@@ -16,12 +16,12 @@ export type DirectoryEntry = {
   specialisms: string[];
   psypact: boolean;
   avatarUrl: string | null;
-  tier: "partner" | "bench" | "recommended" | "none";
+  tier: "partner" | "trusted_colleague" | "bench" | "recommended" | "none";
   connectionStatus: "accepted" | "pending" | null;
 };
 
 const PAGE_SIZE = 15;
-const TIER_ORDER: Record<string, number> = { partner: 0, bench: 1, recommended: 2, none: 3 };
+const TIER_ORDER: Record<string, number> = { partner: 0, trusted_colleague: 0, bench: 1, recommended: 2, none: 3 };
 
 function ProfessionTag({ profession }: { profession: Profession }) {
   return (
@@ -33,7 +33,7 @@ function ProfessionTag({ profession }: { profession: Profession }) {
 
 function TierTag({ tier }: { tier: DirectoryEntry["tier"] }) {
   if (tier === "none") return <span className="tag tier-none">Not yet connected</span>;
-  const label = tier === "partner" ? "Partner" : tier === "bench" ? "Bench" : "Recommended";
+  const label = tier === "partner" || tier === "trusted_colleague" ? "Trusted Colleague" : tier === "bench" ? "Bench" : "Recommended";
   return <span className={`tag tier-${tier}`}>{label}</span>;
 }
 
@@ -122,7 +122,7 @@ export default function DirectoryBrowser({
           <label htmlFor="dir-degree">Connection status</label>
           <select id="dir-degree" value={degree} onChange={(e) => updateFilter(setDegree)(e.target.value)}>
             <option value="all">All</option>
-            <option value="partner">Partner</option>
+            <option value="trusted_colleague">Trusted Colleague</option>
             <option value="bench">Bench</option>
             <option value="recommended">Recommended</option>
             <option value="none">Not yet connected</option>
@@ -202,8 +202,8 @@ export default function DirectoryBrowser({
               ) : (
                 <form action={sendConnectionRequest}>
                   <input type="hidden" name="addressee_id" value={p.id} />
-                  <input type="hidden" name="tier" value="partner" />
-                  <button type="submit" className="btn-tier-partner" style={{ padding: "0.3rem 0.6rem", fontSize: "0.8rem" }}>
+                  <input type="hidden" name="tier" value="trusted_colleague" />
+                  <button type="submit" className="btn-tier-trusted_colleague" style={{ padding: "0.3rem 0.6rem", fontSize: "0.8rem" }}>
                     Connect
                   </button>
                 </form>

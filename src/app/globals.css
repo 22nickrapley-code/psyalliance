@@ -381,11 +381,11 @@ button.danger:hover {
    match their tier's color exactly, same blue/purple used on names and
    tags everywhere else, so the action itself signals which list it adds
    someone to before you even read the label. */
-button.btn-tier-partner, .btn.btn-tier-partner {
+button.btn-tier-partner, .btn.btn-tier-partner, button.btn-tier-trusted_colleague, .btn.btn-tier-trusted_colleague {
   background: var(--tier-partner);
 }
 
-button.btn-tier-partner:hover, .btn.btn-tier-partner:hover {
+button.btn-tier-partner:hover, .btn.btn-tier-partner:hover, button.btn-tier-trusted_colleague:hover, .btn.btn-tier-trusted_colleague:hover {
   background: #1c4685;
 }
 
@@ -1094,7 +1094,8 @@ tbody tr:hover {
 /* Connection-tier tags: partner = blue, bench = purple, recommended =
    orange, used consistently across Network, Messages, and the Overview
    dashboard so the same person's status reads the same color everywhere. */
-.tag.tier-partner {
+.tag.tier-partner,
+.tag.tier-trusted_colleague {
   background: var(--tier-partner-soft);
   color: var(--tier-partner);
 }
@@ -1136,7 +1137,9 @@ a.person-link:hover {
    profile links). Supervision's list is the one deliberate exception - see
    its own page - names there stay plain. */
 a.person-link.tier-partner,
-.person-link-inline.tier-partner {
+a.person-link.tier-trusted_colleague,
+.person-link-inline.tier-partner,
+.person-link-inline.tier-trusted_colleague {
   background: var(--tier-partner-soft);
   color: var(--tier-partner);
 }
@@ -1154,9 +1157,11 @@ a.person-link.tier-recommended,
 }
 
 a.person-link.tier-partner,
+a.person-link.tier-trusted_colleague,
 a.person-link.tier-bench,
 a.person-link.tier-recommended,
 .person-link-inline.tier-partner,
+.person-link-inline.tier-trusted_colleague,
 .person-link-inline.tier-bench,
 .person-link-inline.tier-recommended {
   display: inline-flex;
@@ -1168,6 +1173,7 @@ a.person-link.tier-recommended,
 }
 
 a.person-link.tier-partner:hover,
+a.person-link.tier-trusted_colleague:hover,
 a.person-link.tier-bench:hover,
 a.person-link.tier-recommended:hover {
   text-decoration: underline;
@@ -1180,7 +1186,8 @@ a.person-link.tier-recommended:hover {
   border-radius: 50%;
 }
 
-.tier-ring-partner {
+.tier-ring-partner,
+.tier-ring-trusted_colleague {
   box-shadow: 0 0 0 2px var(--tier-partner);
 }
 
@@ -1403,7 +1410,8 @@ a.person-link.tier-recommended:hover {
 /* Blend the connection tier into the banner itself, so it's obvious at a
    glance (not just from the small "Partner" tag below) - the plain green
    is reserved for colleagues with no tier relationship yet. */
-.profile-view-banner-partner {
+.profile-view-banner-partner,
+.profile-view-banner-trusted_colleague {
   background: linear-gradient(120deg, var(--accent), var(--tier-partner));
 }
 

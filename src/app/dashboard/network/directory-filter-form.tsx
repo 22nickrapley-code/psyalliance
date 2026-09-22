@@ -79,7 +79,7 @@ export default function DirectoryFilterForm({
         <label htmlFor="degree">Connection status</label>
         <select id="degree" name="degree" defaultValue={degreeFilter} onChange={submit}>
           <option value="all">All</option>
-          <option value="partner">Partner</option>
+          <option value="trusted_colleague">Trusted Colleague</option>
           <option value="bench">Bench</option>
           <option value="recommended">Recommended</option>
           <option value="none">Not yet connected</option>

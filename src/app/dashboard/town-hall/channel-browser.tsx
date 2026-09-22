@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import type { ChannelSnapshot, ChannelMessageNode } from "./actions";
 import Avatar from "../avatar";
 
-type Tier = "partner" | "bench" | "recommended" | "none";
+type Tier = "partner" | "trusted_colleague" | "bench" | "recommended" | "none";
 
 export type ChannelPill = {
   id: number;

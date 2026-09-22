@@ -12,11 +12,14 @@
 //   5. alphabetical by name
 
 export type LocationTier = "city" | "state" | "national";
-export type ConnectionTier = "partner" | "bench" | "recommended" | "none";
+// "partner" stays a legal value only for any stray pre-rebuild row the
+// relabel migration didn't touch (declined/pending at the time) - every
+// write path now uses trusted_colleague. Both rank identically.
+export type ConnectionTier = "partner" | "trusted_colleague" | "bench" | "recommended" | "none";
 
 const LOCATION_POINTS: Record<LocationTier, number> = { city: 8, state: 6, national: 2 };
 const SPECIALISM_RANK_POINTS: Record<number, number> = { 1: 10, 2: 8, 3: 2 };
-const TIER_ORDER: Record<ConnectionTier, number> = { partner: 3, bench: 2, recommended: 1, none: 0 };
+const TIER_ORDER: Record<ConnectionTier, number> = { partner: 3, trusted_colleague: 3, bench: 2, recommended: 1, none: 0 };
 
 export interface MatchCandidate {
   profileId: string;
@@ -105,7 +108,7 @@ export function rankCandidates(
 //   3. Tie-break, in order: relationship tier, then specialty rating, then
 //      most community endorsements, then most recent last-active, then
 //      alphabetical by name.
-const GRID_TIER_VALUE: Record<ConnectionTier, number> = { partner: 3, bench: 2, recommended: 1, none: 0 };
+const GRID_TIER_VALUE: Record<ConnectionTier, number> = { partner: 3, trusted_colleague: 3, bench: 2, recommended: 1, none: 0 };
 
 export interface GridCandidate {
   profileId: string;

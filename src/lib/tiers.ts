@@ -1,8 +1,13 @@
 // Shared connection-tier lookup, used everywhere a person's name needs to
-// be colored/ringed by their relationship to the viewer (Overview, Messages,
-// Town Hall, Network, Planner, profile pages). Partner=blue, Bench=purple,
-// Recommended=orange (shares a specialism, not yet connected), None=no color.
-export type Tier = "partner" | "bench" | "recommended" | "none";
+// be colored/ringed by their relationship to the viewer (Home, Messages,
+// Town Hall, Network, Planner, profile pages). Trusted Colleague=blue,
+// Bench=purple, Recommended=orange (shares a specialism, not yet
+// connected), None=no color. "partner" is kept in the type only because
+// the connection_tier enum still accepts it as a legal (legacy) value -
+// Phase 4 relabeled existing accepted rows to trusted_colleague and every
+// write path now inserts trusted_colleague, but the type stays permissive
+// so a stray old row still renders instead of falling through to "none".
+export type Tier = "partner" | "trusted_colleague" | "bench" | "recommended" | "none";
 
 export function buildTierMap(
   connections: Array<{ requester_id: string; addressee_id: string; tier: string; status: string }> | null | undefined,

@@ -98,7 +98,7 @@ export async function sendConnectionRequest(formData: FormData) {
   if (!user) throw new Error("Not signed in");
 
   const addresseeId = String(formData.get("addressee_id") || "");
-  const tier = String(formData.get("tier") || "partner");
+  const tier = String(formData.get("tier") || "trusted_colleague");
 
   // Bench is a one-sided, personal list - per Nick's spec, adding someone to
   // your Bench needs no confirmation from them (only Partner is mutual-
@@ -138,7 +138,7 @@ export async function sendConnectionRequest(formData: FormData) {
         user.id,
         addresseeId,
         "Connection request",
-        `${me?.full_name || "A colleague"} would like to connect with you as a Partner colleague on PsyAlliance. Visit your Network page to accept or decline.`
+        `${me?.full_name || "A colleague"} would like to connect with you as a Trusted Colleague on PsyAlliance. Visit your Network page to accept or decline.`
       );
     }
   }
@@ -174,7 +174,7 @@ export async function sendDueConnectionReminders(supabase: Awaited<ReturnType<ty
       userId,
       c.addressee_id,
       "Connection request",
-      `Just a reminder - ${me?.full_name || "a colleague"} sent you a ${c.tier === "partner" ? "Partner" : "Bench"} connection request on PsyAlliance a couple of weeks ago. Visit your Network page to respond whenever you get a chance.`
+      `Just a reminder - ${me?.full_name || "a colleague"} sent you a ${c.tier === "partner" || c.tier === "trusted_colleague" ? "Trusted Colleague" : "Bench"} connection request on PsyAlliance a couple of weeks ago. Visit your Network page to respond whenever you get a chance.`
     );
     await supabase.from("connections").update({ reminder_sent_at: new Date().toISOString() }).eq("id", c.id);
   }

@@ -81,7 +81,7 @@ export default async function TownHallIndexPage(
   const myChannels = (channels || []).filter((c) => memberChannelIds.has(c.id));
 
   const tierMap = buildTierMap(connections, myself);
-  const tierByAuthorId: Record<string, "partner" | "bench" | "recommended" | "none"> = Object.fromEntries(tierMap);
+  const tierByAuthorId: Record<string, "partner" | "trusted_colleague" | "bench" | "recommended" | "none"> = Object.fromEntries(tierMap);
 
   // Unread badges: for each channel the user belongs to, count messages from
   // OTHER authors posted since that membership's last_read_at (set whenever

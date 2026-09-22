@@ -19,11 +19,11 @@ export type PickerContact = {
   state: string | null;
   profession: string;
   specialisms: string[];
-  tier: "partner" | "bench" | "recommended" | "none";
+  tier: "partner" | "trusted_colleague" | "bench" | "recommended" | "none";
   avatarUrl?: string | null;
 };
 
-const TIER_ORDER: Record<string, number> = { partner: 0, bench: 1, recommended: 2, none: 3 };
+const TIER_ORDER: Record<string, number> = { partner: 0, trusted_colleague: 0, bench: 1, recommended: 2, none: 3 };
 
 export default function RecipientPicker({
   contacts,
@@ -41,7 +41,7 @@ export default function RecipientPicker({
   // Empty set = ALL (no tier filter). Otherwise each active tier button is
   // OR'd together, so Partner + Bench (say) shows both at once, letting Nick
   // message multiple groups in one go instead of picking a single tier.
-  const [tierFilter, setTierFilter] = useState<Set<"partner" | "bench" | "recommended">>(new Set());
+  const [tierFilter, setTierFilter] = useState<Set<"partner" | "trusted_colleague" | "bench" | "recommended">>(new Set());
   const [sortBy, setSortBy] = useState("alpha");
   const [checked, setChecked] = useState<Set<string>>(new Set());
 
@@ -50,7 +50,7 @@ export default function RecipientPicker({
     const st = state.trim().toUpperCase();
     return contacts
       .filter((c) => !qq || c.name.toLowerCase().includes(qq))
-      .filter((c) => tierFilter.size === 0 || (c.tier !== "none" && tierFilter.has(c.tier)))
+      .filter((c) => tierFilter.size === 0 || (c.tier !== "none" && tierFilter.has(c.tier as "partner" | "trusted_colleague" | "bench" | "recommended")))
       .filter((c) => !st || c.state === st)
       .filter((c) => !specialism || c.specialisms.includes(specialism))
       .filter((c) => !profession || c.profession === profession)
@@ -69,7 +69,7 @@ export default function RecipientPicker({
       });
   }, [contacts, q, state, specialism, profession, tierFilter, sortBy]);
 
-  function toggleTierFilter(tier: "partner" | "bench" | "recommended") {
+  function toggleTierFilter(tier: "partner" | "trusted_colleague" | "bench" | "recommended") {
     setTierFilter((prev) => {
       const next = new Set(prev);
       if (next.has(tier)) next.delete(tier);
@@ -151,8 +151,8 @@ export default function RecipientPicker({
         <button type="button" className={tierFilter.size === 0 ? "active" : ""} onClick={() => setTierFilter(new Set())}>
           ALL
         </button>
-        <button type="button" className={tierFilter.has("partner") ? "active" : ""} onClick={() => toggleTierFilter("partner")}>
-          Partner
+        <button type="button" className={tierFilter.has("trusted_colleague") ? "active" : ""} onClick={() => toggleTierFilter("trusted_colleague")}>
+          Trusted Colleague
         </button>
         <button type="button" className={tierFilter.has("bench") ? "active" : ""} onClick={() => toggleTierFilter("bench")}>
           Bench

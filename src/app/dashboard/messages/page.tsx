@@ -13,7 +13,7 @@ import ToggleBox from "@/components/toggle-box";
 import RecipientPicker, { type PickerContact } from "@/components/recipient-picker";
 import type { ReactNode } from "react";
 
-type Tier = "partner" | "bench" | "recommended" | "none";
+type Tier = "partner" | "trusted_colleague" | "bench" | "recommended" | "none";
 
 type Contact = {
   id: string;
@@ -187,19 +187,19 @@ export default async function MessagesPage(
     }
   }
 
-  const tierByContact = new Map<string, "partner" | "bench">();
+  const tierByContact = new Map<string, "partner" | "trusted_colleague" | "bench">();
   for (const c of connections || []) {
     const otherId = c.requester_id === myself ? c.addressee_id : c.requester_id;
     tierByContact.set(otherId, c.tier);
   }
 
-  // Partner group consultation: per the spec notes, someone who's opted out
-  // of Partner group consultation on their profile should never be swept
+  // Trusted Colleague group consultation: per the spec notes, someone who's
+  // opted out of group consultation on their profile should never be swept
   // into one, and the initiator should be told who was left out and why -
   // rather than silently including or silently dropping them with no
   // explanation.
   const partnerIds = Array.from(tierByContact.entries())
-    .filter(([, tier]) => tier === "partner")
+    .filter(([, tier]) => tier === "partner" || tier === "trusted_colleague")
     .map(([id]) => id)
     .filter((id) => !blockedIds.has(id));
   const eligiblePartners = partnerIds
@@ -548,14 +548,14 @@ export default async function MessagesPage(
 
       {partnerIds.length > 0 && (
         <div className="card">
-          <h2>Start Partner group consultation</h2>
+          <h2>Start Trusted Colleague group consultation</h2>
           <p className="muted">
-            Starts one conversation with all your Partners who are open to group consultation.
+            Starts one conversation with all your Trusted Colleagues who are open to group consultation.
           </p>
           {excludedPartners.length > 0 && (
             <div className="message-banner">
               {excludedPartners.length} colleague{excludedPartners.length === 1 ? "" : "s"} not
-              included because they've opted out of Partner group consultation:{" "}
+              included because they've opted out of group consultation:{" "}
               {excludedPartners.map((p) => p.full_name).join(", ")}.
             </div>
           )}
@@ -564,7 +564,7 @@ export default async function MessagesPage(
               {eligiblePartners.map((p) => (
                 <input key={p.id} type="hidden" name="participant_ids" value={p.id} />
               ))}
-              <input type="hidden" name="title" value="Partner group consultation" />
+              <input type="hidden" name="title" value="Trusted Colleague group consultation" />
               <p className="muted">
                 Including: {eligiblePartners.map((p) => p.full_name).join(", ")}
               </p>
@@ -575,7 +575,7 @@ export default async function MessagesPage(
               <button type="submit" className="secondary">Start group consultation</button>
             </form>
           ) : (
-            <p className="muted">None of your Partners are currently open to group consultation.</p>
+            <p className="muted">None of your Trusted Colleagues are currently open to group consultation.</p>
           )}
         </div>
       )}

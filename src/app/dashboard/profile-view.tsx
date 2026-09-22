@@ -101,7 +101,7 @@ export function ProfileView({
   // Tints the banner gradient toward the connection-tier color (blue for
   // Partner, purple for Bench, orange for Recommended) so the relationship
   // is obvious from the banner itself, not just the small tag underneath.
-  bannerTier?: "partner" | "bench" | "recommended" | "none";
+  bannerTier?: "partner" | "trusted_colleague" | "bench" | "recommended" | "none";
   relevantSpecialisms?: string[];
   // Additional values (any specialism category, lower-cased match is
   // case-insensitive) to highlight as chips without adding them to the

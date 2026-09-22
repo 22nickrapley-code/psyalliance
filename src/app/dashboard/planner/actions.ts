@@ -61,7 +61,7 @@ async function offerToNextCandidate(
 
   const message = draftCoverageMessage({
     requesterName,
-    hasPriorRelationship: next.connectionTier === "partner" || next.connectionTier === "bench",
+    hasPriorRelationship: next.connectionTier === "partner" || next.connectionTier === "trusted_colleague" || next.connectionTier === "bench",
     specialismSummary: caseRow.primary_need || "a case that matches your listed specialisms",
     startDate: dateRange.start_date,
     endDate: dateRange.end_date,
