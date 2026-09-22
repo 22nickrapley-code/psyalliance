@@ -8,9 +8,6 @@ import { buildTierMap, rankRecommended, type Tier } from "@/lib/tiers";
 import ToggleBox from "@/components/toggle-box";
 import { resolveAvatarUrls } from "@/lib/avatars";
 import Avatar from "./avatar";
-import { getActivityTicker } from "@/lib/activity";
-import { refreshNewsCacheIfStale, getRecentNews } from "@/lib/news";
-import ActivityTicker from "./activity-ticker";
 
 const PIE_COLORS = ["#1f4d3f", "#b08d57", "#6b4c6b", "#2456a6", "#a3372c", "#4a4842", "#7a3fa0"];
 
@@ -71,10 +68,6 @@ export default async function DashboardHome(
   } = await supabase.auth.getUser();
   const myself = user!.id;
 
-  // Best-effort, TTL-gated - a no-op on almost every page load (twice-daily
-  // refresh window), so this never meaningfully slows the Overview down.
-  await refreshNewsCacheIfStale(supabase);
-
   const [
     { data: profile },
     { count: caseCount },
@@ -98,8 +91,6 @@ export default async function DashboardHome(
     { data: recentSharedDocs },
     { data: incomeBooks },
     { data: overheadExpenses },
-    activityTicker,
-    newsItems,
   ] = await Promise.all([
     supabase.from("profiles").select("*").eq("id", myself).maybeSingle(),
     supabase.from("caseload_clients").select("id", { count: "exact", head: true }).eq("profile_id", myself).eq("is_active", true),
@@ -157,8 +148,6 @@ export default async function DashboardHome(
     supabase.from("documents").select("id, title, created_at, uploader:uploaded_by(full_name)").eq("owner_scope", "world").order("created_at", { ascending: false }).limit(4),
     supabase.from("books_of_business").select("id, name, expense_burden_pct").eq("profile_id", myself),
     supabase.from("practice_overhead_expenses").select("monthly_cost").eq("profile_id", myself),
-    getActivityTicker(supabase, myself),
-    getRecentNews(supabase),
   ]);
 
   const expiringLicenseCount = expiringLicenseCountRaw ?? 0;
@@ -485,8 +474,6 @@ export default async function DashboardHome(
           </a>
         </div>
       </div>
-
-      <ActivityTicker activity={activityTicker} news={newsItems} />
 
       {!profile && (
         <div className="error-banner">

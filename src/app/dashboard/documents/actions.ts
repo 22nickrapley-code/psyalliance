@@ -4,7 +4,6 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { assertIsAdmin } from "@/lib/admin";
-import { logActivityEvent } from "@/lib/activity";
 
 // A plain `throw` inside a server action wired to a bare <form action={fn}>
 // crashes the whole page with Next.js's generic error screen instead of showing
@@ -109,26 +108,6 @@ export async function uploadDocument(formData: FormData) {
       treatmentAreaIds.map((lookup_value_id) => ({ document_id: inserted.id, lookup_value_id }))
     );
     if (areasError) documentsError(areasError.message);
-  }
-
-  // Only a Shared Library upload feeds the Overview activity ticker -
-  // a personal upload is only ever visible to its owner, so it has no
-  // colleague to be relevant to.
-  if (ownerScope === "world" && inserted) {
-    const { data: author } = await supabase
-      .from("profiles")
-      .select("full_name, credential_prefix, primary_state")
-      .eq("id", user.id)
-      .maybeSingle();
-    await logActivityEvent(supabase, {
-      eventType: "document_upload",
-      actorProfileId: user.id,
-      actorName: `${author?.credential_prefix || ""} ${author?.full_name || "A colleague"}`.trim(),
-      specialismIds: treatmentAreaIds,
-      state: author?.primary_state || null,
-      summary: `uploaded "${String(formData.get("title") || file.name)}" to the Shared Library`,
-      metadata: { documentId: inserted.id },
-    });
   }
 
   revalidatePath("/dashboard/documents");

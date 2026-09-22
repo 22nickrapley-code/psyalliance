@@ -4,7 +4,6 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { resolveAvatarUrls } from "@/lib/avatars";
-import { logActivityEvent } from "@/lib/activity";
 
 // A plain `throw` inside a server action wired to a bare <form action={fn}>
 // crashes the whole page with Next.js's generic error screen instead of showing
@@ -36,27 +35,6 @@ export async function postMessage(formData: FormData) {
     body,
   });
   if (error) townHallError(`/dashboard/town-hall/${channelId}`, error.message);
-
-  // Only a new top-level post ("started a conversation"), not a reply,
-  // feeds the Overview activity ticker - and only in a specialism channel,
-  // since a general-channel post has no specialism to match a viewer against.
-  if (!parentMessageId) {
-    const [{ data: channel }, { data: author }] = await Promise.all([
-      supabase.from("town_hall_channels").select("name, lookup_value_id, is_general").eq("id", channelId).maybeSingle(),
-      supabase.from("profiles").select("full_name, credential_prefix, primary_state").eq("id", user.id).maybeSingle(),
-    ]);
-    if (channel && !channel.is_general) {
-      await logActivityEvent(supabase, {
-        eventType: "town_hall_post",
-        actorProfileId: user.id,
-        actorName: `${author?.credential_prefix || ""} ${author?.full_name || "A colleague"}`.trim(),
-        specialismIds: channel.lookup_value_id ? [channel.lookup_value_id] : [],
-        state: author?.primary_state || null,
-        summary: `started a conversation in ${channel.name}`,
-        metadata: { channelId },
-      });
-    }
-  }
 
   revalidatePath(`/dashboard/town-hall/${channelId}`);
   revalidatePath("/dashboard/town-hall");
