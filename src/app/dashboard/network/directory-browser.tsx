@@ -18,6 +18,7 @@ export type DirectoryEntry = {
   avatarUrl: string | null;
   tier: "partner" | "trusted_colleague" | "bench" | "recommended" | "none";
   connectionStatus: "accepted" | "pending" | null;
+  saved: boolean;
 };
 
 const PAGE_SIZE = 15;
@@ -33,7 +34,7 @@ function ProfessionTag({ profession }: { profession: Profession }) {
 
 function TierTag({ tier }: { tier: DirectoryEntry["tier"] }) {
   if (tier === "none") return <span className="tag tier-none">Not yet connected</span>;
-  const label = tier === "partner" || tier === "trusted_colleague" ? "Trusted Colleague" : tier === "bench" ? "Bench" : "Recommended";
+  const label = tier === "partner" || tier === "trusted_colleague" ? "Trusted Colleague" : tier === "bench" ? "Bench" : "Suggested for you";
   return <span className={`tag tier-${tier}`}>{label}</span>;
 }
 
@@ -48,11 +49,15 @@ export default function DirectoryBrowser({
   specialismOptions,
   sendConnectionRequest,
   startConversation,
+  saveClinicianAction,
+  removeSavedClinicianAction,
 }: {
   people: DirectoryEntry[];
   specialismOptions: string[];
   sendConnectionRequest: (formData: FormData) => Promise<void>;
   startConversation: (formData: FormData) => Promise<void>;
+  saveClinicianAction: (formData: FormData) => Promise<void>;
+  removeSavedClinicianAction: (formData: FormData) => Promise<void>;
 }) {
   const [q, setQ] = useState("");
   const [state, setState] = useState("");
@@ -124,7 +129,7 @@ export default function DirectoryBrowser({
             <option value="all">All</option>
             <option value="trusted_colleague">Trusted Colleague</option>
             <option value="bench">Bench</option>
-            <option value="recommended">Recommended</option>
+            <option value="recommended">Suggested for you</option>
             <option value="none">Not yet connected</option>
           </select>
         </div>
@@ -206,6 +211,17 @@ export default function DirectoryBrowser({
                   <button type="submit" className="btn-tier-trusted_colleague" style={{ padding: "0.3rem 0.6rem", fontSize: "0.8rem" }}>
                     Connect
                   </button>
+                </form>
+              )}
+              {p.saved ? (
+                <form action={removeSavedClinicianAction}>
+                  <input type="hidden" name="clinician_id" value={p.id} />
+                  <button type="submit" className="secondary" style={{ padding: "0.3rem 0.6rem", fontSize: "0.8rem" }}>Saved</button>
+                </form>
+              ) : (
+                <form action={saveClinicianAction}>
+                  <input type="hidden" name="clinician_id" value={p.id} />
+                  <button type="submit" className="secondary" style={{ padding: "0.3rem 0.6rem", fontSize: "0.8rem" }}>Save</button>
                 </form>
               )}
             </div>

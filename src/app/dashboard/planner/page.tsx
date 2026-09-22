@@ -14,7 +14,7 @@ type Tier = "partner" | "trusted_colleague" | "bench" | "recommended" | "none";
 
 function TierTag({ tier }: { tier: Tier }) {
   if (tier === "none") return <span className="tag tier-none">Not yet connected</span>;
-  const label = tier === "partner" || tier === "trusted_colleague" ? "Trusted Colleague" : tier === "bench" ? "Bench" : "Recommended";
+  const label = tier === "partner" || tier === "trusted_colleague" ? "Trusted Colleague" : tier === "bench" ? "Bench" : "Suggested for you";
   return <span className={`tag tier-${tier}`}>{label}</span>;
 }
 

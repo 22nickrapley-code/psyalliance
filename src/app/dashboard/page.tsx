@@ -483,7 +483,7 @@ export default async function DashboardHome(
               )) : "None yet"}
             </p>
             <div className="ov-tier-line">
-              <span className="tag tier-recommended">Recommended</span>
+              <span className="tag tier-recommended">Suggested for you</span>
               <strong>
                 {recommendedTop5.length}
                 {recommendedTotal > recommendedTop5.length && <span className="muted" style={{ fontWeight: 400, fontSize: "0.7rem" }}> of {recommendedTotal}</span>}

@@ -162,7 +162,7 @@ export default function RecipientPicker({
           className={tierFilter.has("recommended") ? "active" : ""}
           onClick={() => toggleTierFilter("recommended")}
         >
-          Recommended
+          Suggested for you
         </button>
       </div>
 

@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { resolveAvatarUrl, resolveAvatarUrls } from "@/lib/avatars";
-import { sendConnectionRequest, respondToConnection, removeConnection } from "../../network/actions";
+import { sendConnectionRequest, respondToConnection, removeConnection, saveClinicianAction, removeSavedClinicianAction } from "../../network/actions";
 import { startConversation } from "../../messages/actions";
 import { addToBlocklist, removeFromBlocklist } from "../../settings/actions";
 import { submitEndorsement, deleteEndorsement, assignColleagueToClient, markSentToPatient } from "../actions";
@@ -45,6 +45,7 @@ export default async function PersonProfilePage({
     { data: endorsements },
     { data: myEndorsement },
     { data: myAssignments },
+    { data: savedRow },
   ] = await Promise.all([
     supabase.from("public_directory").select("*").eq("id", id),
     supabase
@@ -76,6 +77,7 @@ export default async function PersonProfilePage({
       .eq("profile_id", myself)
       .eq("assigned_profile_id", id)
       .order("created_at", { ascending: false }),
+    supabase.from("saved_clinicians").select("id").eq("profile_id", myself).eq("clinician_id", id).maybeSingle(),
   ]);
 
   if (!directoryRows || directoryRows.length === 0) {
@@ -275,6 +277,17 @@ export default async function PersonProfilePage({
                     <button type="submit" className="btn-tier-bench">Add to Bench</button>
                   </form>
                 </>
+              )}
+              {savedRow ? (
+                <form action={removeSavedClinicianAction} style={{ display: "inline" }}>
+                  <input type="hidden" name="clinician_id" value={first.id} />
+                  <button type="submit" className="secondary">Saved</button>
+                </form>
+              ) : (
+                <form action={saveClinicianAction} style={{ display: "inline" }}>
+                  <input type="hidden" name="clinician_id" value={first.id} />
+                  <button type="submit" className="secondary">Save</button>
+                </form>
               )}
               {isBlocked ? (
                 <form action={removeFromBlocklist} style={{ display: "inline" }}>

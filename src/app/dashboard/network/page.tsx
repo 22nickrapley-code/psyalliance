@@ -1,5 +1,12 @@
 import { createClient } from "@/lib/supabase/server";
-import { sendConnectionRequest, respondToConnection, removeConnection, sendDueConnectionReminders } from "./actions";
+import {
+  sendConnectionRequest,
+  respondToConnection,
+  removeConnection,
+  sendDueConnectionReminders,
+  saveClinicianAction,
+  removeSavedClinicianAction,
+} from "./actions";
 import { startConversation } from "../messages/actions";
 import { resolveAvatarUrls } from "@/lib/avatars";
 import Avatar from "../avatar";
@@ -7,6 +14,7 @@ import { professionFor, professionLabel, type Profession } from "@/lib/professio
 import ExpandableList from "@/components/expandable-list";
 import ToggleBox from "@/components/toggle-box";
 import { rankRecommended } from "@/lib/tiers";
+import { getWorkedWithBefore } from "@/lib/professional-events";
 import DirectoryBrowser, { type DirectoryEntry } from "./directory-browser";
 
 type DirectoryPerson = {
@@ -51,7 +59,7 @@ function ProfessionTag({ profession }: { profession: Profession }) {
 // coloring, used everywhere a connection tier shows up on this page.
 function TierTag({ tier }: { tier: Tier }) {
   if (tier === "none") return <span className="tag tier-none">Not yet connected</span>;
-  const label = tier === "partner" || tier === "trusted_colleague" ? "Trusted Colleague" : tier === "bench" ? "Bench" : "Recommended";
+  const label = tier === "partner" || tier === "trusted_colleague" ? "Trusted Colleague" : tier === "bench" ? "Bench" : "Suggested for you";
   return <span className={`tag tier-${tier}`}>{label}</span>;
 }
 
@@ -87,6 +95,8 @@ export default async function NetworkPage(
     { data: blocklist },
     { data: scores },
     { data: allSpecialisms },
+    { data: savedClinicians },
+    workedWithBefore,
   ] = await Promise.all([
     supabase.from("public_directory").select("*"),
     supabase
@@ -100,10 +110,21 @@ export default async function NetworkPage(
     supabase.from("do_not_work_with").select("blocked_profile_id").eq("profile_id", user!.id),
     supabase.from("community_endorsement_scores").select("profile_id, score"),
     supabase.from("lookup_values").select("value").eq("category", "treatment_specialism").order("value"),
+    // Saved Clinicians (Master Brief #28): private, unilateral list, joined
+    // with the clinician's own name/avatar for display.
+    supabase
+      .from("saved_clinicians")
+      .select("id, clinician_id, note, created_at, clinician:clinician_id(full_name, credential_prefix, avatar_path, primary_state)")
+      .eq("profile_id", user!.id)
+      .order("created_at", { ascending: false }),
+    // Worked With Before (Master Brief #28-29): derived from professional_events,
+    // naturally empty until the modules that log completed interactions exist.
+    getWorkedWithBefore(supabase, user!.id),
   ]);
 
   const blockedIds = new Set((blocklist || []).map((b) => b.blocked_profile_id));
   const scoreById = new Map((scores || []).map((s) => [s.profile_id, s.score as number]));
+  const savedIds = new Set((savedClinicians || []).map((s: any) => s.clinician_id));
   const engagementBadge = (personId: string) => {
     const score = scoreById.get(personId) || 0;
     if (score >= 20) return { label: "Highly engaged, consider Trusted Colleague", score };
@@ -140,6 +161,7 @@ export default async function NetworkPage(
     ...Array.from(people.values()).map((p) => p.avatar_path),
     ...(connections || []).map((c: any) => c.requester?.avatar_path),
     ...(connections || []).map((c: any) => c.addressee?.avatar_path),
+    ...(savedClinicians || []).map((s: any) => s.clinician?.avatar_path),
   ]);
   const avatarOf = (c: any) =>
     avatarUrlByPath.get((c.requester_id === myself ? c.addressee?.avatar_path : c.requester?.avatar_path) || "") || null;
@@ -208,6 +230,7 @@ export default async function NetworkPage(
       avatarUrl: avatarUrlByPath.get(p.avatar_path || "") || null,
       tier: connectionDegree(p),
       connectionStatus: conn ? (conn.status === "accepted" ? "accepted" : "pending") : null,
+      saved: savedIds.has(p.id),
     };
   });
   const specialismOptions = (allSpecialisms || []).map((s) => s.value);
@@ -220,7 +243,7 @@ export default async function NetworkPage(
         first-degree, mutual-consent connections.
         <span className="tag tier-bench" style={{ margin: "0 0.35rem 0 0.75rem" }}>Bench</span>
         a looser "known, not yet connected" tier.
-        <span className="tag tier-recommended" style={{ margin: "0 0.35rem 0 0.75rem" }}>Recommended</span>
+        <span className="tag tier-recommended" style={{ margin: "0 0.35rem 0 0.75rem" }}>Suggested for you</span>
         computed from shared specialisms, nothing here is stored until you connect.
       </p>
 
@@ -366,7 +389,73 @@ export default async function NetworkPage(
       </div>
 
       <div className="card">
-        <h2>Recommended for you</h2>
+        <h2>Saved Clinicians ({(savedClinicians || []).length})</h2>
+        <p className="muted">
+          People you may wish to work with or remember - private to you, no notice sent, no
+          accept/decline needed.
+        </p>
+        {(savedClinicians || []).map((s: any) => (
+          <div key={s.id} className="person-row">
+            <span className="person-row-info">
+              <Avatar url={avatarUrlByPath.get(s.clinician?.avatar_path || "") || null} name={s.clinician?.full_name || ""} />
+              <PersonLink id={s.clinician_id} name={`${s.clinician?.credential_prefix ? s.clinician.credential_prefix + " " : ""}${s.clinician?.full_name || ""}`} />
+              {s.clinician?.primary_state && <span className="muted" style={{ marginLeft: "0.5rem", fontSize: "0.8rem" }}>({s.clinician.primary_state})</span>}
+              {s.note && <span className="muted" style={{ marginLeft: "0.5rem", fontSize: "0.8rem" }}>&ldquo;{s.note}&rdquo;</span>}
+            </span>
+            <span className="person-row-actions">
+              <form action={startConversation}>
+                <input type="hidden" name="participant_ids" value={s.clinician_id} />
+                <input type="hidden" name="title" value={s.clinician?.full_name || ""} />
+                <input type="hidden" name="body" value={`Hi ${s.clinician?.full_name || ""}, wanted to reach out.`} />
+                <button type="submit" className="secondary">Message</button>
+              </form>
+              <form action={removeSavedClinicianAction}>
+                <input type="hidden" name="clinician_id" value={s.clinician_id} />
+                <button type="submit" className="secondary">Remove</button>
+              </form>
+            </span>
+          </div>
+        ))}
+        {(savedClinicians || []).length === 0 && <p className="muted">Nothing saved yet. Save a clinician from the directory below to keep them handy.</p>}
+      </div>
+
+      <div className="card">
+        <h2>Worked With Before ({workedWithBefore.length})</h2>
+        <p className="muted">
+          Derived automatically from completed coverage, referrals and consultations - not
+          something you set yourself, and never something that appears until it's genuinely true.
+        </p>
+        {workedWithBefore.slice(0, 10).map((w) => {
+          const person = people.get(w.colleagueId);
+          const alreadyTrusted = connectionByOtherId.get(w.colleagueId)?.status === "accepted";
+          return (
+            <div key={w.colleagueId} className="person-row">
+              <span className="person-row-info">
+                <Avatar url={avatarUrlByPath.get(person?.avatar_path || "") || null} name={person?.full_name || "A colleague"} />
+                <PersonLink id={w.colleagueId} name={person?.full_name || "A colleague"} />
+                <span className="muted" style={{ marginLeft: "0.5rem", fontSize: "0.8rem" }}>
+                  {w.interactionCount} completed interaction{w.interactionCount === 1 ? "" : "s"}
+                </span>
+              </span>
+              {!alreadyTrusted && (
+                <span className="person-row-actions">
+                  <form action={sendConnectionRequest}>
+                    <input type="hidden" name="addressee_id" value={w.colleagueId} />
+                    <input type="hidden" name="tier" value="trusted_colleague" />
+                    <button type="submit" className="btn-tier-trusted_colleague">Add to Trusted Colleagues</button>
+                  </form>
+                </span>
+              )}
+            </div>
+          );
+        })}
+        {workedWithBefore.length === 0 && (
+          <p className="muted">Nothing here yet - this fills in automatically as you complete coverage, referrals and consultations with colleagues.</p>
+        )}
+      </div>
+
+      <div className="card">
+        <h2>Suggested for you</h2>
         <p className="muted">
           Colleagues who share at least one of your treatment specialisms. Capped to the top 10,
           recomputed live from shared specialisms and recent activity.
@@ -419,6 +508,17 @@ export default async function NetworkPage(
                 <input type="hidden" name="tier" value="bench" />
                 <button type="submit" className="btn-tier-bench" style={{ padding: "0.25rem 0.5rem", fontSize: "0.72rem" }}>Bench</button>
               </form>
+              {savedIds.has(p.id) ? (
+                <form action={removeSavedClinicianAction} style={{ display: "inline" }}>
+                  <input type="hidden" name="clinician_id" value={p.id} />
+                  <button type="submit" className="secondary" style={{ padding: "0.25rem 0.5rem", fontSize: "0.72rem" }}>Saved</button>
+                </form>
+              ) : (
+                <form action={saveClinicianAction} style={{ display: "inline" }}>
+                  <input type="hidden" name="clinician_id" value={p.id} />
+                  <button type="submit" className="secondary" style={{ padding: "0.25rem 0.5rem", fontSize: "0.72rem" }}>Save</button>
+                </form>
+              )}
             </div>
           </div>
           );
@@ -436,6 +536,8 @@ export default async function NetworkPage(
           specialismOptions={specialismOptions}
           sendConnectionRequest={sendConnectionRequest}
           startConversation={startConversation}
+          saveClinicianAction={saveClinicianAction}
+          removeSavedClinicianAction={removeSavedClinicianAction}
         />
       </div>
     </div>

@@ -81,7 +81,7 @@ export default function DirectoryFilterForm({
           <option value="all">All</option>
           <option value="trusted_colleague">Trusted Colleague</option>
           <option value="bench">Bench</option>
-          <option value="recommended">Recommended</option>
+          <option value="recommended">Suggested for you</option>
           <option value="none">Not yet connected</option>
         </select>
       </div>

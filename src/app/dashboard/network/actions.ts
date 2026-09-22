@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { saveClinicianRelationship, removeSavedClinicianRelationship } from "@/lib/relationships";
 
 // A plain `throw` inside a server action wired to a bare <form action={fn}>
 // crashes the whole page with Next.js's generic error screen instead of showing
@@ -201,6 +202,41 @@ export async function removeConnection(formData: FormData) {
 
   const { error } = await supabase.from("connections").delete().eq("id", id);
   if (error) networkError(error.message);
+
+  revalidatePath("/dashboard/network");
+  revalidatePath("/dashboard/people/[id]", "page");
+}
+
+// Saved Clinicians (Master Brief #28): private and unilateral - no accept/
+// decline, no notice to the other person, thin wrappers over
+// src/lib/relationships.ts so Network and the People profile page share
+// the exact same logic.
+export async function saveClinicianAction(formData: FormData) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not signed in");
+
+  const clinicianId = String(formData.get("clinician_id") || "");
+  const note = String(formData.get("note") || "").trim();
+  const { error } = await saveClinicianRelationship(supabase, user.id, clinicianId, note || undefined);
+  if (error) networkError(error);
+
+  revalidatePath("/dashboard/network");
+  revalidatePath("/dashboard/people/[id]", "page");
+}
+
+export async function removeSavedClinicianAction(formData: FormData) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not signed in");
+
+  const clinicianId = String(formData.get("clinician_id") || "");
+  const { error } = await removeSavedClinicianRelationship(supabase, user.id, clinicianId);
+  if (error) networkError(error);
 
   revalidatePath("/dashboard/network");
   revalidatePath("/dashboard/people/[id]", "page");
