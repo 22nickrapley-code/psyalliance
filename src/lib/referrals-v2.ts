@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { logProfessionalEvent } from "@/lib/professional-events";
+import { raiseNotification } from "@/lib/notifications-v2";
 
 // Canonical service layer for the rebuilt Referrals lifecycle (Master
 // Brief #23-24): Need identified -> Referral sent -> Interested /
@@ -82,6 +83,23 @@ export async function respondToReferralRequest(
     metadata: { referralRequestId, response },
   });
 
+  const { data: originalRequest } = await supabase
+    .from("referral_requests")
+    .select("requesting_profile_id")
+    .eq("id", referralRequestId)
+    .maybeSingle();
+  if (originalRequest?.requesting_profile_id) {
+    await raiseNotification(supabase, {
+      eventType: "referral_response",
+      recipientProfileIds: [originalRequest.requesting_profile_id],
+      actorProfileId: respondingProfileId,
+      actorType: "member_web",
+      summary: `responded "${response}" to your referral request`,
+      deepLink: "/dashboard/requests?tab=referrals",
+      metadata: { referralRequestId, response },
+    });
+  }
+
   return { error: null };
 }
 
@@ -107,6 +125,16 @@ export async function establishProfessionalConnection(
     actorProfileId: requestingProfileId,
     relatedProfileId: respondingProfileId,
     summary: "established a professional connection via referral",
+    metadata: { referralRequestId },
+  });
+
+  await raiseNotification(supabase, {
+    eventType: "referral_connected",
+    recipientProfileIds: [respondingProfileId],
+    actorProfileId: requestingProfileId,
+    actorType: "member_web",
+    summary: "connected with you on a referral request",
+    deepLink: "/dashboard/requests?tab=referrals",
     metadata: { referralRequestId },
   });
 

@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { logProfessionalEvent } from "@/lib/professional-events";
+import { raiseNotification } from "@/lib/notifications-v2";
 
 // Canonical Coverage service layer (Master Brief #19-22, Addendum A7 Level
 // 1 data only). Plain functions, callable from a server action today and a
@@ -229,6 +230,16 @@ export async function sendCoverageRequest(
       summary: "sent a coverage request",
       metadata: { coveragePlanCaseId, coverageRequestId: data.id },
     }),
+    raiseNotification(supabase, {
+      eventType: "coverage_request",
+      recipientProfileIds: [requestedProfileId],
+      actorProfileId,
+      actorType: "member_web",
+      summary: "sent you a coverage request",
+      deepLink: "/dashboard/requests?tab=coverage",
+      dedupKey: `coverage_request:${data.id}`,
+      metadata: { coveragePlanCaseId, coverageRequestId: data.id },
+    }),
   ]);
   return { requestId: data.id, error: null };
 }
@@ -245,11 +256,12 @@ export async function respondToCoverageRequest(
 ) {
   const { data: request, error: fetchError } = await supabase
     .from("coverage_requests")
-    .select("coverage_plan_case_id, sent_at, requested_profile_id")
+    .select("coverage_plan_case_id, sent_at, requested_profile_id, coverage_plan_cases(coverage_plan_id, coverage_plans(profile_id))")
     .eq("id", coverageRequestId)
     .maybeSingle();
   if (fetchError || !request) return { error: fetchError?.message ?? "Request not found" };
   if (request.requested_profile_id !== requestedProfileId) return { error: "Not your request" };
+  const planOwnerId = (request as any).coverage_plan_cases?.coverage_plans?.profile_id as string | undefined;
 
   const respondedAt = new Date();
   const responseTimeSeconds = Math.round((respondedAt.getTime() - new Date(request.sent_at).getTime()) / 1000);
@@ -285,6 +297,19 @@ export async function respondToCoverageRequest(
       eventType: "coverage_confirmed",
       actorProfileId: requestedProfileId,
       metadata: { coverageRequestId, coveragePlanCaseId: request.coverage_plan_case_id },
+    });
+  }
+
+  if (planOwnerId) {
+    await raiseNotification(supabase, {
+      eventType: response === "accepted" ? "coverage_confirmed" : "coverage_response",
+      recipientProfileIds: [planOwnerId],
+      actorProfileId: requestedProfileId,
+      actorType: "member_web",
+      summary: response === "accepted" ? "confirmed they can cover your case" : `responded "${response}" to your coverage request`,
+      deepLink: "/dashboard/requests?tab=coverage",
+      dedupKey: `coverage_response:${coverageRequestId}`,
+      metadata: { coverageRequestId, response },
     });
   }
 

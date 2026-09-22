@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { logProfessionalEvent } from "@/lib/professional-events";
+import { raiseNotification } from "@/lib/notifications-v2";
 
 // Canonical Consult service layer (PsyA2 #56-67, PA-04/PA-05).
 
@@ -113,6 +114,12 @@ export async function respondToConsultation(
   });
   if (error) return { error: error.message };
 
+  const { data: consultation } = await supabase
+    .from("consultations")
+    .select("author_profile_id")
+    .eq("id", consultationId)
+    .maybeSingle();
+
   await Promise.all([
     supabase.from("consultations").update({ status: "responses_received" }).eq("id", consultationId).eq("status", "open"),
     logProfessionalEvent(supabase, {
@@ -121,6 +128,17 @@ export async function respondToConsultation(
       summary: `${responseType === "clarifying_question" ? "asked a clarifying question on" : "replied to"} a consultation`,
       metadata: { consultationId },
     }),
+    consultation?.author_profile_id
+      ? raiseNotification(supabase, {
+          eventType: "consultation_response",
+          recipientProfileIds: [consultation.author_profile_id],
+          actorProfileId: responderProfileId,
+          actorType: "member_web",
+          summary: responseType === "clarifying_question" ? "asked a clarifying question on your consultation" : "replied to your consultation",
+          deepLink: "/dashboard/consult",
+          metadata: { consultationId, responseType },
+        })
+      : Promise.resolve(),
   ]);
 
   return { error: null };
