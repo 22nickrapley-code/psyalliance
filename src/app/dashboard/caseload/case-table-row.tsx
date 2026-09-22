@@ -52,19 +52,18 @@ export default function CaseTableRow({
     return areaMatches && c[field] === highlight.value;
   }
 
-  function cellProps(field: "primary_need" | "secondary_need" | "tertiary_need") {
+  // The highlight pill (background + rounded corners) goes on the inner
+  // content div, never on the <td> itself - a <td> with border-radius under
+  // border-collapse: collapse renders inconsistently across browsers (the
+  // rounded background can paint past the cell's own bounds and bleed into
+  // a neighboring cell, which is what was happening here). A plain nested
+  // div has none of that table-specific baggage.
+  function cellMatchProps(field: "primary_need" | "secondary_need" | "tertiary_need") {
     const matched = cellHighlighted(field);
     return {
       className: matched ? "caseload-cell-match" : undefined,
       style: matched && highlight.color ? { backgroundColor: hexToRgba(highlight.color, 0.28) } : undefined,
     };
-  }
-
-  // Same as cellProps, plus a fixed extra class (used for Primary's left
-  // divider border, which always applies regardless of highlight state).
-  function cellPropsWithClass(field: "primary_need" | "secondary_need" | "tertiary_need", extraClass: string) {
-    const base = cellProps(field);
-    return { ...base, className: [base.className, extraClass].filter(Boolean).join(" ") };
   }
 
   if (!editing) {
@@ -80,9 +79,21 @@ export default function CaseTableRow({
         <td><div className="cl-cell-clamp">{c.insurance || <span className="muted">-</span>}</div></td>
         <td>{c.rate_per_session ? `$${c.rate_per_session}` : <span className="muted">-</span>}</td>
         <td>{c.sessions_per_week ?? <span className="muted">-</span>}</td>
-        <td {...cellPropsWithClass("primary_need", "caseload-col-divide")}><div className="cl-cell-clamp">{c.primary_need || <span className="muted">-</span>}</div></td>
-        <td {...cellProps("secondary_need")}><div className="cl-cell-clamp">{c.secondary_need || <span className="muted">-</span>}</div></td>
-        <td {...cellProps("tertiary_need")}><div className="cl-cell-clamp">{c.tertiary_need || <span className="muted">-</span>}</div></td>
+        <td className="caseload-col-divide">
+          <div className={["cl-cell-clamp", cellMatchProps("primary_need").className].filter(Boolean).join(" ")} style={cellMatchProps("primary_need").style}>
+            {c.primary_need || <span className="muted">-</span>}
+          </div>
+        </td>
+        <td>
+          <div className={["cl-cell-clamp", cellMatchProps("secondary_need").className].filter(Boolean).join(" ")} style={cellMatchProps("secondary_need").style}>
+            {c.secondary_need || <span className="muted">-</span>}
+          </div>
+        </td>
+        <td>
+          <div className={["cl-cell-clamp", cellMatchProps("tertiary_need").className].filter(Boolean).join(" ")} style={cellMatchProps("tertiary_need").style}>
+            {c.tertiary_need || <span className="muted">-</span>}
+          </div>
+        </td>
         <td className="case-row-actions">
           <button
             type="button"

@@ -9,18 +9,21 @@ type Org = { id: number; name: string };
 // Order matches Nick's spec: identity/logistics columns first, treatment
 // areas last, since those are the columns someone scans first when looking
 // a client up, and the ones that need the least horizontal room come
-// narrowest (Sessions/wk only ever holds up to two decimal places).
+// narrowest (Sesh P.W only ever holds up to two decimal places). Shortened
+// per Nick's second pass at the labels (Client ID / ST / Sesh Rate / Sesh
+// P.W / 1st / 2nd / 3rd) - the fuller words were still too wide for how
+// narrow several of these columns need to be.
 const COLUMNS = [
   "No.",
-  "Client Identifier",
-  "State",
+  "Client ID",
+  "ST",
   "Sesh Type",
   "Insurance",
-  "Rate/session",
-  "Sessions/wk",
-  "Primary",
-  "Secondary",
-  "Tertiary",
+  "Sesh Rate",
+  "Sesh P.W",
+  "1st",
+  "2nd",
+  "3rd",
   "",
 ];
 
@@ -32,12 +35,12 @@ const COLUMNS = [
 // way to guarantee every header gets a stable box to wrap inside.
 const COLUMN_WIDTHS = [3, 14, 5, 7, 12, 7, 7, 10, 10, 10, 15];
 
-const NARROW_COLUMNS = new Set(["No.", "State", "Sesh Type", "Rate/session", "Sessions/wk", ""]);
+const NARROW_COLUMNS = new Set(["No.", "ST", "Sesh Type", "Sesh Rate", "Sesh P.W", ""]);
 
 // A divider separates the identity/logistics columns from the clinical
-// Primary/Secondary/Tertiary need columns - drawn as a left border on the
-// Primary column only, so it reads as a single seam rather than three.
-const DIVIDE_BEFORE = new Set(["Primary"]);
+// 1st/2nd/3rd need columns - drawn as a left border on the first of those
+// three, so it reads as a single seam rather than three.
+const DIVIDE_BEFORE = new Set(["1st"]);
 
 // Small stat trio shown in each org's title bar - Total Clients was already
 // visible in the "(count)" next to the title, but Nick wanted it repeated
@@ -100,9 +103,7 @@ function OrgTable({
   return (
     <div className={`caseload-org-table${warn ? " caseload-org-table-warn" : ""}`}>
       <div className="caseload-org-table-head">
-        <h3>
-          {title} <span className="muted" style={{ fontWeight: 400 }}>({cases.length})</span>
-        </h3>
+        <h3>{title}</h3>
         <OrgStats cases={cases} />
       </div>
       {warn && (
