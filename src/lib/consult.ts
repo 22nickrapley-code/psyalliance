@@ -144,6 +144,29 @@ export async function respondToConsultation(
   return { error: null };
 }
 
+// PsyA2 #61: the author-only, private "mark as useful" on a response -
+// explicitly not a public like-count/leaderboard, so this never touches
+// anything the responder or anyone else can see. Toggles rather than only
+// setting true, since the author may reconsider.
+export async function setResponseUseful(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  authorProfileId: string,
+  responseId: number,
+  useful: boolean
+) {
+  const { data: response } = await supabase
+    .from("consultation_responses")
+    .select("consultation_id, consultations(author_profile_id)")
+    .eq("id", responseId)
+    .maybeSingle();
+  if (!response) return { error: "Response not found" };
+  const consultationAuthorId = (response as any).consultations?.author_profile_id as string | undefined;
+  if (consultationAuthorId !== authorProfileId) return { error: "Only the consultation's author can mark a response useful" };
+
+  const { error } = await supabase.from("consultation_responses").update({ marked_useful: useful }).eq("id", responseId);
+  return { error: error?.message ?? null };
+}
+
 export async function resolveConsultation(
   supabase: Awaited<ReturnType<typeof createClient>>,
   authorProfileId: string,

@@ -3,7 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { createConsultation, respondToConsultation, resolveConsultation, type ConsultationType } from "@/lib/consult";
+import { createConsultation, respondToConsultation, resolveConsultation, setResponseUseful, type ConsultationType } from "@/lib/consult";
 
 function consultError(message: string): never {
   redirect(`/dashboard/consult?error=${encodeURIComponent(message)}`);
@@ -66,6 +66,22 @@ export async function resolveConsultationAction(formData: FormData) {
 
   const consultationId = Number(formData.get("consultation_id"));
   const { error } = await resolveConsultation(supabase, user.id, consultationId);
+  if (error) consultError(error);
+
+  revalidatePath("/dashboard/consult");
+  redirect("/dashboard/consult");
+}
+
+export async function setResponseUsefulAction(formData: FormData) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not signed in");
+
+  const responseId = Number(formData.get("response_id"));
+  const useful = String(formData.get("useful") || "true") === "true";
+  const { error } = await setResponseUseful(supabase, user.id, responseId, useful);
   if (error) consultError(error);
 
   revalidatePath("/dashboard/consult");

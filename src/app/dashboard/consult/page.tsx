@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
-import { createConsultationAction, respondToConsultationAction, resolveConsultationAction } from "./actions";
+import { createConsultationAction, respondToConsultationAction, resolveConsultationAction, setResponseUsefulAction } from "./actions";
+import { startConversation } from "../messages/actions";
 
 const CONSULTATION_TYPE_LABELS: Record<string, string> = {
   diagnostic_clarification: "Diagnostic clarification",
@@ -133,9 +134,25 @@ export default async function ConsultPage(props: { searchParams: Promise<{ error
             {(c.consultation_responses || []).length > 0 && (
               <div style={{ marginTop: "0.4rem" }}>
                 {c.consultation_responses.map((r: any) => (
-                  <p key={r.id} style={{ fontSize: "0.9rem", margin: "0.2rem 0" }}>
-                    <strong>{r.profiles?.full_name}:</strong> {r.body}
-                  </p>
+                  <div key={r.id} style={{ display: "flex", alignItems: "baseline", gap: "0.4rem", margin: "0.2rem 0" }}>
+                    <p style={{ fontSize: "0.9rem", margin: 0 }}>
+                      <strong>{r.profiles?.full_name}:</strong> {r.body}
+                    </p>
+                    {c.author_profile_id === myself && (
+                      <form action={setResponseUsefulAction} style={{ display: "inline" }}>
+                        <input type="hidden" name="response_id" value={r.id} />
+                        <input type="hidden" name="useful" value={r.marked_useful ? "false" : "true"} />
+                        <button
+                          type="submit"
+                          className="secondary"
+                          style={{ padding: "0.15rem 0.4rem", fontSize: "0.75rem", flexShrink: 0 }}
+                          title="Private to you - not shown to the responder or anyone else"
+                        >
+                          {r.marked_useful ? "Useful ✓" : "Mark useful"}
+                        </button>
+                      </form>
+                    )}
+                  </div>
                 ))}
               </div>
             )}
@@ -152,6 +169,14 @@ export default async function ConsultPage(props: { searchParams: Promise<{ error
                     Ask a question
                   </button>
                 </div>
+              </form>
+            )}
+            {c.author_profile_id !== myself && (
+              <form action={startConversation} style={{ marginTop: "0.3rem" }}>
+                <input type="hidden" name="participant_ids" value={c.author_profile_id} />
+                <input type="hidden" name="title" value={`${c.author?.credential_prefix || ""} ${c.author?.full_name || ""}`.trim()} />
+                <input type="hidden" name="body" value={`Hi, on your consultation "${c.question}" - `} />
+                <button type="submit" className="secondary" style={{ fontSize: "0.85rem" }}>Message privately instead</button>
               </form>
             )}
           </div>
