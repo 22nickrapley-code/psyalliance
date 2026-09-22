@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import ToggleBox from "@/components/toggle-box";
 import UsStateDatalist from "@/components/us-state-datalist";
 import { suggestCliniciansForCase } from "@/lib/coverage";
+import { startConversation } from "../messages/actions";
 import {
   createCoveragePlanAction,
   addCoveragePlanCaseAction,
@@ -94,6 +95,25 @@ export default async function RequestsPage(props: { searchParams: Promise<{ tab?
 
   const alreadyRespondedReferralIds = new Set((myReferralResponses || []).map((r: any) => r.referral_request_id));
 
+  const CASE_STATUS_LABEL: Record<string, string> = {
+    confirmed: "Confirmed",
+    awaiting_response: "Awaiting response",
+    needs_cover: "Needs cover",
+    declined_all: "Declined by all",
+  };
+  // Master Brief #20's worked example: "12 cases / 9 Confirmed / 2 Awaiting
+  // response / 1 Needs cover" - a plan-level rollup so Nick can see a plan's
+  // overall state without opening every case row.
+  function casePlanSummary(cases: any[]) {
+    if (cases.length === 0) return null;
+    const counts: Record<string, number> = { confirmed: 0, awaiting_response: 0, needs_cover: 0, declined_all: 0 };
+    for (const c of cases) counts[c.status] = (counts[c.status] || 0) + 1;
+    const parts = ["confirmed", "awaiting_response", "needs_cover", "declined_all"]
+      .filter((status) => counts[status] > 0)
+      .map((status) => `${counts[status]} ${CASE_STATUS_LABEL[status]}`);
+    return `${cases.length} case${cases.length === 1 ? "" : "s"} · ${parts.join(" · ")}`;
+  }
+
   const coverageTab = (
     <div>
       <div className="card">
@@ -144,6 +164,9 @@ export default async function RequestsPage(props: { searchParams: Promise<{ tab?
                   </span>
                 )}
               </div>
+              {casePlanSummary(cases) && (
+                <p className="muted" style={{ fontSize: "0.85rem", marginTop: "0.2rem" }}>{casePlanSummary(cases)}</p>
+              )}
 
               <div style={{ marginTop: "0.5rem" }}>
                 {cases.map((c: any) => (
@@ -166,6 +189,15 @@ export default async function RequestsPage(props: { searchParams: Promise<{ tab?
                               ))}
                             </span>
                             <span className="person-row-actions">
+                              <a href={`/dashboard/people/${s.profileId}`} className="btn secondary" style={{ padding: "0.3rem 0.6rem", fontSize: "0.85rem" }}>
+                                View profile
+                              </a>
+                              <form action={startConversation}>
+                                <input type="hidden" name="participant_ids" value={s.profileId} />
+                                <input type="hidden" name="title" value={`${s.credentialPrefix || ""} ${s.fullName}`.trim()} />
+                                <input type="hidden" name="body" value={`Hi ${s.fullName}, `} />
+                                <button type="submit" className="secondary">Message</button>
+                              </form>
                               <form action={sendCoverageRequestAction}>
                                 <input type="hidden" name="coverage_plan_case_id" value={c.id} />
                                 <input type="hidden" name="requested_profile_id" value={s.profileId} />
