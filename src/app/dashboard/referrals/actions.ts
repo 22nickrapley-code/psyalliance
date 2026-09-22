@@ -13,6 +13,13 @@ function referralsError(message: string): never {
   redirect(`/dashboard/referrals?error=${encodeURIComponent(message)}`);
 }
 
+// Same idea as referralsError, for the three actions below that now run
+// from Messages' "Referral notices" tab instead of this page - a failure
+// should send you back to where the form actually lives.
+function messagesError(message: string): never {
+  redirect(`/dashboard/messages?error=${encodeURIComponent(message)}`);
+}
+
 export async function createReferralRequest(formData: FormData) {
   const supabase = await createClient();
   const {
@@ -52,6 +59,7 @@ export async function offerToHelp(formData: FormData) {
   if (error) referralsError(error.message);
 
   revalidatePath("/dashboard/referrals");
+  revalidatePath("/dashboard/messages");
 }
 
 export async function acceptResponse(formData: FormData) {
@@ -63,7 +71,7 @@ export async function acceptResponse(formData: FormData) {
     .from("referral_responses")
     .update({ status: "accepted", responded_at: new Date().toISOString() })
     .eq("id", responseId);
-  if (acceptError) referralsError(acceptError.message);
+  if (acceptError) messagesError(acceptError.message);
 
   await supabase
     .from("referral_responses")
@@ -75,8 +83,9 @@ export async function acceptResponse(formData: FormData) {
     .from("referral_requests")
     .update({ status: "matched" })
     .eq("id", requestId);
-  if (matchError) referralsError(matchError.message);
+  if (matchError) messagesError(matchError.message);
 
+  revalidatePath("/dashboard/messages");
   revalidatePath("/dashboard/referrals");
 }
 
@@ -107,9 +116,9 @@ export async function acknowledgeProviderReferral(formData: FormData) {
     .from("provider_referrals")
     .update({ status: "acknowledged", status_note: note, responded_at: new Date().toISOString() })
     .eq("id", id);
-  if (error) referralsError(error.message);
+  if (error) messagesError(error.message);
 
-  revalidatePath("/dashboard/referrals");
+  revalidatePath("/dashboard/messages");
 }
 
 export async function declineProviderReferral(formData: FormData) {
@@ -121,7 +130,7 @@ export async function declineProviderReferral(formData: FormData) {
     .from("provider_referrals")
     .update({ status: "declined", status_note: note, responded_at: new Date().toISOString() })
     .eq("id", id);
-  if (error) referralsError(error.message);
+  if (error) messagesError(error.message);
 
-  revalidatePath("/dashboard/referrals");
+  revalidatePath("/dashboard/messages");
 }

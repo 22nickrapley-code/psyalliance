@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { deleteDocument, rateDocument, createFolder, deleteFolder, moveDocumentToFolder } from "./actions";
-import UploadForm from "./upload-form";
+import DocumentsUploadBox from "./documents-upload-box";
 
 // One hour, not the 60 *seconds* this used to be set to: these signed URLs
 // sit as plain <a href> links on a rendered page, and a user browsing the
@@ -147,9 +147,9 @@ export default async function DocumentsPage(
     <div>
       <h1>Documents</h1>
       <p className="muted">
-        Personal documents are visible only to you. Shared library documents (best-practice
-        guides, session frameworks, regulatory references) are visible to any signed-in
-        colleague, and can be rated so the most useful ones surface.
+        Your Personal Library is visible only to you. The Shared Library (best-practice guides,
+        session frameworks, regulatory references) is visible to any signed-in colleague, and can
+        be rated so the most useful ones surface.
       </p>
 
       {searchParams?.error && <div className="error-banner">{searchParams.error}</div>}
@@ -158,10 +158,12 @@ export default async function DocumentsPage(
         <div className="message-banner">Document uploaded successfully.</div>
       )}
 
-      <UploadForm treatmentAreas={treatmentAreas || []} folders={myFolders} />
+      <div style={{ marginBottom: "1rem" }}>
+        <DocumentsUploadBox treatmentAreas={treatmentAreas || []} folders={myFolders} />
+      </div>
 
       <div className="card">
-        <h2>My personal documents ({personalAllUnfiltered.length})</h2>
+        <h2>My Personal Library ({personalAllUnfiltered.length})</h2>
 
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem", alignItems: "center", marginBottom: "1rem" }}>
           <a
@@ -268,7 +270,7 @@ export default async function DocumentsPage(
       <div className="card">
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: "0.75rem" }}>
           <div>
-            <h2>Shared global documents ({sharedAll.length})</h2>
+            <h2>Shared Library ({sharedAll.length})</h2>
             <p className="muted">
               {sortBy === "latest" ? "Sorted by newest first." : sortBy === "area" ? "Sorted by treatment area." : "Ranked by rating, highest first."}
             </p>
@@ -372,8 +374,8 @@ export default async function DocumentsPage(
             <label htmlFor="where">Where?</label>
             <select id="where" name="where" defaultValue={whereFilter}>
               <option value="all">All</option>
-              <option value="personal">My personal documents</option>
-              <option value="world">Shared global documents</option>
+              <option value="personal">My Personal Library</option>
+              <option value="world">Shared Library</option>
             </select>
           </div>
           <div className="field">
@@ -410,7 +412,7 @@ export default async function DocumentsPage(
               {searchResults.map((d: any) => (
                 <tr key={`${d.scope}-${d.id}`}>
                   <td>{d.title}</td>
-                  <td>{d.scope === "personal" ? "My personal documents" : "Shared global documents"}</td>
+                  <td>{d.scope === "personal" ? "My Personal Library" : "Shared Library"}</td>
                   <td>
                     {d.uploader?.full_name ? (
                       <a href={`/dashboard/people/${d.uploaded_by}`} className="person-link">{d.uploader.full_name}</a>

@@ -1,5 +1,10 @@
 import { createClient } from "@/lib/supabase/server";
 import { startConversation, setConversationReadState, setNotificationReadState } from "./actions";
+import {
+  acceptResponse,
+  acknowledgeProviderReferral,
+  declineProviderReferral,
+} from "../referrals/actions";
 import { professionFor } from "@/lib/profession";
 import { resolveAvatarUrls } from "@/lib/avatars";
 import Avatar from "../avatar";
@@ -60,6 +65,8 @@ export default async function MessagesPage(
     { data: blocklist },
     { data: allSpecialisms },
     { data: notifications },
+    { data: providerReferrals },
+    { data: myOpenRequests },
   ] = await Promise.all([
     supabase.from("conversation_participants").select("conversation_id, last_read_at").eq("profile_id", myself),
     supabase
@@ -80,6 +87,21 @@ export default async function MessagesPage(
       .from("system_notifications")
       .select("id, title, body, created_at, read_at")
       .eq("profile_id", myself)
+      .order("created_at", { ascending: false }),
+    // Referral notices, part 1: structured referrals sent in through the
+    // GP/physician portal, addressed to me specifically.
+    supabase
+      .from("provider_referrals")
+      .select("*, referring_providers(full_name, practice_name, phone, email)")
+      .eq("target_profile_id", myself)
+      .order("created_at", { ascending: false }),
+    // Referral notices, part 2: colleagues offering to help on a bulletin-
+    // board request I posted myself (the "who responded" half of Referrals,
+    // now living here alongside every other kind of incoming mail).
+    supabase
+      .from("referral_requests")
+      .select("*, lookup_values(value), referral_responses(*, profiles:responding_profile_id(full_name))")
+      .eq("requesting_profile_id", myself)
       .order("created_at", { ascending: false }),
   ]);
 
@@ -358,6 +380,99 @@ export default async function MessagesPage(
 
   const unreadNotificationCount = (notifications || []).filter((n: any) => !n.read_at).length;
 
+  // Referral notices: everyone's incoming "mail/requests" that isn't a
+  // regular conversation - structured referrals from physicians, and
+  // colleagues offering to help on a bulletin-board request I posted -
+  // merged into one list and sorted by date, same shape as inboxRows above.
+  // The pending count (not yet acted on) is what drives the tab badge and
+  // feeds the sidebar nav's unified Messages count.
+  const pendingProviderReferrals = (providerReferrals || []).filter((r: any) => r.status === "sent");
+  const peerOffers = (myOpenRequests || [])
+    .flatMap((r: any) => (r.referral_responses || []).map((resp: any) => ({ ...resp, request: r })));
+  const pendingPeerOffers = peerOffers.filter((o: any) => o.status === "offered");
+  const noticesPendingCount = pendingProviderReferrals.length + pendingPeerOffers.length;
+
+  function renderNoticeRows() {
+    const hasAny = (providerReferrals || []).length > 0 || peerOffers.length > 0;
+    return (
+      <>
+        {(providerReferrals || []).map((r: any) => (
+          <div key={`pr-${r.id}`} className="provider-referral-row">
+            <div>
+              <strong>{r.referring_providers?.full_name || "A physician"}</strong>
+              {r.referring_providers?.practice_name ? `, ${r.referring_providers.practice_name}` : ""}{" "}
+              <span className={`tag${r.urgency === "urgent" ? " danger" : ""}`}>{r.urgency}</span>
+              <span className="tag">{r.status}</span>
+              <p className="muted" style={{ margin: "0.25rem 0 0" }}>
+                {r.patient_initials ? `Patient ${r.patient_initials}` : "Patient"}
+                {r.patient_age_range ? `, ${r.patient_age_range}` : ""} · {r.reason}
+              </p>
+              <p className="muted" style={{ margin: "0.15rem 0 0", fontSize: "0.82rem" }}>
+                Contact: {r.contact_details}
+                {r.referring_providers?.phone ? ` · ${r.referring_providers.phone}` : ""}
+                {r.referring_providers?.email ? ` · ${r.referring_providers.email}` : ""}
+              </p>
+              {r.status_note && <p className="muted" style={{ margin: "0.15rem 0 0", fontSize: "0.82rem" }}>Your note: "{r.status_note}"</p>}
+            </div>
+            {r.status === "sent" && (
+              <div className="provider-referral-actions">
+                <form action={acknowledgeProviderReferral}>
+                  <input type="hidden" name="id" value={r.id} />
+                  <button type="submit" className="secondary" style={{ padding: "0.3rem 0.6rem", fontSize: "0.8rem" }}>
+                    Acknowledge
+                  </button>
+                </form>
+                <details>
+                  <summary style={{ cursor: "pointer", fontSize: "0.8rem", color: "var(--muted)" }}>Decline</summary>
+                  <form action={declineProviderReferral} style={{ marginTop: "0.4rem" }}>
+                    <input type="hidden" name="id" value={r.id} />
+                    <input name="status_note" type="text" placeholder="Optional note for their office" style={{ fontSize: "0.8rem" }} />
+                    <button type="submit" className="secondary" style={{ padding: "0.3rem 0.6rem", fontSize: "0.8rem", marginTop: "0.3rem" }}>
+                      Confirm decline
+                    </button>
+                  </form>
+                </details>
+              </div>
+            )}
+          </div>
+        ))}
+        {peerOffers.map((o: any) => (
+          <div key={`po-${o.id}`} className="person-row">
+            <span className="person-row-info">
+              <a href={`/dashboard/people/${o.responding_profile_id}`} className="person-link">
+                {o.profiles?.full_name}
+              </a>{" "}
+              offered to help with your {o.request.lookup_values?.value || "referral"} request
+              {o.request.state ? ` in ${o.request.state}` : ""}, {o.status}
+              {o.message ? `: "${o.message}"` : ""}
+            </span>
+            <span className="person-row-actions">
+              <form action={startConversation}>
+                <input type="hidden" name="participant_ids" value={o.responding_profile_id} />
+                <input type="hidden" name="title" value={`Re: ${o.request.lookup_values?.value || "referral"} request`} />
+                <input type="hidden" name="body" value={`Hi ${o.profiles?.full_name || ""}, thanks for offering to help, could we discuss further?`} />
+                <button type="submit" className="secondary">Discuss</button>
+              </form>
+              {o.status === "offered" && o.request.status === "open" && (
+                <form action={acceptResponse}>
+                  <input type="hidden" name="response_id" value={o.id} />
+                  <input type="hidden" name="referral_request_id" value={o.request.id} />
+                  <button type="submit">Accept</button>
+                </form>
+              )}
+            </span>
+          </div>
+        ))}
+        {!hasAny && (
+          <p className="muted">
+            Nothing here yet. Physician referrals and offers on your posted{" "}
+            <a href="/dashboard/referrals">referral requests</a> will show up here.
+          </p>
+        )}
+      </>
+    );
+  }
+
   // Full colleague list handed to the client-side RecipientPicker - every
   // filter/search/sort on it happens in local React state from here on, so
   // there's no server round-trip and no page reload when it changes.
@@ -385,15 +500,20 @@ export default async function MessagesPage(
 
       <div className="card">
         <div className="widget-header">
-          <h2>Your conversations</h2>
+          <h2>Your inbox</h2>
         </div>
         <ToggleBox
-          defaultTab="inbox"
+          defaultTab={noticesPendingCount > 0 ? "notices" : "inbox"}
           tabs={[
             {
               key: "inbox",
               label: `Inbox (${inboxRows.length})`,
               content: renderBoxRows(inboxRows, "Nothing in your inbox yet."),
+            },
+            {
+              key: "notices",
+              label: `Referral notices (${noticesPendingCount})`,
+              content: renderNoticeRows(),
             },
             {
               key: "sent",

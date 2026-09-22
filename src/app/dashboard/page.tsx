@@ -81,6 +81,7 @@ export default async function DashboardHome(
     { count: docCount },
     { count: pendingConnectionCount },
     { data: myOpenRequests },
+    { data: pendingProviderReferrals },
     { count: expiringLicenseCountRaw },
     { count: expiringPanelCountRaw },
     { count: plannerOfferCount },
@@ -105,6 +106,14 @@ export default async function DashboardHome(
     supabase.from("documents").select("id", { count: "exact", head: true }).eq("profile_id", myself),
     supabase.from("connections").select("id", { count: "exact", head: true }).eq("addressee_id", myself).eq("status", "pending"),
     supabase.from("referral_requests").select("id, referral_responses(status)").eq("requesting_profile_id", myself).eq("status", "open"),
+    // Physician referrals awaiting a response - shown in the "My messages"
+    // Notices tab below so they're never a blind spot on Overview.
+    supabase
+      .from("provider_referrals")
+      .select("id, reason, urgency, created_at, referring_providers(full_name, practice_name)")
+      .eq("target_profile_id", myself)
+      .eq("status", "sent")
+      .order("created_at", { ascending: false }),
     supabase
       .from("licenses")
       .select("id", { count: "exact", head: true })
@@ -155,10 +164,14 @@ export default async function DashboardHome(
   const expiringLicenseCount = expiringLicenseCountRaw ?? 0;
   const expiringPanelCount = expiringPanelCountRaw ?? 0;
 
-  const offersAwaitingDecision = (myOpenRequests || []).reduce(
+  const peerOffersAwaitingDecision = (myOpenRequests || []).reduce(
     (sum, r: any) => sum + (r.referral_responses || []).filter((resp: any) => resp.status === "offered").length,
     0
   );
+  const providerReferralsAwaitingDecision = (pendingProviderReferrals || []).length;
+  // Both feed the same "Referral notices" tab in Messages now, so Overview
+  // treats them as one combined attention item rather than two separate ones.
+  const offersAwaitingDecision = peerOffersAwaitingDecision + providerReferralsAwaitingDecision;
 
   const unreadMessageCount = (myConversationRows || []).filter((r: any) => {
     if (!r.conversation) return false;
@@ -304,6 +317,47 @@ export default async function DashboardHome(
         {rows.length === 0 && (
           <p className="muted">
             Nothing here yet. <a href="/dashboard/messages">Send a new message</a> to get a conversation going.
+          </p>
+        )}
+      </>
+    );
+  }
+
+  // Physician referrals + colleagues' offers, both awaiting a decision -
+  // the same "Referral notices" content that lives in full on Messages,
+  // shown here in miniature so this widget is never a blind spot for them.
+  function renderNoticePreviewRows() {
+    const peerRows = (myOpenRequests || []).flatMap((r: any) =>
+      (r.referral_responses || [])
+        .filter((resp: any) => resp.status === "offered")
+        .map((resp: any) => ({ kind: "peer" as const, requestId: r.id }))
+    );
+    const hasAny = (pendingProviderReferrals || []).length > 0 || peerRows.length > 0;
+    return (
+      <>
+        {(pendingProviderReferrals || []).map((r: any) => (
+          <a key={`pr-${r.id}`} href="/dashboard/messages" className="ov-feed-row needs-reply">
+            <span className="title">
+              <span>
+                {r.referring_providers?.full_name || "A physician"}
+                {r.referring_providers?.practice_name ? `, ${r.referring_providers.practice_name}` : ""}
+                <span className={`tag${r.urgency === "urgent" ? " danger" : ""}`} style={{ marginLeft: "0.4rem" }}>{r.urgency}</span>
+              </span>
+            </span>
+            <span className="snippet">{r.reason}</span>
+          </a>
+        ))}
+        {peerOffersAwaitingDecision > 0 && (
+          <a href="/dashboard/messages" className="ov-feed-row needs-reply">
+            <span className="title"><span>Colleague offers to help</span></span>
+            <span className="snippet">
+              {peerOffersAwaitingDecision} offer{peerOffersAwaitingDecision === 1 ? "" : "s"} on your posted referral requests
+            </span>
+          </a>
+        )}
+        {!hasAny && (
+          <p className="muted">
+            Nothing here yet. Physician referrals and offers on your posted requests will show up here.
           </p>
         )}
       </>
@@ -457,7 +511,7 @@ export default async function DashboardHome(
           )}
           {offersAwaitingDecision > 0 && (
             <span>
-              <a href="/dashboard/referrals">{offersAwaitingDecision} referral offer{offersAwaitingDecision === 1 ? "" : "s"}</a>
+              <a href="/dashboard/messages">{offersAwaitingDecision} referral notice{offersAwaitingDecision === 1 ? "" : "s"}</a>
             </span>
           )}
           {(plannerOfferCount ?? 0) > 0 && (
@@ -551,9 +605,10 @@ export default async function DashboardHome(
               <GoLink href="/dashboard/messages" />
             </div>
             <ToggleBox
-              defaultTab="inbox"
+              defaultTab={offersAwaitingDecision > 0 ? "notices" : "inbox"}
               tabs={[
                 { key: "inbox", label: `Inbox (${inboxRows.length})`, content: renderMessageRows(inboxRows) },
+                { key: "notices", label: `Notices (${offersAwaitingDecision})`, content: renderNoticePreviewRows() },
                 { key: "sent", label: `Sent (${sentRows.length})`, content: renderMessageRows(sentRows) },
               ]}
             />

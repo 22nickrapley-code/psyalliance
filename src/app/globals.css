@@ -3281,15 +3281,20 @@ a.person-link.tier-recommended:hover {
   table-layout: fixed;
 }
 
-/* white-space was forcing every header onto one line while narrow columns
-   were capped to 78px, so long labels like "Rate/session" spilled past
-   their column and visually overlapped the next one. Letting headers wrap
-   onto two lines keeps each one inside its own column. */
+/* white-space: normal alone wasn't enough - "Rate/session" and
+   "Sessions/wk" are each a single unbroken run of characters (a "/" isn't
+   a guaranteed wrap point across browsers), so with no space to break on
+   they kept rendering as one line that spilled past their narrow column
+   and visually overlapped the next header's text. overflow-wrap: anywhere
+   forces a break inside the word itself when there's no better spot,
+   which is what actually keeps each header inside its own column. */
 .caseload-table th {
   text-align: center;
   padding: 0.3rem 0.4rem;
   border-bottom: 1px solid var(--border-strong);
   white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
   font-size: 0.72rem;
   line-height: 1.2;
   vertical-align: bottom;

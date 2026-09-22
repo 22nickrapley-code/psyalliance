@@ -44,7 +44,12 @@ export default async function DashboardLayout({
   // not awaited-critical, but kept simple and correct rather than clever.
   supabase.from("profiles").update({ last_active_at: new Date().toISOString() }).eq("id", user.id).then(() => {});
 
-  const [{ data: myConversationRows }, { count: unreadNotificationCount }] = await Promise.all([
+  const [
+    { data: myConversationRows },
+    { count: unreadNotificationCount },
+    { count: pendingProviderReferralCount },
+    { data: myOpenRequestsForBadge },
+  ] = await Promise.all([
     supabase
       .from("conversation_participants")
       .select("last_read_at, conversation:conversation_id(last_message_at)")
@@ -54,14 +59,32 @@ export default async function DashboardLayout({
       .select("id", { count: "exact", head: true })
       .eq("profile_id", user.id)
       .is("read_at", null),
+    supabase
+      .from("provider_referrals")
+      .select("id", { count: "exact", head: true })
+      .eq("target_profile_id", user.id)
+      .eq("status", "sent"),
+    supabase
+      .from("referral_requests")
+      .select("id, referral_responses(status)")
+      .eq("requesting_profile_id", user.id)
+      .eq("status", "open"),
   ]);
   const unreadConversationCount = (myConversationRows || []).filter((r: any) => {
     if (!r.conversation) return false;
     return new Date(r.conversation.last_message_at) > new Date(r.last_read_at);
   }).length;
-  // The Messages nav badge now covers the whole inbox - real conversations
-  // plus company/admin notices - since a notice shows up in that same inbox.
-  const unreadMessageCount = unreadConversationCount + (unreadNotificationCount || 0);
+  const pendingPeerOfferCount = (myOpenRequestsForBadge || []).reduce(
+    (sum: number, r: any) => sum + (r.referral_responses || []).filter((resp: any) => resp.status === "offered").length,
+    0
+  );
+  // The Messages nav badge now covers the whole inbox - real conversations,
+  // company/admin notices, physician referrals sent to you, and colleagues'
+  // offers to help on a request you posted - every kind of incoming "mail"
+  // now surfaces as a Referral notice inside Messages, per Nick's call to
+  // stop splitting incoming requests between Messages and Referrals.
+  const unreadMessageCount =
+    unreadConversationCount + (unreadNotificationCount || 0) + (pendingProviderReferralCount || 0) + pendingPeerOfferCount;
 
   const displayName = profile?.full_name || user.email || "";
   const initials = displayName

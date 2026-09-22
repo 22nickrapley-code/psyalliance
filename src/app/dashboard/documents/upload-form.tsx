@@ -75,8 +75,7 @@ export default function UploadForm({
   );
 
   return (
-    <div className="card">
-      <h2>Upload</h2>
+    <div>
       <form action={uploadDocument}>
         <div className="field-row" style={{ alignItems: "flex-start" }}>
           <div className="field" style={{ flex: "1 1 260px" }}>
