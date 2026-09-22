@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import ToggleBox from "@/components/toggle-box";
 import UsStateDatalist from "@/components/us-state-datalist";
 import { suggestCliniciansForCase } from "@/lib/coverage";
+import { suggestCliniciansForReferral } from "@/lib/referrals-v2";
 import { startConversation } from "../messages/actions";
 import {
   createCoveragePlanAction,
@@ -94,6 +95,16 @@ export default async function RequestsPage(props: { searchParams: Promise<{ tab?
   }
 
   const alreadyRespondedReferralIds = new Set((myReferralResponses || []).map((r: any) => r.referral_request_id));
+
+  // Master Brief #24's "Matches found" step - only meaningful while a
+  // request is still active, same reasoning as needsCoverCases above.
+  const openReferralRequests = (myReferralRequests || []).filter(
+    (r: any) => !["closed", "connected", "handoff"].includes(r.status)
+  );
+  const referralSuggestionsByRequestId = new Map<number, Awaited<ReturnType<typeof suggestCliniciansForReferral>>>();
+  for (const r of openReferralRequests) {
+    referralSuggestionsByRequestId.set(r.id, await suggestCliniciansForReferral(supabase, r.id));
+  }
 
   const CASE_STATUS_LABEL: Record<string, string> = {
     confirmed: "Confirmed",
@@ -357,10 +368,41 @@ export default async function RequestsPage(props: { searchParams: Promise<{ tab?
               </div>
             )}
             {!["closed", "connected", "handoff"].includes(r.status) && (
-              <form action={closeReferralRequestAction} style={{ marginTop: "0.35rem" }}>
-                <input type="hidden" name="referral_request_id" value={r.id} />
-                <button type="submit" className="secondary">Close</button>
-              </form>
+              <>
+                {(referralSuggestionsByRequestId.get(r.id) || []).length > 0 && (
+                  <div style={{ marginTop: "0.5rem" }}>
+                    <p className="muted" style={{ fontSize: "0.85rem", marginBottom: "0.3rem" }}>Matches found:</p>
+                    {(referralSuggestionsByRequestId.get(r.id) || []).map((s) => (
+                      <div key={s.profileId} className="person-row">
+                        <span className="person-row-info">
+                          <a href={`/dashboard/people/${s.profileId}`} className="person-link">
+                            {s.credentialPrefix ? `${s.credentialPrefix} ` : ""}
+                            {s.fullName}
+                          </a>
+                          {s.reasons.map((reason) => (
+                            <span key={reason.code} className="tag" style={{ marginLeft: "0.3rem" }}>{reason.label}</span>
+                          ))}
+                        </span>
+                        <span className="person-row-actions">
+                          <a href={`/dashboard/people/${s.profileId}`} className="btn secondary" style={{ padding: "0.3rem 0.6rem", fontSize: "0.85rem" }}>
+                            View profile
+                          </a>
+                          <form action={startConversation}>
+                            <input type="hidden" name="participant_ids" value={s.profileId} />
+                            <input type="hidden" name="title" value={`${s.credentialPrefix || ""} ${s.fullName}`.trim()} />
+                            <input type="hidden" name="body" value={`Hi ${s.fullName}, `} />
+                            <button type="submit" className="secondary">Message</button>
+                          </form>
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <form action={closeReferralRequestAction} style={{ marginTop: "0.35rem" }}>
+                  <input type="hidden" name="referral_request_id" value={r.id} />
+                  <button type="submit" className="secondary">Close</button>
+                </form>
+              </>
             )}
           </div>
         ))}

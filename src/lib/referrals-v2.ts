@@ -12,6 +12,126 @@ import { raiseNotification } from "@/lib/notifications-v2";
 
 export type ReferralAudience = "trusted" | "selected" | "suggested" | "wider_network";
 
+export type ReferralReasonCode =
+  | "trusted_colleague"
+  | "saved_clinician"
+  | "worked_with_before"
+  | "specialty_match"
+  | "licence_on_file"
+  | "available_for_referrals";
+
+export type SuggestedReferralClinician = {
+  profileId: string;
+  fullName: string;
+  credentialPrefix: string | null;
+  primaryState: string | null;
+  reasons: { code: ReferralReasonCode; label: string }[];
+};
+
+// Master Brief #24's workflow has "Matches found" as its own step between
+// "Need identified" and "Referral sent" - this was the one state in that
+// chain with no code behind it at all. Deliberately read-only for this
+// pass (no schema/RLS change): it surfaces who's a good fit for a request
+// the member already posted, using the same staged-matching shape as
+// Coverage's suggestCliniciansForCase (hard eligibility -> clinical
+// relevance -> relationship ordering; reliability unweighted, same
+// Addendum A4 reasoning as Coverage). Sending the request itself still
+// goes through the request's own audience_type, same as before - this
+// only helps a requester see (and message) the right people faster.
+export async function suggestCliniciansForReferral(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  referralRequestId: number
+): Promise<SuggestedReferralClinician[]> {
+  const { data: request } = await supabase
+    .from("referral_requests")
+    .select("requesting_profile_id, specialism_lookup_id, state")
+    .eq("id", referralRequestId)
+    .maybeSingle();
+  if (!request) return [];
+
+  const { data: excluded } = await supabase
+    .from("do_not_work_with")
+    .select("blocked_profile_id")
+    .eq("profile_id", request.requesting_profile_id);
+  const excludedIds = new Set((excluded || []).map((e) => e.blocked_profile_id));
+
+  let candidatesQuery = supabase
+    .from("profiles")
+    .select("id, full_name, credential_prefix, primary_state, referral_availability, licenses!inner(state, status)")
+    .eq("verification_status", "verified")
+    .eq("licenses.status", "active")
+    .neq("id", request.requesting_profile_id);
+  if (request.state) {
+    candidatesQuery = candidatesQuery.eq("licenses.state", request.state);
+  }
+  const { data: candidates, error } = await candidatesQuery;
+  if (error) {
+    console.error("suggestCliniciansForReferral failed:", error.message);
+    return [];
+  }
+
+  const candidateIds = (candidates || []).map((c: any) => c.id).filter((id: string) => !excludedIds.has(id));
+  if (candidateIds.length === 0) return [];
+
+  const [{ data: specialisms }, { data: trustedRows }, { data: savedRows }, { data: workedWithRows }] = await Promise.all([
+    request.specialism_lookup_id
+      ? supabase
+          .from("profile_lookup_values")
+          .select("profile_id, lookup_value_id")
+          .in("profile_id", candidateIds)
+          .eq("lookup_value_id", request.specialism_lookup_id)
+      : Promise.resolve({ data: [] as any[] }),
+    supabase
+      .from("connections")
+      .select("requester_id, addressee_id")
+      .eq("tier", "trusted_colleague")
+      .eq("status", "accepted")
+      .or(`requester_id.eq.${request.requesting_profile_id},addressee_id.eq.${request.requesting_profile_id}`),
+    supabase.from("saved_clinicians").select("clinician_id").eq("profile_id", request.requesting_profile_id),
+    supabase.from("worked_with_before").select("colleague_id, interaction_count").eq("profile_id", request.requesting_profile_id),
+  ]);
+
+  const specialtyMatchIds = new Set((specialisms || []).map((s: any) => s.profile_id));
+  const trustedIds = new Set(
+    (trustedRows || []).map((c: any) => (c.requester_id === request.requesting_profile_id ? c.addressee_id : c.requester_id))
+  );
+  const savedIds = new Set((savedRows || []).map((s: any) => s.clinician_id));
+  const workedWithCount = new Map((workedWithRows || []).map((w: any) => [w.colleague_id, w.interaction_count as number]));
+
+  const eligible = (candidates || []).filter(
+    (c: any) =>
+      !excludedIds.has(c.id) &&
+      c.referral_availability !== "no" &&
+      (!request.specialism_lookup_id || specialtyMatchIds.has(c.id))
+  );
+
+  const results: SuggestedReferralClinician[] = eligible.map((c: any) => {
+    const reasons: SuggestedReferralClinician["reasons"] = [];
+    if (trustedIds.has(c.id)) reasons.push({ code: "trusted_colleague", label: "Trusted colleague" });
+    if (workedWithCount.has(c.id)) reasons.push({ code: "worked_with_before", label: "Worked together before" });
+    if (savedIds.has(c.id)) reasons.push({ code: "saved_clinician", label: "Saved clinician" });
+    if (specialtyMatchIds.has(c.id)) reasons.push({ code: "specialty_match", label: "Relevant specialty" });
+    const licenceState = c.primary_state || request.state;
+    if (licenceState) reasons.push({ code: "licence_on_file", label: `Verified ${licenceState} licence on file` });
+    if (c.referral_availability === "yes") reasons.push({ code: "available_for_referrals", label: "Accepting referrals" });
+    return {
+      profileId: c.id,
+      fullName: c.full_name,
+      credentialPrefix: c.credential_prefix,
+      primaryState: c.primary_state,
+      reasons,
+    };
+  });
+
+  results.sort((a, b) => {
+    const rank = (r: SuggestedReferralClinician) =>
+      (trustedIds.has(r.profileId) ? 0 : 1) * 100 + (workedWithCount.has(r.profileId) ? 0 : 1) * 10 + (savedIds.has(r.profileId) ? 0 : 1);
+    return rank(a) - rank(b);
+  });
+
+  return results.slice(0, 5);
+}
+
 export async function createReferralRequest(
   supabase: Awaited<ReturnType<typeof createClient>>,
   requestingProfileId: string,
