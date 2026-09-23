@@ -57,6 +57,11 @@ export default async function ConsultPage(props: { searchParams: Promise<{ error
       </p>
       {error && <div className="error-banner">{error}</div>}
 
+      <p className="muted" style={{ marginTop: "-0.5rem" }}>
+        Looking for a persistent peer group instead of a one-off question?{" "}
+        <a href="/dashboard/consult/groups">Consultation groups &rarr;</a>
+      </p>
+
       <div className="card">
         <h2>Ask something</h2>
         <form action={createConsultationAction}>
