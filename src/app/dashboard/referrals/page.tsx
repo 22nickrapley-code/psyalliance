@@ -185,7 +185,7 @@ export default async function ReferralsPage(
             </div>
           </div>
           <div className="field">
-            <label htmlFor="notes">Notes</label>
+            <label htmlFor="notes">Notes (no patient names or identifying details)</label>
             <textarea id="notes" name="notes" rows={2} />
           </div>
           <button type="submit">Post request</button>

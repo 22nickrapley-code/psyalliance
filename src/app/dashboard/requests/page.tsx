@@ -295,7 +295,7 @@ export default async function RequestsPage(props: { searchParams: Promise<{ tab?
                   <input type="hidden" name="coverage_plan_id" value={plan.id} />
                   <div className="field-row">
                     <div className="field">
-                      <label>Private reference</label>
+                      <label>Private reference (no patient name)</label>
                       <input name="case_reference" type="text" placeholder="Tuesday 4pm, adult anxiety" required />
                     </div>
                     <div className="field">
