@@ -275,10 +275,11 @@ export default async function MessagesPage(
                   <span className="inbox-row-main">
                     <div className="msg-avatar system">PA</div>
                     <span className="inbox-row-text">
-                      <strong>{n.title}</strong>
-                      <span className="tag gold" style={{ marginLeft: "0.5rem" }}>PsyAlliance Team</span>
-                      {unread && <span className="tag" style={{ marginLeft: "0.3rem" }}>Unread</span>}
-                      <br />
+                      <span className="inbox-row-line1">
+                        <strong>{n.title}</strong>
+                        <span className="tag gold" style={{ marginLeft: "0.5rem" }}>PsyAlliance Team</span>
+                        {unread && <span className="tag" style={{ marginLeft: "0.3rem" }}>Unread</span>}
+                      </span>
                       <span className="muted inbox-preview" style={{ fontWeight: unread ? 600 : 400 }}>{n.body}</span>
                     </span>
                   </span>
@@ -337,15 +338,16 @@ export default async function MessagesPage(
                     <div className="msg-avatar">{groupLabel}</div>
                   )}
                   <span className="inbox-row-text">
-                    <strong>{nameLabel}</strong>
-                    {c.title && <span className="muted"> · {c.title}</span>}
-                    {needsReply && (
-                      <span className="tag gold" style={{ marginLeft: "0.5rem" }}>Needs your reply</span>
-                    )}
-                    {unread && !needsReply && (
-                      <span className="tag" style={{ marginLeft: "0.5rem" }}>Unread</span>
-                    )}
-                    <br />
+                    <span className="inbox-row-line1">
+                      <strong>{nameLabel}</strong>
+                      {c.title && <span className="muted"> · {c.title}</span>}
+                      {needsReply && (
+                        <span className="tag gold" style={{ marginLeft: "0.5rem" }}>Needs your reply</span>
+                      )}
+                      {unread && !needsReply && (
+                        <span className="tag" style={{ marginLeft: "0.5rem" }}>Unread</span>
+                      )}
+                    </span>
                     <span className="muted inbox-preview" style={{ fontWeight: unread ? 600 : 400 }}>
                       {latest ? (latest.body as string).slice(0, 90) : "No messages yet"}
                     </span>

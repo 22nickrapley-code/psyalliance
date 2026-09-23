@@ -296,6 +296,20 @@ a {
   color: var(--text);
 }
 
+/* Sept 23 audit: name + title + "Needs your reply"/"Unread" tags could
+   still wrap onto their own second line before the preview text below it,
+   so a row with a long name or a tag on it took three lines while a plain
+   row took two - an uneven, jumpy-looking list. Truncating line 1 the same
+   way .inbox-preview already truncates line 2 keeps every row to exactly
+   two lines. */
+.inbox-row-line1 {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
 .inbox-preview {
   display: block;
   overflow: hidden;

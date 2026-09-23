@@ -99,6 +99,14 @@ export default function RecipientPicker({
   }
 
   const allVisibleChecked = filtered.length > 0 && filtered.every((c) => checked.has(c.id));
+  // Sept 23 audit: "Select all shown" defaulted to showing (and could select)
+  // literally every colleague in the network in one click, since no filter
+  // is active by default - flagged as too easy to accidentally mass-compose
+  // to everyone. The control itself is useful (message a filtered group at
+  // once), so rather than remove it, it only works once a filter has
+  // actually narrowed the list - selecting the whole unfiltered network
+  // still requires deliberately doing that one person at a time.
+  const hasActiveFilter = q.trim() !== "" || state.trim() !== "" || specialism !== "" || profession !== "" || tierFilter.size > 0;
 
   return (
     <div>
@@ -167,9 +175,17 @@ export default function RecipientPicker({
       </div>
 
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.3rem" }}>
-        <label style={{ margin: 0, fontWeight: 400, fontSize: "0.82rem", display: "flex", alignItems: "center", gap: "0.3rem" }}>
-          <input type="checkbox" checked={allVisibleChecked} onChange={(e) => selectAllVisible(e.target.checked)} />
-          Select all shown ({filtered.length})
+        <label
+          style={{ margin: 0, fontWeight: 400, fontSize: "0.82rem", display: "flex", alignItems: "center", gap: "0.3rem" }}
+          title={hasActiveFilter ? undefined : "Filter the list (search, state, specialism, profession, or a connection tier) before selecting everyone shown"}
+        >
+          <input
+            type="checkbox"
+            checked={allVisibleChecked}
+            disabled={!hasActiveFilter}
+            onChange={(e) => selectAllVisible(e.target.checked)}
+          />
+          {hasActiveFilter ? `Select all shown (${filtered.length})` : `Filter first to select a group (${filtered.length} shown)`}
         </label>
         <span className="muted" style={{ fontSize: "0.8rem" }}>{checked.size} selected</span>
       </div>
