@@ -1,7 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { assertIsAdmin } from "@/lib/admin";
+import { assertIsAdmin, hasReviewableCredentialEvidence } from "@/lib/admin";
 import { notifyProfile } from "@/lib/notifications";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -61,6 +61,16 @@ export async function setProfileVerificationStatus(formData: FormData) {
     .select("verification_status")
     .eq("id", profileId)
     .maybeSingle();
+
+  // Launch-readiness audit finding: "verified" must mean an admin actually
+  // reviewed a real credential, not just a status flip. See the comment on
+  // hasReviewableCredentialEvidence in lib/admin.ts for the incident this closes.
+  if (status === "verified" && before?.verification_status !== "verified") {
+    const hasEvidence = await hasReviewableCredentialEvidence(supabase, profileId);
+    if (!hasEvidence) {
+      verificationsError("Can't mark verified: no license on file and no reviewed/matched credential submission. Add a license or review a submission first.");
+    }
+  }
 
   const { error } = await supabase
     .from("profiles")
