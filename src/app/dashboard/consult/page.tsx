@@ -82,9 +82,15 @@ export default async function ConsultPage(props: { searchParams: Promise<{ error
             </div>
             <div className="field">
               <label htmlFor="audience_type">Audience</label>
-              <select id="audience_type" name="audience_type" defaultValue="wider_network">
-                <option value="wider_network">Verified network</option>
+              {/* Sept 23 audit (task #125): defaulted to the whole verified
+                  network, which is the widest possible audience for
+                  something that's about to ask a real clinical question -
+                  narrowed the default to Trusted colleagues; still a
+                  deliberate choice to widen it, not the path of least
+                  resistance. */}
+              <select id="audience_type" name="audience_type" defaultValue="trusted">
                 <option value="trusted">Trusted colleagues only</option>
+                <option value="wider_network">Verified network</option>
               </select>
             </div>
             <div className="field">
@@ -96,7 +102,18 @@ export default async function ConsultPage(props: { searchParams: Promise<{ error
             <label htmlFor="context">Context (optional, de-identified)</label>
             <textarea id="context" name="context" rows={2} />
           </div>
-          <button type="submit">Post consultation</button>
+          {/* Sept 23 audit (task #125): the de-identification guidance above
+              the form was passive text nobody had to interact with. This is
+              a real, required confirmation - recorded on the row itself
+              (deidentification_confirmed), not just a hint. */}
+          <div className="checkbox-row">
+            <input id="deidentification_confirmed" name="deidentification_confirmed" type="checkbox" required />
+            <label htmlFor="deidentification_confirmed" style={{ margin: 0, fontWeight: 400 }}>
+              I confirm this question is de-identified - no patient names, exact dates, addresses, or other
+              identifying details
+            </label>
+          </div>
+          <button type="submit" style={{ marginTop: "0.5rem" }}>Post consultation</button>
         </form>
       </div>
 

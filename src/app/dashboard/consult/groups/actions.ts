@@ -22,6 +22,18 @@ function groupError(groupId: number | string, message: string): never {
   redirect(`/dashboard/consult/groups/${groupId}?error=${encodeURIComponent(message)}`);
 }
 
+// Sept 23 audit (task #125): a group used to be immediately usable with no
+// charter at all - invite/post are now gated on one existing, server-side
+// too, so a hand-crafted request can't route around the UI hiding those
+// forms. Checked here rather than by RLS since it's a product rule about
+// group readiness, not a data-ownership boundary.
+async function requireCharter(supabase: Awaited<ReturnType<typeof createClient>>, groupId: number) {
+  const { data: group } = await supabase.from("consultation_groups").select("charter_body").eq("id", groupId).maybeSingle();
+  if (!group?.charter_body) {
+    groupError(groupId, "Write this group's charter first - it's what sets confidentiality and de-identification expectations.");
+  }
+}
+
 export async function createConsultationGroupAction(formData: FormData) {
   const supabase = await createClient();
   const {
@@ -55,6 +67,7 @@ export async function inviteInternalMemberAction(formData: FormData) {
   if (!user) throw new Error("Not signed in");
 
   const groupId = Number(formData.get("group_id"));
+  await requireCharter(supabase, groupId);
   const profileId = String(formData.get("profile_id") || "");
   if (!profileId) groupError(groupId, "Choose a colleague to invite");
 
@@ -73,6 +86,7 @@ export async function inviteExternalAction(formData: FormData) {
   if (!user) throw new Error("Not signed in");
 
   const groupId = Number(formData.get("group_id"));
+  await requireCharter(supabase, groupId);
   const externalEmail = String(formData.get("external_email") || "").trim();
   if (!externalEmail) groupError(groupId, "Enter an email to invite");
 
@@ -174,8 +188,11 @@ export async function postGroupConsultationAction(formData: FormData) {
   if (!user) throw new Error("Not signed in");
 
   const groupId = Number(formData.get("group_id"));
+  await requireCharter(supabase, groupId);
   const question = String(formData.get("question") || "").trim();
   if (!question) groupError(groupId, "What do you need help thinking through?");
+  const deidentificationConfirmed = formData.get("deidentification_confirmed") === "on";
+  if (!deidentificationConfirmed) groupError(groupId, "Confirm this question is de-identified before posting.");
 
   // Visibility for a group-posted consultation comes from group_id itself
   // (see the consultations RLS policy) regardless of audience_type, so
@@ -185,6 +202,7 @@ export async function postGroupConsultationAction(formData: FormData) {
     audienceType: "trusted",
     groupId,
     context: String(formData.get("context") || "") || undefined,
+    deidentificationConfirmed,
   });
   if (error) groupError(groupId, error);
 

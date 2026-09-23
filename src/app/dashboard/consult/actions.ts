@@ -19,11 +19,19 @@ export async function createConsultationAction(formData: FormData) {
   const question = String(formData.get("question") || "").trim();
   if (!question) consultError("What do you need help thinking through?");
   const consultationType = (String(formData.get("consultation_type") || "") || undefined) as ConsultationType | undefined;
-  const audienceType = String(formData.get("audience_type") || "wider_network") as "trusted" | "wider_network";
+  // Sept 23 audit (task #125): default narrowed from wider_network to
+  // trusted, both here and in the form's own defaultValue - going wider is
+  // now something the poster has to actively choose.
+  const audienceType = String(formData.get("audience_type") || "trusted") as "trusted" | "wider_network";
   const tags = String(formData.get("tags") || "")
     .split(",")
     .map((t) => t.trim())
     .filter(Boolean);
+  // Sept 23 audit (task #125): a real confirmation gate, not just the
+  // checkbox's HTML `required` attribute - a hand-crafted request can't
+  // route around it.
+  const deidentificationConfirmed = formData.get("deidentification_confirmed") === "on";
+  if (!deidentificationConfirmed) consultError("Confirm this question is de-identified before posting.");
 
   const { error } = await createConsultation(supabase, user.id, {
     question,
@@ -31,6 +39,7 @@ export async function createConsultationAction(formData: FormData) {
     audienceType,
     tags,
     context: String(formData.get("context") || "") || undefined,
+    deidentificationConfirmed,
   });
   if (error) consultError(error);
 

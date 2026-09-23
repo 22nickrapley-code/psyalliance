@@ -100,7 +100,10 @@ export default async function ConsultationGroupsPage(props: { searchParams: Prom
             <input id="purpose" name="purpose" type="text" placeholder="What this group is for" />
           </div>
           <div className="field">
-            <label htmlFor="charter_body">Charter (ground rules, confidentiality expectations - optional, can add later)</label>
+            <label htmlFor="charter_body">
+              Charter (ground rules, confidentiality expectations) - can be added right after creating, but
+              nobody can be invited or post here until it's written
+            </label>
             <textarea id="charter_body" name="charter_body" rows={2} />
           </div>
           <button type="submit">Create group</button>

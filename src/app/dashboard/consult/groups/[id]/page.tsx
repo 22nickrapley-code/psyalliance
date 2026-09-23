@@ -129,6 +129,21 @@ export default async function ConsultationGroupPage(props: { params: Promise<{ i
         )}
       </div>
 
+      {/* Sept 23 audit (task #125): a group used to be immediately usable
+          (invite people, post consultations) with no charter at all, even
+          though the charter card above frames it as the thing that makes a
+          group different from a one-off consult - confidentiality,
+          de-identification, consultation vs. supervision. Now it has to
+          actually be written first; the invite/post forms below are gated
+          on it server-side too (inviteInternalMemberAction,
+          inviteExternalAction, postGroupConsultationAction). */}
+      {isCreator && !group.charter_body && (
+        <div className="card" style={{ borderColor: "var(--accent, #d97)", background: "rgba(217,153,0,0.08)" }}>
+          Write the charter above before inviting anyone or posting to this group - it's what sets the
+          confidentiality and de-identification expectations everyone in it is agreeing to.
+        </div>
+      )}
+
       <div className="card">
         <h2>Members ({(members || []).length})</h2>
         {(members || []).map((m: any) => (
@@ -156,7 +171,7 @@ export default async function ConsultationGroupPage(props: { params: Promise<{ i
           </div>
         ))}
 
-        {isCreator && (
+        {isCreator && group.charter_body && (
           <div style={{ marginTop: "0.75rem", display: "flex", flexWrap: "wrap", gap: "1rem" }}>
             <form action={inviteInternalMemberAction}>
               <input type="hidden" name="group_id" value={group.id} />
@@ -204,7 +219,7 @@ export default async function ConsultationGroupPage(props: { params: Promise<{ i
           Visible only to this group's members, whatever else the audience picker says - still keep it
           de-identified.
         </p>
-        {(myMembership?.status === "joined" || isCreator) && (
+        {(myMembership?.status === "joined" || isCreator) && group.charter_body && (
           <form action={postGroupConsultationAction} style={{ marginBottom: "1rem" }}>
             <input type="hidden" name="group_id" value={group.id} />
             <div className="field">
@@ -215,8 +230,19 @@ export default async function ConsultationGroupPage(props: { params: Promise<{ i
               <label htmlFor="gctx">Context (optional, de-identified)</label>
               <textarea id="gctx" name="context" rows={2} />
             </div>
-            <button type="submit" className="secondary">Post to this group</button>
+            <div className="checkbox-row">
+              <input id="g_deidentification_confirmed" name="deidentification_confirmed" type="checkbox" required />
+              <label htmlFor="g_deidentification_confirmed" style={{ margin: 0, fontWeight: 400 }}>
+                I confirm this is de-identified - no patient names, exact dates, addresses, or other identifying details
+              </label>
+            </div>
+            <button type="submit" className="secondary" style={{ marginTop: "0.5rem" }}>Post to this group</button>
           </form>
+        )}
+        {(myMembership?.status === "joined" || isCreator) && !group.charter_body && (
+          <p className="muted" style={{ marginBottom: "1rem" }}>
+            This group needs a charter before anyone can post to it - see above.
+          </p>
         )}
 
         {(consultations || []).map((c: any) => (
