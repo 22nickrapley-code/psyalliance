@@ -34,7 +34,14 @@ export type SuggestedClinician = {
 // legal eligibility conclusion).
 export async function suggestCliniciansForCase(
   supabase: Awaited<ReturnType<typeof createClient>>,
-  coveragePlanCaseId: number
+  coveragePlanCaseId: number,
+  // Task #132 (Sept 23 audit): a case that's cycled back to needs_cover
+  // after a decline (see respondToCoverageRequest below) shouldn't
+  // re-suggest someone who already said no - the legacy Planner's
+  // sequential offer never re-asked a candidate either. Pass every
+  // profile id already asked for this case (any status) to leave them out
+  // of the ranked list entirely, same as do_not_work_with exclusions.
+  excludeProfileIds: string[] = []
 ): Promise<SuggestedClinician[]> {
   const { data: coverageCase } = await supabase
     .from("coverage_plan_cases")
@@ -57,7 +64,7 @@ export async function suggestCliniciansForCase(
     .from("do_not_work_with")
     .select("blocked_profile_id")
     .eq("profile_id", ownerProfileId);
-  const excludedIds = new Set((excluded || []).map((e) => e.blocked_profile_id));
+  const excludedIds = new Set([...(excluded || []).map((e) => e.blocked_profile_id), ...excludeProfileIds]);
 
   // Hard eligibility: verified members with an active licence in a state
   // the plan owner's patients are in. Clinical relevance: shares at least
@@ -296,8 +303,32 @@ export async function respondToCoverageRequest(
     caseUpdates.status = "confirmed";
     caseUpdates.assigned_clinician_id = requestedProfileId;
   } else if (response === "declined") {
-    // Left as 'awaiting_response' if other outreach is still pending -
-    // Phase 5+ UI logic decides whether to flip back to 'needs_cover'.
+    // Task #132 (Sept 23 audit): this used to just leave the case at
+    // 'awaiting_response' forever with a "Phase 5+ UI logic decides"
+    // comment - no UI ever did, so a declined request was a dead end with
+    // no suggested-clinicians list and no way to ask anyone else. This is
+    // the fix: if nothing else is still pending for this case, check
+    // whether there's anyone left to ask (same staged matching, excluding
+    // everyone already asked) - if so, cycle back to 'needs_cover' so the
+    // case resurfaces on the Requests page for another round; if the pool
+    // is genuinely exhausted, land on 'declined_all' instead, a real
+    // "nobody available" state rather than silently pretending nobody's
+    // been tried yet.
+    const { data: otherPending } = await supabase
+      .from("coverage_requests")
+      .select("id")
+      .eq("coverage_plan_case_id", request.coverage_plan_case_id)
+      .eq("status", "sent")
+      .neq("id", coverageRequestId);
+    if (!otherPending || otherPending.length === 0) {
+      const { data: everAsked } = await supabase
+        .from("coverage_requests")
+        .select("requested_profile_id")
+        .eq("coverage_plan_case_id", request.coverage_plan_case_id);
+      const askedIds = Array.from(new Set((everAsked || []).map((r) => r.requested_profile_id)));
+      const remaining = await suggestCliniciansForCase(supabase, request.coverage_plan_case_id, askedIds);
+      caseUpdates.status = remaining.length > 0 ? "needs_cover" : "declined_all";
+    }
   }
   if (Object.keys(caseUpdates).length > 0) {
     await supabase.from("coverage_plan_cases").update(caseUpdates).eq("id", request.coverage_plan_case_id);

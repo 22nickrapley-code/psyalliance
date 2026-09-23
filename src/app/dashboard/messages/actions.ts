@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { raiseNotification } from "@/lib/notifications-v2";
 
 // A plain `throw` inside a server action wired to a bare <form action={fn}>
 // crashes the whole page with Next.js's generic error screen instead of showing
@@ -58,6 +59,28 @@ async function postInitialMessage(
     .from("conversations")
     .update({ last_message_at: new Date().toISOString() })
     .eq("id", conversationId);
+
+  // Task #68 (Sept 23 audit): "message_received" has had a notification
+  // type, a preference column (email_on_message, defaulting to on), and a
+  // Notifications-page label since Phase 4/16 - nothing ever actually
+  // raised one. This is that wiring. Still only reaches the existing email
+  // stub (deliverEmailStub() in notifications-v2.ts) until Nick picks a
+  // real provider - the point is that the whole in-app pipeline (event,
+  // per-user opt-out, dedup) is exercised now, so flipping on real email
+  // later needs no further code changes here. Deduped per conversation for
+  // 24h so an active back-and-forth thread raises one notification, not
+  // one per message - the inbox's own unread badge/count already tracks
+  // every individual message regardless.
+  await raiseNotification(supabase, {
+    eventType: "message_received",
+    recipientProfileIds: otherParticipantIds,
+    actorProfileId: authorId,
+    actorType: "member_web",
+    summary: "sent you a message",
+    deepLink: `/dashboard/messages/${conversationId}`,
+    dedupKey: `message:${conversationId}`,
+    metadata: { conversationId },
+  });
 }
 
 export async function startConversation(formData: FormData) {
@@ -193,6 +216,20 @@ export async function sendMessage(formData: FormData) {
     .update({ last_read_at: new Date().toISOString() })
     .eq("conversation_id", conversationId)
     .eq("profile_id", user.id);
+
+  // See the matching comment in postInitialMessage above (task #68) - same
+  // event type, same per-conversation 24h dedup, just the reply-in-an-
+  // existing-thread path rather than the first message of a new one.
+  await raiseNotification(supabase, {
+    eventType: "message_received",
+    recipientProfileIds: others.map((p: any) => p.id),
+    actorProfileId: user.id,
+    actorType: "member_web",
+    summary: "sent you a message",
+    deepLink: `/dashboard/messages/${conversationId}`,
+    dedupKey: `message:${conversationId}`,
+    metadata: { conversationId },
+  });
 
   revalidatePath(`/dashboard/messages/${conversationId}`);
   revalidatePath("/dashboard/messages");

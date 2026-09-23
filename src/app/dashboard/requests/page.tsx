@@ -53,6 +53,7 @@ export default async function RequestsPage(props: { searchParams: Promise<{ tab?
     { data: myPlans },
     { data: myPlanCases },
     { data: incomingCoverageRequests },
+    { data: myCoverageRequestHistory },
     { data: myReferralRequests },
     { data: visibleReferralRequests },
     { data: myReferralResponses },
@@ -88,6 +89,20 @@ export default async function RequestsPage(props: { searchParams: Promise<{ tab?
       .eq("requested_profile_id", myself)
       .eq("status", "sent")
       .order("sent_at", { ascending: false }),
+    // Task #132 (Sept 23 audit): outreach history for MY OWN cases - who
+    // I've already asked and how they responded. Never queried before, so
+    // the owner had no visibility into their own past requests per case,
+    // and suggestions could re-offer someone who'd already declined.
+    // Filtered via the FK chain (case -> plan -> profile_id) rather than an
+    // id list, since myPlanCases isn't available yet inside this same
+    // Promise.all - same pattern as the coverage_plan_cases query above.
+    supabase
+      .from("coverage_requests")
+      .select(
+        "coverage_plan_case_id, requested_profile_id, status, sent_at, requested:requested_profile_id(full_name, credential_prefix), coverage_plan_cases!inner(coverage_plans!inner(profile_id))"
+      )
+      .eq("coverage_plan_cases.coverage_plans.profile_id", myself)
+      .order("sent_at", { ascending: false }),
     supabase
       .from("referral_requests")
       .select(
@@ -116,12 +131,26 @@ export default async function RequestsPage(props: { searchParams: Promise<{ tab?
     casesByPlanId.get(c.coverage_plan_id)!.push(c);
   }
 
+  // Task #132 (Sept 23 audit): who's already been asked for each of my own
+  // cases, and how they responded - feeds both the exclusion list below
+  // (don't re-suggest someone who already declined) and the "Already
+  // asked" history shown under each case.
+  const requestHistoryByCaseId = new Map<number, any[]>();
+  for (const r of myCoverageRequestHistory || []) {
+    const list = requestHistoryByCaseId.get(r.coverage_plan_case_id) || [];
+    list.push(r);
+    requestHistoryByCaseId.set(r.coverage_plan_case_id, list);
+  }
+
   // Suggested clinicians for every one of my own cases still needing cover
   // - fine at today's volume; worth paginating once plans get large.
-  const needsCoverCases = (myPlanCases || []).filter((c: any) => c.status === "needs_cover");
+  // declined_all is included too so a fully-exhausted case can confirm
+  // (rather than just claim) that nobody eligible is left.
+  const needsCoverCases = (myPlanCases || []).filter((c: any) => c.status === "needs_cover" || c.status === "declined_all");
   const suggestionsByCaseId = new Map<number, Awaited<ReturnType<typeof suggestCliniciansForCase>>>();
   for (const c of needsCoverCases) {
-    suggestionsByCaseId.set(c.id, await suggestCliniciansForCase(supabase, c.id));
+    const askedIds = (requestHistoryByCaseId.get(c.id) || []).map((r: any) => r.requested_profile_id);
+    suggestionsByCaseId.set(c.id, await suggestCliniciansForCase(supabase, c.id, askedIds));
   }
 
   const alreadyRespondedReferralIds = new Set((myReferralResponses || []).map((r: any) => r.referral_request_id));
@@ -238,12 +267,35 @@ export default async function RequestsPage(props: { searchParams: Promise<{ tab?
               )}
 
               <div style={{ marginTop: "0.5rem" }}>
-                {cases.map((c: any) => (
+                {cases.map((c: any) => {
+                  const history = requestHistoryByCaseId.get(c.id) || [];
+                  return (
                   <div key={c.id} style={{ padding: "0.5rem 0", borderTop: "1px solid var(--border)" }}>
                     <div>
                       {c.case_reference} <span className="tag">{c.status.replace("_", " ")}</span>
                     </div>
-                    {c.status === "needs_cover" && (
+                    {history.length > 0 && (
+                      // Task #132: visibility into a case's own outreach history
+                      // didn't exist anywhere before - the owner had no way to
+                      // see who they'd already asked, or that a decline was
+                      // even final rather than just silently stuck.
+                      <p className="muted" style={{ fontSize: "0.8rem", marginTop: "0.3rem" }}>
+                        Already asked: {history.map((r: any, i: number) => (
+                          <span key={r.requested_profile_id + r.sent_at}>
+                            {i > 0 ? ", " : ""}
+                            {r.requested?.credential_prefix ? `${r.requested.credential_prefix} ` : ""}
+                            {r.requested?.full_name || "someone"} ({r.status === "sent" ? "awaiting response" : r.status})
+                          </span>
+                        ))}
+                      </p>
+                    )}
+                    {c.status === "declined_all" && (
+                      <p className="muted" style={{ fontSize: "0.85rem", marginTop: "0.3rem" }}>
+                        Everyone eligible has declined. Add a Trusted Colleague or Bench connection, or broaden the
+                        case's specialty/state, then check back here - the suggested list recomputes automatically.
+                      </p>
+                    )}
+                    {(c.status === "needs_cover" || c.status === "declined_all") && (suggestionsByCaseId.get(c.id) || []).length > 0 && (
                       <div style={{ marginTop: "0.35rem" }}>
                         <p className="muted" style={{ fontSize: "0.85rem", marginBottom: "0.3rem" }}>Suggested clinicians:</p>
                         {(suggestionsByCaseId.get(c.id) || []).slice(0, 5).map((s) => (
@@ -275,10 +327,10 @@ export default async function RequestsPage(props: { searchParams: Promise<{ tab?
                             </span>
                           </div>
                         ))}
-                        {(suggestionsByCaseId.get(c.id) || []).length === 0 && (
-                          <p className="muted">No eligible colleagues found yet for this case.</p>
-                        )}
                       </div>
+                    )}
+                    {c.status === "needs_cover" && (suggestionsByCaseId.get(c.id) || []).length === 0 && (
+                      <p className="muted" style={{ fontSize: "0.85rem", marginTop: "0.3rem" }}>No eligible colleagues found yet for this case.</p>
                     )}
                     {c.status === "confirmed" && c.assigned_clinician_id && (
                       <p className="muted" style={{ fontSize: "0.85rem" }}>
@@ -286,7 +338,8 @@ export default async function RequestsPage(props: { searchParams: Promise<{ tab?
                       </p>
                     )}
                   </div>
-                ))}
+                  );
+                })}
               </div>
 
               <details style={{ marginTop: "0.5rem" }}>

@@ -7,6 +7,7 @@ import {
   submitDocumentReviewAction,
   publishDocumentAction,
   unpublishDocumentAction,
+  seedStarterLibraryAction,
 } from "./actions";
 
 const ROLE_LABELS: Record<ReviewerRole, string> = {
@@ -32,11 +33,11 @@ const STATUS_LABELS: Record<string, string> = {
 // page is that UI's first pass. See documents/page.tsx for the matching
 // fix on the member-facing side - the Shared Library now only shows a
 // document once it's Published or was never gated (no required roles set).
-export default async function AdminLibraryPage(props: { searchParams: Promise<{ error?: string }> }) {
+export default async function AdminLibraryPage(props: { searchParams: Promise<{ error?: string; seeded?: string; skipped?: string }> }) {
   const supabase = await createClient();
   const redirectPath = await requireAdminOrRedirectPath(supabase);
   if (redirectPath) redirect(redirectPath);
-  const { error } = await props.searchParams;
+  const { error, seeded, skipped } = await props.searchParams;
 
   const [{ data: documents }, { data: reviews }] = await Promise.all([
     supabase
@@ -57,6 +58,7 @@ export default async function AdminLibraryPage(props: { searchParams: Promise<{ 
 
   const needsAttention = (documents || []).filter((d: any) => d.review_status !== "published");
   const published = (documents || []).filter((d: any) => d.review_status === "published");
+  const starterSetCount = (documents || []).filter((d: any) => /^PA-\d\d: /.test(d.title)).length;
 
   function renderDocRow(d: any) {
     const requiredRoles = (d.required_reviewer_roles || []) as ReviewerRole[];
@@ -163,6 +165,28 @@ export default async function AdminLibraryPage(props: { searchParams: Promise<{ 
         and stays visible in the Shared Library as before.
       </p>
       {error && <div className="error-banner">{error}</div>}
+      {(seeded || skipped) && (
+        <div className="card" style={{ borderColor: "var(--accent, #2a7)", background: "rgba(34,170,119,0.08)" }}>
+          Seeded {seeded} document{seeded === "1" ? "" : "s"}
+          {skipped && skipped !== "0" ? ` (${skipped} already present, skipped)` : ""} into Needs attention below.
+        </div>
+      )}
+
+      {starterSetCount < 20 && (
+        <div className="card">
+          <h2>Starter library (PA-01&ndash;20)</h2>
+          <p className="muted" style={{ fontSize: "0.9rem" }}>
+            The 20 practice-management/compliance templates Nick provided ({starterSetCount} of 20 already here).
+            Uploads each one to the shared library and lands it in Needs attention below - nothing here publishes
+            anything on its own. Only works running locally (<code>npm run dev</code>), not on the deployed site,
+            since it reads the files straight off disk under this admin's own signed-in session - no service key
+            or credential needed.
+          </p>
+          <form action={seedStarterLibraryAction}>
+            <button type="submit">Seed starter library</button>
+          </form>
+        </div>
+      )}
 
       <div className="card">
         <h2>Needs attention ({needsAttention.length})</h2>
