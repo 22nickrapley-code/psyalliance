@@ -223,6 +223,55 @@ export async function respondToReferralRequest(
   return { error: null };
 }
 
+// Master Brief #26's "Selected clinicians" audience choice - the schema
+// and RLS have supported audience_type = 'selected' + audience_profile_ids
+// since Phase 4 batch 3, but nothing ever wrote to audience_profile_ids.
+// A request created as 'selected' starts empty (invisible to everyone but
+// its own requester, per the existing RLS policy) - this is how the
+// requester actually adds people to it, reusing the "Matches found" list
+// already built for Referrals. Additive only (never removes anyone
+// already added) and notifies each newly-added clinician the same way a
+// wider_network/trusted request already does on send.
+export async function addReferralAudienceProfiles(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  requestingProfileId: string,
+  referralRequestId: number,
+  profileIds: string[]
+) {
+  const { data: request } = await supabase
+    .from("referral_requests")
+    .select("requesting_profile_id, audience_profile_ids")
+    .eq("id", referralRequestId)
+    .maybeSingle();
+  if (!request) return { error: "Referral request not found" };
+  if (request.requesting_profile_id !== requestingProfileId) {
+    return { error: "Only the requester can choose who sees this referral" };
+  }
+
+  const existing = new Set<string>(request.audience_profile_ids || []);
+  const added = profileIds.filter((id) => id && !existing.has(id));
+  if (added.length === 0) return { error: null };
+  added.forEach((id) => existing.add(id));
+
+  const { error } = await supabase
+    .from("referral_requests")
+    .update({ audience_type: "selected", audience_profile_ids: Array.from(existing) })
+    .eq("id", referralRequestId);
+  if (error) return { error: error.message };
+
+  await raiseNotification(supabase, {
+    eventType: "referral_sent",
+    recipientProfileIds: added,
+    actorProfileId: requestingProfileId,
+    actorType: "member_web",
+    summary: "sent you a referral request",
+    deepLink: "/dashboard/requests?tab=referrals",
+    metadata: { referralRequestId },
+  });
+
+  return { error: null };
+}
+
 // Moves a request from "Interested" into "Professional connection" -
 // requester picks one interested responder. The other open responses on
 // the same request are left as-is (they weren't declined, just not

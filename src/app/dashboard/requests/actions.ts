@@ -14,6 +14,7 @@ import {
   respondToReferralRequest,
   establishProfessionalConnection,
   closeReferralRequest,
+  addReferralAudienceProfiles,
 } from "@/lib/referrals-v2";
 
 // Server-action wrappers around the Phase 4 Coverage/Referrals service
@@ -116,7 +117,7 @@ export async function createReferralRequestAction(formData: FormData) {
   if (!user) throw new Error("Not signed in");
 
   const specialismId = Number(formData.get("specialism_lookup_id"));
-  const audienceType = String(formData.get("audience_type") || "wider_network") as "trusted" | "wider_network";
+  const audienceType = String(formData.get("audience_type") || "wider_network") as "trusted" | "selected" | "wider_network";
 
   const { error } = await createReferralRequest(supabase, user.id, {
     specialismLookupId: Number.isFinite(specialismId) && specialismId > 0 ? specialismId : undefined,
@@ -128,6 +129,29 @@ export async function createReferralRequestAction(formData: FormData) {
     notes: String(formData.get("notes") || "") || undefined,
     audienceType,
   });
+  if (error) requestsError(error);
+
+  revalidatePath("/dashboard/requests");
+  redirect("/dashboard/requests?tab=referrals");
+}
+
+// Master Brief #26's "Selected clinicians" audience - checkboxes on the
+// "Matches found" list (requests/page.tsx) submit here under a shared
+// "profile_ids" name; FormData.getAll collects every checked value in one
+// go. See addReferralAudienceProfiles in referrals-v2.ts for why this is
+// additive rather than a replace.
+export async function addReferralAudienceProfilesAction(formData: FormData) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not signed in");
+
+  const referralRequestId = Number(formData.get("referral_request_id"));
+  const profileIds = formData.getAll("profile_ids").map((v) => String(v)).filter(Boolean);
+  if (profileIds.length === 0) requestsError("Choose at least one person to send this to");
+
+  const { error } = await addReferralAudienceProfiles(supabase, user.id, referralRequestId, profileIds);
   if (error) requestsError(error);
 
   revalidatePath("/dashboard/requests");

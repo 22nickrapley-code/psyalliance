@@ -13,6 +13,7 @@ import {
   respondToReferralRequestAction,
   establishProfessionalConnectionAction,
   closeReferralRequestAction,
+  addReferralAudienceProfilesAction,
 } from "./actions";
 
 // The new REQUESTS hub (Master Brief's primary nav: Home / Requests /
@@ -327,6 +328,7 @@ export default async function RequestsPage(props: { searchParams: Promise<{ tab?
               <select id="ref_audience" name="audience_type" defaultValue="wider_network">
                 <option value="wider_network">Verified network</option>
                 <option value="trusted">Trusted colleagues only</option>
+                <option value="selected">Selected clinicians (choose after posting)</option>
               </select>
             </div>
           </div>
@@ -369,35 +371,68 @@ export default async function RequestsPage(props: { searchParams: Promise<{ tab?
             )}
             {!["closed", "connected", "handoff"].includes(r.status) && (
               <>
-                {(referralSuggestionsByRequestId.get(r.id) || []).length > 0 && (
-                  <div style={{ marginTop: "0.5rem" }}>
-                    <p className="muted" style={{ fontSize: "0.85rem", marginBottom: "0.3rem" }}>Matches found:</p>
-                    {(referralSuggestionsByRequestId.get(r.id) || []).map((s) => (
-                      <div key={s.profileId} className="person-row">
-                        <span className="person-row-info">
-                          <a href={`/dashboard/people/${s.profileId}`} className="person-link">
-                            {s.credentialPrefix ? `${s.credentialPrefix} ` : ""}
-                            {s.fullName}
-                          </a>
-                          {s.reasons.map((reason) => (
-                            <span key={reason.code} className="tag" style={{ marginLeft: "0.3rem" }}>{reason.label}</span>
-                          ))}
-                        </span>
-                        <span className="person-row-actions">
-                          <a href={`/dashboard/people/${s.profileId}`} className="btn secondary" style={{ padding: "0.3rem 0.6rem", fontSize: "0.85rem" }}>
-                            View profile
-                          </a>
-                          <form action={startConversation}>
-                            <input type="hidden" name="participant_ids" value={s.profileId} />
-                            <input type="hidden" name="title" value={`${s.credentialPrefix || ""} ${s.fullName}`.trim()} />
-                            <input type="hidden" name="body" value={`Hi ${s.fullName}, `} />
-                            <button type="submit" className="secondary">Message</button>
-                          </form>
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                {(referralSuggestionsByRequestId.get(r.id) || []).length > 0 && (() => {
+                  const suggestions = referralSuggestionsByRequestId.get(r.id) || [];
+                  const isSelected = r.audience_type === "selected";
+                  const sentIds: string[] = r.audience_profile_ids || [];
+                  const unsentCount = isSelected ? suggestions.filter((s) => !sentIds.includes(s.profileId)).length : 0;
+                  const formId = `send-selected-${r.id}`;
+                  return (
+                    <div style={{ marginTop: "0.5rem" }}>
+                      <p className="muted" style={{ fontSize: "0.85rem", marginBottom: "0.3rem" }}>
+                        Matches found:
+                        {isSelected && " check who should receive this referral, then send."}
+                      </p>
+                      {isSelected && (
+                        <form id={formId} action={addReferralAudienceProfilesAction}>
+                          <input type="hidden" name="referral_request_id" value={r.id} />
+                        </form>
+                      )}
+                      {suggestions.map((s) => {
+                        const alreadySent = isSelected && sentIds.includes(s.profileId);
+                        return (
+                          <div key={s.profileId} className="person-row">
+                            <span className="person-row-info">
+                              {isSelected && !alreadySent && (
+                                <input
+                                  type="checkbox"
+                                  name="profile_ids"
+                                  value={s.profileId}
+                                  form={formId}
+                                  style={{ marginRight: "0.4rem" }}
+                                />
+                              )}
+                              <a href={`/dashboard/people/${s.profileId}`} className="person-link">
+                                {s.credentialPrefix ? `${s.credentialPrefix} ` : ""}
+                                {s.fullName}
+                              </a>
+                              {alreadySent && <span className="tag" style={{ marginLeft: "0.3rem" }}>Sent</span>}
+                              {s.reasons.map((reason) => (
+                                <span key={reason.code} className="tag" style={{ marginLeft: "0.3rem" }}>{reason.label}</span>
+                              ))}
+                            </span>
+                            <span className="person-row-actions">
+                              <a href={`/dashboard/people/${s.profileId}`} className="btn secondary" style={{ padding: "0.3rem 0.6rem", fontSize: "0.85rem" }}>
+                                View profile
+                              </a>
+                              <form action={startConversation}>
+                                <input type="hidden" name="participant_ids" value={s.profileId} />
+                                <input type="hidden" name="title" value={`${s.credentialPrefix || ""} ${s.fullName}`.trim()} />
+                                <input type="hidden" name="body" value={`Hi ${s.fullName}, `} />
+                                <button type="submit" className="secondary">Message</button>
+                              </form>
+                            </span>
+                          </div>
+                        );
+                      })}
+                      {isSelected && unsentCount > 0 && (
+                        <button type="submit" form={formId} className="secondary" style={{ marginTop: "0.4rem" }}>
+                          Send referral to checked clinicians
+                        </button>
+                      )}
+                    </div>
+                  );
+                })()}
                 <form action={closeReferralRequestAction} style={{ marginTop: "0.35rem" }}>
                   <input type="hidden" name="referral_request_id" value={r.id} />
                   <button type="submit" className="secondary">Close</button>
