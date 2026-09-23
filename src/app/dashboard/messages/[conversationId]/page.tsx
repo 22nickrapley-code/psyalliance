@@ -4,6 +4,7 @@ import { sendMessage } from "../actions";
 import { buildTierMap, type Tier } from "@/lib/tiers";
 import { resolveAvatarUrls } from "@/lib/avatars";
 import Avatar from "../../avatar";
+import { fileReportAction } from "../../moderation-actions";
 
 function initialsOf(name: string) {
   return (
@@ -156,6 +157,20 @@ export default async function ConversationPage(
                     {mine && "You · "}
                     {new Date(m.created_at).toLocaleString()}
                   </div>
+                  {!mine && !m.deleted_at && (
+                    <details>
+                      <summary className="muted" style={{ fontSize: "0.72rem", cursor: "pointer", display: "inline-block" }}>Report</summary>
+                      <form action={fileReportAction} style={{ marginTop: "0.3rem", maxWidth: 320 }}>
+                        <input type="hidden" name="target_type" value="message" />
+                        <input type="hidden" name="target_id" value={m.id} />
+                        <input type="hidden" name="return_to" value={`/dashboard/messages/${conversationId}`} />
+                        <div className="field">
+                          <textarea name="reason" rows={2} placeholder="What's wrong with this message?" required />
+                        </div>
+                        <button type="submit" className="danger" style={{ padding: "0.1rem 0.4rem", fontSize: "0.72rem" }}>Submit report</button>
+                      </form>
+                    </details>
+                  )}
                 </div>
               </div>
             );

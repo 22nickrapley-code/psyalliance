@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { deleteDocument, rateDocument, createFolder, deleteFolder, moveDocumentToFolder } from "./actions";
 import DocumentsUploadBox from "./documents-upload-box";
+import { fileReportAction } from "../moderation-actions";
 
 // One hour, not the 60 *seconds* this used to be set to: these signed URLs
 // sit as plain <a href> links on a rendered page, and a user browsing the
@@ -354,6 +355,20 @@ export default async function DocumentsPage(
                           Delete
                         </button>
                       </form>
+                    )}
+                    {d.uploaded_by !== myself && (
+                      <details style={{ display: "inline-block", marginLeft: "0.4rem" }}>
+                        <summary className="muted" style={{ fontSize: "0.78rem", cursor: "pointer", display: "inline-block" }}>Report</summary>
+                        <form action={fileReportAction} style={{ marginTop: "0.3rem", maxWidth: 280 }}>
+                          <input type="hidden" name="target_type" value="library_document" />
+                          <input type="hidden" name="target_id" value={d.id} />
+                          <input type="hidden" name="return_to" value="/dashboard/documents" />
+                          <div className="field">
+                            <textarea name="reason" rows={2} placeholder="What's wrong with this document?" required />
+                          </div>
+                          <button type="submit" className="danger" style={{ padding: "0.1rem 0.4rem", fontSize: "0.72rem" }}>Submit report</button>
+                        </form>
+                      </details>
                     )}
                   </td>
                 </tr>

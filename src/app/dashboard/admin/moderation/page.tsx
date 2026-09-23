@@ -12,9 +12,8 @@ const TARGET_LABELS: Record<string, string> = {
 };
 
 // PsyA2 #98/#101: content moderation queue - "must exist from launch."
-// Reports are filed from src/lib/moderation.ts's fileReport() (wired in so
-// far on People profiles and Consult; Messages/Library reporting are a
-// documented follow-on, not built yet - see the progress doc).
+// Reports are filed from src/lib/moderation.ts's fileReport(), wired onto
+// People profiles, Consult, Messages, and the Shared Library.
 //
 // "Hide" is deliberately not wired to an actual visibility flag on the
 // reported content: consultations, messages, and library documents don't
@@ -53,17 +52,25 @@ export default async function ModerationQueuePage(props: { searchParams: Promise
     .filter((r: any) => r.target_type === "consultation")
     .map((r: any) => Number(r.target_id))
     .filter((n: number) => Number.isFinite(n));
+  const documentTargetIds = (openReports || [])
+    .filter((r: any) => r.target_type === "library_document")
+    .map((r: any) => Number(r.target_id))
+    .filter((n: number) => Number.isFinite(n));
 
-  const [{ data: targetProfiles }, { data: targetConsultations }] = await Promise.all([
+  const [{ data: targetProfiles }, { data: targetConsultations }, { data: targetDocuments }] = await Promise.all([
     profileTargetIds.length > 0
       ? supabase.from("profiles").select("id, full_name, credential_prefix").in("id", profileTargetIds)
       : Promise.resolve({ data: [] as any[] }),
     consultationTargetIds.length > 0
       ? supabase.from("consultations").select("id, question").in("id", consultationTargetIds)
       : Promise.resolve({ data: [] as any[] }),
+    documentTargetIds.length > 0
+      ? supabase.from("documents").select("id, title").in("id", documentTargetIds)
+      : Promise.resolve({ data: [] as any[] }),
   ]);
   const profileById = new Map((targetProfiles || []).map((p: any) => [p.id, p]));
   const consultationById = new Map((targetConsultations || []).map((c: any) => [String(c.id), c]));
+  const documentById = new Map((targetDocuments || []).map((d: any) => [String(d.id), d]));
 
   function targetContext(r: any): { label: string; link?: string } {
     if (r.target_type === "profile" || r.target_type === "user") {
@@ -75,6 +82,10 @@ export default async function ModerationQueuePage(props: { searchParams: Promise
     if (r.target_type === "consultation") {
       const c = consultationById.get(r.target_id);
       return c ? { label: c.question } : { label: `Consultation #${r.target_id}` };
+    }
+    if (r.target_type === "library_document") {
+      const d = documentById.get(r.target_id);
+      return d ? { label: d.title, link: "/dashboard/documents" } : { label: `Document #${r.target_id}` };
     }
     return { label: `${TARGET_LABELS[r.target_type] || r.target_type} ${r.target_id}` };
   }
