@@ -58,8 +58,6 @@ export default async function DashboardHome(
 
   const [
     { data: profile },
-    { count: caseCount },
-    { count: docCount },
     { count: pendingConnectionCount },
     { data: myOpenRequests },
     { data: pendingProviderReferrals },
@@ -81,8 +79,6 @@ export default async function DashboardHome(
     { data: openConsultationsFromColleagues },
   ] = await Promise.all([
     supabase.from("profiles").select("*").eq("id", myself).maybeSingle(),
-    supabase.from("caseload_clients").select("id", { count: "exact", head: true }).eq("profile_id", myself).eq("is_active", true),
-    supabase.from("documents").select("id", { count: "exact", head: true }).eq("profile_id", myself),
     supabase.from("connections").select("id", { count: "exact", head: true }).eq("addressee_id", myself).eq("status", "pending"),
     supabase.from("referral_requests").select("id, referral_responses(status)").eq("requesting_profile_id", myself).eq("status", "open"),
     // Physician referrals awaiting a response - shown in full on the
@@ -305,11 +301,13 @@ export default async function DashboardHome(
             {profile?.qualification_level ? ` · ${profile.qualification_level}` : ""}, here's where things stand.
           </p>
         </div>
+        {/* Sept 23 audit: this strip used to be static vanity counts (Active
+            clients, Library document count) that never asked for anything -
+            replaced with the same unresolved-item signals the "Needs your
+            attention" bar below already computes, so the top of Home is
+            entirely "here's what's waiting on you," not a mix of that and
+            "here's how many things you own." */}
         <div className="overview-stat-strip">
-          <a href="/dashboard/caseload" className="overview-stat-pill">
-            <span className="value">{caseCount ?? 0}</span>
-            <span className="label">Active clients</span>
-          </a>
           <a href="/dashboard/messages" className="overview-stat-pill">
             <span className="value">{unreadMessageCount}</span>
             <span className="label">Unread</span>
@@ -318,9 +316,13 @@ export default async function DashboardHome(
             <span className="value">{pendingConnectionCount ?? 0}</span>
             <span className="label">Network</span>
           </a>
-          <a href="/dashboard/documents" className="overview-stat-pill">
-            <span className="value">{docCount ?? 0}</span>
-            <span className="label">Library</span>
+          <a href="/dashboard/requests" className="overview-stat-pill">
+            <span className="value">{pendingCoverageRequestCount}</span>
+            <span className="label">Coverage requests</span>
+          </a>
+          <a href="/dashboard/consult" className="overview-stat-pill">
+            <span className="value">{consultationRepliesCount}</span>
+            <span className="label">Consult replies</span>
           </a>
         </div>
       </div>

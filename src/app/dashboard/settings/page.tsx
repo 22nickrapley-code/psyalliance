@@ -48,9 +48,21 @@ export default async function SettingsPage(props: { searchParams: Promise<{ save
     <div>
       <h1>Settings</h1>
       <p className="muted">
-        Notification preferences, your emergency-cover contact, and a private list of colleagues to
-        exclude from your own search and recommendations. None of this is visible to anyone else.
+        Nothing on this page is visible to anyone else.
       </p>
+
+      {/* Sept 23 audit: Settings was one long unlabeled scroll of unrelated
+          controls - reorganized into named categories per the audit's
+          recommendation (this is also the resolved answer to "what does
+          Privacy/Data controls mean" - it's these category labels, not new
+          account-deletion/export features, which aren't built yet). */}
+      <nav className="settings-jump" style={{ display: "flex", flexWrap: "wrap", gap: "0.6rem", marginBottom: "1.25rem" }}>
+        <a href="#account-security" className="tag">Account &amp; security</a>
+        <a href="#notifications" className="tag">Notifications</a>
+        <a href="#privacy-controls" className="tag">Privacy &amp; controls</a>
+        <a href="#blocked-excluded" className="tag">Blocked / Excluded</a>
+        <a href="#data" className="tag">Data</a>
+      </nav>
 
       {error && <div className="error-banner">{error}</div>}
 
@@ -60,7 +72,20 @@ export default async function SettingsPage(props: { searchParams: Promise<{ save
         </div>
       )}
 
-      <div className="card">
+      <div className="card" id="account-security">
+        <h2>Account &amp; security</h2>
+        <dl>
+          <dt>Signed in as</dt>
+          <dd>{user!.email}</dd>
+        </dl>
+        <p className="muted" style={{ marginBottom: "0.75rem" }}>
+          To change your password, request a reset link the same way you would if you'd forgotten
+          it - you'll stay signed in on this device until you use it.
+        </p>
+        <a href="/auth/forgot-password" className="btn secondary">Send password reset link</a>
+      </div>
+
+      <div className="card" id="notifications">
         <h2>Notifications</h2>
         <form action={saveNotificationPreferences}>
           <div className="checkbox-row">
@@ -176,8 +201,12 @@ export default async function SettingsPage(props: { searchParams: Promise<{ save
         </form>
       </div>
 
-      <div className="card">
-        <h2>Emergency-cover contact</h2>
+      <div className="card" id="privacy-controls">
+        <h2>Privacy &amp; controls</h2>
+        <p className="muted">
+          Who's designated to coordinate on your behalf if you're ever unexpectedly unavailable.
+        </p>
+        <h3 style={{ fontSize: "0.95rem" }}>Emergency-cover contact</h3>
         <p className="muted">
           The one colleague who should be looped in if you're ever unexpectedly unavailable and your
           caseload needs covering. This is a plain designation. It doesn't share any client
@@ -220,8 +249,8 @@ export default async function SettingsPage(props: { searchParams: Promise<{ save
         </form>
       </div>
 
-      <div className="card">
-        <h2>Do-not-work-with list</h2>
+      <div className="card" id="blocked-excluded">
+        <h2>Blocked / Excluded</h2>
         <p className="muted">
           Colleagues you add here are quietly excluded from your own recommendations, matching
           results, and predictive search. This is on your side only; they're never notified.
@@ -256,6 +285,17 @@ export default async function SettingsPage(props: { searchParams: Promise<{ save
             <button type="submit" className="secondary">Add to list</button>
           </div>
         </form>
+      </div>
+
+      <div className="card" id="data">
+        <h2>Data</h2>
+        <p className="muted">
+          Your profile and credential information is used to verify your identity and connect you
+          with other verified clinicians on the network - never sold, never used for advertising.
+          A full self-serve data export or account-deletion tool isn't built yet; until it is,
+          email <a href="mailto:hello@psyalliance.org">hello@psyalliance.org</a> for either one and
+          we'll handle it directly.
+        </p>
       </div>
     </div>
   );
