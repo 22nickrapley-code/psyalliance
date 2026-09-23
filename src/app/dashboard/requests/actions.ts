@@ -117,6 +117,8 @@ export async function createReferralRequestAction(formData: FormData) {
   if (!user) throw new Error("Not signed in");
 
   const specialismId = Number(formData.get("specialism_lookup_id"));
+  const languageId = Number(formData.get("language_lookup_id"));
+  const sessionTypeId = Number(formData.get("session_type_lookup_id"));
   const audienceType = String(formData.get("audience_type") || "wider_network") as "trusted" | "selected" | "wider_network";
 
   const { error } = await createReferralRequest(supabase, user.id, {
@@ -126,6 +128,9 @@ export async function createReferralRequestAction(formData: FormData) {
     insurance: String(formData.get("insurance") || "") || undefined,
     ageBand: String(formData.get("age_band") || "") || undefined,
     modality: String(formData.get("modality") || "") || undefined,
+    languageLookupId: Number.isFinite(languageId) && languageId > 0 ? languageId : undefined,
+    sessionTypeLookupId: Number.isFinite(sessionTypeId) && sessionTypeId > 0 ? sessionTypeId : undefined,
+    timeframe: String(formData.get("timeframe") || "") || undefined,
     notes: String(formData.get("notes") || "") || undefined,
     audienceType,
   });

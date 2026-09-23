@@ -142,6 +142,9 @@ export async function createReferralRequest(
     insurance?: string;
     ageBand?: string;
     modality?: string;
+    languageLookupId?: number;
+    sessionTypeLookupId?: number;
+    timeframe?: string;
     notes?: string;
     audienceType: ReferralAudience;
     audienceProfileIds?: string[];
@@ -157,6 +160,9 @@ export async function createReferralRequest(
       insurance: opts.insurance ?? null,
       age_band: opts.ageBand ?? null,
       modality: opts.modality ?? null,
+      language_lookup_id: opts.languageLookupId ?? null,
+      session_type_lookup_id: opts.sessionTypeLookupId ?? null,
+      timeframe: opts.timeframe ?? null,
       notes: opts.notes ?? null,
       audience_type: opts.audienceType,
       audience_profile_ids: opts.audienceType === "selected" ? opts.audienceProfileIds ?? [] : [],

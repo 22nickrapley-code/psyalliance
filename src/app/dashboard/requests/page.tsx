@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import ToggleBox from "@/components/toggle-box";
 import UsStateDatalist from "@/components/us-state-datalist";
+import ReferralAudienceField from "@/components/referral-audience-field";
 import { suggestCliniciansForCase } from "@/lib/coverage";
 import { suggestCliniciansForReferral } from "@/lib/referrals-v2";
 import { startConversation } from "../messages/actions";
@@ -43,6 +44,12 @@ export default async function RequestsPage(props: { searchParams: Promise<{ tab?
 
   const [
     { data: specialisms },
+    { data: languages },
+    { data: sessionTypes },
+    { data: modalities },
+    { data: insuranceNames },
+    { count: trustedColleagueCount },
+    { count: verifiedNetworkCount },
     { data: myPlans },
     { data: myPlanCases },
     { data: incomingCoverageRequests },
@@ -51,6 +58,24 @@ export default async function RequestsPage(props: { searchParams: Promise<{ tab?
     { data: myReferralResponses },
   ] = await Promise.all([
     supabase.from("lookup_values").select("id, value").eq("category", "treatment_specialism").order("value"),
+    // Structured Referrals criteria (Sept 23 audit) - all reuse taxonomies
+    // that already exist for profile self-disclosure/matching rather than
+    // inventing new ones (see src/lib/server-matching.ts for the same
+    // session_type usage).
+    supabase.from("lookup_values").select("id, value").eq("category", "language").order("value"),
+    supabase.from("lookup_values").select("id, value").eq("category", "session_type").order("value"),
+    supabase.from("lookup_values").select("id, value").eq("category", "treatment_modality").order("value"),
+    supabase.from("lookup_values").select("id, value").eq("category", "insurance").order("value"),
+    // Audience-size preview for the "review recipients before send" gate
+    // (ReferralAudienceField) - how many people "Trusted colleagues only"
+    // and "Verified network" would actually reach.
+    supabase
+      .from("connections")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "accepted")
+      .eq("tier", "trusted_colleague")
+      .or(`requester_id.eq.${myself},addressee_id.eq.${myself}`),
+    supabase.from("public_directory").select("id", { count: "exact", head: true }),
     supabase.from("coverage_plans").select("*").eq("profile_id", myself).order("created_at", { ascending: false }),
     supabase
       .from("coverage_plan_cases")
@@ -65,12 +90,16 @@ export default async function RequestsPage(props: { searchParams: Promise<{ tab?
       .order("sent_at", { ascending: false }),
     supabase
       .from("referral_requests")
-      .select("*, lookup_values(value), referral_responses(*, profiles:responding_profile_id(full_name))")
+      .select(
+        "*, lookup_values(value), language:lookup_values!referral_requests_language_lookup_id_fkey(value), session_type:lookup_values!referral_requests_session_type_lookup_id_fkey(value), referral_responses(*, profiles:responding_profile_id(full_name))"
+      )
       .eq("requesting_profile_id", myself)
       .order("created_at", { ascending: false }),
     supabase
       .from("referral_requests")
-      .select("*, lookup_values(value)")
+      .select(
+        "*, lookup_values(value), language:lookup_values!referral_requests_language_lookup_id_fkey(value), session_type:lookup_values!referral_requests_session_type_lookup_id_fkey(value)"
+      )
       .neq("requesting_profile_id", myself)
       .in("status", ["open", "sent"])
       .order("created_at", { ascending: false })
@@ -124,6 +153,34 @@ export default async function RequestsPage(props: { searchParams: Promise<{ tab?
       .filter((status) => counts[status] > 0)
       .map((status) => `${counts[status]} ${CASE_STATUS_LABEL[status]}`);
     return `${cases.length} case${cases.length === 1 ? "" : "s"} · ${parts.join(" · ")}`;
+  }
+
+  const TIMEFRAME_LABEL: Record<string, string> = {
+    urgent: "Urgent (this week)",
+    within_month: "Within a month",
+    flexible: "Flexible",
+  };
+  // Sept 23 audit: renders the structured criteria (age band, modality,
+  // insurance, language, session type, timeframe) that used to only exist
+  // in free-text notes, as tags on both "My requests" and "Open requests
+  // from colleagues" - so a criterion filled in during posting is actually
+  // visible to whoever's deciding whether to respond.
+  function referralCriteriaTags(r: any) {
+    const tags: string[] = [];
+    if (r.age_band) tags.push(r.age_band);
+    if (r.modality) tags.push(r.modality);
+    if (r.insurance) tags.push(r.insurance);
+    if (r.language?.value) tags.push(r.language.value);
+    if (r.session_type?.value) tags.push(r.session_type.value);
+    if (r.timeframe && TIMEFRAME_LABEL[r.timeframe]) tags.push(TIMEFRAME_LABEL[r.timeframe]);
+    if (tags.length === 0) return null;
+    return (
+      <>
+        {tags.map((t) => (
+          <span key={t} className="tag" style={{ marginLeft: "0.3rem" }}>{t}</span>
+        ))}
+      </>
+    );
   }
 
   const coverageTab = (
@@ -324,13 +381,70 @@ export default async function RequestsPage(props: { searchParams: Promise<{ tab?
               <UsStateDatalist id="us-states-requests" />
             </div>
             <div className="field">
-              <label htmlFor="ref_audience">Who should see this?</label>
-              <select id="ref_audience" name="audience_type" defaultValue="wider_network">
-                <option value="wider_network">Verified network</option>
-                <option value="trusted">Trusted colleagues only</option>
-                <option value="selected">Selected clinicians (choose after posting)</option>
+              <label htmlFor="ref_age_band">Age band</label>
+              <input id="ref_age_band" name="age_band" type="text" placeholder="Adult" />
+            </div>
+          </div>
+          {/* Sept 23 audit: insurance/age band/modality were already read by
+              createReferralRequestAction and stored, but this form never
+              rendered inputs for them, so every request pushed that context
+              into free-text notes instead. Language, session type, and
+              timeframe are new columns added for the same reason (see
+              migration 0057) - language and session type reuse the
+              lookup_values taxonomies already used for profile
+              self-disclosure/matching rather than inventing new ones. */}
+          <div className="field-row">
+            <div className="field">
+              <label htmlFor="ref_insurance">Insurance</label>
+              <input id="ref_insurance" name="insurance" type="text" placeholder="e.g. Aetna" list="insurance-names-requests" autoComplete="off" />
+              <datalist id="insurance-names-requests">
+                {(insuranceNames || []).map((i) => (
+                  <option key={i.id} value={i.value} />
+                ))}
+              </datalist>
+            </div>
+            <div className="field">
+              <label htmlFor="ref_modality">Modality</label>
+              <select id="ref_modality" name="modality" defaultValue="">
+                <option value="">Any</option>
+                {(modalities || []).map((m) => (
+                  <option key={m.id} value={m.value}>{m.value}</option>
+                ))}
               </select>
             </div>
+            <div className="field">
+              <label htmlFor="ref_language">Language needed</label>
+              <select id="ref_language" name="language_lookup_id" defaultValue="">
+                <option value="">Any</option>
+                {(languages || []).map((l) => (
+                  <option key={l.id} value={l.id}>{l.value}</option>
+                ))}
+              </select>
+            </div>
+            <div className="field">
+              <label htmlFor="ref_session_type">Session type</label>
+              <select id="ref_session_type" name="session_type_lookup_id" defaultValue="">
+                <option value="">Any</option>
+                {(sessionTypes || []).map((s) => (
+                  <option key={s.id} value={s.id}>{s.value}</option>
+                ))}
+              </select>
+            </div>
+            <div className="field">
+              <label htmlFor="ref_timeframe">How soon?</label>
+              <select id="ref_timeframe" name="timeframe" defaultValue="">
+                <option value="">Not specified</option>
+                <option value="urgent">Urgent (this week)</option>
+                <option value="within_month">Within a month</option>
+                <option value="flexible">Flexible</option>
+              </select>
+            </div>
+          </div>
+          <div className="field-row">
+            <ReferralAudienceField
+              trustedCount={trustedColleagueCount || 0}
+              networkCount={Math.max(0, (verifiedNetworkCount || 0) - 1)}
+            />
           </div>
           <div className="field">
             <label htmlFor="ref_notes">Notes (no patient names or identifying details)</label>
@@ -348,6 +462,7 @@ export default async function RequestsPage(props: { searchParams: Promise<{ tab?
               <strong>{r.lookup_values?.value || "Any specialism"}</strong>
               {r.state ? ` - ${r.state}` : ""} <span className="tag">{r.status}</span>{" "}
               <span className="tag">{r.audience_type.replace("_", " ")}</span>
+              {referralCriteriaTags(r)}
             </div>
             {(r.referral_responses || []).length > 0 && (
               <div style={{ marginTop: "0.35rem" }}>
@@ -451,6 +566,7 @@ export default async function RequestsPage(props: { searchParams: Promise<{ tab?
             <span className="person-row-info">
               <strong>{r.lookup_values?.value || "Any specialism"}</strong>
               {r.state ? ` - ${r.state}` : ""}
+              {referralCriteriaTags(r)}
               {r.notes ? `, ${r.notes}` : ""}
             </span>
             {alreadyRespondedReferralIds.has(r.id) ? (
