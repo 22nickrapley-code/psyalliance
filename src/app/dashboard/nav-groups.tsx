@@ -258,6 +258,11 @@ export function buildNavGroups(
           label: "Referring providers",
           icon: icon.providers,
         },
+        {
+          href: "/dashboard/admin/library",
+          label: "Library governance",
+          icon: icon.library,
+        },
       ],
     });
   }

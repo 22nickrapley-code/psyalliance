@@ -85,7 +85,16 @@ export default async function DocumentsPage(
   // everything you have access to - they are never filtered by the search
   // box. Only the "Search documents" section at the bottom reacts to it.
   const personalAllUnfiltered = await withSignedUrls(supabase, (personalDocs || []).map(withAreas));
-  const sharedAllUnsorted = await withSignedUrls(supabase, (sharedDocs || []).map(withAreas));
+  // Addendum A6: "a resource cannot move to Published until every required
+  // reviewer role has approved it" also means a resource with required
+  // roles set is never member-visible before that - draft/needs_review/
+  // in_review all stay hidden here. A document nobody has ever gated with
+  // required_reviewer_roles is treated as ungated and shows as before, so
+  // this doesn't hide anything that predates the governance workflow.
+  const sharedGoverned = (sharedDocs || []).filter(
+    (d: any) => d.review_status === "published" || (d.required_reviewer_roles || []).length === 0
+  );
+  const sharedAllUnsorted = await withSignedUrls(supabase, sharedGoverned.map(withAreas));
 
   const folderFilter = searchParams?.folder || "all";
   const personalAll =
