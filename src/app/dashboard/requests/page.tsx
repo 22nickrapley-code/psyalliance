@@ -9,6 +9,7 @@ import {
   createCoveragePlanAction,
   addCoveragePlanCaseAction,
   sendCoverageRequestAction,
+  rejectCoverageCandidateAction,
   respondToCoverageRequestAction,
   createReferralRequestAction,
   respondToReferralRequestAction,
@@ -54,6 +55,7 @@ export default async function RequestsPage(props: { searchParams: Promise<{ tab?
     { data: myPlanCases },
     { data: incomingCoverageRequests },
     { data: myCoverageRequestHistory },
+    { data: myCoverageCaseRejections },
     { data: myReferralRequests },
     { data: visibleReferralRequests },
     { data: myReferralResponses },
@@ -103,6 +105,14 @@ export default async function RequestsPage(props: { searchParams: Promise<{ tab?
       )
       .eq("coverage_plan_cases.coverage_plans.profile_id", myself)
       .order("sent_at", { ascending: false }),
+    // Task #132 (Sept 23 audit), approved cut: manual per-case rejections
+    // (rejectCoverageCandidateAction) - same FK-chain filter pattern as
+    // myCoverageRequestHistory above, for the same reason (the id list
+    // isn't available yet inside this Promise.all).
+    supabase
+      .from("coverage_case_rejections")
+      .select("coverage_plan_case_id, candidate_profile_id, coverage_plan_cases!inner(coverage_plans!inner(profile_id))")
+      .eq("coverage_plan_cases.coverage_plans.profile_id", myself),
     supabase
       .from("referral_requests")
       .select(
@@ -142,6 +152,17 @@ export default async function RequestsPage(props: { searchParams: Promise<{ tab?
     requestHistoryByCaseId.set(r.coverage_plan_case_id, list);
   }
 
+  // Task #132 (Sept 23 audit), approved cut: manual per-case rejections
+  // feed the same exclusion list as outreach history, so a candidate the
+  // owner has explicitly ruled out (via rejectCoverageCandidateAction)
+  // drops off just like someone who already declined a real request.
+  const rejectionsByCaseId = new Map<number, string[]>();
+  for (const r of myCoverageCaseRejections || []) {
+    const list = rejectionsByCaseId.get(r.coverage_plan_case_id) || [];
+    list.push(r.candidate_profile_id);
+    rejectionsByCaseId.set(r.coverage_plan_case_id, list);
+  }
+
   // Suggested clinicians for every one of my own cases still needing cover
   // - fine at today's volume; worth paginating once plans get large.
   // declined_all is included too so a fully-exhausted case can confirm
@@ -150,7 +171,8 @@ export default async function RequestsPage(props: { searchParams: Promise<{ tab?
   const suggestionsByCaseId = new Map<number, Awaited<ReturnType<typeof suggestCliniciansForCase>>>();
   for (const c of needsCoverCases) {
     const askedIds = (requestHistoryByCaseId.get(c.id) || []).map((r: any) => r.requested_profile_id);
-    suggestionsByCaseId.set(c.id, await suggestCliniciansForCase(supabase, c.id, askedIds));
+    const rejectedIds = rejectionsByCaseId.get(c.id) || [];
+    suggestionsByCaseId.set(c.id, await suggestCliniciansForCase(supabase, c.id, [...askedIds, ...rejectedIds]));
   }
 
   const alreadyRespondedReferralIds = new Set((myReferralResponses || []).map((r: any) => r.referral_request_id));
@@ -323,6 +345,18 @@ export default async function RequestsPage(props: { searchParams: Promise<{ tab?
                                 <input type="hidden" name="coverage_plan_case_id" value={c.id} />
                                 <input type="hidden" name="requested_profile_id" value={s.profileId} />
                                 <button type="submit" className="secondary">Request coverage</button>
+                              </form>
+                              <form action={rejectCoverageCandidateAction}>
+                                <input type="hidden" name="coverage_plan_case_id" value={c.id} />
+                                <input type="hidden" name="candidate_profile_id" value={s.profileId} />
+                                <button
+                                  type="submit"
+                                  className="secondary"
+                                  title="Not a fit for this case - won't be suggested here again"
+                                  style={{ color: "var(--danger)" }}
+                                >
+                                  Not a fit
+                                </button>
                               </form>
                             </span>
                           </div>

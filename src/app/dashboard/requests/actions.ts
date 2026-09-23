@@ -92,6 +92,39 @@ export async function sendCoverageRequestAction(formData: FormData) {
   redirect("/dashboard/requests?tab=coverage");
 }
 
+// Task #132 (Sept 23 audit), approved cut: the ported version of the
+// legacy Planner's inline "-" reject action (rejectCandidate in
+// planner/actions.ts), scoped to a coverage case instead of a caseload
+// client. Writes to coverage_case_rejections; suggestCliniciansForCase
+// already excludes anything in there via its excludeProfileIds param
+// (requests/page.tsx merges this with coverage_requests history before
+// calling it), so the rejected candidate simply drops off the ranked list
+// and the next-ranked one rotates into view - no separate "cascade" logic
+// needed, unlike the legacy grid engine.
+export async function rejectCoverageCandidateAction(formData: FormData) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not signed in");
+
+  const coveragePlanCaseId = Number(formData.get("coverage_plan_case_id"));
+  const candidateProfileId = String(formData.get("candidate_profile_id") || "");
+  if (!coveragePlanCaseId || !candidateProfileId) requestsError("Missing case or candidate");
+
+  const { error } = await supabase.from("coverage_case_rejections").insert({
+    profile_id: user.id,
+    coverage_plan_case_id: coveragePlanCaseId,
+    candidate_profile_id: candidateProfileId,
+  });
+  // A repeat click hits the unique constraint - same no-op treatment as
+  // the legacy rejectCandidate action.
+  if (error && error.code !== "23505") requestsError(error.message);
+
+  revalidatePath("/dashboard/requests");
+  redirect("/dashboard/requests?tab=coverage");
+}
+
 export async function respondToCoverageRequestAction(formData: FormData) {
   const supabase = await createClient();
   const {
