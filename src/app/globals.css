@@ -371,11 +371,11 @@ button.secondary:hover, .btn.secondary:hover {
   border-color: var(--accent-soft-border);
 }
 
-button.danger {
+button.danger, .btn.danger {
   background: var(--danger);
 }
 
-button.danger:hover {
+button.danger:hover, .btn.danger:hover {
   background: #822c23;
 }
 

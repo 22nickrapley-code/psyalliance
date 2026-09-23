@@ -19,6 +19,7 @@ export default async function AdminOverviewPage() {
     { count: pendingInsuranceRequestCount },
     { count: pendingChannelRequestCount },
     { count: pendingProviderCount },
+    { count: openReportCount },
   ] = await Promise.all([
     supabase.from("profiles").select("*", { count: "exact", head: true }),
     supabase.from("profiles").select("*", { count: "exact", head: true }).eq("verification_status", "verified"),
@@ -35,6 +36,7 @@ export default async function AdminOverviewPage() {
     supabase.from("insurance_requests").select("*", { count: "exact", head: true }).eq("status", "pending"),
     supabase.from("channel_requests").select("*", { count: "exact", head: true }).eq("status", "pending"),
     supabase.from("referring_providers").select("*", { count: "exact", head: true }).eq("approval_status", "pending"),
+    supabase.from("reports").select("*", { count: "exact", head: true }).in("status", ["open", "reviewing"]),
   ]);
 
   const stateCounts = new Map<string, number>();
@@ -59,9 +61,12 @@ export default async function AdminOverviewPage() {
         list (search, verify, flag, promote to admin) is under{" "}
         <a href="/dashboard/admin/members">All members</a>, physician/GP referral-portal
         registrations are under{" "}
-        <a href="/dashboard/admin/referring-providers">Referring providers</a>, and liquidity
+        <a href="/dashboard/admin/referring-providers">Referring providers</a>, liquidity
         metrics (response rates, supply gaps, Northeast/Texas density) are under{" "}
-        <a href="/dashboard/admin/network-health">Network health</a>.
+        <a href="/dashboard/admin/network-health">Network health</a>, member-filed reports on a
+        profile, consultation, message, or Library document are under{" "}
+        <a href="/dashboard/admin/moderation">Moderation queue</a>, and Practice Library
+        publication sign-off is under <a href="/dashboard/admin/library">Library governance</a>.
       </p>
 
       <div className="card">
@@ -103,6 +108,10 @@ export default async function AdminOverviewPage() {
             <div className="value">{pendingProviderCount ?? 0}</div>
             <div className="label">Pending referring providers</div>
           </div>
+          <div className="stat">
+            <div className="value">{openReportCount ?? 0}</div>
+            <div className="label">Open moderation reports</div>
+          </div>
         </div>
         {(pendingCount ?? 0) > 0 && (
           <p style={{ marginTop: "0.75rem" }}>
@@ -129,6 +138,13 @@ export default async function AdminOverviewPage() {
           <p style={{ marginTop: "0.5rem" }}>
             <a href="/dashboard/admin/referring-providers" className="btn secondary">
               Review {pendingProviderCount} referring provider{pendingProviderCount === 1 ? "" : "s"}
+            </a>
+          </p>
+        )}
+        {(openReportCount ?? 0) > 0 && (
+          <p style={{ marginTop: "0.5rem" }}>
+            <a href="/dashboard/admin/moderation" className="btn danger">
+              Review {openReportCount} open report{openReportCount === 1 ? "" : "s"}
             </a>
           </p>
         )}
