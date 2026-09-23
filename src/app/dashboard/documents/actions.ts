@@ -37,6 +37,14 @@ export async function uploadDocument(formData: FormData) {
   } = await supabase.auth.getUser();
   if (!user) throw new Error("Not signed in");
 
+  // V1 cannot receive arbitrary member-uploaded files: a document can carry
+  // identifiable patient information even when its title does not. Admin
+  // uploads to the governed review queue remain supported.
+  const { data: uploader } = await supabase.from("profiles").select("is_admin").eq("id", user.id).maybeSingle();
+  if (!uploader?.is_admin || formData.get("owner_scope") !== "world") {
+    documentsError("Member file uploads are paused while the no-patient-data boundary is established. Save a reviewed Practice Library resource instead.");
+  }
+
   const file = formData.get("file") as File | null;
   if (!file || file.size === 0) documentsError("No file selected");
   if (file.size > MAX_FILE_SIZE_BYTES) {

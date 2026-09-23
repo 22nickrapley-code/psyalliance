@@ -34,7 +34,7 @@ export default async function ConsultPage(props: { searchParams: Promise<{ error
   } = await supabase.auth.getUser();
   const myself = user!.id;
 
-  const [{ data: consultations }, { data: myConsultations }] = await Promise.all([
+  const [{ data: consultations }, { data: myConsultations }, { data: directoryRows }] = await Promise.all([
     supabase
       .from("consultations")
       .select("*, author:author_profile_id(full_name, credential_prefix), consultation_responses(*, profiles:responder_profile_id(full_name))")
@@ -47,13 +47,16 @@ export default async function ConsultPage(props: { searchParams: Promise<{ error
       .eq("author_profile_id", myself)
       .order("created_at", { ascending: false })
       .limit(10),
+    supabase.from("public_directory").select("id,full_name,credential_prefix").order("full_name").limit(1000),
   ]);
+  const recipients = Array.from(new Map((directoryRows || []).filter((row) => row.id !== myself)
+    .map((row) => [row.id, row])).values());
 
   return (
     <div>
       <h1>Consult</h1>
       <p className="muted">
-        Ask a specific question - trusted colleagues, or the verified network. Keep it de-identified: no
+        Ask a specific question for selected clinicians, trusted colleagues, or the verified network. Keep it de-identified: no
         patient names, exact dates, addresses, or other identifying details.
       </p>
       {error && <div className="error-banner">{error}</div>}
@@ -90,6 +93,7 @@ export default async function ConsultPage(props: { searchParams: Promise<{ error
                   resistance. */}
               <select id="audience_type" name="audience_type" defaultValue="trusted">
                 <option value="trusted">Trusted colleagues only</option>
+                <option value="selected">Selected clinicians</option>
                 <option value="wider_network">Verified network</option>
               </select>
             </div>
@@ -98,6 +102,14 @@ export default async function ConsultPage(props: { searchParams: Promise<{ error
               <input id="tags" name="tags" type="text" placeholder="ADHD, Assessment" />
             </div>
           </div>
+          <details className="consult-recipient-picker"><summary>Choose clinicians for a selected-audience question</summary>
+            <p className="muted">These people receive the question only if you choose “Selected clinicians” above. Pick at least one.</p>
+            <div className="consult-recipient-grid">{recipients.map((person) => <label key={person.id}>
+              <input type="checkbox" name="audience_profile_ids" value={person.id} />
+              <span>{person.credential_prefix ? `${person.credential_prefix} ` : ""}{person.full_name}</span>
+            </label>)}</div>
+            {!recipients.length && <p className="muted">No verified clinicians are available to select yet.</p>}
+          </details>
           <div className="field">
             <label htmlFor="context">Context (optional, de-identified)</label>
             <textarea id="context" name="context" rows={2} />

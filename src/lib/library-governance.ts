@@ -20,16 +20,18 @@ export async function setDocumentGovernance(
     requiredReviewerRoles?: ReviewerRole[];
   }
 ) {
+  // Updating reviewer roles must not erase sources, ownership and review
+  // metadata that the admin already recorded for this version.
+  const changes: Record<string, unknown> = {};
+  if (opts.resourceOwnerId !== undefined) changes.resource_owner_id = opts.resourceOwnerId || null;
+  if (opts.sources !== undefined) changes.sources = opts.sources;
+  if (opts.applicability !== undefined) changes.applicability = opts.applicability;
+  if (opts.customizationWarning !== undefined) changes.customization_warning = opts.customizationWarning;
+  if (opts.nextReviewDate !== undefined) changes.next_review_date = opts.nextReviewDate || null;
+  if (opts.requiredReviewerRoles !== undefined) changes.required_reviewer_roles = opts.requiredReviewerRoles;
   const { error } = await supabase
     .from("documents")
-    .update({
-      resource_owner_id: opts.resourceOwnerId ?? null,
-      sources: opts.sources ?? null,
-      applicability: opts.applicability ?? null,
-      customization_warning: opts.customizationWarning ?? null,
-      next_review_date: opts.nextReviewDate ?? null,
-      required_reviewer_roles: opts.requiredReviewerRoles ?? [],
-    })
+    .update(changes)
     .eq("id", documentId);
   return { error: error?.message ?? null };
 }
@@ -58,7 +60,7 @@ export async function submitDocumentReview(
       notes: notes ?? null,
       reviewed_at: new Date().toISOString(),
     },
-    { onConflict: "document_id,document_version,reviewer_role" }
+    { onConflict: "document_id,document_version,reviewer_role,reviewer_profile_id" }
   );
   return { error: error?.message ?? null };
 }

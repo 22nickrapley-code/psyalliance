@@ -50,7 +50,7 @@ export default async function RequestsPage(props: { searchParams: Promise<{ tab?
     { data: modalities },
     { data: insuranceNames },
     { count: trustedColleagueCount },
-    { count: verifiedNetworkCount },
+    { data: verifiedNetworkCount },
     { data: myPlans },
     { data: myPlanCases },
     { data: incomingCoverageRequests },
@@ -78,7 +78,9 @@ export default async function RequestsPage(props: { searchParams: Promise<{ tab?
       .eq("status", "accepted")
       .eq("tier", "trusted_colleague")
       .or(`requester_id.eq.${myself},addressee_id.eq.${myself}`),
-    supabase.from("public_directory").select("id", { count: "exact", head: true }),
+    // Count clinicians, not public_directory's one-row-per-specialism
+    // records. The RPC also applies the same active/verified view gate.
+    supabase.rpc("verified_network_audience_count"),
     supabase.from("coverage_plans").select("*").eq("profile_id", myself).order("created_at", { ascending: false }),
     supabase
       .from("coverage_plan_cases")
@@ -530,7 +532,7 @@ export default async function RequestsPage(props: { searchParams: Promise<{ tab?
           <div className="field-row">
             <ReferralAudienceField
               trustedCount={trustedColleagueCount || 0}
-              networkCount={Math.max(0, (verifiedNetworkCount || 0) - 1)}
+              networkCount={Number(verifiedNetworkCount) || 0}
             />
           </div>
           <div className="field">

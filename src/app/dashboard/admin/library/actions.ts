@@ -45,13 +45,70 @@ export async function setRequiredReviewerRolesAction(formData: FormData) {
   redirect("/dashboard/admin/library");
 }
 
+export async function setLibraryMetadataAction(formData: FormData) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not signed in");
+  await assertIsAdmin(supabase, user.id);
+  const documentId = Number(formData.get("document_id"));
+  if (!Number.isInteger(documentId) || documentId < 1) libraryError("Choose a resource");
+  const { error } = await setDocumentGovernance(supabase, documentId, {
+    resourceOwnerId: String(formData.get("resource_owner_id") || ""),
+    sources: String(formData.get("sources") || "").trim(),
+    applicability: String(formData.get("applicability") || "").trim(),
+    customizationWarning: String(formData.get("customization_warning") || "").trim(),
+    nextReviewDate: String(formData.get("next_review_date") || ""),
+  });
+  if (error) libraryError(error);
+  revalidatePath("/dashboard/admin/library");
+  redirect("/dashboard/admin/library");
+}
+
+export async function authorizeLibraryReviewerAction(formData: FormData) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not signed in");
+  await assertIsAdmin(supabase, user.id);
+  const reviewerProfileId = String(formData.get("reviewer_profile_id") || "");
+  const reviewerRole = String(formData.get("reviewer_role") || "") as ReviewerRole;
+  const qualificationEvidence = String(formData.get("qualification_evidence") || "").trim();
+  if (!ALL_ROLES.includes(reviewerRole) || !reviewerProfileId || qualificationEvidence.length < 20) {
+    libraryError("Choose a reviewer and role, and document their relevant qualifications (20+ characters)");
+  }
+  const { error } = await supabase.from("document_reviewer_authorizations").upsert({
+    reviewer_profile_id: reviewerProfileId,
+    reviewer_role: reviewerRole,
+    qualification_evidence: qualificationEvidence,
+    approved_by: user.id,
+    approved_at: new Date().toISOString(),
+  }, { onConflict: "reviewer_profile_id,reviewer_role" });
+  if (error) libraryError(error.message);
+  revalidatePath("/dashboard/admin/library");
+  redirect("/dashboard/admin/library");
+}
+
+export async function revokeLibraryReviewerAction(formData: FormData) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not signed in");
+  await assertIsAdmin(supabase, user.id);
+  const reviewerProfileId = String(formData.get("reviewer_profile_id") || "");
+  const reviewerRole = String(formData.get("reviewer_role") || "");
+  const { error } = await supabase.from("document_reviewer_authorizations")
+    .delete().eq("reviewer_profile_id", reviewerProfileId).eq("reviewer_role", reviewerRole);
+  if (error) libraryError(error.message);
+  revalidatePath("/dashboard/admin/library");
+  redirect("/dashboard/admin/library");
+}
+
 export async function submitDocumentReviewAction(formData: FormData) {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) throw new Error("Not signed in");
-  await assertIsAdmin(supabase, user.id);
+  // Reviewer authorization and independence are checked again below and
+  // at the RLS boundary, so qualified non-admin reviewers may submit here.
 
   const documentId = Number(formData.get("document_id"));
   const documentVersion = Number(formData.get("document_version"));
@@ -59,12 +116,22 @@ export async function submitDocumentReviewAction(formData: FormData) {
   const approved = String(formData.get("approved") || "") === "true";
   const notes = String(formData.get("notes") || "") || undefined;
   if (!reviewerRole) libraryError("Choose which role this review is for");
+  const [{ data: authorization }, { data: document }] = await Promise.all([
+    supabase.from("document_reviewer_authorizations").select("reviewer_role")
+      .eq("reviewer_profile_id", user.id).eq("reviewer_role", reviewerRole).maybeSingle(),
+    supabase.from("documents").select("resource_owner_id, uploaded_by, version")
+      .eq("id", documentId).maybeSingle(),
+  ]);
+  if (!authorization || !document || document.resource_owner_id === user.id || document.uploaded_by === user.id || document.version !== documentVersion) {
+    libraryError("An independently authorized reviewer must review the current resource version");
+  }
 
   const { error } = await submitDocumentReview(supabase, user.id, documentId, documentVersion, reviewerRole, approved, notes);
   if (error) libraryError(error);
 
   revalidatePath("/dashboard/admin/library");
-  redirect("/dashboard/admin/library");
+  revalidatePath("/dashboard/review");
+  redirect("/dashboard/review");
 }
 
 export async function publishDocumentAction(formData: FormData) {

@@ -152,7 +152,13 @@ export async function createReferralRequestAction(formData: FormData) {
   const specialismId = Number(formData.get("specialism_lookup_id"));
   const languageId = Number(formData.get("language_lookup_id"));
   const sessionTypeId = Number(formData.get("session_type_lookup_id"));
-  const audienceType = String(formData.get("audience_type") || "wider_network") as "trusted" | "selected" | "wider_network";
+  const audienceType = String(formData.get("audience_type") || "selected") as "trusted" | "selected" | "wider_network";
+  if (!["trusted", "selected", "wider_network"].includes(audienceType)) requestsError("Choose a valid audience");
+  if (audienceType === "wider_network") {
+    const { data: reach, error: reachError } = await supabase.rpc("verified_network_audience_count");
+    if (reachError || Number(reach) < 1) requestsError("No active verified clinicians can receive a network-wide request yet");
+    if (formData.get("confirm_network_audience") !== "on") requestsError("Confirm the network-wide audience before posting");
+  }
 
   const { error } = await createReferralRequest(supabase, user.id, {
     specialismLookupId: Number.isFinite(specialismId) && specialismId > 0 ? specialismId : undefined,
