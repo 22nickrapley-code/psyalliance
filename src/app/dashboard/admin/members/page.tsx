@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { requireAdminOrRedirectPath } from "@/lib/admin";
-import { setMemberVerificationStatus, setMemberAdminFlag } from "./actions";
+import { setMemberVerificationStatus, setMemberAdminFlag, setMemberAccountStatusAction } from "./actions";
 import { professionFor, professionLabel } from "@/lib/profession";
 import UsStateDatalist from "@/components/us-state-datalist";
 
@@ -20,7 +20,7 @@ export default async function AdminMembersPage(
   const { data: profiles } = await supabase
     .from("profiles")
     .select(
-      "id, full_name, credential_prefix, qualification_level, primary_practice_city, primary_state, verification_status, is_admin, contact_email, created_at"
+      "id, full_name, credential_prefix, qualification_level, primary_practice_city, primary_state, verification_status, account_status, is_admin, contact_email, created_at"
     )
     .order("created_at", { ascending: false });
 
@@ -84,6 +84,7 @@ export default async function AdminMembersPage(
               <th>Profession</th>
               <th>Location</th>
               <th>Status</th>
+              <th>Account</th>
               <th>Admin</th>
               <th>Actions</th>
             </tr>
@@ -108,6 +109,13 @@ export default async function AdminMembersPage(
                   </td>
                   <td>{p.primary_practice_city || "-"}{p.primary_state ? `, ${p.primary_state}` : ""}</td>
                   <td><span className="tag">{p.verification_status}</span></td>
+                  <td>
+                    {p.account_status === "active" ? (
+                      <span className="muted">active</span>
+                    ) : (
+                      <span className="tag danger">{p.account_status}</span>
+                    )}
+                  </td>
                   <td>{p.is_admin ? "Yes" : "-"}</td>
                   <td>
                     <div style={{ display: "flex", gap: "0.3rem", flexWrap: "wrap" }}>
@@ -139,6 +147,31 @@ export default async function AdminMembersPage(
                           {p.is_admin ? "Revoke admin" : "Make admin"}
                         </button>
                       </form>
+                      {p.account_status !== "active" ? (
+                        <form action={setMemberAccountStatusAction}>
+                          <input type="hidden" name="profile_id" value={p.id} />
+                          <input type="hidden" name="account_status" value="active" />
+                          <button type="submit" style={{ padding: "0.15rem 0.5rem", fontSize: "0.8rem" }}>Restore</button>
+                        </form>
+                      ) : (
+                        <>
+                          <form action={setMemberAccountStatusAction}>
+                            <input type="hidden" name="profile_id" value={p.id} />
+                            <input type="hidden" name="account_status" value="restricted" />
+                            <button type="submit" className="secondary" style={{ padding: "0.15rem 0.5rem", fontSize: "0.8rem" }}>Restrict</button>
+                          </form>
+                          <form action={setMemberAccountStatusAction}>
+                            <input type="hidden" name="profile_id" value={p.id} />
+                            <input type="hidden" name="account_status" value="suspended" />
+                            <button type="submit" className="danger" style={{ padding: "0.15rem 0.5rem", fontSize: "0.8rem" }}>Suspend</button>
+                          </form>
+                          <form action={setMemberAccountStatusAction}>
+                            <input type="hidden" name="profile_id" value={p.id} />
+                            <input type="hidden" name="account_status" value="deactivated" />
+                            <button type="submit" className="danger" style={{ padding: "0.15rem 0.5rem", fontSize: "0.8rem" }}>Deactivate</button>
+                          </form>
+                        </>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -146,7 +179,7 @@ export default async function AdminMembersPage(
             })}
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={6} className="muted">No members match those filters.</td>
+                <td colSpan={7} className="muted">No members match those filters.</td>
               </tr>
             )}
           </tbody>

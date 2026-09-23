@@ -7,6 +7,7 @@ import { addToBlocklist, removeFromBlocklist } from "../../settings/actions";
 import { submitEndorsement, deleteEndorsement, assignColleagueToClient, markSentToPatient } from "../actions";
 import { ProfileView, type SpecialismValue } from "../../profile-view";
 import Avatar from "../../avatar";
+import { fileReportAction } from "../../moderation-actions";
 
 function TierBadge({ tier }: { tier: "partner" | "trusted_colleague" | "bench" | "pending-out" | "pending-in" | null }) {
   if (!tier) return null;
@@ -300,6 +301,18 @@ export default async function PersonProfilePage({
                   <button type="submit" className="danger">Do not work with</button>
                 </form>
               )}
+              <details style={{ display: "inline-block" }}>
+                <summary className="btn secondary" style={{ display: "inline-block", cursor: "pointer" }}>Report</summary>
+                <form action={fileReportAction} style={{ marginTop: "0.4rem" }}>
+                  <input type="hidden" name="target_type" value="profile" />
+                  <input type="hidden" name="target_id" value={first.id} />
+                  <input type="hidden" name="return_to" value={`/dashboard/people/${first.id}`} />
+                  <div className="field">
+                    <textarea name="reason" rows={2} placeholder="What's wrong with this profile?" required />
+                  </div>
+                  <button type="submit" className="danger">Submit report</button>
+                </form>
+              </details>
             </>
           }
           sidebarExtra={

@@ -183,6 +183,12 @@ const icon = {
       <path d="M4 20h16" />
     </svg>
   ),
+  moderation: (
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 3 4.5 6.5v5c0 4.6 3.2 7.9 7.5 9.5 4.3-1.6 7.5-4.9 7.5-9.5v-5Z" />
+      <path d="M9.5 12.2 11.3 14l3.2-3.5" />
+    </svg>
+  ),
 };
 
 // Rebuild Phase 5 (navigation). Master Brief's new primary destinations:
@@ -275,6 +281,11 @@ export function buildNavGroups(
           href: "/dashboard/admin/network-health",
           label: "Network health",
           icon: icon.networkHealth,
+        },
+        {
+          href: "/dashboard/admin/moderation",
+          label: "Moderation queue",
+          icon: icon.moderation,
         },
       ],
     });

@@ -80,3 +80,31 @@ export async function setMemberAdminFlag(formData: FormData) {
 
   revalidatePath("/dashboard/admin/members");
 }
+
+// PsyA2 #100 (member administration): restrict/suspend/restore/deactivate.
+// See the account_status column comment (rebuild_admin_moderation
+// migration) for what these actually do today - a flat "hidden from other
+// members" effect, not four different enforcement levels yet. This is the
+// direct action (used from All members); the moderation queue's
+// restrict/suspend buttons go through resolveReport() in moderation.ts
+// instead, since those also need to update the report row itself.
+export async function setMemberAccountStatusAction(formData: FormData) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not signed in");
+  await assertIsAdmin(supabase, user.id);
+
+  const profileId = String(formData.get("profile_id") || "");
+  const accountStatus = String(formData.get("account_status") || "") as
+    | "active"
+    | "restricted"
+    | "suspended"
+    | "deactivated";
+
+  const { error } = await supabase.from("profiles").update({ account_status: accountStatus }).eq("id", profileId);
+  if (error) membersError(error.message);
+
+  revalidatePath("/dashboard/admin/members");
+}

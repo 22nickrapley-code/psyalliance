@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createConsultationAction, respondToConsultationAction, resolveConsultationAction, setResponseUsefulAction } from "./actions";
 import { startConversation } from "../messages/actions";
+import { fileReportAction } from "../moderation-actions";
 
 const CONSULTATION_TYPE_LABELS: Record<string, string> = {
   diagnostic_clarification: "Diagnostic clarification",
@@ -184,6 +185,18 @@ export default async function ConsultPage(props: { searchParams: Promise<{ error
                 <button type="submit" className="secondary" style={{ fontSize: "0.85rem" }}>Message privately instead</button>
               </form>
             )}
+            <details style={{ marginTop: "0.3rem" }}>
+              <summary className="muted" style={{ fontSize: "0.8rem", cursor: "pointer", display: "inline-block" }}>Report this consultation</summary>
+              <form action={fileReportAction} style={{ marginTop: "0.4rem", maxWidth: 420 }}>
+                <input type="hidden" name="target_type" value="consultation" />
+                <input type="hidden" name="target_id" value={c.id} />
+                <input type="hidden" name="return_to" value="/dashboard/consult" />
+                <div className="field">
+                  <textarea name="reason" rows={2} placeholder="What's wrong with this consultation?" required />
+                </div>
+                <button type="submit" className="danger" style={{ padding: "0.15rem 0.5rem", fontSize: "0.8rem" }}>Submit report</button>
+              </form>
+            </details>
           </div>
         ))}
         {(consultations || []).length === 0 && <p className="muted">No open consultations right now.</p>}
