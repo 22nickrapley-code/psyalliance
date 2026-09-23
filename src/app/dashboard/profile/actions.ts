@@ -54,7 +54,11 @@ export async function saveProfile(formData: FormData) {
     primary_practice_city: String(formData.get("primary_practice_city") || "") || null,
     states_qualified: statesQualified,
     primary_state: statesQualified[0] || null,
-    accepting_referrals: formData.get("accepting_referrals") === "on",
+    // accepting_referrals is deliberately NOT written here any more (Sept 23
+    // audit fix) - it's now a derived mirror of the confirmed Availability
+    // tri-state, written only by confirmAvailability() in
+    // dashboard/availability/actions.ts. Two independently-editable places
+    // for the same signal is exactly what let them disagree.
     pronoun: String(formData.get("pronoun") || "") || null,
     practice_website: String(formData.get("practice_website") || "") || null,
     contact_phone: String(formData.get("contact_phone") || "") || null,
@@ -113,18 +117,21 @@ export async function saveProfile(formData: FormData) {
   redirect("/dashboard/profile?saved=1");
 }
 
-// The four "Open to" flags shown on the profile view, keyed to their exact
+// The three "Open to" flags shown on the profile view, keyed to their exact
 // profiles column name so the toggle below can update any of them with one
-// shared function instead of four near-identical ones.
+// shared function instead of three near-identical ones. Incoming referrals
+// used to be a fourth one-click field here (accepting_referrals) - removed
+// Sept 23 as part of the audit fix, since that field is now derived from the
+// confirmed Availability tri-state, not independently toggleable. It's shown
+// read-only on the profile view with a link to Availability instead.
 const OPEN_TO_FIELDS = new Set([
-  "accepting_referrals",
   "open_to_give_supervision",
   "open_to_receive_supervision",
   "open_to_group_consultation",
 ]);
 
 // One-click "Open to" toggle from the read-only profile view - per Nick's
-// note, these four should flip with a single click right there, not require
+// note, these should flip with a single click right there, not require
 // the full Edit Profile flow just to change a yes/no. Takes the field name
 // and its current value (so it can flip it) via hidden form inputs.
 export async function toggleOpenToField(formData: FormData) {

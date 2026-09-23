@@ -189,6 +189,8 @@ export default async function ProfilePage({
             city: profile.primary_practice_city,
             state: profile.primary_state,
             acceptingReferrals: !!profile.accepting_referrals,
+            referralAvailability: profile.referral_availability ?? null,
+            availabilityConfirmedAt: profile.availability_confirmed_at ?? null,
             psypactParticipating: !!profile.psypact_participating,
             avatarUrl,
             practiceWebsite: profile.practice_website,
@@ -348,12 +350,12 @@ export default async function ProfilePage({
               Board certified
             </label>
           </div>
-          <div className="checkbox-row">
-            <input id="accepting_referrals" name="accepting_referrals" type="checkbox" defaultChecked={profile?.accepting_referrals ?? true} />
-            <label htmlFor="accepting_referrals" style={{ margin: 0, fontWeight: 400, color: "var(--text)" }}>
-              Currently accepting referrals
-            </label>
-          </div>
+          <p className="muted" style={{ marginTop: 0 }}>
+            Whether you're currently accepting referrals is set on the{" "}
+            <a href="/dashboard/availability">Availability</a> page, along with coverage and
+            consultation availability - kept in one place so it can't drift out of sync with
+            what colleagues see there.
+          </p>
           <div className="field">
             <label htmlFor="primary_practice_city">Primary practice city</label>
             <input id="primary_practice_city" name="primary_practice_city" type="text" defaultValue={profile?.primary_practice_city || ""} />

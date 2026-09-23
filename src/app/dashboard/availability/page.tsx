@@ -13,6 +13,16 @@ function daysAgo(iso: string | null): string {
 // interaction rather than a buried profile field. This is what Coverage's
 // operational-fit matching stage and the future availability-reminder
 // notification both read.
+//
+// Sept 23 launch-readiness audit finding: the radios used to fall back to
+// `|| "yes"` / `|| "ask_me"` whenever a field was unset, so a colleague never
+// confirmed for coverage still saw "Yes" pre-selected on their own screen -
+// a silent, false affirmative. "Never confirmed" (above the form) and "Yes"
+// pre-checked (inside the form) directly contradicted each other. Per the
+// audit's instruction to treat Unconfirmed as its own state and never an
+// implied Yes: when availability_confirmed_at is null, nothing is
+// pre-checked and the person has to make an active choice in every group
+// before they can submit (`required` on each radio group).
 export default async function AvailabilityPage(props: { searchParams: Promise<{ confirmed?: string; error?: string }> }) {
   const { confirmed, error } = await props.searchParams;
   const supabase = await createClient();
@@ -26,6 +36,8 @@ export default async function AvailabilityPage(props: { searchParams: Promise<{ 
     .eq("id", user!.id)
     .maybeSingle();
 
+  const neverConfirmed = !profile?.availability_confirmed_at;
+
   return (
     <div>
       <h1>Availability</h1>
@@ -38,7 +50,14 @@ export default async function AvailabilityPage(props: { searchParams: Promise<{ 
       {error && <div className="error-banner">{error}</div>}
 
       <div className="card">
-        <p className="muted">{daysAgo(profile?.availability_confirmed_at ?? null)}</p>
+        {neverConfirmed ? (
+          <p className="muted">
+            <strong>Never confirmed.</strong> Nothing below is pre-selected - pick your current
+            status in each row, then confirm.
+          </p>
+        ) : (
+          <p className="muted">{daysAgo(profile!.availability_confirmed_at)}</p>
+        )}
         <form action={confirmAvailability}>
           <div className="field">
             <label>Accepting referrals</label>
@@ -49,7 +68,8 @@ export default async function AvailabilityPage(props: { searchParams: Promise<{ 
                     type="radio"
                     name="referral_availability"
                     value={v}
-                    defaultChecked={(profile?.referral_availability || "yes") === v}
+                    required
+                    defaultChecked={!neverConfirmed && profile?.referral_availability === v}
                   />
                   {v === "yes" ? "Yes" : v === "limited" ? "Limited" : "No"}
                 </label>
@@ -70,7 +90,8 @@ export default async function AvailabilityPage(props: { searchParams: Promise<{ 
                     type="radio"
                     name="coverage_availability"
                     value={v}
-                    defaultChecked={(profile?.coverage_availability || "ask_me") === v}
+                    required
+                    defaultChecked={!neverConfirmed && profile?.coverage_availability === v}
                   />
                   {label}
                 </label>
@@ -87,7 +108,8 @@ export default async function AvailabilityPage(props: { searchParams: Promise<{ 
                     type="radio"
                     name="consultation_availability"
                     value={v}
-                    defaultChecked={(profile?.consultation_availability || "yes") === v}
+                    required
+                    defaultChecked={!neverConfirmed && profile?.consultation_availability === v}
                   />
                   {v === "yes" ? "Yes" : v === "limited" ? "Limited" : "No"}
                 </label>

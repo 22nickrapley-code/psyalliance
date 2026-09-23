@@ -38,6 +38,16 @@ export type ProfileViewData = {
   city: string | null;
   state: string | null;
   acceptingReferrals: boolean;
+  // The confirmed source of truth for "accepting referrals" (Sept 23 audit
+  // fix) - the tri-state from the Availability page plus the timestamp of
+  // when it was last confirmed. `acceptingReferrals` above is kept as a
+  // derived mirror of `referralAvailability === "yes"` for the few places
+  // that still just need a plain boolean (e.g. /refer's simpler physician
+  // portal); anything shown to a colleague deciding whether to send a
+  // referral should read `referralAvailability`/`availabilityConfirmedAt`
+  // instead, so an unconfirmed profile never displays a false "Yes."
+  referralAvailability?: "yes" | "limited" | "no" | null;
+  availabilityConfirmedAt?: string | null;
   psypactParticipating: boolean;
   avatarUrl: string | null;
   practiceWebsite: string | null;
@@ -137,6 +147,14 @@ export function ProfileView({
   );
   const hasLocation = !!(data.city || data.state);
 
+  // Sept 23 audit fix: only ever assert "Accepting referrals" to someone
+  // else when it's backed by a confirmed answer on the Availability page -
+  // never the legacy boolean's silent default. An unconfirmed profile shows
+  // no referral badge at all rather than a claim that might not be true.
+  const referralsConfirmed = !!data.availabilityConfirmedAt;
+  const acceptingReferralsConfirmedYes = referralsConfirmed && data.referralAvailability === "yes";
+  const acceptingReferralsLimited = referralsConfirmed && data.referralAvailability === "limited";
+
   return (
     <div className="profile-view-card">
       <div className={`profile-view-banner${bannerTier && bannerTier !== "none" ? ` profile-view-banner-${bannerTier}` : ""}`}>
@@ -174,7 +192,8 @@ export function ProfileView({
           </span>
           {tierBadge}
           {data.boardCertified && <span className="tag gold">Board certified</span>}
-          {data.acceptingReferrals && <span className="tag">Accepting referrals</span>}
+          {acceptingReferralsConfirmedYes && <span className="tag">Accepting referrals</span>}
+          {acceptingReferralsLimited && <span className="tag">Limited referrals</span>}
           {data.psypactParticipating && (
             <span className="tag" title="Holds PSYPACT Authority to Practice Interjurisdictional Telepsychology">
               PSYPACT
@@ -236,10 +255,22 @@ export function ProfileView({
               <dl>
                 <dt>Incoming referrals</dt>
                 <dd>
-                  {onToggleOpenTo ? (
-                    <ToggleBadgeButton field="accepting_referrals" value={data.acceptingReferrals} onToggleOpenTo={onToggleOpenTo} />
+                  {referralsConfirmed ? (
+                    <span className={`oswitch-text ${acceptingReferralsConfirmedYes ? "yes" : "no"}`}>
+                      {data.referralAvailability === "yes" ? "Yes" : data.referralAvailability === "limited" ? "Limited" : "No"}
+                    </span>
                   ) : (
-                    <ToggleBadge value={data.acceptingReferrals} />
+                    <span className="oswitch-text no" title="Never confirmed on the Availability page">
+                      Not confirmed
+                    </span>
+                  )}
+                  {onToggleOpenTo && (
+                    <>
+                      {" "}
+                      <a href="/dashboard/availability" style={{ fontSize: "0.8rem" }}>
+                        (change)
+                      </a>
+                    </>
                   )}
                 </dd>
                 <dt>Giving supervision</dt>

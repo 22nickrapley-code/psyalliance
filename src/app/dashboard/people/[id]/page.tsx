@@ -234,6 +234,8 @@ export default async function PersonProfilePage({
             city: first.primary_practice_city,
             state: first.primary_state,
             acceptingReferrals: first.accepting_referrals,
+            referralAvailability: first.referral_availability ?? null,
+            availabilityConfirmedAt: first.availability_confirmed_at ?? null,
             psypactParticipating: first.psypact_participating,
             avatarUrl,
             practiceWebsite: first.practice_website,
