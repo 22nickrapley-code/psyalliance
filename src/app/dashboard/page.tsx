@@ -569,7 +569,7 @@ export default async function DashboardHome(
                 </h3>
                 {quickSearchResults.length > 0 ? (
                   quickSearchResults.map((r) => (
-                    <div key={r.profileId} className="ov-feed-row" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <div key={r.profileId} className="ov-feed-row" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "0.4rem" }}>
                       <span>
                         <a href={`/dashboard/people/${r.profileId}`} className={`person-link${r.connectionTier !== "none" ? ` tier-${r.connectionTier}` : ""}`} style={{ fontSize: "0.84rem" }}>
                           {r.fullName}

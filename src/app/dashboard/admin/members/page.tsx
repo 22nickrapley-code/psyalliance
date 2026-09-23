@@ -118,7 +118,7 @@ export default async function AdminMembersPage(
                   </td>
                   <td>{p.is_admin ? "Yes" : "-"}</td>
                   <td>
-                    <div style={{ display: "flex", gap: "0.3rem", flexWrap: "wrap" }}>
+                    <div className="admin-actions-cell" style={{ display: "flex", gap: "0.3rem", flexWrap: "wrap" }}>
                       {p.verification_status !== "verified" && (
                         <form action={setMemberVerificationStatus}>
                           <input type="hidden" name="profile_id" value={p.id} />

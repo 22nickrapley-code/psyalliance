@@ -220,7 +220,7 @@ export default async function ProfilePage({
       </p>
 
       {hasSavedProfile && (
-        <div className="card" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div className="card" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "0.6rem" }}>
           <span className="muted">Editing your profile details.</span>
           <a href="/dashboard/profile" className="btn secondary">Cancel, view profile</a>
         </div>

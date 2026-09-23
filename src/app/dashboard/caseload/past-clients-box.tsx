@@ -89,7 +89,7 @@ export default function PastClientsBox({
                   <td>{c.org || <span className="muted">-</span>}</td>
                   <td>{c.state || "-"}</td>
                   <td>{c.rate ? `$${c.rate}` : "-"}</td>
-                  <td style={{ whiteSpace: "nowrap" }}>
+                  <td className="admin-actions-cell">
                     <form action={reactivateCase} style={{ display: "inline" }}>
                       <input type="hidden" name="id" value={c.id} />
                       <button type="submit" className="secondary" style={{ marginRight: "0.35rem" }}>Re-add to caseload</button>

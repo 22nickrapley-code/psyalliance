@@ -169,7 +169,7 @@ export default async function NetworkHealthPage() {
           </div>
         </div>
         <div className="field-row" style={{ marginTop: "1rem", alignItems: "flex-start" }}>
-          <div style={{ flex: 1 }}>
+          <div style={{ flex: 1, minWidth: "140px" }}>
             <p className="muted" style={{ fontSize: "0.85rem", marginBottom: "0.3rem" }}>By state (top 10)</p>
             {topStates.map(([state, count]) => (
               <div key={state} className="person-row">
@@ -178,7 +178,7 @@ export default async function NetworkHealthPage() {
               </div>
             ))}
           </div>
-          <div style={{ flex: 1 }}>
+          <div style={{ flex: 1, minWidth: "140px" }}>
             <p className="muted" style={{ fontSize: "0.85rem", marginBottom: "0.3rem" }}>By profession</p>
             {topProfessions.map(([q, count]) => (
               <div key={q} className="person-row">
@@ -196,13 +196,13 @@ export default async function NetworkHealthPage() {
           Self-reported tri-states from Availability, among verified members.
         </p>
         <div className="field-row" style={{ alignItems: "flex-start" }}>
-          <div style={{ flex: 1 }}>
+          <div style={{ flex: 1, minWidth: "140px" }}>
             <p className="muted" style={{ fontSize: "0.85rem", marginBottom: "0.3rem" }}>Referral availability</p>
             <div className="person-row"><span className="person-row-info">Yes</span><span>{referralYes}</span></div>
             <div className="person-row"><span className="person-row-info">Limited</span><span>{referralLimited}</span></div>
             <div className="person-row"><span className="person-row-info">No</span><span>{referralNo}</span></div>
           </div>
-          <div style={{ flex: 1 }}>
+          <div style={{ flex: 1, minWidth: "140px" }}>
             <p className="muted" style={{ fontSize: "0.85rem", marginBottom: "0.3rem" }}>Coverage availability</p>
             <div className="person-row"><span className="person-row-info">Yes</span><span>{coverageYes}</span></div>
             <div className="person-row"><span className="person-row-info">Ask me</span><span>{coverageAsk}</span></div>

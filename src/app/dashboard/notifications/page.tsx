@@ -104,7 +104,7 @@ export default async function NotificationsPage() {
       <p className="muted">Everything Coverage, Referrals, Consult, and the rest of PsyAlliance have flagged for you.</p>
 
       <div className="card">
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "0.6rem" }}>
           <h2 style={{ margin: 0 }}>
             {unreadCount > 0
               ? `${unreadCount} unread`

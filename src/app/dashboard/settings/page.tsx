@@ -74,10 +74,9 @@ export default async function SettingsPage(props: { searchParams: Promise<{ save
 
       <div className="card" id="account-security">
         <h2>Account &amp; security</h2>
-        <dl>
-          <dt>Signed in as</dt>
-          <dd>{user!.email}</dd>
-        </dl>
+        <p className="muted" style={{ margin: "0 0 0.75rem", fontSize: "0.9rem" }}>
+          Signed in as <strong style={{ color: "var(--text)" }}>{user!.email}</strong>
+        </p>
         <p className="muted" style={{ marginBottom: "0.75rem" }}>
           To change your password, request a reset link the same way you would if you'd forgotten
           it - you'll stay signed in on this device until you use it.

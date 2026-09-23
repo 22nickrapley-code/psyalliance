@@ -783,6 +783,22 @@ button.btn-tier-bench:hover, .btn.btn-tier-bench:hover {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
   }
+
+  /* Cards eat ~56px of horizontal space on a narrow phone at the desktop
+     padding value - every dashboard page lives inside at least one .card,
+     so this alone reclaims real room without needing a page-by-page fix. */
+  .card {
+    padding: 1.15rem 1rem;
+  }
+
+  /* A table action cell with several buttons (admin Members' Verify/Flag/
+     Reject/Make admin/Restrict/Suspend row) has `flex-wrap: wrap` inline
+     but nothing constraining its width once the surrounding <table> is
+     `display:block` and sized to max-content - wrap never actually
+     triggers. Capping the cell's width here is what makes the wrap real. */
+  .admin-actions-cell {
+    max-width: 220px;
+  }
 }
 
 /* ---------- Tables ---------- */
@@ -2252,6 +2268,7 @@ a.person-link.tier-recommended:hover {
 .ov-box-toggle {
   display: flex;
   gap: 0.3rem;
+  flex-wrap: wrap;
 }
 
 .ov-box-toggle a,
@@ -3720,6 +3737,7 @@ a.person-link.tier-recommended:hover {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
+  flex-wrap: wrap;
   gap: 1rem;
   padding: 0.75rem 0;
   border-bottom: 1px solid var(--border);

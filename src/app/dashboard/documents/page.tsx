@@ -331,7 +331,7 @@ export default async function DocumentsPage(
                       <span className="muted">No ratings yet</span>
                     )}
                   </td>
-                  <td style={{ whiteSpace: "nowrap" }}>
+                  <td className="admin-actions-cell">
                     {d.signedUrl && (
                       <a className="btn secondary" href={d.signedUrl} target="_blank" rel="noreferrer" style={{ marginRight: "0.5rem" }}>
                         Open
