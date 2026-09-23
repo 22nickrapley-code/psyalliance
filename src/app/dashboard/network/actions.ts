@@ -101,6 +101,12 @@ export async function sendConnectionRequest(formData: FormData) {
   const addresseeId = String(formData.get("addressee_id") || "");
   const tier = String(formData.get("tier") || "trusted_colleague");
 
+  // Sept 23 audit (task #123): Bench retired as a tier a member can newly
+  // choose - the UI no longer offers it, and this rejects a hand-crafted
+  // request too, rather than relying on the UI alone. Existing Bench
+  // connections are untouched; this only blocks creating new ones.
+  if (tier === "bench") networkError("Bench connections can no longer be created. Use Trusted Colleague instead.");
+
   // Bench is a one-sided, personal list - per Nick's spec, adding someone to
   // your Bench needs no confirmation from them (only Partner is mutual-
   // consent). So a bench add goes straight to "accepted" instead of

@@ -268,18 +268,15 @@ export default async function PersonProfilePage({
               ) : tier === "pending-out" ? (
                 <button type="button" className="secondary" disabled>Request sent</button>
               ) : tier === "pending-in" ? null : (
-                <>
-                  <form action={sendConnectionRequest} style={{ display: "inline" }}>
-                    <input type="hidden" name="addressee_id" value={first.id} />
-                    <input type="hidden" name="tier" value="trusted_colleague" />
-                    <button type="submit" className="btn-tier-trusted_colleague">Connect (Trusted Colleague)</button>
-                  </form>
-                  <form action={sendConnectionRequest} style={{ display: "inline" }}>
-                    <input type="hidden" name="addressee_id" value={first.id} />
-                    <input type="hidden" name="tier" value="bench" />
-                    <button type="submit" className="btn-tier-bench">Add to Bench</button>
-                  </form>
-                </>
+                // Sept 23 audit (task #123): Bench retired as a tier a
+                // member can newly choose - see the matching note on
+                // Network's Recommended row action. Existing Bench
+                // connections keep working exactly as before.
+                <form action={sendConnectionRequest} style={{ display: "inline" }}>
+                  <input type="hidden" name="addressee_id" value={first.id} />
+                  <input type="hidden" name="tier" value="trusted_colleague" />
+                  <button type="submit" className="btn-tier-trusted_colleague">Connect (Trusted Colleague)</button>
+                </form>
               )}
               {savedRow ? (
                 <form action={removeSavedClinicianAction} style={{ display: "inline" }}>

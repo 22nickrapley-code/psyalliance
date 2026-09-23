@@ -498,15 +498,17 @@ export default async function NetworkPage(
                 <input type="hidden" name="body" value={`Hi ${p.full_name}, I noticed we share a specialism and wanted to reach out.`} />
                 <button type="submit" className="secondary" style={{ padding: "0.25rem 0.5rem", fontSize: "0.72rem" }}>Message</button>
               </form>
+              {/* Sept 23 audit (task #123): Bench retired as a tier a member
+                  can newly choose - a "Bench" button here looked like an
+                  equally real option alongside Trusted Colleague, but
+                  nothing in the current product explains what it means or
+                  when to pick it over the other. Existing Bench connections
+                  (Network page, badges, matching weight) are left exactly
+                  as they are - this only stops new ones from being created. */}
               <form action={sendConnectionRequest} style={{ display: "inline" }}>
                 <input type="hidden" name="addressee_id" value={p.id} />
                 <input type="hidden" name="tier" value="trusted_colleague" />
                 <button type="submit" className="btn-tier-trusted_colleague" style={{ padding: "0.25rem 0.5rem", fontSize: "0.72rem" }}>Trusted Colleague</button>
-              </form>
-              <form action={sendConnectionRequest} style={{ display: "inline" }}>
-                <input type="hidden" name="addressee_id" value={p.id} />
-                <input type="hidden" name="tier" value="bench" />
-                <button type="submit" className="btn-tier-bench" style={{ padding: "0.25rem 0.5rem", fontSize: "0.72rem" }}>Bench</button>
               </form>
               {savedIds.has(p.id) ? (
                 <form action={removeSavedClinicianAction} style={{ display: "inline" }}>
