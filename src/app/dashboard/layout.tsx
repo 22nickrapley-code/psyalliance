@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import SidebarNav from "./sidebar-nav";
 import { buildNavGroups } from "./nav-groups";
 import { resolveAvatarUrl } from "@/lib/avatars";
+import { getUnreadNotificationCount } from "@/lib/notifications-v2";
 
 export default async function DashboardLayout({
   children,
@@ -50,6 +51,7 @@ export default async function DashboardLayout({
     { count: pendingProviderReferralCount },
     { data: myOpenRequestsForBadge },
     { count: pendingCoverageRequestCount },
+    notificationPipelineUnreadCount,
   ] = await Promise.all([
     supabase
       .from("conversation_participants")
@@ -77,6 +79,11 @@ export default async function DashboardLayout({
       .select("id", { count: "exact", head: true })
       .eq("requested_profile_id", user.id)
       .eq("status", "sent"),
+    // Notifications nav badge (Phase 16): the new notification_events/
+    // notification_deliveries pipeline, separate from the legacy
+    // system_notifications count above (that one stays feeding the
+    // Messages badge, unchanged - this is its own destination now).
+    getUnreadNotificationCount(supabase, user.id),
   ]);
   const unreadConversationCount = (myConversationRows || []).filter((r: any) => {
     if (!r.conversation) return false;
@@ -102,7 +109,7 @@ export default async function DashboardLayout({
     .map((p: string) => p[0]?.toUpperCase())
     .join("") || "U";
 
-  const groups = buildNavGroups(!!profile?.is_admin, unreadMessageCount, pendingCoverageRequestCount || 0);
+  const groups = buildNavGroups(!!profile?.is_admin, unreadMessageCount, pendingCoverageRequestCount || 0, notificationPipelineUnreadCount || 0);
 
   return (
     <div className="app-shell">

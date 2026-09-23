@@ -169,6 +169,12 @@ const icon = {
       <path d="m16.3 5 3.7 14.5-4.3 1.1L12 6.1z" />
     </svg>
   ),
+  notifications: (
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M6 10a6 6 0 0 1 12 0c0 3.5 1 5 1.8 6H4.2c.8-1 1.8-2.5 1.8-6Z" />
+      <path d="M10 19.5a2 2 0 0 0 4 0" />
+    </svg>
+  ),
 };
 
 // Rebuild Phase 5 (navigation). Master Brief's new primary destinations:
@@ -182,12 +188,18 @@ const icon = {
 // standing in for. "Overview" is relabelled "Home" here at the nav level
 // only - the page itself (dashboard/page.tsx) is still the old Overview
 // content until the Phase 6 Home rebuild.
-export function buildNavGroups(isAdmin: boolean, unreadMessageCount = 0, pendingRequestsCount = 0): NavGroup[] {
+export function buildNavGroups(
+  isAdmin: boolean,
+  unreadMessageCount = 0,
+  pendingRequestsCount = 0,
+  unreadNotificationCount = 0
+): NavGroup[] {
   const groups: NavGroup[] = [
     {
       label: "PsyAlliance",
       items: [
         { href: "/dashboard", label: "Home", icon: icon.overview },
+        { href: "/dashboard/notifications", label: "Notifications", icon: icon.notifications, badge: unreadNotificationCount },
         { href: "/dashboard/requests", label: "Requests", icon: icon.requests, badge: pendingRequestsCount },
         { href: "/dashboard/network", label: "Network", icon: icon.network },
         { href: "/dashboard/consult", label: "Consult", icon: icon.consult },

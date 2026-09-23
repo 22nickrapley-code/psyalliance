@@ -190,3 +190,13 @@ export async function markNotificationRead(
     .eq("recipient_profile_id", profileId);
   return { error: error?.message ?? null };
 }
+
+export async function markAllNotificationsRead(supabase: Awaited<ReturnType<typeof createClient>>, profileId: string) {
+  const { error } = await supabase
+    .from("notification_deliveries")
+    .update({ read_at: new Date().toISOString() })
+    .eq("recipient_profile_id", profileId)
+    .eq("channel", "in_app")
+    .is("read_at", null);
+  return { error: error?.message ?? null };
+}
