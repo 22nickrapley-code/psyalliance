@@ -14,6 +14,7 @@ export type ReferralAudience = "trusted" | "selected" | "suggested" | "wider_net
 
 export type ReferralReasonCode =
   | "trusted_colleague"
+  | "bench_colleague"
   | "saved_clinician"
   | "worked_with_before"
   | "specialty_match"
@@ -73,7 +74,7 @@ export async function suggestCliniciansForReferral(
   const candidateIds = (candidates || []).map((c: any) => c.id).filter((id: string) => !excludedIds.has(id));
   if (candidateIds.length === 0) return [];
 
-  const [{ data: specialisms }, { data: trustedRows }, { data: savedRows }, { data: workedWithRows }] = await Promise.all([
+  const [{ data: specialisms }, { data: relationshipRows }, { data: savedRows }, { data: workedWithRows }] = await Promise.all([
     request.specialism_lookup_id
       ? supabase
           .from("profile_lookup_values")
@@ -81,10 +82,15 @@ export async function suggestCliniciansForReferral(
           .in("profile_id", candidateIds)
           .eq("lookup_value_id", request.specialism_lookup_id)
       : Promise.resolve({ data: [] as any[] }),
+    // Sept 23 audit finding (task #123): same restoration as
+    // suggestCliniciansForCase in src/lib/coverage.ts - the old grid engine
+    // weighted Bench between Trusted Colleague and no relationship at all;
+    // this staged engine originally checked trusted_colleague only, which
+    // silently dropped that signal for anyone still on someone's Bench.
     supabase
       .from("connections")
-      .select("requester_id, addressee_id")
-      .eq("tier", "trusted_colleague")
+      .select("requester_id, addressee_id, tier")
+      .in("tier", ["trusted_colleague", "bench"])
       .eq("status", "accepted")
       .or(`requester_id.eq.${request.requesting_profile_id},addressee_id.eq.${request.requesting_profile_id}`),
     supabase.from("saved_clinicians").select("clinician_id").eq("profile_id", request.requesting_profile_id),
@@ -93,7 +99,14 @@ export async function suggestCliniciansForReferral(
 
   const specialtyMatchIds = new Set((specialisms || []).map((s: any) => s.profile_id));
   const trustedIds = new Set(
-    (trustedRows || []).map((c: any) => (c.requester_id === request.requesting_profile_id ? c.addressee_id : c.requester_id))
+    (relationshipRows || [])
+      .filter((c: any) => c.tier === "trusted_colleague")
+      .map((c: any) => (c.requester_id === request.requesting_profile_id ? c.addressee_id : c.requester_id))
+  );
+  const benchIds = new Set(
+    (relationshipRows || [])
+      .filter((c: any) => c.tier === "bench")
+      .map((c: any) => (c.requester_id === request.requesting_profile_id ? c.addressee_id : c.requester_id))
   );
   const savedIds = new Set((savedRows || []).map((s: any) => s.clinician_id));
   const workedWithCount = new Map((workedWithRows || []).map((w: any) => [w.colleague_id, w.interaction_count as number]));
@@ -108,6 +121,7 @@ export async function suggestCliniciansForReferral(
   const results: SuggestedReferralClinician[] = eligible.map((c: any) => {
     const reasons: SuggestedReferralClinician["reasons"] = [];
     if (trustedIds.has(c.id)) reasons.push({ code: "trusted_colleague", label: "Trusted colleague" });
+    else if (benchIds.has(c.id)) reasons.push({ code: "bench_colleague", label: "Bench colleague" });
     if (workedWithCount.has(c.id)) reasons.push({ code: "worked_with_before", label: "Worked together before" });
     if (savedIds.has(c.id)) reasons.push({ code: "saved_clinician", label: "Saved clinician" });
     if (specialtyMatchIds.has(c.id)) reasons.push({ code: "specialty_match", label: "Relevant specialty" });
@@ -123,9 +137,13 @@ export async function suggestCliniciansForReferral(
     };
   });
 
+  // Trusted outranks Bench outranks no relationship, same order the old
+  // grid engine used (see the relationshipRows comment above).
   results.sort((a, b) => {
     const rank = (r: SuggestedReferralClinician) =>
-      (trustedIds.has(r.profileId) ? 0 : 1) * 100 + (workedWithCount.has(r.profileId) ? 0 : 1) * 10 + (savedIds.has(r.profileId) ? 0 : 1);
+      (trustedIds.has(r.profileId) ? 0 : benchIds.has(r.profileId) ? 1 : 2) * 100 +
+      (workedWithCount.has(r.profileId) ? 0 : 1) * 10 +
+      (savedIds.has(r.profileId) ? 0 : 1);
     return rank(a) - rank(b);
   });
 
