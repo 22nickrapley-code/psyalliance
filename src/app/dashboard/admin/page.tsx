@@ -57,9 +57,11 @@ export default async function AdminOverviewPage() {
         Town Hall channel are under{" "}
         <a href="/dashboard/admin/channel-requests">Channel requests</a>, the full member
         list (search, verify, flag, promote to admin) is under{" "}
-        <a href="/dashboard/admin/members">All members</a>, and physician/GP referral-portal
+        <a href="/dashboard/admin/members">All members</a>, physician/GP referral-portal
         registrations are under{" "}
-        <a href="/dashboard/admin/referring-providers">Referring providers</a>.
+        <a href="/dashboard/admin/referring-providers">Referring providers</a>, and liquidity
+        metrics (response rates, supply gaps, Northeast/Texas density) are under{" "}
+        <a href="/dashboard/admin/network-health">Network health</a>.
       </p>
 
       <div className="card">

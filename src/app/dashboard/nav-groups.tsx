@@ -175,6 +175,14 @@ const icon = {
       <path d="M10 19.5a2 2 0 0 0 4 0" />
     </svg>
   ),
+  networkHealth: (
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 20V10" />
+      <path d="M10 20V4" />
+      <path d="M16 20v-7" />
+      <path d="M4 20h16" />
+    </svg>
+  ),
 };
 
 // Rebuild Phase 5 (navigation). Master Brief's new primary destinations:
@@ -262,6 +270,11 @@ export function buildNavGroups(
           href: "/dashboard/admin/library",
           label: "Library governance",
           icon: icon.library,
+        },
+        {
+          href: "/dashboard/admin/network-health",
+          label: "Network health",
+          icon: icon.networkHealth,
         },
       ],
     });
