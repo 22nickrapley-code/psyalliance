@@ -155,7 +155,7 @@ export default async function DocumentsPage(
 
   return (
     <div>
-      <h1>Documents</h1>
+      <h1>Library</h1>
       <p className="muted">
         Your Personal Library is visible only to you. The Shared Library (best-practice guides,
         session frameworks, regulatory references) is visible to any signed-in colleague, and can

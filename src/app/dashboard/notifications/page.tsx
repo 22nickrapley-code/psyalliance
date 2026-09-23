@@ -45,17 +45,58 @@ export default async function NotificationsPage() {
   } = await supabase.auth.getUser();
   const myself = user!.id;
 
-  const { data: deliveries } = await supabase
-    .from("notification_deliveries")
-    .select(
-      "id, read_at, created_at, notification_events(summary, deep_link, event_type, created_at, actor:actor_profile_id(full_name, credential_prefix))"
-    )
-    .eq("recipient_profile_id", myself)
-    .eq("channel", "in_app")
-    .order("created_at", { ascending: false })
-    .limit(50);
+  const [
+    { data: deliveries },
+    { count: pendingConnectionCount },
+    { data: myConversationRows },
+    { data: pendingCoverageRequests },
+    { data: myConsultationsWithReplies },
+  ] = await Promise.all([
+    supabase
+      .from("notification_deliveries")
+      .select(
+        "id, read_at, created_at, notification_events(summary, deep_link, event_type, created_at, actor:actor_profile_id(full_name, credential_prefix))"
+      )
+      .eq("recipient_profile_id", myself)
+      .eq("channel", "in_app")
+      .order("created_at", { ascending: false })
+      .limit(50),
+    // Sept 23 audit finding: this page said "All caught up" while unread
+    // messages and pending connection requests sat elsewhere in the app -
+    // those live in entirely different tables (conversation_participants,
+    // connections) from this page's notification_deliveries, so they never
+    // showed up here. Same signals Home already computes, reused so "All
+    // caught up" only appears when it's actually true across the app, not
+    // just true of this one pipeline.
+    supabase.from("connections").select("id", { count: "exact", head: true }).eq("addressee_id", myself).eq("status", "pending"),
+    supabase
+      .from("conversation_participants")
+      .select("last_read_at, conversation:conversation_id(last_message_at)")
+      .eq("profile_id", myself),
+    supabase
+      .from("coverage_requests")
+      .select("id")
+      .eq("requested_profile_id", myself)
+      .eq("status", "sent"),
+    supabase
+      .from("consultations")
+      .select("id")
+      .eq("author_profile_id", myself)
+      .eq("status", "responses_received"),
+  ]);
 
   const unreadCount = (deliveries || []).filter((d: any) => !d.read_at).length;
+
+  const unreadMessageCount = (myConversationRows || []).filter((r: any) => {
+    if (!r.conversation) return false;
+    return new Date(r.conversation.last_message_at) > new Date(r.last_read_at);
+  }).length;
+  const otherPendingItems = [
+    unreadMessageCount > 0 && { count: unreadMessageCount, label: `unread conversation${unreadMessageCount === 1 ? "" : "s"}`, href: "/dashboard/messages" },
+    (pendingConnectionCount ?? 0) > 0 && { count: pendingConnectionCount ?? 0, label: `pending connection${pendingConnectionCount === 1 ? "" : "s"}`, href: "/dashboard/network" },
+    (pendingCoverageRequests || []).length > 0 && { count: (pendingCoverageRequests || []).length, label: `coverage request${(pendingCoverageRequests || []).length === 1 ? "" : "s"} waiting on you`, href: "/dashboard/requests" },
+    (myConsultationsWithReplies || []).length > 0 && { count: (myConsultationsWithReplies || []).length, label: `consultation${(myConsultationsWithReplies || []).length === 1 ? "" : "s"} with new replies`, href: "/dashboard/consult" },
+  ].filter(Boolean) as { count: number; label: string; href: string }[];
 
   return (
     <div>
@@ -65,7 +106,11 @@ export default async function NotificationsPage() {
       <div className="card">
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <h2 style={{ margin: 0 }}>
-            {unreadCount > 0 ? `${unreadCount} unread` : "All caught up"}
+            {unreadCount > 0
+              ? `${unreadCount} unread`
+              : otherPendingItems.length > 0
+                ? "No new notifications"
+                : "All caught up"}
           </h2>
           {unreadCount > 0 && (
             <form action={markAllNotificationsReadAction}>
@@ -73,6 +118,19 @@ export default async function NotificationsPage() {
             </form>
           )}
         </div>
+
+        {otherPendingItems.length > 0 && (
+          <p className="muted" style={{ marginTop: "0.4rem" }}>
+            Not tracked as notifications, but still waiting on you:{" "}
+            {otherPendingItems.map((item, i) => (
+              <span key={item.href}>
+                {i > 0 && ", "}
+                <a href={item.href}>{item.count} {item.label}</a>
+              </span>
+            ))}
+            .
+          </p>
+        )}
 
         <div style={{ marginTop: "0.75rem" }}>
           {(deliveries || []).map((d: any) => {
