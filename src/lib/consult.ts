@@ -49,6 +49,8 @@ export async function createConsultation(
     deidentificationConfirmed?: boolean;
     decisionNeededBy?: string;
     groupId?: number;
+    kind?: "question" | "supervision_request" | "supervision_offer";
+    status?: "draft" | "open";
   }
 ) {
   const hasCaseDetail = opts.caseDetail && Object.keys(opts.caseDetail).length > 0;
@@ -81,7 +83,8 @@ export async function createConsultation(
             constraints: opts.caseDetail?.constraints,
           }
         : {},
-      status: "open",
+      status: opts.status ?? "open",
+      kind: opts.kind ?? "question",
       decision_needed_by: opts.decisionNeededBy ?? null,
       group_id: opts.groupId ?? null,
     })
@@ -135,7 +138,7 @@ export async function respondToConsultation(
           actorProfileId: responderProfileId,
           actorType: "member_web",
           summary: responseType === "clarifying_question" ? "asked a clarifying question on your consultation" : "replied to your consultation",
-          deepLink: "/dashboard/consult",
+          deepLink: `/dashboard/consult/${consultationId}`,
           metadata: { consultationId, responseType },
         })
       : Promise.resolve(),

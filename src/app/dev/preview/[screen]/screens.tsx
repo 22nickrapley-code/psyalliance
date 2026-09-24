@@ -4,6 +4,9 @@ import type { NeedOptions } from "@/lib/need-options";
 import { US_STATES } from "@/lib/us-states";
 import { HomeView } from "../../../dashboard/home-view";
 import { ReferShortlistView, ReferReviewView, ReferIndexView, ReferTrackView } from "../../../dashboard/refer/views";
+import { NetworkView } from "../../../dashboard/network/views";
+import { ConsultIndexView, ConsultComposeView, ConsultDetailView } from "../../../dashboard/consult/views";
+import { ConversationList, MessagesShell } from "../../../dashboard/messages/views";
 import { CoverIndexView, CoverCandidatesView, CoverTrackView, CoverPlanStepView, CoverInviteView } from "../../../dashboard/cover/views";
 
 // Illustrative fixtures for the dev-only preview. Not real members.
@@ -97,6 +100,66 @@ export const previewScreens: Record<string, () => ReactNode> = {
         myResponse: null, chosen: null, rated: false,
       }}
     />
+  ),
+  network: () => (
+    <NetworkView
+      tab="directory"
+      people={[
+        { id: "a", name: "Dr. Maya Chen", qualification: "PsyD", city: "Brooklyn", state: "NY", licenceStates: ["NY"], topFocus: ["Trauma / PTSD", "Anxiety"], availability: "Accepting referrals", fresh: true, confirmedDaysAgo: 2, psypact: true, avatarUrl: null, relationship: "trusted", saved: false },
+        { id: "b", name: "Dr. Eli Ramirez", qualification: "MD", city: "Manhattan", state: "NY", licenceStates: ["NY", "NJ"], topFocus: ["Depression"], availability: "Selected referrals", fresh: false, confirmedDaysAgo: 41, psypact: false, avatarUrl: null, relationship: "none", saved: true },
+      ]}
+      suggested={[]}
+      suggestedAvatars={{}}
+      invitations={[{ id: 1, name: "Dr. Imani Brooks", profileId: "c" }]}
+      sentCount={1}
+      filters={{ q: "", focus: "", state: "", available: false, profession: "" }}
+      focusOptions={["Anxiety", "Depression", "Trauma / PTSD"]}
+      states={US_STATES}
+      counts={{ directory: 2, trusted: 1, saved: 1, worked: 0, suggested: 0 }}
+    />
+  ),
+  consult: () => (
+    <ConsultIndexView
+      tab="discussions"
+      posts={[
+        { id: 1, kind: "question", question: "How are you structuring a transition to a new covering clinician?", context: "A planned leave is approaching. I would welcome approaches to transition communication and clear role boundaries.", tags: ["Private practice"], audienceLabel: "Trusted colleagues", authorName: "Dr. Maya Chen", createdAt: new Date().toISOString(), replies: 3, status: "open", mine: false, why: "From your trusted circle" },
+        { id: 2, kind: "question", question: "What helps your peer consultation group stay clinically focused?", context: null, tags: ["Supervision"], audienceLabel: "Verified network", authorName: "Dr. Imani Brooks", createdAt: new Date(Date.now() - 86400000).toISOString(), replies: 6, status: "resolved", mine: false },
+      ]}
+      tags={["Anxiety", "Trauma / PTSD", "Private practice", "Supervision"]}
+      followed={["Anxiety"]}
+      activeTag=""
+      groups={[]}
+      supervisors={[]}
+      supervisorAvatars={{}}
+    />
+  ),
+  "consult-new": () => <ConsultComposeView kind="question" areas={["Anxiety", "Depression"]} colleagues={[{ id: "a", name: "Dr. Maya Chen", relation: "Trusted" }]} groups={[{ id: 1, name: "Thursday Circle" }]} />,
+  "consult-review": () => (
+    <ConsultDetailView
+      c={{ id: 3, kind: "question", question: "Approaches to a stalled treatment with adolescent anxiety?", context: "Twelve sessions in, avoidance persists despite exposure work. Looking for ideas on engagement.", typeLabel: "Treatment impasse", tags: ["Anxiety"], status: "draft", mine: true, authorName: "You", createdAt: new Date().toISOString(), audienceLabel: "Selected colleagues", recipients: ["Dr. Maya Chen", "Dr. Eli Ramirez"], responses: [] }}
+    />
+  ),
+  messages: () => (
+    <MessagesShell
+      list={
+        <ConversationList
+          activeId={1}
+          items={[
+            { id: 1, title: "Dr. Maya Chen", context: "Cover \u00b7 October leave", preview: "I can review your coverage dates this week.", when: "9:14 AM", unread: true, avatarName: "Maya Chen", avatarUrl: null },
+            { id: 2, title: "Dr. Eli Ramirez", context: "Referral \u00b7 Anxiety \u00b7 New York", preview: "Thanks, I have two openings.", when: "Sep 21", unread: false, avatarName: "Eli Ramirez", avatarUrl: null },
+          ]}
+        />
+      }
+    >
+      <section className="card message-area">
+        <div className="context-head"><div><h3 style={{ margin: 0 }}>Dr. Maya Chen</h3><span className="micro-note">Cover \u00b7 October leave</span></div></div>
+        <div className="message-scroll">
+          <div className="bubble">I can review your coverage dates this week.<small>Sep 23, 9:14 AM</small></div>
+          <div className="bubble me">Thank you. I will send the non-identifying plan details for your review.<small>Sep 23, 9:20 AM</small></div>
+        </div>
+        <div className="message-compose" style={{ marginTop: 12 }}><textarea placeholder="Write a professional message." /><button className="btn">Send</button></div>
+      </section>
+    </MessagesShell>
   ),
   "cover-index": () => (
     <CoverIndexView

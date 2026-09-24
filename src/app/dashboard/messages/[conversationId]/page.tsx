@@ -1,202 +1,86 @@
-import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
 import { sendMessage } from "../actions";
-import { buildTierMap, type Tier } from "@/lib/tiers";
-import { resolveAvatarUrls } from "@/lib/avatars";
-import Avatar from "../../avatar";
 import { fileReportAction } from "../../moderation-actions";
+import { loadConversations, splitContext } from "../data";
+import { ConversationList, MessagesShell } from "../views";
+import { Status } from "../../_components/ui";
 
-function initialsOf(name: string) {
-  return (
-    name
-      .split(/\s+/)
-      .filter(Boolean)
-      .slice(0, 2)
-      .map((p) => p[0]?.toUpperCase())
-      .join("") || "?"
-  );
-}
+const nameOf = (p: any) => (p ? `${p.credential_prefix ? p.credential_prefix + " " : ""}${p.full_name}` : "Colleague");
 
-// Renders a message body, turning any "@Full Name" substring that matches a
-// mentioned participant into a highlighted span - simple text-based
-// rendering rather than a rich editor, matching how the message was parsed
-// for mentions on the way in.
-function renderBody(body: string, mentionedNames: string[]) {
-  if (mentionedNames.length === 0) return body;
-  const pattern = new RegExp(`(@(?:${mentionedNames.map((n) => n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")}))`, "gi");
-  const parts = body.split(pattern);
-  return parts.map((part, i) =>
-    mentionedNames.some((n) => part.toLowerCase() === `@${n.toLowerCase()}`) ? (
-      <span key={i} className="tag gold">{part}</span>
-    ) : (
-      <span key={i}>{part}</span>
-    )
-  );
-}
-
-export default async function ConversationPage(
-  props: {
-    params: Promise<{ conversationId: string }>;
-  }
-) {
-  const params = await props.params;
-  const conversationId = Number(params.conversationId);
+export default async function ConversationPage(props: { params: Promise<{ conversationId: string }>; searchParams: Promise<{ error?: string }> }) {
+  const { conversationId } = await props.params;
+  const { error } = await props.searchParams;
+  const id = Number(conversationId);
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   const myself = user!.id;
 
-  const { data: conversation } = await supabase
-    .from("conversations")
-    .select("id, title")
-    .eq("id", conversationId)
-    .maybeSingle();
+  const { data: conversation } = await supabase.from("conversations").select("id, title").eq("id", id).maybeSingle();
+  if (!conversation) redirect("/dashboard/messages");
 
-  if (!conversation) {
-    redirect("/dashboard/messages");
-  }
+  // Mark read before loading the list so this thread isn't shown as unread.
+  await supabase.from("conversation_participants").update({ last_read_at: new Date().toISOString() }).eq("conversation_id", id).eq("profile_id", myself);
 
-  const [{ data: participants }, { data: messages }, { data: connections }] = await Promise.all([
-    supabase
-      .from("conversation_participants")
-      .select("profile_id, profile:profile_id(id, full_name, credential_prefix, avatar_path)")
-      .eq("conversation_id", conversationId),
+  const [items, { data: participants }, { data: messages }] = await Promise.all([
+    loadConversations(supabase, myself),
+    supabase.from("conversation_participants").select("profile_id, profile:profile_id(id, full_name, credential_prefix)").eq("conversation_id", id),
     supabase
       .from("conversation_messages")
-      .select("id, author_id, body, mentioned_profile_ids, created_at, edited_at, deleted_at, author:author_id(full_name, credential_prefix, avatar_path)")
-      .eq("conversation_id", conversationId)
+      .select("id, author_id, body, created_at, deleted_at, author:author_id(full_name, credential_prefix)")
+      .eq("conversation_id", id)
       .order("created_at", { ascending: true }),
-    supabase
-      .from("connections")
-      .select("requester_id, addressee_id, tier, status")
-      .or(`requester_id.eq.${myself},addressee_id.eq.${myself}`)
-      .eq("status", "accepted"),
   ]);
-
-  const nameById = new Map<string, string>();
-  for (const p of participants || []) {
-    nameById.set(p.profile_id, (p.profile as any)?.full_name || "Colleague");
-  }
-
-  const others = (participants || []).filter((p) => p.profile_id !== myself);
-  const title = conversation.title || others.map((o) => (o.profile as any)?.full_name).join(", ") || "Conversation";
-
-  // Colored by relationship, same as everywhere else in the app (Overview,
-  // Network, Town Hall) - Partner/Bench/Recommended each get their own pill
-  // color and avatar ring, so a colleague's tier is recognizable at a
-  // glance inside the thread too, not just in list views.
-  const tierMap = buildTierMap(connections, myself);
-  const tierOf = (id: string): Tier => tierMap.get(id) || "none";
-  const avatarUrlByPath = await resolveAvatarUrls(supabase, [
-    ...others.map((o) => (o.profile as any)?.avatar_path),
-    ...(messages || []).map((m: any) => m.author?.avatar_path),
-  ]);
-  const avatarUrlOf = (path: string | null | undefined) => avatarUrlByPath.get(path || "") || null;
-
-  // Mark read on open. Previously fire-and-forget (a bare .then(() => {}))
-  // which let the request race the page response on Cloudflare Workers'
-  // request-scoped runtime and could get cancelled before it completed -
-  // awaited here so it reliably lands before the page renders.
-  await supabase
-    .from("conversation_participants")
-    .update({ last_read_at: new Date().toISOString() })
-    .eq("conversation_id", conversationId)
-    .eq("profile_id", myself);
+  const others = (participants || []).filter((p: any) => p.profile_id !== myself);
+  const { context, detail } = splitContext(conversation.title);
+  const heading = others.map((p: any) => nameOf(p.profile)).join(", ") || detail || "Conversation";
+  const group = others.length > 1;
 
   return (
-    <div>
-      <p><a href="/dashboard/messages">&larr; Back to messages</a></p>
-      <h1>{title}</h1>
-      <p className="muted">
-        With:{" "}
-        {others.length > 0
-          ? others.map((o, i) => {
-              const tier = tierOf(o.profile_id);
-              return (
-                <span key={o.profile_id}>
-                  <a href={`/dashboard/people/${o.profile_id}`} className={tier === "none" ? "person-link" : `person-link tier-${tier}`}>
-                    {(o.profile as any)?.full_name}
-                  </a>
-                  {i < others.length - 1 ? ", " : ""}
-                </span>
-              );
-            })
-          : "-"}
-      </p>
-
-      <div className="card">
-        <div className="chat-thread">
-          {(messages || []).map((m: any) => {
-            const mentionedNames = (m.mentioned_profile_ids || [])
-              .map((id: string) => nameById.get(id))
-              .filter(Boolean) as string[];
-            const mine = m.author_id === myself;
-            const authorName = m.author?.full_name || "Colleague";
-            const authorTier = mine ? "none" : tierOf(m.author_id);
-            return (
-              <div key={m.id} className={`chat-bubble-row${mine ? " mine" : ""}`}>
-                {mine ? (
-                  <div className="msg-avatar" aria-hidden="true">{initialsOf(authorName)}</div>
-                ) : (
-                  <Avatar url={avatarUrlOf(m.author?.avatar_path)} name={authorName} size={38} ring={authorTier} />
-                )}
-                <div style={{ minWidth: 0 }}>
-                  {!mine && (
-                    <div className="chat-author">
-                      <a href={`/dashboard/people/${m.author_id}`} className={authorTier === "none" ? "person-link" : `person-link tier-${authorTier}`}>
-                        {m.author?.credential_prefix ? `${m.author.credential_prefix} ` : ""}
-                        {authorName}
-                      </a>
-                    </div>
-                  )}
-                  <div className="chat-bubble">
-                    {m.deleted_at ? <em className="muted">Message deleted</em> : renderBody(m.body, mentionedNames)}
-                  </div>
-                  <div className="chat-meta">
-                    {mine && "You · "}
-                    {new Date(m.created_at).toLocaleString()}
-                  </div>
-                  {!mine && !m.deleted_at && (
-                    <details>
-                      <summary className="muted" style={{ fontSize: "0.72rem", cursor: "pointer", display: "inline-block" }}>Report</summary>
-                      <form action={fileReportAction} style={{ marginTop: "0.3rem", maxWidth: 320 }}>
-                        <input type="hidden" name="target_type" value="message" />
-                        <input type="hidden" name="target_id" value={m.id} />
-                        <input type="hidden" name="return_to" value={`/dashboard/messages/${conversationId}`} />
-                        <div className="field">
-                          <textarea name="reason" rows={2} placeholder="What's wrong with this message?" required />
-                        </div>
-                        <button type="submit" className="danger" style={{ padding: "0.1rem 0.4rem", fontSize: "0.72rem" }}>Submit report</button>
-                      </form>
-                    </details>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-          {(messages || []).length === 0 && <p className="muted">No messages yet - say hello.</p>}
-        </div>
-
-        <form action={sendMessage} className="chat-composer">
-          <input type="hidden" name="conversation_id" value={conversationId} />
-          <div className="field" style={{ flex: 1, marginBottom: 0 }}>
-            <textarea
-              id="body"
-              name="body"
-              rows={2}
-              required
-              placeholder={others.length > 0 ? `Message ${(others[0]?.profile as any)?.full_name}…` : "Write a message…"}
-            />
-            {others.length > 0 && (
-              <p className="muted" style={{ margin: "0.3rem 0 0", fontSize: "0.72rem" }}>
-                Type @{(others[0]?.profile as any)?.full_name} to mention someone
-              </p>
-            )}
+    <MessagesShell list={<ConversationList items={items} activeId={id} />}>
+      <section className="card message-area">
+        <div className="context-head">
+          <div>
+            <h3 style={{ margin: 0 }}>{heading}</h3>
+            <span className="micro-note">{context ? `${context} · ${detail}` : group && detail ? detail : "Direct message"}</span>
           </div>
-          <button type="submit">Send</button>
+          {others.length === 1 && <a className="btn secondary small-btn" href={`/dashboard/people/${others[0].profile_id}`}>View profile</a>}
+        </div>
+        {error && <div className="banner error">{error}</div>}
+        <div className="message-scroll">
+          {(messages || []).length === 0 && <p className="small">No messages yet. Say hello.</p>}
+          {(messages || []).map((m: any) => (
+            <div key={m.id} className={`bubble${m.author_id === myself ? " me" : ""}`}>
+              {group && m.author_id !== myself && <span className="author">{nameOf(m.author)}</span>}
+              {m.deleted_at ? <em>Message removed</em> : <span style={{ whiteSpace: "pre-wrap" }}>{m.body}</span>}
+              <small>
+                {new Date(m.created_at).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
+                {m.author_id !== myself && !m.deleted_at && (
+                  <details style={{ display: "inline", marginLeft: 8 }}>
+                    <summary style={{ display: "inline", cursor: "pointer" }}>Report</summary>
+                    <form action={fileReportAction} style={{ marginTop: 6 }}>
+                      <input type="hidden" name="target_type" value="message" />
+                      <input type="hidden" name="target_id" value={m.id} />
+                      <input type="hidden" name="return_to" value={`/dashboard/messages/${id}`} />
+                      <textarea name="reason" required rows={2} placeholder="What's wrong?" style={{ width: "100%" }} />
+                      <button type="submit" className="btn secondary small-btn">Send to admins</button>
+                    </form>
+                  </details>
+                )}
+              </small>
+            </div>
+          ))}
+        </div>
+        <form action={sendMessage} className="message-compose" style={{ marginTop: 12 }}>
+          <input type="hidden" name="conversation_id" value={id} />
+          <textarea name="body" required placeholder="Write a professional message." aria-label="Message" />
+          <button type="submit" className="btn">Send</button>
         </form>
-      </div>
-    </div>
+        <p className="micro-note" style={{ marginTop: 6 }}>No patient-identifying details. Clinical handoffs happen through your own secure channel.</p>
+      </section>
+      {others.length === 0 && <Status tone="neutral">Only you are in this conversation</Status>}
+    </MessagesShell>
   );
 }

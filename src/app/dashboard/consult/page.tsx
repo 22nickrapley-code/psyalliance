@@ -1,223 +1,126 @@
 import { createClient } from "@/lib/supabase/server";
-import { createConsultationAction, respondToConsultationAction, resolveConsultationAction, setResponseUsefulAction } from "./actions";
-import { startConversation } from "../messages/actions";
-import { fileReportAction } from "../moderation-actions";
+import { findMatches } from "@/lib/match-engine";
+import { resolveAvatarUrls } from "@/lib/avatars";
+import { ConsultIndexView, audienceLabel, type ConsultTab, type PostItem } from "./views";
 
-const CONSULTATION_TYPE_LABELS: Record<string, string> = {
-  diagnostic_clarification: "Diagnostic clarification",
-  treatment_impasse: "Treatment impasse",
-  risk: "Risk",
-  ethics_legal: "Ethics / legal",
-  boundaries_countertransference: "Boundaries / countertransference",
-  medication_split_treatment: "Medication / split treatment",
-  termination_transfer: "Termination / transfer",
-  referral_recommendation: "Referral recommendation",
-  practice_question: "Practice / professional question",
-  other: "Other",
-};
+const nameOf = (p: any) => (p ? `${p.credential_prefix ? p.credential_prefix + " " : ""}${p.full_name}` : "A colleague");
 
-// New CONSULT primary destination (Master Brief's #56-61 composer + Phase
-// 5 navigation). Product-level replacement for Town Hall specialist
-// channels - Town Hall itself stays reachable from the Legacy nav group
-// for now, untouched, until Phase 18. This first pass covers the
-// question-first composer, type, audience (trusted/wider_network - full
-// "selected clinicians" picker is a later refinement), tags, and
-// reply/resolve. The optional structured case-detail format (PsyA2 #60)
-// isn't exposed in this composer yet - every consultation created here has
-// an empty case_detail, so the database's de-identification-confirmation
-// gate never blocks anything in this first pass.
-export default async function ConsultPage(props: { searchParams: Promise<{ error?: string }> }) {
-  const { error } = await props.searchParams;
+export default async function ConsultPage(props: { searchParams: Promise<{ tab?: string; tag?: string; error?: string }> }) {
+  const sp = await props.searchParams;
+  const tab = (["discussions", "mine", "groups", "supervision"].includes(sp.tab || "") ? sp.tab : "discussions") as ConsultTab;
+  const activeTag = sp.tag || "";
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   const myself = user!.id;
 
-  const [{ data: consultations }, { data: myConsultations }] = await Promise.all([
+  const [{ data: follows }, { data: myFocus }, { data: trustedRows }, { data: profile }] = await Promise.all([
+    supabase.from("consult_tag_follows").select("tag").eq("profile_id", myself),
     supabase
-      .from("consultations")
-      .select("*, author:author_profile_id(full_name, credential_prefix), consultation_responses(*, profiles:responder_profile_id(full_name))")
-      .in("status", ["open", "responses_received"])
-      .order("created_at", { ascending: false })
-      .limit(30),
+      .from("profile_lookup_values")
+      .select("lookup_value_id, rank, lookup_values!inner(category, value)")
+      .eq("profile_id", myself)
+      .eq("lookup_values.category", "treatment_specialism")
+      .order("rank"),
     supabase
-      .from("consultations")
-      .select("id, question, status, created_at")
-      .eq("author_profile_id", myself)
-      .order("created_at", { ascending: false })
-      .limit(10),
+      .from("connections")
+      .select("requester_id, addressee_id")
+      .eq("status", "accepted")
+      .or(`requester_id.eq.${myself},addressee_id.eq.${myself}`),
+    supabase.from("profiles").select("primary_state").eq("id", myself).maybeSingle(),
   ]);
+  const followed = (follows || []).map((f: any) => f.tag);
+  const mySpecialties = (myFocus || []).map((r: any) => r.lookup_values.value as string);
+  const trusted = new Set((trustedRows || []).map((c: any) => (c.requester_id === myself ? c.addressee_id : c.requester_id)));
+  const interests = new Set([...followed, ...mySpecialties.slice(0, 5)]);
+
+  let posts: PostItem[] = [];
+  let groups: any[] = [];
+  let supervisors: any[] = [];
+  let supervisorAvatars: Record<string, string | null> = {};
+
+  if (tab === "groups") {
+    const { data: memberships } = await supabase
+      .from("consultation_group_members")
+      .select("id, status, group_id, consultation_groups(id, name, purpose)")
+      .eq("profile_id", myself)
+      .in("status", ["joined", "invited"]);
+    const ids = (memberships || []).map((m: any) => m.group_id);
+    const { data: allMembers } = ids.length
+      ? await supabase.from("consultation_group_members").select("group_id").in("group_id", ids).eq("status", "joined")
+      : { data: [] as any[] };
+    groups = (memberships || [])
+      .filter((m: any) => m.consultation_groups)
+      .map((m: any) => ({
+        id: m.group_id,
+        name: m.consultation_groups.name,
+        purpose: m.consultation_groups.purpose,
+        members: (allMembers || []).filter((x: any) => x.group_id === m.group_id).length,
+        status: m.status,
+        membershipId: m.id,
+      }));
+  } else {
+    let q = supabase
+      .from("consultations")
+      .select("id, kind, question, context, tags, audience_type, audience_profile_ids, group_id, status, created_at, author_profile_id, author:author_profile_id(full_name, credential_prefix, is_demo), consultation_responses(count)")
+      .order("created_at", { ascending: false })
+      .limit(60);
+    if (tab === "mine") q = q.eq("author_profile_id", myself);
+    else {
+      q = q.is("group_id", null).in("status", ["open", "responses_received", "resolved"]);
+      q = tab === "supervision" ? q.in("kind", ["supervision_request", "supervision_offer"]) : q.eq("kind", "question");
+      if (activeTag) q = q.contains("tags", [activeTag]);
+    }
+    const { data } = await q;
+    posts = (data || [])
+      .filter((c: any) => c.author_profile_id === myself || !c.author?.is_demo)
+      .map((c: any) => {
+        const tagHit = (c.tags || []).find((t: string) => interests.has(t));
+        const why = trusted.has(c.author_profile_id) ? "From your trusted circle" : tagHit ? `Matches ${tagHit}` : undefined;
+        return {
+          id: c.id,
+          kind: c.kind,
+          question: c.question,
+          context: c.context,
+          tags: c.tags || [],
+          audienceLabel: audienceLabel(c),
+          authorName: c.author_profile_id === myself ? "You" : nameOf(c.author),
+          createdAt: c.created_at,
+          replies: c.consultation_responses?.[0]?.count ?? 0,
+          status: c.status,
+          mine: c.author_profile_id === myself,
+          why,
+        };
+      });
+    if (tab === "discussions" && !activeTag) {
+      posts.sort((a, b) => Number(!!b.why) - Number(!!a.why) || Number(a.status === "resolved") - Number(b.status === "resolved"));
+    }
+  }
+
+  if (tab === "supervision") {
+    const focusIds = (myFocus || []).slice(0, 1).map((r: any) => Number(r.lookup_value_id));
+    const { matches } = await findMatches(supabase, myself, { kind: "supervision", focusIds, state: profile?.primary_state || null }, { limit: 5 });
+    supervisors = matches;
+    const u = await resolveAvatarUrls(supabase, matches.map((m) => m.avatarPath));
+    supervisorAvatars = Object.fromEntries(matches.map((m) => [m.profileId, u.get(m.avatarPath || "") || null]));
+  }
+
+  const tagSet = new Set<string>([...followed, ...mySpecialties.slice(0, 3)]);
+  for (const p of posts) for (const t of p.tags) if (tagSet.size < 14) tagSet.add(t);
+  if (activeTag) tagSet.add(activeTag);
 
   return (
-    <div>
-      <h1>Consult</h1>
-      <p className="muted">
-        Ask a specific question - trusted colleagues, or the verified network. Keep it de-identified: no
-        patient names, exact dates, addresses, or other identifying details.
-      </p>
-      {error && <div className="error-banner">{error}</div>}
-
-      <p className="muted" style={{ marginTop: "-0.5rem" }}>
-        Looking for a persistent peer group instead of a one-off question?{" "}
-        <a href="/dashboard/consult/groups">Consultation groups &rarr;</a>
-      </p>
-
-      <div className="card">
-        <h2>Ask something</h2>
-        <form action={createConsultationAction}>
-          <div className="field">
-            <label htmlFor="question">What do you need help thinking through?</label>
-            <input id="question" name="question" type="text" placeholder="One-sentence question" required />
-          </div>
-          <div className="field-row">
-            <div className="field">
-              <label htmlFor="consultation_type">Type</label>
-              <select id="consultation_type" name="consultation_type" defaultValue="">
-                <option value="">-</option>
-                {Object.entries(CONSULTATION_TYPE_LABELS).map(([value, label]) => (
-                  <option key={value} value={value}>{label}</option>
-                ))}
-              </select>
-            </div>
-            <div className="field">
-              <label htmlFor="audience_type">Audience</label>
-              {/* Sept 23 audit (task #125): defaulted to the whole verified
-                  network, which is the widest possible audience for
-                  something that's about to ask a real clinical question -
-                  narrowed the default to Trusted colleagues; still a
-                  deliberate choice to widen it, not the path of least
-                  resistance. */}
-              <select id="audience_type" name="audience_type" defaultValue="trusted">
-                <option value="trusted">Trusted colleagues only</option>
-                <option value="wider_network">Verified network</option>
-              </select>
-            </div>
-            <div className="field">
-              <label htmlFor="tags">Tags</label>
-              <input id="tags" name="tags" type="text" placeholder="ADHD, Assessment" />
-            </div>
-          </div>
-          <div className="field">
-            <label htmlFor="context">Context (optional, de-identified)</label>
-            <textarea id="context" name="context" rows={2} />
-          </div>
-          {/* Sept 23 audit (task #125): the de-identification guidance above
-              the form was passive text nobody had to interact with. This is
-              a real, required confirmation - recorded on the row itself
-              (deidentification_confirmed), not just a hint. */}
-          <div className="checkbox-row">
-            <input id="deidentification_confirmed" name="deidentification_confirmed" type="checkbox" required />
-            <label htmlFor="deidentification_confirmed" style={{ margin: 0, fontWeight: 400 }}>
-              I confirm this question is de-identified - no patient names, exact dates, addresses, or other
-              identifying details
-            </label>
-          </div>
-          <button type="submit" style={{ marginTop: "0.5rem" }}>Post consultation</button>
-        </form>
-      </div>
-
-      {(myConsultations || []).length > 0 && (
-        <div className="card">
-          <h2>My consultations</h2>
-          {(myConsultations || []).map((c: any) => (
-            <div key={c.id} className="person-row">
-              <span className="person-row-info">
-                {c.question} <span className="tag">{c.status.replace("_", " ")}</span>
-              </span>
-              {["open", "responses_received"].includes(c.status) && (
-                <span className="person-row-actions">
-                  <form action={resolveConsultationAction}>
-                    <input type="hidden" name="consultation_id" value={c.id} />
-                    <button type="submit" className="secondary">Mark resolved</button>
-                  </form>
-                </span>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
-
-      <div className="card">
-        <h2>Open consultations ({(consultations || []).length})</h2>
-        {(consultations || []).map((c: any) => (
-          <div key={c.id} style={{ borderBottom: "1px solid var(--border)", paddingBottom: "0.75rem", marginBottom: "0.75rem" }}>
-            <div>
-              <strong>{c.question}</strong>{" "}
-              {c.consultation_type && <span className="tag">{CONSULTATION_TYPE_LABELS[c.consultation_type] || c.consultation_type}</span>}{" "}
-              <span className="tag">{c.audience_type.replace("_", " ")}</span>
-            </div>
-            <p className="muted" style={{ fontSize: "0.85rem" }}>
-              {c.author?.credential_prefix ? `${c.author.credential_prefix} ` : ""}
-              {c.author?.full_name}
-              {(c.tags || []).length > 0 && ` · ${c.tags.join(", ")}`}
-            </p>
-            {c.context && <p className="muted">{c.context}</p>}
-
-            {(c.consultation_responses || []).length > 0 && (
-              <div style={{ marginTop: "0.4rem" }}>
-                {c.consultation_responses.map((r: any) => (
-                  <div key={r.id} style={{ display: "flex", alignItems: "baseline", gap: "0.4rem", margin: "0.2rem 0" }}>
-                    <p style={{ fontSize: "0.9rem", margin: 0 }}>
-                      <strong>{r.profiles?.full_name}:</strong> {r.body}
-                    </p>
-                    {c.author_profile_id === myself && (
-                      <form action={setResponseUsefulAction} style={{ display: "inline" }}>
-                        <input type="hidden" name="response_id" value={r.id} />
-                        <input type="hidden" name="useful" value={r.marked_useful ? "false" : "true"} />
-                        <button
-                          type="submit"
-                          className="secondary"
-                          style={{ padding: "0.15rem 0.4rem", fontSize: "0.75rem", flexShrink: 0 }}
-                          title="Private to you - not shown to the responder or anyone else"
-                        >
-                          {r.marked_useful ? "Useful ✓" : "Mark useful"}
-                        </button>
-                      </form>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {c.author_profile_id !== myself && (
-              <form action={respondToConsultationAction} style={{ marginTop: "0.4rem" }}>
-                <input type="hidden" name="consultation_id" value={c.id} />
-                <div className="field-row">
-                  <div className="field" style={{ flex: 1 }}>
-                    <input name="body" type="text" placeholder="Reply" />
-                  </div>
-                  <button type="submit" className="secondary">Reply</button>
-                  <button type="submit" name="response_type" value="clarifying_question" className="secondary">
-                    Ask a question
-                  </button>
-                </div>
-              </form>
-            )}
-            {c.author_profile_id !== myself && (
-              <form action={startConversation} style={{ marginTop: "0.3rem" }}>
-                <input type="hidden" name="participant_ids" value={c.author_profile_id} />
-                <input type="hidden" name="title" value={`${c.author?.credential_prefix || ""} ${c.author?.full_name || ""}`.trim()} />
-                <input type="hidden" name="body" value={`Hi, on your consultation "${c.question}" - `} />
-                <button type="submit" className="secondary" style={{ fontSize: "0.85rem" }}>Message privately instead</button>
-              </form>
-            )}
-            <details style={{ marginTop: "0.3rem" }}>
-              <summary className="muted" style={{ fontSize: "0.8rem", cursor: "pointer", display: "inline-block" }}>Report this consultation</summary>
-              <form action={fileReportAction} style={{ marginTop: "0.4rem", maxWidth: 420 }}>
-                <input type="hidden" name="target_type" value="consultation" />
-                <input type="hidden" name="target_id" value={c.id} />
-                <input type="hidden" name="return_to" value="/dashboard/consult" />
-                <div className="field">
-                  <textarea name="reason" rows={2} placeholder="What's wrong with this consultation?" required />
-                </div>
-                <button type="submit" className="danger" style={{ padding: "0.15rem 0.5rem", fontSize: "0.8rem" }}>Submit report</button>
-              </form>
-            </details>
-          </div>
-        ))}
-        {(consultations || []).length === 0 && <p className="muted">No open consultations right now.</p>}
-      </div>
-    </div>
+    <ConsultIndexView
+      tab={tab}
+      posts={posts}
+      tags={Array.from(tagSet)}
+      followed={followed}
+      activeTag={activeTag}
+      groups={groups}
+      supervisors={supervisors}
+      supervisorAvatars={supervisorAvatars}
+      error={sp.error}
+    />
   );
 }

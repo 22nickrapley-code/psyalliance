@@ -345,3 +345,9 @@
 .pa .tab{display:inline-block}
 .pa .card.dark h3{color:#fff;font-family:var(--display);font-weight:400;font-size:22px}
 .pa .pa-case strong{font-size:13px}
+.pa .conversation-list{max-height:72vh;overflow:auto}
+.pa .conversation-entry{align-items:flex-start}
+.pa .message-area{max-height:72vh}
+.pa .message-scroll{overflow:auto;flex:1;padding-right:4px}
+.pa .context-head{display:flex;justify-content:space-between;align-items:center;gap:12px;border-bottom:1px solid var(--line);padding-bottom:13px;margin-bottom:6px}
+.pa .bubble .author{display:block;font-weight:650;color:var(--ink);margin-bottom:3px}
