@@ -11,10 +11,9 @@ export default async function CredentialsPage(props: { searchParams: Promise<{ s
 
   const [{ data: profile }, { data: licences }, { data: ce }, { data: panels }, { data: npiChecks }] = await Promise.all([
     supabase
-      .from("profiles")
-      .select("verification_status, verified_at, account_status, qualification_level, npi_number, caqh_provider_id, caqh_last_attested_date, malpractice_carrier, malpractice_expires")
-      .eq("id", myself)
-      .maybeSingle(),
+      .rpc("my_profile")
+      .select("verification_status, verified_at, account_status, qualification_level, npi_number, caqh_provider_id, caqh_last_attested_date, malpractice_carrier, malpractice_expires, account_kind")
+      .maybeSingle<any>(),
     supabase.from("licenses").select("*").eq("profile_id", myself).order("state"),
     supabase.from("continuing_education_credits").select("*").eq("profile_id", myself).order("completed_date", { ascending: false }),
     supabase.from("insurance_panels").select("*").eq("profile_id", myself).order("insurance_name"),

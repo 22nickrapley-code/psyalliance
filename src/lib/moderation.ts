@@ -6,14 +6,29 @@ import { notifyProfile } from "@/lib/notifications";
 // Canonical service layer over the `reports` table - see the
 // rebuild_admin_moderation migration for the schema/RLS this relies on.
 
-export type ReportTargetType = "consultation" | "message" | "profile" | "user" | "library_document";
+export type ReportTargetType =
+  | "consultation"
+  | "consultation_response"
+  | "message"
+  | "profile"
+  | "user"
+  | "library_document"
+  | "referral"
+  | "referral_response"
+  | "cover_request";
+
+export type ReportCategory = "patient_information" | "conduct" | "other";
+
+// Content an admin can redact in place (admin_redact, migration 0084).
+export const REDACTABLE: ReportTargetType[] = ["consultation", "consultation_response", "message", "referral", "referral_response", "cover_request"];
 
 export async function fileReport(
   supabase: Awaited<ReturnType<typeof createClient>>,
   reporterProfileId: string,
-  opts: { targetType: ReportTargetType; targetId: string; reason: string }
+  opts: { targetType: ReportTargetType; targetId: string; reason: string; category?: ReportCategory }
 ) {
-  const reason = opts.reason.trim();
+  const category: ReportCategory = opts.category || "other";
+  const reason = opts.reason.trim() || (category === "patient_information" ? "Contains patient information" : "");
   if (!reason) return { error: "Say what's wrong so an admin has something to act on" };
 
   const { error } = await supabase.from("reports").insert({
@@ -21,6 +36,7 @@ export async function fileReport(
     target_type: opts.targetType,
     target_id: opts.targetId,
     reason,
+    category,
   });
   return { error: error?.message ?? null };
 }

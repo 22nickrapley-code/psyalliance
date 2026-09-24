@@ -36,7 +36,7 @@ export function ResourceCard({ r }: { r: LibraryResource }) {
       <p>{r.summary}</p>
       <p className="micro-note" style={{ marginTop: -8 }}>For {r.audience}</p>
       <p className="micro-note" style={{ marginTop: -10 }}>
-        Version {r.version} &middot; Reviewed {formatDate(r.reviewDate)}
+        Version {r.version} &middot; {r.reviewed ? `Reviewed ${formatDate(r.reviewDate)}` : "Provisional, not yet independently reviewed"}
       </p>
       <div className="foot">
         {wf ? (
@@ -69,20 +69,27 @@ export function LibraryView({
   category,
   mineCount,
   error,
+  isReviewer = false,
 }: {
   resources: LibraryResource[];
   q: string;
   category: string;
   mineCount: number;
   error?: string | null;
+  isReviewer?: boolean;
 }) {
   return (
     <>
       <PageHead
-        eyebrow="Reviewed resources"
+        eyebrow="Practice resources"
         title="The Practice Library."
-        lead="Curated tools placed near the work they support. Check the version and who it applies to before you use one."
-        actions={<a className="btn secondary" href="/dashboard/documents?tab=mine">My Library</a>}
+        lead="Templates placed near the work they support. Each one shows whether it has been independently reviewed. Adapt any template to your state and practice before you rely on it."
+        actions={
+          <>
+            {isReviewer && <a className="btn ghost" href="/dashboard/documents/review">Review desk</a>}
+            <a className="btn secondary" href="/dashboard/documents?tab=mine">My Library</a>
+          </>
+        }
       />
       <Banner error={error} />
       <div className="split">
@@ -147,7 +154,17 @@ export function LibraryView({
   );
 }
 
-export function ResourceDetailView({ r, url, error }: { r: LibraryResource; url: string | null; error?: string | null }) {
+export function ResourceDetailView({
+  r,
+  url,
+  error,
+  reviewers = [],
+}: {
+  r: LibraryResource;
+  url: string | null;
+  error?: string | null;
+  reviewers?: { role: string; name: string }[];
+}) {
   const wf = WORKFLOW[r.code];
   return (
     <>
@@ -171,11 +188,23 @@ export function ResourceDetailView({ r, url, error }: { r: LibraryResource; url:
       <Banner error={error} />
       <div className="split">
         <section className="card">
-          <div className="card-title"><h3>About this resource</h3><Status>Reviewed</Status></div>
+          <div className="card-title">
+            <h3>About this resource</h3>
+            {r.reviewed ? <Status>Independently reviewed</Status> : <Status tone="warn">Provisional</Status>}
+          </div>
+          {!r.reviewed && (
+            <div className="tone-panel" style={{ marginBottom: 14 }}>
+              <b>Not yet independently reviewed.</b>
+              <p>This is a working template from PsyAlliance. No clinician, lawyer or privacy specialist has signed off this version yet. Check it against your state&rsquo;s rules and your own advisers before you use it.</p>
+            </div>
+          )}
           <ul className="summary-list">
             <li><span>Applies to</span><strong>{r.audience}</strong></li>
             <li><span>Version</span><strong>{r.version}</strong></li>
-            <li><span>Last reviewed</span><strong>{formatDate(r.reviewDate)}</strong></li>
+            {r.reviewed && <li><span>Last reviewed</span><strong>{formatDate(r.reviewDate)}</strong></li>}
+            {r.reviewed && reviewers.map((rv) => (
+              <li key={rv.role}><span>{rv.role} review</span><strong>{rv.name}</strong></li>
+            ))}
             {r.nextReviewDate && <li><span>Next review</span><strong>{formatDate(r.nextReviewDate)}</strong></li>}
           </ul>
           {r.tags.length > 0 && (

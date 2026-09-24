@@ -99,7 +99,7 @@ begin
       values ('00000000-0000-0000-0000-000000000000', pid, 'authenticated', 'authenticated',
         'demo-' || lower(fn) || '.' || lower(ln) || '-' || k || '@seed.psyalliance.test',
         crypt(gen_random_uuid()::text, gen_salt('bf')), now(),
-        '{"provider":"email","providers":["email"]}'::jsonb, '{}'::jsonb, false, false,
+        '{"provider":"email","providers":["email"],"created_by_system":"true"}'::jsonb, '{}'::jsonb, false, false,
         now() - ((30 + random() * 360) || ' days')::interval, now());
 
       -- practice facts

@@ -22,7 +22,7 @@ export default async function HomePage(props: { searchParams: Promise<{ reconfir
   } = await supabase.auth.getUser();
   const myself = user!.id;
 
-  const { data: profile } = await supabase.from("profiles").select("*").eq("id", myself).maybeSingle();
+  const { data: profile } = await supabase.rpc("my_profile").maybeSingle<any>();
   if (!profile) redirect("/dashboard/profile");
 
   const monthAgo = new Date(Date.now() - 30 * 86_400_000).toISOString();

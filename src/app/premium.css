@@ -429,3 +429,9 @@
 .pa .bubble small{color:#4f5e54}
 .pa .demo-bar{background:#f7efe3;border-bottom:1px solid #e6d3b8;color:#6b4a22;font-size:12px;font-weight:600;padding:8px 28px;text-align:center}
 .pa .demo-bar a{color:#6b4a22;margin-left:6px}
+.pa details.report-content{display:inline-block}
+.pa details.report-content > summary{list-style:none; cursor:pointer; display:inline}
+.pa details.report-content > summary::-webkit-details-marker{display:none}
+.pa details.report-content[open]{display:block; margin-top:6px}
+.pa .admin-funnel{grid-template-columns:repeat(4,1fr)}
+@media (max-width:760px){.pa .admin-funnel{grid-template-columns:repeat(2,1fr)}}

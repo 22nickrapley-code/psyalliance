@@ -179,10 +179,9 @@ export async function checkNpiRegistry() {
   if (!user) throw new Error("Not signed in");
 
   const { data: profile } = await supabase
-    .from("profiles")
+    .rpc("my_profile")
     .select("npi_number, full_name, states_qualified")
-    .eq("id", user.id)
-    .maybeSingle();
+    .maybeSingle<any>();
   if (!profile?.npi_number) credentialsError("Add your NPI number first");
 
   let raw: any = null;

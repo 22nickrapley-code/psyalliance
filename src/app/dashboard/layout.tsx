@@ -22,10 +22,9 @@ export default async function DashboardLayout({
   }
 
   const { data: profile } = await supabase
-    .from("profiles")
-    .select("full_name, verification_status, is_admin, avatar_path, demo_view")
-    .eq("id", user.id)
-    .maybeSingle();
+    .rpc("my_profile")
+    .select("full_name, verification_status, is_admin, avatar_path, demo_view, account_kind")
+    .maybeSingle<any>();
 
   // A referring provider (GP/physician portal account) has no `profiles`
   // row at all - that's what keeps them out of Network/Messages/Town Hall/
@@ -42,40 +41,33 @@ export default async function DashboardLayout({
   }
   const avatarUrl = await resolveAvatarUrl(supabase, profile?.avatar_path);
 
-  // Spec rule 2, "verified means reviewed" (re-audit R3): the badge only
-  // says Verified when an admin has verified the member AND an active,
-  // unexpired licence is on record. A verified account with no licence was
-  // previously shown as "verified" while Credentials said "No licenses
-  // added yet" - it now says what's actually missing instead.
-  const today = new Date().toISOString().slice(0, 10);
-  const { count: activeLicenceCount } = await supabase
-    .from("licenses")
-    .select("id", { count: "exact", head: true })
-    .eq("profile_id", user.id)
-    .eq("status", "active")
-    .or(`expiration_date.is.null,expiration_date.gte.${today}`);
-  const { count: reviewedLicenceCount } = await supabase
-    .from("licenses")
-    .select("id", { count: "exact", head: true })
-    .eq("profile_id", user.id)
-    .eq("status", "active")
-    .not("reviewed_at", "is", null)
-    .or(`expiration_date.is.null,expiration_date.gte.${today}`);
+  // The badge says what's true. Admin-only (operator) logins make no
+  // clinical claim. A clinician is "Verified" only when they are a network
+  // member: verified, active and holding a reviewed, in-date licence.
+  const { data: status } = await supabase.rpc("my_network_status").maybeSingle<any>();
+  const { count: licenceCount } = await supabase.from("licenses").select("id", { count: "exact", head: true }).eq("profile_id", user.id);
+  const isOperator = profile?.account_kind === "operator";
   const verificationLabel = !profile
     ? null
-    : profile.verification_status === "verified"
-      ? (reviewedLicenceCount || 0) > 0
+    : isOperator
+      ? "Admin"
+      : status?.is_member
         ? "Verified"
-        : (activeLicenceCount || 0) > 0
-          ? "Licence awaiting review"
-          : "Verified - add your licence"
-      : profile.verification_status === "pending"
-        ? "Verification pending"
         : profile.verification_status === "flagged"
           ? "Action required"
           : profile.verification_status === "rejected"
             ? "Not verified"
-            : String(profile.verification_status);
+            : (licenceCount || 0) === 0
+              ? "Add your licence"
+              : status?.has_reviewed_licence
+                ? "Verification pending"
+                : "Licence awaiting review";
+  const gateNotice =
+    !profile || isOperator || status?.is_member || profile.demo_view
+      ? null
+      : (licenceCount || 0) === 0
+        ? "Add a licence to be reviewed. Referrals, cover, consults and messages open once you're verified."
+        : "Your credentials are with us for review. Referrals, cover, consults and messages open once you're verified.";
 
   // Cheap presence signal used only for match tie-breaking ("last login") -
   // not awaited-critical, but kept simple and correct rather than clever.
@@ -162,6 +154,7 @@ export default async function DashboardLayout({
       unreadNotifications={notificationPipelineUnreadCount || 0}
       signOutAction={signOutAction}
       demoView={!!profile?.demo_view}
+      gateNotice={gateNotice}
     >
       {children}
     </PremiumShell>

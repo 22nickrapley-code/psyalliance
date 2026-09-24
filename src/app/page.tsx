@@ -21,7 +21,7 @@ const FAQ: [string, string][] = [
   ],
   [
     "Do patient details go into PsyAlliance?",
-    "No. Cover plans and referrals describe needs without identifiers (\"Case 3: adult, anxiety, telehealth, Aetna\"). Free text is checked for names, dates and contact details. The clinical handoff happens outside PsyAlliance once a colleague agrees.",
+    "They shouldn't. Cover plans and referrals describe needs, not people (\"Case 3: adult, anxiety, telehealth, Aetna\"). Before anything is sent, PsyAlliance flags dates, phone numbers, email and street addresses and record numbers. It can't reliably recognise names, so leaving those out is up to you. If something identifying is shared by mistake, report it and an admin removes it. The clinical handoff happens outside PsyAlliance once a colleague agrees.",
   ],
   [
     "How do I get cover while I'm on leave?",
@@ -65,7 +65,7 @@ export default function HomePage() {
           <a className="text-link" href="#verification">Verification</a>
           <a className="text-link" href="#story">Our story</a>
           <a className="btn secondary small-btn" href="/auth/sign-in">Sign in</a>
-          <a className="btn small-btn" href="/auth/sign-up">Join the network</a>
+          <a className="btn small-btn" href="/join">Join the network</a>
         </div>
       </nav>
 
@@ -122,7 +122,7 @@ export default function HomePage() {
               <span className="status warn">1 open</span>
             </div>
             <p className="micro-note" style={{ color: "#c6dbd2", margin: 0 }}>
-              Example only. No patient identifiers are entered in PsyAlliance.
+              Example only. Cases are described by need, never by name.
             </p>
           </div>
         </section>
@@ -130,7 +130,7 @@ export default function HomePage() {
         <div className="trust-row">
           <span>Credential review</span>
           <span>Clinician-to-clinician relationships</span>
-          <span>No patient identifiers</span>
+          <span>Built for de-identified cases</span>
           <span>Never sold, never advertised to</span>
         </div>
 
@@ -218,7 +218,7 @@ export default function HomePage() {
               <h2>Rules we don&rsquo;t bend.</h2>
             </div>
             <ul className="rules">
-              <li><b>No patient identifiers, ever</b>Cases are system references. Free text is checked for names, dates and contact details.</li>
+              <li><b>Needs, not patients</b>Cases are described by need. We flag dates, contact details and record numbers before anything is sent, and remove anything identifying that&rsquo;s reported.</li>
               <li><b>Verified means reviewed</b>Listing and requests require a reviewed identity, degree and in-date licence.</li>
               <li><b>Facts, not judgements</b>Profiles show facts on file with dates. Whether a colleague suits a patient is your professional call.</li>
               <li><b>Nothing sends without review</b>Every request and post shows exactly who will see it before you confirm.</li>
@@ -252,7 +252,7 @@ export default function HomePage() {
               <h2>Join the first cohort.</h2>
               <p>We&rsquo;re opening PsyAlliance to a founding group of psychologists and psychiatrists first.</p>
             </div>
-            <a className="btn" href="/auth/sign-up">Apply to join &rarr;</a>
+            <a className="btn" href="/join">Ask to join &rarr;</a>
           </div>
         </section>
       </main>

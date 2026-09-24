@@ -37,9 +37,6 @@ export default async function SignInPage(
         <p className="muted" style={{ textAlign: "center" }}>
           No account yet? <a href="/auth/sign-up">Create one</a>
         </p>
-        <p className="muted" style={{ textAlign: "center" }}>
-          A referring physician or GP? <a href="/auth/refer-sign-in">Sign in here</a>
-        </p>
       </div>
     </div>
   );

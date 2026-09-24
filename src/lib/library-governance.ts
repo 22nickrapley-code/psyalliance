@@ -8,6 +8,13 @@ import { createClient } from "@/lib/supabase/server";
 
 export type ReviewerRole = "clinical" | "legal_regulatory" | "privacy_security" | "prescribing";
 
+export const REVIEWER_ROLE_LABELS: Record<ReviewerRole, string> = {
+  clinical: "Clinical",
+  legal_regulatory: "Legal / regulatory",
+  privacy_security: "Privacy / security",
+  prescribing: "Prescribing",
+};
+
 export async function setDocumentGovernance(
   supabase: Awaited<ReturnType<typeof createClient>>,
   documentId: number,
@@ -34,11 +41,11 @@ export async function setDocumentGovernance(
   return { error: error?.message ?? null };
 }
 
-// A resource owner's credentials never substitute for a required review
-// (Addendum A6) - this only ever records the reviewer's own name against
-// their own role; nothing here lets a document's owner mark their own
-// resource approved unless they're also independently a reviewer for that
-// role, same as anyone else.
+// Records the signed-in reviewer's verdict on the current version. The
+// database decides whether it counts (guard_document_review, migration
+// 0081): an active appointment for the role, the current version, not the
+// author or owner, and a different person for each role. Changing your
+// mind updates your own review rather than adding a second one.
 export async function submitDocumentReview(
   supabase: Awaited<ReturnType<typeof createClient>>,
   reviewerProfileId: string,
@@ -48,18 +55,29 @@ export async function submitDocumentReview(
   approved: boolean,
   notes?: string
 ) {
-  const { error } = await supabase.from("document_reviews").upsert(
-    {
-      document_id: documentId,
-      document_version: documentVersion,
-      reviewer_role: reviewerRole,
-      reviewer_profile_id: reviewerProfileId,
-      approved,
-      notes: notes ?? null,
-      reviewed_at: new Date().toISOString(),
-    },
-    { onConflict: "document_id,document_version,reviewer_role" }
-  );
+  const { data: existing } = await supabase
+    .from("document_reviews")
+    .select("id, reviewer_profile_id")
+    .eq("document_id", documentId)
+    .eq("document_version", documentVersion)
+    .eq("reviewer_role", reviewerRole)
+    .is("invalidated_at", null)
+    .maybeSingle();
+  if (existing && existing.reviewer_profile_id !== reviewerProfileId) {
+    return { error: "Another reviewer has already reviewed this version for that role." };
+  }
+  const row = {
+    document_id: documentId,
+    document_version: documentVersion,
+    reviewer_role: reviewerRole,
+    reviewer_profile_id: reviewerProfileId,
+    approved,
+    notes: notes ?? null,
+    reviewed_at: new Date().toISOString(),
+  };
+  const { error } = existing
+    ? await supabase.from("document_reviews").update(row).eq("id", existing.id)
+    : await supabase.from("document_reviews").insert(row);
   return { error: error?.message ?? null };
 }
 

@@ -1,5 +1,7 @@
 "use server";
 
+import { identifierError } from "@/lib/deidentify";
+
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -193,6 +195,8 @@ export async function postGroupConsultationAction(formData: FormData) {
   if (!question) groupError(groupId, "What do you need help thinking through?");
   const deidentificationConfirmed = formData.get("deidentification_confirmed") === "on";
   if (!deidentificationConfirmed) groupError(groupId, "Confirm this question is de-identified before posting.");
+  const idErr = identifierError(`${question}\n${String(formData.get("context") || "")}`);
+  if (idErr) groupError(groupId, idErr);
 
   // Visibility for a group-posted consultation comes from group_id itself
   // (see the consultations RLS policy) regardless of audience_type, so

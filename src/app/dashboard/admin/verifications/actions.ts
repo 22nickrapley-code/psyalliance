@@ -1,7 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { assertIsAdmin, hasReviewableCredentialEvidence } from "@/lib/admin";
+import { assertIsAdmin, setVerificationStatus } from "@/lib/admin";
 import { notifyProfile } from "@/lib/notifications";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -49,52 +49,12 @@ export async function setProfileVerificationStatus(formData: FormData) {
   if (!user) throw new Error("Not signed in");
   await assertIsAdmin(supabase, user.id);
 
-  const profileId = String(formData.get("profile_id") || "");
-  const status = String(formData.get("status") || "");
-
-  // Read the current status first so re-saving an already-verified profile
-  // (or moving between any two non-verified statuses) never fires a
-  // duplicate "you're approved" notification - only a genuine transition
-  // into 'verified' should notify.
-  const { data: before } = await supabase
-    .from("profiles")
-    .select("verification_status")
-    .eq("id", profileId)
-    .maybeSingle();
-
-  // Launch-readiness audit finding: "verified" must mean an admin actually
-  // reviewed a real credential, not just a status flip. See the comment on
-  // hasReviewableCredentialEvidence in lib/admin.ts for the incident this closes.
-  if (status === "verified" && before?.verification_status !== "verified") {
-    const hasEvidence = await hasReviewableCredentialEvidence(supabase, profileId);
-    if (!hasEvidence) {
-      verificationsError("Can't mark verified: no license on file and no reviewed/matched credential submission. Add a license or review a submission first.");
-    }
-  }
-
-  const { error } = await supabase
-    .from("profiles")
-    .update({
-      verification_status: status,
-      verified_at: status === "verified" ? new Date().toISOString() : null,
-    })
-    .eq("id", profileId);
-  if (error) verificationsError(error.message);
-
-  if (status === "verified" && before?.verification_status !== "verified") {
-    await notifyProfile(supabase, {
-      profileId,
-      title: "You're approved!",
-      body: "Your credential verification is complete and your PsyAlliance membership is now approved. You have full access to the network - Caseload, Messages, Network, and every other tool.",
-      createdBy: user.id,
-    });
-  }
+  const { error } = await setVerificationStatus(supabase, user.id, String(formData.get("profile_id") || ""), String(formData.get("status") || ""));
+  if (error) verificationsError(error);
 
   revalidatePath("/dashboard/admin/verifications");
   revalidatePath("/dashboard/admin/members");
   revalidatePath("/dashboard/admin");
-  revalidatePath("/dashboard/messages");
-  revalidatePath("/dashboard");
 }
 
 // Trust rule "Verified means reviewed": a licence only counts toward
@@ -122,7 +82,7 @@ export async function reviewLicenceAction(formData: FormData) {
     await notifyProfile(supabase, {
       profileId: lic.profile_id,
       title: `Your ${lic.state} licence has been reviewed`,
-      body: "It's now on record. You're listed in the directory and can be matched for referrals and cover in that state.",
+      body: "It's now on record. Once your profile is verified, you're listed and matched for referrals and cover in that state.",
       createdBy: user.id,
     });
   } else {

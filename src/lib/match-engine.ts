@@ -121,6 +121,7 @@ export async function findMatches(
       )
       .eq("verification_status", "verified")
       .eq("account_status", "active")
+      .eq("account_kind", "clinician")
       .eq("is_demo", demo)
       .neq("id", requesterId),
     supabase

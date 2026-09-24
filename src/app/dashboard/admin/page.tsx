@@ -1,219 +1,146 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { requireAdminOrRedirectPath } from "@/lib/admin";
+import { PageHead, Status } from "../_components/ui";
+
+// Admin overview. Counts come from admin_network_metrics(), which never
+// includes demo accounts, the demo view or operator (admin-only) logins,
+// and separates registered, verified, eligible and available supply.
+
+type Metrics = Record<string, any>;
+
+const AREAS: [string, string, string, string][] = [
+  ["/dashboard/admin/invitations", "✉", "Invitations", "Requests to join and cohort invitations."],
+  ["/dashboard/admin/verifications", "✓", "Verification", "Licences and credentials to review."],
+  ["/dashboard/admin/members", "◎", "Members", "Search, suspend, promote."],
+  ["/dashboard/admin/library", "▤", "Library governance", "Reviewers and publishing."],
+  ["/dashboard/admin/moderation", "⚑", "Moderation", "Reports and redaction."],
+  ["/dashboard/admin/network-health", "↗", "Network health", "Supply and response by state."],
+  ["/dashboard/admin/insurance-requests", "+", "Insurance requests", "Plans members asked us to add."],
+];
+
+function pct(n: number, d: number) {
+  return d ? `${Math.round((n / d) * 100)}%` : "-";
+}
 
 export default async function AdminOverviewPage() {
   const supabase = await createClient();
   const redirectPath = await requireAdminOrRedirectPath(supabase);
   if (redirectPath) redirect(redirectPath);
 
-  const [
-    { count: totalCount },
-    { count: verifiedCount },
-    { count: pendingCount },
-    { count: flaggedCount },
-    { count: rejectedCount },
-    { data: byState },
-    { data: recentSignups },
-    { count: unmatchedCredentialCount },
-    { count: pendingInsuranceRequestCount },
-    { count: pendingChannelRequestCount },
-    { count: pendingProviderCount },
-    { count: openReportCount },
-  ] = await Promise.all([
-    supabase.from("profiles").select("*", { count: "exact", head: true }).eq("is_demo", false),
-    supabase.from("profiles").select("*", { count: "exact", head: true }).eq("verification_status", "verified").eq("is_demo", false),
-    supabase.from("profiles").select("*", { count: "exact", head: true }).eq("verification_status", "pending").eq("is_demo", false),
-    supabase.from("profiles").select("*", { count: "exact", head: true }).eq("verification_status", "flagged").eq("is_demo", false),
-    supabase.from("profiles").select("*", { count: "exact", head: true }).eq("verification_status", "rejected").eq("is_demo", false),
-    supabase.from("profiles").select("primary_state").eq("is_demo", false),
-    supabase
-      .from("profiles")
-      .select("id, full_name, credential_prefix, qualification_level, verification_status, created_at")
-      .eq("is_demo", false)
-      .order("created_at", { ascending: false })
-      .limit(8),
-    supabase.from("credential_verifications").select("*", { count: "exact", head: true }).eq("matched", false),
-    supabase.from("insurance_requests").select("*", { count: "exact", head: true }).eq("status", "pending"),
-    supabase.from("channel_requests").select("*", { count: "exact", head: true }).eq("status", "pending"),
-    supabase.from("referring_providers").select("*", { count: "exact", head: true }).eq("approval_status", "pending"),
-    supabase.from("reports").select("*", { count: "exact", head: true }).in("status", ["open", "reviewing"]),
-  ]);
-
-  const [{ data: emailHealthRows }, { count: licencesAwaitingReview }] = await Promise.all([
+  const [{ data: metricsRaw }, { data: emailRows }, { count: openReports }, { count: libraryHidden }, { count: joinRequests }] = await Promise.all([
+    supabase.rpc("admin_network_metrics"),
     supabase.rpc("admin_email_health"),
-    supabase.from("licenses").select("id", { count: "exact", head: true }).is("reviewed_at", null),
+    supabase.from("reports").select("id", { count: "exact", head: true }).in("status", ["open", "reviewing"]),
+    supabase.from("documents").select("id", { count: "exact", head: true }).eq("owner_scope", "world").in("review_status", ["in_review", "needs_review"]),
+    supabase.from("join_requests").select("id", { count: "exact", head: true }).eq("status", "new"),
   ]);
-  const email = Array.isArray(emailHealthRows) ? emailHealthRows[0] : null;
+  const m: Metrics = (metricsRaw as Metrics) || {};
+  const email = Array.isArray(emailRows) ? emailRows[0] : null;
+  const n = (k: string) => Number(m[k] || 0);
 
-  const stateCounts = new Map<string, number>();
-  for (const row of byState || []) {
-    const s = row.primary_state || "-";
-    stateCounts.set(s, (stateCounts.get(s) || 0) + 1);
-  }
-  const topStates = Array.from(stateCounts.entries())
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 8);
+  const needs: [string, number, string][] = [
+    ["Requests to join", joinRequests || 0, "/dashboard/admin/invitations"],
+    ["Licences to review", n("licences_awaiting_review"), "/dashboard/admin/verifications"],
+    ["Members awaiting a decision", n("pending") + n("flagged"), "/dashboard/admin/verifications"],
+    ["Verified without a reviewed licence", n("verified_without_licence"), "/dashboard/admin/verifications#unlicensed"],
+    ["Open reports", openReports || 0, "/dashboard/admin/moderation"],
+    ["Library resources hidden for review", libraryHidden || 0, "/dashboard/admin/library"],
+  ];
+  const states = Object.entries((m.eligible_by_state as Record<string, number>) || {}).sort((a, b) => b[1] - a[1]);
 
   return (
-    <div>
-      <h1>Admin</h1>
-      <p className="muted">
-        Platform-wide stats and quick links for running admin tasks. Credential review lives in{" "}
-        <a href="/dashboard/admin/verifications">Verification queue</a>, requests to add a new
-        insurance provider are under{" "}
-        <a href="/dashboard/admin/insurance-requests">Insurance requests</a>, requests for a new
-        Town Hall channel are under{" "}
-        <a href="/dashboard/admin/channel-requests">Channel requests</a>, the full member
-        list (search, verify, flag, promote to admin) is under{" "}
-        <a href="/dashboard/admin/members">All members</a>, physician/GP referral-portal
-        registrations are under{" "}
-        <a href="/dashboard/admin/referring-providers">Referring providers</a>, liquidity
-        metrics (response rates, supply gaps, Northeast/Texas density) are under{" "}
-        <a href="/dashboard/admin/network-health">Network health</a>, member-filed reports on a
-        profile, consultation, message, or Library document are under{" "}
-        <a href="/dashboard/admin/moderation">Moderation queue</a>, and Practice Library
-        publication sign-off is under <a href="/dashboard/admin/library">Library governance</a>.
-      </p>
+    <>
+      <PageHead eyebrow="Admin" title="Running the network" lead="Real members only. Demo accounts and admin-only logins are never counted." />
 
-      <div className="card">
-        <h2>Needs you</h2>
-        <p>
-          <a href="/dashboard/admin/verifications">{licencesAwaitingReview || 0} licence{licencesAwaitingReview === 1 ? "" : "s"} awaiting review</a>
-          {" · "}
-          <a href="/dashboard/admin/moderation">{openReportCount || 0} open report{openReportCount === 1 ? "" : "s"}</a>
-        </p>
-        <h2 style={{ marginTop: "1rem" }}>Email</h2>
-        {email ? (
-          <p className="muted">
-            {email.configured ? "Switched on." : "Not switched on yet: add the provider API key to Supabase Vault as 'email_api_key'. Emails queue for up to 3 days, then lapse."}{" "}
-            Last 7 days: {email.sent_7d} sent, {email.failed_7d} failed. {email.pending} waiting.
-            {email.last_error ? ` Last error: ${email.last_error}` : ""}
-          </p>
-        ) : (
-          <p className="muted">Email status unavailable.</p>
-        )}
+      <div className="split" style={{ marginBottom: 20 }}>
+        <section className="card">
+          <div className="card-title"><h3>Needs you</h3></div>
+          {needs.map(([label, count, href]) => (
+            <a key={label} href={href} className="list-row" style={{ textDecoration: "none", color: "inherit" }}>
+              <span><strong>{label}</strong></span>
+              {count > 0 ? <Status tone="warn">{count}</Status> : <Status tone="neutral">0</Status>}
+            </a>
+          ))}
+        </section>
+        <section className="card tint">
+          <div className="card-title">
+            <h3>Email</h3>
+            {email?.configured ? <Status>On</Status> : <Status tone="warn">Off</Status>}
+          </div>
+          {email ? (
+            <>
+              <p className="small">
+                {email.configured ? "Sending through the configured provider." : "Not switched on. Add the provider key to Supabase Vault as email_api_key. Queued emails lapse after 3 days."}
+              </p>
+              <ul className="summary-list">
+                <li><span>Sent, last 7 days</span><b>{email.sent_7d}</b></li>
+                <li><span>Failed, last 7 days</span><b>{email.failed_7d}</b></li>
+                <li><span>Waiting</span><b>{email.pending}</b></li>
+              </ul>
+              {email.last_error ? <p className="micro-note">Last error: {email.last_error}</p> : null}
+            </>
+          ) : (
+            <p className="small">Email status unavailable.</p>
+          )}
+        </section>
       </div>
 
-      <div className="card">
-        <h2>Members</h2>
-        <div className="stat-grid">
-          <div className="stat">
-            <div className="value">{totalCount ?? 0}</div>
-            <div className="label">Total profiles</div>
-          </div>
-          <div className="stat">
-            <div className="value">{verifiedCount ?? 0}</div>
-            <div className="label">Verified</div>
-          </div>
-          <div className="stat">
-            <div className="value">{pendingCount ?? 0}</div>
-            <div className="label">Pending review</div>
-          </div>
-          <div className="stat">
-            <div className="value">{flaggedCount ?? 0}</div>
-            <div className="label">Flagged</div>
-          </div>
-          <div className="stat">
-            <div className="value">{rejectedCount ?? 0}</div>
-            <div className="label">Rejected</div>
-          </div>
-          <div className="stat">
-            <div className="value">{unmatchedCredentialCount ?? 0}</div>
-            <div className="label">Unreviewed credential submissions</div>
-          </div>
-          <div className="stat">
-            <div className="value">{pendingInsuranceRequestCount ?? 0}</div>
-            <div className="label">Pending insurance requests</div>
-          </div>
-          <div className="stat">
-            <div className="value">{pendingChannelRequestCount ?? 0}</div>
-            <div className="label">Pending channel requests</div>
-          </div>
-          <div className="stat">
-            <div className="value">{pendingProviderCount ?? 0}</div>
-            <div className="label">Pending referring providers</div>
-          </div>
-          <div className="stat">
-            <div className="value">{openReportCount ?? 0}</div>
-            <div className="label">Open moderation reports</div>
-          </div>
+      <section className="card" style={{ marginBottom: 20 }}>
+        <div className="card-title"><h3>Supply</h3><span className="micro-note">Each step is a subset of the one before</span></div>
+        <div className="three-grid admin-funnel">
+          {[
+            ["Registered", n("registered"), "Clinician accounts"],
+            ["Verified", n("verified"), "Identity and degree signed off"],
+            ["Eligible", n("eligible"), "Verified, active, reviewed in-date licence"],
+            ["Available", n("available"), "Eligible, open to referrals or cover, confirmed in 30 days"],
+          ].map(([label, value, note]) => (
+            <div key={String(label)} className="quiet-panel">
+              <div className="eyebrow">{label}</div>
+              <div className="metric" style={{ margin: "8px 0" }}>{value}</div>
+              <p className="micro-note" style={{ margin: 0 }}>{note}</p>
+            </div>
+          ))}
         </div>
-        {(pendingCount ?? 0) > 0 && (
-          <p style={{ marginTop: "0.75rem" }}>
-            <a href="/dashboard/admin/verifications" className="btn">
-              Review {pendingCount} pending profile{pendingCount === 1 ? "" : "s"}
-            </a>
-          </p>
-        )}
-        {(pendingInsuranceRequestCount ?? 0) > 0 && (
-          <p style={{ marginTop: "0.5rem" }}>
-            <a href="/dashboard/admin/insurance-requests" className="btn secondary">
-              Review {pendingInsuranceRequestCount} insurance request{pendingInsuranceRequestCount === 1 ? "" : "s"}
-            </a>
-          </p>
-        )}
-        {(pendingChannelRequestCount ?? 0) > 0 && (
-          <p style={{ marginTop: "0.5rem" }}>
-            <a href="/dashboard/admin/channel-requests" className="btn secondary">
-              Review {pendingChannelRequestCount} channel request{pendingChannelRequestCount === 1 ? "" : "s"}
-            </a>
-          </p>
-        )}
-        {(pendingProviderCount ?? 0) > 0 && (
-          <p style={{ marginTop: "0.5rem" }}>
-            <a href="/dashboard/admin/referring-providers" className="btn secondary">
-              Review {pendingProviderCount} referring provider{pendingProviderCount === 1 ? "" : "s"}
-            </a>
-          </p>
-        )}
-        {(openReportCount ?? 0) > 0 && (
-          <p style={{ marginTop: "0.5rem" }}>
-            <a href="/dashboard/admin/moderation" className="btn danger">
-              Review {openReportCount} open report{openReportCount === 1 ? "" : "s"}
-            </a>
-          </p>
-        )}
-      </div>
-
-      <div className="card">
-        <h2>By state</h2>
-        {topStates.length === 0 && <p className="muted">No profiles yet.</p>}
-        {topStates.map(([state, count]) => (
-          <span key={state} className="tag" style={{ marginRight: "0.35rem" }}>
-            {state} · {count}
-          </span>
-        ))}
-      </div>
-
-      <div className="card">
-        <h2>Recent signups</h2>
-        <table>
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Qualification</th>
-              <th>Status</th>
-              <th>Joined</th>
-            </tr>
-          </thead>
-          <tbody>
-            {(recentSignups || []).map((p: any) => (
-              <tr key={p.id}>
-                <td>{p.credential_prefix} {p.full_name}</td>
-                <td>{p.qualification_level}</td>
-                <td><span className="tag">{p.verification_status}</span></td>
-                <td>{new Date(p.created_at).toLocaleDateString()}</td>
-              </tr>
+        <div className="divider" style={{ margin: "18px 0 12px" }} />
+        <div className="eyebrow">Eligible members by licensed state</div>
+        {states.length ? (
+          <div className="chip-row" style={{ marginTop: 8 }}>
+            {states.map(([st, c]) => (
+              <span key={st} className="chip">{st} &middot; {c}</span>
             ))}
-            {(recentSignups || []).length === 0 && (
-              <tr>
-                <td colSpan={4} className="muted">No signups yet.</td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-    </div>
+          </div>
+        ) : (
+          <p className="small" style={{ marginTop: 6 }}>No eligible members yet. The founding cohort is still forming.</p>
+        )}
+      </section>
+
+      <section className="card" style={{ marginBottom: 20 }}>
+        <div className="card-title"><h3>Last 30 days</h3><span className="micro-note">From real requests and replies</span></div>
+        <ul className="summary-list">
+          <li><span>Referrals sent</span><b>{n("referrals_30d")}</b></li>
+          <li><span>Referrals with a reply</span><b>{n("referrals_answered_30d")} ({pct(n("referrals_answered_30d"), n("referrals_30d"))})</b></li>
+          <li><span>Median time to first referral reply</span><b>{m.referral_median_hours_to_reply != null ? `${m.referral_median_hours_to_reply} h` : "-"}</b></li>
+          <li><span>Cover requests sent</span><b>{n("cover_requests_30d")}</b></li>
+          <li><span>Cover requests answered / accepted</span><b>{n("cover_answered_30d")} / {n("cover_accepted_30d")}</b></li>
+          <li><span>Median time to a cover reply</span><b>{m.cover_median_hours_to_reply != null ? `${m.cover_median_hours_to_reply} h` : "-"}</b></li>
+          <li><span>Trusted-circle invitations accepted</span><b>{n("invitations_accepted_30d")} of {n("invitations_30d")} ({pct(n("invitations_accepted_30d"), n("invitations_30d"))})</b></li>
+          <li><span>Consult questions answered</span><b>{n("consults_answered_30d")} of {n("consults_30d")}</b></li>
+        </ul>
+      </section>
+
+      <section>
+        <div className="section-heading"><h2>Admin areas</h2></div>
+        <div className="tile-grid">
+          {AREAS.map(([href, symbol, title, body]) => (
+            <a key={href} className="task-tile" href={href}>
+              <span className="symbol" aria-hidden="true">{symbol}</span>
+              <b>{title}</b>
+              <span>{body}</span>
+            </a>
+          ))}
+        </div>
+      </section>
+    </>
   );
 }

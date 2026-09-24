@@ -26,6 +26,7 @@ export default function PremiumShell({
   signOutAction,
   children,
   demoView,
+  gateNotice,
 }: {
   groups: NavGroup[];
   displayName: string;
@@ -36,6 +37,7 @@ export default function PremiumShell({
   signOutAction: (formData: FormData) => void;
   children: React.ReactNode;
   demoView?: boolean;
+  gateNotice?: string | null;
 }) {
   const pathname = usePathname() || "/dashboard";
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -130,6 +132,11 @@ export default function PremiumShell({
           {demoView && (
             <div className="demo-bar" role="status">
               Demo network: everyone you see here is fake. <Link href="/dashboard/settings#demo">Switch back to the real network</Link>
+            </div>
+          )}
+          {gateNotice && !demoView && (
+            <div className="demo-bar gate-bar" role="status">
+              {gateNotice} <Link href="/dashboard/credentials">Credentials</Link>
             </div>
           )}
           <main className="page" id="main" tabIndex={-1}>{children}</main>

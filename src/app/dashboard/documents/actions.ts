@@ -1,5 +1,7 @@
 "use server";
 
+import { isMemberVisible } from "@/lib/library";
+
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -240,7 +242,7 @@ export async function saveWorkingCopyAction(formData: FormData) {
     .select("id, title, library_code, version, storage_path, review_status, review_date, owner_scope")
     .eq("id", id)
     .maybeSingle();
-  if (!doc || doc.owner_scope !== "world" || doc.review_status !== "published" || !doc.review_date) {
+  if (!doc || doc.owner_scope !== "world" || !isMemberVisible(doc)) {
     documentsError("That resource isn't available");
   }
 

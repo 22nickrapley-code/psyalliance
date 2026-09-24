@@ -52,7 +52,7 @@ export async function saveProfile(formData: FormData) {
     id: user.id,
     full_name: String(formData.get("full_name") || "").trim(),
     credential_prefix: String(formData.get("credential_prefix") || "").trim() || null,
-    qualification_level: String(formData.get("qualification_level") || "PhD"),
+    qualification_level: (String(formData.get("qualification_level") || "") || null) as any,
     board_certified: formData.get("board_certified") === "on",
     primary_practice_city: String(formData.get("primary_practice_city") || "").trim() || null,
     states_qualified: statesQualified,
@@ -72,9 +72,15 @@ export async function saveProfile(formData: FormData) {
   };
   if (!profileRow.full_name) profileError("Add your full name");
 
-  const { error: upsertError } = await supabase.from("profiles").upsert(profileRow);
-  if (upsertError) {
-    profileError(upsertError.message);
+  // Update when the row exists, insert on first save. (An upsert would
+  // need read access to private columns, which members don't have
+  // directly: see migration 0079.)
+  const { data: mine } = await supabase.rpc("my_profile").maybeSingle();
+  const { error: saveError } = mine
+    ? await supabase.from("profiles").update(profileRow).eq("id", user.id)
+    : await supabase.from("profiles").insert(profileRow);
+  if (saveError) {
+    profileError(saveError.message);
   }
 
   // Rebuild the profile's lookup-value associations from scratch each save -

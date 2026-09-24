@@ -1,36 +1,51 @@
-// Placeholder page so the public footer's Privacy link resolves to something
-// honest rather than a 404. This is deliberately not a finished privacy
-// policy - the actual policy needs real legal review (data handling across
-// Supabase/Cloudflare, HIPAA-adjacent considerations given the clinical
-// audience, state-specific requirements) before it can be published as
-// binding. Flagged in the Sept 23 launch-readiness audit as missing.
+import "../premium.css";
+import { PublicNav, PublicFooter } from "../_public/chrome";
+
+export const metadata = { title: "Privacy · PsyAlliance" };
+
+// Plain-language privacy notes. Not yet a reviewed legal policy: that needs
+// counsel (data handling across Supabase and Cloudflare, state rules)
+// before launch. This page says what the product actually does today.
 export default function PrivacyPage() {
   return (
-    <div className="marketing-shell">
-      <nav className="marketing-nav">
-        <a href="/" className="brand">psyalliance.org</a>
-        <div style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
-          <a href="/auth/sign-in" className="btn secondary">Sign in</a>
-          <a href="/auth/sign-up" className="btn">Join the network</a>
-        </div>
-      </nav>
-      <section className="section-band" style={{ borderTop: "none" }}>
-        <div className="section-band-inner" style={{ maxWidth: 720 }}>
-          <h1 style={{ fontSize: "1.6rem", marginBottom: "1rem" }}>Privacy policy</h1>
-          <p className="muted">
-            This page is a placeholder while our full privacy policy is finalized with legal
-            review. In the meantime, the short version: we don&apos;t sell member data, and we
-            don&apos;t use it for advertising. Profile and credential information you submit is
-            used to verify your identity and connect you with other verified clinicians on the
-            platform.
-          </p>
-          <p className="muted">
-            If you have a specific question about how your information is handled, email us at{" "}
-            <a href="mailto:hello@psyalliance.org">hello@psyalliance.org</a> and we&apos;ll
-            answer directly.
-          </p>
-        </div>
-      </section>
+    <div className="pa">
+      <PublicNav />
+      <main>
+        <section className="public-section">
+          <div className="section-inner" style={{ maxWidth: 760 }}>
+            <div className="section-intro">
+              <div className="eyebrow">Privacy</div>
+              <h2>How PsyAlliance handles information.</h2>
+              <p>Plain-language notes while our full privacy policy completes legal review. Questions: <a href="mailto:hello@psyalliance.org">hello@psyalliance.org</a>.</p>
+            </div>
+
+            <h3>Your information</h3>
+            <p>
+              We use your profile and credentials to verify you and to connect you with other verified clinicians. Your licence numbers, NPI, CAQH and malpractice details,
+              and your contact email and phone are visible only to you and to PsyAlliance admins. Other verified members see your professional profile: name, degree,
+              practice location, specialties, availability and the states where your licence is reviewed. Accounts that aren&rsquo;t verified yet can&rsquo;t see other members.
+              We don&rsquo;t sell member data or use it for advertising.
+            </p>
+
+            <h3 style={{ marginTop: 28 }}>Patient information</h3>
+            <p>
+              PsyAlliance is designed for de-identified cases. Cover plans, referrals and consults describe needs, not people. Before anything is sent, we flag dates,
+              phone numbers, email and street addresses and record numbers. We can&rsquo;t reliably recognise names, so please leave names and unusual combinations of details
+              out. The clinical handoff happens outside PsyAlliance, through your own secure channel, once a colleague agrees. Email notifications never include what you wrote.
+            </p>
+
+            <h3 style={{ marginTop: 28 }}>If patient information is shared by mistake</h3>
+            <ol className="small" style={{ lineHeight: 1.8, paddingLeft: 18 }}>
+              <li>Remove it yourself if you can: you can remove your own messages at any time.</li>
+              <li>Otherwise use <b>Report</b> on the post, reply or message and choose &ldquo;It identifies a patient&rdquo;. Don&rsquo;t repeat the details in the report.</li>
+              <li>An admin reviews it as a priority and replaces the text everywhere it appears in PsyAlliance. We log that it happened, without keeping the removed words.</li>
+              <li>We tell you when it&rsquo;s done. Whether the disclosure needs further action under your own professional or legal obligations is your call; we&rsquo;ll give you the facts you need.</li>
+            </ol>
+            <p className="micro-note">Removed text may persist in encrypted database backups until they expire on our provider&rsquo;s schedule.</p>
+          </div>
+        </section>
+      </main>
+      <PublicFooter />
     </div>
   );
 }

@@ -13,7 +13,7 @@ export default async function ProfilePage(props: {
   const me = user!.id;
 
   const [{ data: profile }, { data: lookups }, { data: selectedRows }, { count: licenceCount }] = await Promise.all([
-    supabase.from("profiles").select("*").eq("id", me).maybeSingle(),
+    supabase.rpc("my_profile").maybeSingle<any>(),
     supabase.from("lookup_values").select("id, category, value").neq("category", "us_state").order("value"),
     supabase.from("profile_lookup_values").select("lookup_value_id, rank").eq("profile_id", me),
     supabase.from("licenses").select("id", { count: "exact", head: true }).eq("profile_id", me),

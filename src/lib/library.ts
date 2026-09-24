@@ -11,6 +11,7 @@ export type LibraryResource = {
   audience: string;
   tags: string[];
   version: number;
+  reviewed: boolean;
   reviewDate: string | null;
   nextReviewDate: string | null;
   storagePath: string;
@@ -46,10 +47,14 @@ export function cleanTitle(title: string) {
   return title.replace(/^PA-\d+:\s*/, "");
 }
 
-// Members only ever see a resource with a recorded review (spec trust rule
-// "Reviewed resources only"). Drafts and anything without a review date
-// stay hidden.
+// Members see published resources (independently reviewed, with a review
+// date) and provisional ones, which are always labelled as not yet
+// independently reviewed. Drafts and hidden resources stay hidden.
 export function isMemberVisible(d: { review_status?: string | null; review_date?: string | null }) {
+  return (d.review_status === "published" && !!d.review_date) || d.review_status === "provisional";
+}
+
+export function isReviewed(d: { review_status?: string | null; review_date?: string | null }) {
   return d.review_status === "published" && !!d.review_date;
 }
 
@@ -63,6 +68,7 @@ export function toResource(d: any): LibraryResource {
     audience: d.audience || "",
     tags: d.tags || [],
     version: d.version || 1,
+    reviewed: isReviewed(d),
     reviewDate: d.review_date || null,
     nextReviewDate: d.next_review_date || null,
     storagePath: d.storage_path,

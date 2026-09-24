@@ -18,7 +18,7 @@ export async function GET() {
 
   const [profile, practiceFacts, licences, ce, panels, referrals, coverPlans, consultations, consultReplies, messages, saved, excluded, blocked, ratings, prefs, myDocuments] =
     await Promise.all([
-      supabase.from("profiles").select("*").eq("id", me).maybeSingle().then((r) => r.data),
+      supabase.rpc("my_profile").maybeSingle<any>().then((r) => r.data),
       q("profile_lookup_values", "profile_id", "rank, lookup_values(category, value)"),
       q("licenses", "profile_id"),
       q("continuing_education_credits", "profile_id"),

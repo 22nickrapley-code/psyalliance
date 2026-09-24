@@ -1,3 +1,4 @@
+import { ReportContent } from "../_components/report-content";
 import type { ReactNode } from "react";
 import type { Match } from "@/lib/match-engine";
 import { PageHead, Banner, Empty, Status, PersonAvatar, MatchCard } from "../_components/ui";
@@ -390,6 +391,11 @@ export function ConsultDetailView({ c, ok, error, extra }: { c: ConsultDetail; o
             </div>
             {c.context ? <p style={{ whiteSpace: "pre-wrap", marginTop: 10 }}>{c.context}</p> : <p className="small" style={{ marginTop: 10 }}>No further context.</p>}
             <div className="chip-row">{c.tags.map((t) => <a key={t} className="chip" href={`/dashboard/consult?tag=${encodeURIComponent(t)}`}>{t}</a>)}</div>
+            {!isDraft && (
+              <div style={{ marginTop: 10 }}>
+                <ReportContent targetType="consultation" targetId={c.id} returnTo={`/dashboard/consult/${c.id}`} label={c.mine ? "Report patient information in this post" : "Report"} />
+              </div>
+            )}
           </section>
 
           {!isDraft && (
@@ -411,7 +417,10 @@ export function ConsultDetailView({ c, ok, error, extra }: { c: ConsultDetail; o
                       )}
                     </div>
                     <p style={{ whiteSpace: "pre-wrap" }}>{r.body}</p>
-                    <span className="micro-note">{new Date(r.createdAt).toLocaleDateString()}</span>
+                    <div className="row" style={{ gap: 10 }}>
+                      <span className="micro-note">{new Date(r.createdAt).toLocaleDateString()}</span>
+                      <ReportContent targetType="consultation_response" targetId={r.id} returnTo={`/dashboard/consult/${c.id}`} />
+                    </div>
                   </div>
                 </div>
               ))}

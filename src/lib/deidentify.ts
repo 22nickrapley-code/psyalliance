@@ -1,8 +1,12 @@
-// Server-side guard for free text that must never carry patient
-// identifiers (Product Spec v1, trust rule 1). A checkbox is not enough;
-// this blocks the patterns that are unambiguous (contact details, full
-// dates, record numbers) and asks the member to rephrase. It can't detect
-// every name, so the compose screens keep their guidance as well.
+// Server-side guard for free text that shouldn't carry patient
+// identifiers. It blocks patterns that are unambiguous (contact details,
+// full dates, record numbers, street addresses) and asks the member to
+// rephrase. It CANNOT reliably detect names, so nothing public may claim
+// that it does; the compose screens keep their guidance, and anything that
+// slips through can be reported and redacted (migration 0084).
+// Applied to: consult questions, context and replies; group posts;
+// referral notes and replies; cover plan titles and request messages;
+// direct messages.
 
 const PATTERNS: { re: RegExp; label: string }[] = [
   { re: /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i, label: "an email address" },
@@ -25,5 +29,5 @@ export function findIdentifiers(text: string | null | undefined): string[] {
 export function identifierError(text: string | null | undefined): string | null {
   const found = findIdentifiers(text);
   if (found.length === 0) return null;
-  return `Please remove ${found.join(" and ")}. PsyAlliance never holds patient-identifying details; share them through your own secure channel once a colleague agrees.`;
+  return `Please remove ${found.join(" and ")}. PsyAlliance isn't built to hold patient-identifying details; share them through your own secure channel once a colleague agrees.`;
 }

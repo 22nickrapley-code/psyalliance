@@ -79,5 +79,10 @@ export default async function DocumentsPage(props: {
     .filter((r) => (!category || r.category === category) && matchesQuery(r, q))
     .sort((a, b) => (a.code || "ZZ").localeCompare(b.code || "ZZ") || a.title.localeCompare(b.title));
 
-  return <LibraryView resources={resources} q={q} category={category} mineCount={myDocs.length} error={sp.error} />;
+  const { count: appointments } = await supabase
+    .from("library_reviewers")
+    .select("id", { count: "exact", head: true })
+    .eq("profile_id", myself)
+    .eq("active", true);
+  return <LibraryView resources={resources} q={q} category={category} mineCount={myDocs.length} error={sp.error} isReviewer={(appointments || 0) > 0} />;
 }

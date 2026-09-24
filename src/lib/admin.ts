@@ -26,29 +26,31 @@ export async function requireAdminOrRedirectPath(
   return null;
 }
 
-// Found in the Sept 23 launch-readiness audit: a profile could be (and one
-// real one was) set to verification_status='verified' with zero rows in
-// `licenses` and no reviewed/matched row in `credential_verifications` -
-// nothing ever checked that "verified" meant an admin had actually looked
-// at a real credential. That's a direct contradiction of what "verified"
-// promises a clinician browsing the directory, so both admin verify actions
-// (members and verifications) now call this before allowing the transition.
-// A profile with neither a license on file nor a matched+reviewed credential
-// submission cannot be marked verified - the admin has to add/review one
-// first. This does not retroactively touch any profile already marked
-// verified; it only gates the next transition.
-export async function hasReviewableCredentialEvidence(
+// Changes a member's verification status. Verified requires at least one
+// reviewed, in-date licence; the database enforces that
+// (guard_verification_evidence, migration 0082) and its message comes back
+// as the error. Only a real transition into verified notifies the member.
+export async function setVerificationStatus(
   supabase: Awaited<ReturnType<typeof createClient>>,
-  profileId: string
-): Promise<boolean> {
-  const [{ count: licenseCount }, { count: reviewedCredentialCount }] = await Promise.all([
-    supabase.from("licenses").select("*", { count: "exact", head: true }).eq("profile_id", profileId),
-    supabase
-      .from("credential_verifications")
-      .select("*", { count: "exact", head: true })
-      .eq("profile_id", profileId)
-      .eq("matched", true)
-      .not("reviewed_by", "is", null),
-  ]);
-  return (licenseCount ?? 0) > 0 || (reviewedCredentialCount ?? 0) > 0;
+  adminId: string,
+  profileId: string,
+  status: string
+): Promise<{ error: string | null }> {
+  if (!["pending", "verified", "flagged", "rejected"].includes(status)) return { error: "Unknown status" };
+  const { data: before } = await supabase.from("profiles").select("verification_status").eq("id", profileId).maybeSingle();
+  const { error } = await supabase
+    .from("profiles")
+    .update({ verification_status: status, verified_at: status === "verified" ? new Date().toISOString() : null })
+    .eq("id", profileId);
+  if (error) return { error: error.message };
+  if (status === "verified" && before?.verification_status !== "verified") {
+    const { notifyProfile } = await import("@/lib/notifications");
+    await notifyProfile(supabase, {
+      profileId,
+      title: "Your credentials are verified",
+      body: "You're now part of the network in the states where your licence has been reviewed: listed, matched for referrals and cover, and able to consult with colleagues.",
+      createdBy: adminId,
+    });
+  }
+  return { error: null };
 }

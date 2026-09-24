@@ -1,44 +1,19 @@
-import { signUpProvider } from "../../refer/actions";
-
-export default async function ProviderSignUpPage(
-  props: { searchParams: Promise<{ error?: string }> }
-) {
-  const searchParams = await props.searchParams;
+// The physician referral portal is paused before launch: it collected
+// patient initials and contact details, which PsyAlliance doesn't hold.
+// Re-opening it is a product decision (see the launch notes).
+export default function PortalClosedPage() {
   return (
     <div className="auth-shell">
       <div className="auth-card-wrap">
-        <a href="/" className="brand"><span aria-hidden="true" style={{ display: "inline-grid", placeItems: "center", width: 30, height: 30, border: "1.5px solid currentColor", borderRadius: "50%", fontFamily: "Georgia, serif", transform: "rotate(-18deg)", marginRight: 10, fontSize: 20 }}>ψ</span>psyalliance</a>
-
-        {searchParams.error && <div className="error-banner">{searchParams.error}</div>}
-
-        <form action={signUpProvider} className="card">
-          <h2>Referring provider sign-up</h2>
-          <p className="muted" style={{ marginTop: "-0.5rem" }}>
-            For family physicians and general practitioners who want to refer patients into
-            PsyAlliance's verified network. An admin reviews every registration before it's
-            approved.
+        <a href="/" className="brand">psyalliance</a>
+        <div className="card">
+          <h2>The physician referral portal isn&rsquo;t open</h2>
+          <p className="muted">
+            PsyAlliance is opening to a founding group of psychologists and psychiatrists first. Referring physicians can&rsquo;t register yet.
+            To reach us, email <a href="mailto:hello@psyalliance.org">hello@psyalliance.org</a>.
           </p>
-          <div className="field">
-            <label htmlFor="fullName">Full name</label>
-            <input id="fullName" name="fullName" type="text" required />
-          </div>
-          <div className="field">
-            <label htmlFor="email">Email</label>
-            <input id="email" name="email" type="email" required />
-          </div>
-          <div className="field">
-            <label htmlFor="password">Password</label>
-            <input id="password" name="password" type="password" minLength={8} required />
-          </div>
-          <button type="submit" style={{ width: "100%" }}>Create account</button>
-        </form>
-
-        <p className="muted" style={{ textAlign: "center" }}>
-          Already registered? <a href="/auth/refer-sign-in">Sign in</a>
-        </p>
-        <p className="muted" style={{ textAlign: "center" }}>
-          A psychologist or psychiatrist looking to join the network? <a href="/auth/sign-up">Sign up here</a>
-        </p>
+          <a href="/" className="btn secondary">Back to PsyAlliance</a>
+        </div>
       </div>
     </div>
   );

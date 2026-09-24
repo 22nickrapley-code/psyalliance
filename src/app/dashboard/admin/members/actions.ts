@@ -1,8 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { assertIsAdmin, hasReviewableCredentialEvidence } from "@/lib/admin";
-import { notifyProfile } from "@/lib/notifications";
+import { assertIsAdmin, setVerificationStatus } from "@/lib/admin";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
@@ -23,50 +22,31 @@ export async function setMemberVerificationStatus(formData: FormData) {
   if (!user) throw new Error("Not signed in");
   await assertIsAdmin(supabase, user.id);
 
-  const profileId = String(formData.get("profile_id") || "");
-  const status = String(formData.get("status") || "");
-
-  // See the identical check in verifications/actions.ts - only a genuine
-  // transition into 'verified' should send the "you're approved" notice.
-  const { data: before } = await supabase
-    .from("profiles")
-    .select("verification_status")
-    .eq("id", profileId)
-    .maybeSingle();
-
-  // Launch-readiness audit finding: "verified" must mean an admin actually
-  // reviewed a real credential, not just a status flip. See the comment on
-  // hasReviewableCredentialEvidence for the incident this closes.
-  if (status === "verified" && before?.verification_status !== "verified") {
-    const hasEvidence = await hasReviewableCredentialEvidence(supabase, profileId);
-    if (!hasEvidence) {
-      membersError("Can't mark verified: no license on file and no reviewed/matched credential submission. Add a license or review a submission first.");
-    }
-  }
-
-  const { error } = await supabase
-    .from("profiles")
-    .update({
-      verification_status: status,
-      verified_at: status === "verified" ? new Date().toISOString() : null,
-    })
-    .eq("id", profileId);
-  if (error) membersError(error.message);
-
-  if (status === "verified" && before?.verification_status !== "verified") {
-    await notifyProfile(supabase, {
-      profileId,
-      title: "You're approved!",
-      body: "Your credential verification is complete and your PsyAlliance membership is now approved. You have full access to the network - Caseload, Messages, Network, and every other tool.",
-      createdBy: user.id,
-    });
-  }
+  const { error } = await setVerificationStatus(supabase, user.id, String(formData.get("profile_id") || ""), String(formData.get("status") || ""));
+  if (error) membersError(error);
 
   revalidatePath("/dashboard/admin/members");
   revalidatePath("/dashboard/admin/verifications");
   revalidatePath("/dashboard/admin");
-  revalidatePath("/dashboard/messages");
-  revalidatePath("/dashboard");
+}
+
+// Admin-only (operator) accounts: for staff and non-clinician reviewers.
+// They're never listed, matched, counted or verified as clinicians.
+export async function setAccountKindAction(formData: FormData) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not signed in");
+  await assertIsAdmin(supabase, user.id);
+
+  const profileId = String(formData.get("profile_id") || "");
+  const kind = formData.get("account_kind") === "operator" ? "operator" : "clinician";
+  const patch: Record<string, unknown> = { account_kind: kind };
+  if (kind === "operator") Object.assign(patch, { verification_status: "pending", verified_at: null, directory_visible: false });
+  const { error } = await supabase.from("profiles").update(patch).eq("id", profileId);
+  if (error) membersError(error.message);
+  revalidatePath("/dashboard/admin/members");
 }
 
 // Lets an existing admin (Nick) promote a trusted co-reviewer (e.g. Rena) to

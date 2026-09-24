@@ -68,7 +68,8 @@ const res = (code: string, title: string, category: string, summary: string): Li
   audience: "Psychologists · Psychiatrists",
   tags: ["coverage", "continuity of care", "handoff"],
   version: 1,
-  reviewDate: "2026-09-23",
+  reviewed: code === "PA-04",
+  reviewDate: code === "PA-04" ? "2026-09-23" : null,
   nextReviewDate: "2027-09-23",
   storagePath: "",
 });

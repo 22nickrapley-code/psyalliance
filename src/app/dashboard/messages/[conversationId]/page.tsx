@@ -1,7 +1,8 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { sendMessage } from "../actions";
-import { fileReportAction } from "../../moderation-actions";
+import { ReportContent } from "../../_components/report-content";
+import { removeMessageAction } from "../actions";
 import { loadConversations, splitContext } from "../data";
 import { ConversationList, MessagesShell } from "../views";
 import { Status } from "../../_components/ui";
@@ -54,20 +55,21 @@ export default async function ConversationPage(props: { params: Promise<{ conver
           {(messages || []).map((m: any) => (
             <div key={m.id} className={`bubble${m.author_id === myself ? " me" : ""}`}>
               {group && m.author_id !== myself && <span className="author">{nameOf(m.author)}</span>}
-              {m.deleted_at ? <em>Message removed</em> : <span style={{ whiteSpace: "pre-wrap" }}>{m.body}</span>}
+              {m.deleted_at ? <em>{m.body && m.body.startsWith("[Removed by PsyAlliance") ? "Removed by PsyAlliance: it contained patient information" : "Message removed"}</em> : <span style={{ whiteSpace: "pre-wrap" }}>{m.body}</span>}
               <small>
                 {new Date(m.created_at).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
-                {m.author_id !== myself && !m.deleted_at && (
-                  <details style={{ display: "inline", marginLeft: 8 }}>
-                    <summary style={{ display: "inline", cursor: "pointer" }}>Report</summary>
-                    <form action={fileReportAction} style={{ marginTop: 6 }}>
-                      <input type="hidden" name="target_type" value="message" />
-                      <input type="hidden" name="target_id" value={m.id} />
-                      <input type="hidden" name="return_to" value={`/dashboard/messages/${id}`} />
-                      <textarea name="reason" required rows={2} placeholder="What's wrong?" style={{ width: "100%" }} />
-                      <button type="submit" className="btn secondary small-btn">Send to admins</button>
-                    </form>
-                  </details>
+                {!m.deleted_at && (
+                  <span style={{ display: "inline-block", marginLeft: 8 }}>
+                    {m.author_id === myself ? (
+                      <form action={removeMessageAction} className="inline">
+                        <input type="hidden" name="message_id" value={m.id} />
+                        <input type="hidden" name="conversation_id" value={id} />
+                        <button type="submit" className="plain-button small">Remove</button>
+                      </form>
+                    ) : (
+                      <ReportContent targetType="message" targetId={m.id} returnTo={`/dashboard/messages/${id}`} />
+                    )}
+                  </span>
                 )}
               </small>
             </div>

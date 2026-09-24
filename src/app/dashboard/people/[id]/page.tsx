@@ -43,7 +43,7 @@ export default async function PersonPage(props: { params: Promise<{ id: string }
     .select("bio, approx_spaces, availability_paused_until")
     .eq("id", id)
     .maybeSingle();
-  const [{ data: rows }, { data: licenceRows }, { data: connection }, { data: savedRow }, { data: excludedRow }, { data: workedRows }, { data: coverEvents }, { data: responseEvents }, { data: workedWithMe }] =
+  const [{ data: rows }, { data: licenceRows }, { data: connection }, { data: savedRow }, { data: excludedRow }, { data: track }, { data: workedWithMe }] =
     await Promise.all([
       supabase.from("public_directory").select("*").eq("id", id),
       supabase.rpc("network_licence_states"),
@@ -54,9 +54,7 @@ export default async function PersonPage(props: { params: Promise<{ id: string }
         .maybeSingle(),
       supabase.from("saved_clinicians").select("id").eq("profile_id", myself).eq("clinician_id", id).maybeSingle(),
       supabase.from("do_not_work_with").select("blocked_profile_id").eq("profile_id", myself).eq("blocked_profile_id", id).maybeSingle(),
-      supabase.from("worked_with_before").select("colleague_id").eq("profile_id", id),
-      supabase.from("professional_events").select("id").eq("event_type", "coverage_completed").eq("related_profile_id", id),
-      supabase.from("professional_events").select("response_time_seconds").eq("actor_profile_id", id).not("response_time_seconds", "is", null).limit(50),
+      supabase.rpc("member_track_record", { target: id }).maybeSingle<any>(),
       supabase.from("worked_with_before").select("interaction_count").eq("profile_id", myself).eq("colleague_id", id).maybeSingle(),
     ]);
 
@@ -93,12 +91,14 @@ export default async function PersonPage(props: { params: Promise<{ id: string }
   const relationship =
     status === "trusted" ? "Trusted colleague" : workedWithMe ? "Worked with before" : savedRow ? "Saved" : status === "pending_out" ? "Invitation sent" : status === "pending_in" ? "Wants to connect" : "Verified network";
 
-  const times = (responseEvents || []).map((e: any) => Number(e.response_time_seconds)).filter((n) => n > 0).sort((a, b) => a - b);
-  const median = times.length >= 3 ? times[Math.floor(times.length / 2)] : null;
-  const replyLabel = median === null ? null : median < 6 * 3600 ? "Typically replies within a few hours" : median < 36 * 3600 ? "Typically replies within a day" : "Typically replies within a few days";
+  // Counts only, from member_track_record (individual events are private).
+  const worked = Number(track?.colleagues_worked_with || 0);
+  const covers = Number(track?.covers_completed || 0);
+  const medianHours = Number(track?.response_samples || 0) >= 3 && track?.median_response_hours != null ? Number(track.median_response_hours) : null;
+  const replyLabel = medianHours === null ? null : medianHours < 6 ? "Typically replies within a few hours" : medianHours < 36 ? "Typically replies within a day" : "Typically replies within a few days";
   const signals = [
-    (workedRows || []).length ? `Worked with ${(workedRows || []).length} member${(workedRows || []).length === 1 ? "" : "s"}` : null,
-    (coverEvents || []).length ? `Covered for colleagues ${(coverEvents || []).length} time${(coverEvents || []).length === 1 ? "" : "s"}` : null,
+    worked ? `Worked with ${worked} member${worked === 1 ? "" : "s"}` : null,
+    covers ? `Covered for colleagues ${covers} time${covers === 1 ? "" : "s"}` : null,
     replyLabel,
   ].filter(Boolean) as string[];
 

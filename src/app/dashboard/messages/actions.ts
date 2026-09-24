@@ -1,5 +1,7 @@
 "use server";
 
+import { identifierError } from "@/lib/deidentify";
+
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -104,6 +106,8 @@ export async function startConversation(formData: FormData) {
   if (participantIds.length === 0) {
     redirect(`/dashboard/messages?error=${encodeURIComponent("Choose at least one colleague to message before sending.")}`);
   }
+  const startIdErr = identifierError(`${title || ""}\n${body}`);
+  if (startIdErr) redirect(`/dashboard/messages?error=${encodeURIComponent(startIdErr)}`);
 
   const allParticipantIds = Array.from(new Set([user.id, ...participantIds]));
 
@@ -188,6 +192,8 @@ export async function sendMessage(formData: FormData) {
   const conversationId = Number(formData.get("conversation_id"));
   const body = String(formData.get("body") || "").trim();
   if (!body) return;
+  const idErr = identifierError(body);
+  if (idErr) redirect(`/dashboard/messages/${conversationId}?error=${encodeURIComponent(idErr)}`);
 
   const { data: participants } = await supabase
     .from("conversation_participants")
@@ -301,4 +307,24 @@ export async function setNotificationReadState(formData: FormData) {
 
   revalidatePath("/dashboard/messages");
   revalidatePath("/dashboard");
+}
+
+// Authors can take back their own message, for example if it identified a
+// patient. The text is cleared, not just hidden.
+export async function removeMessageAction(formData: FormData) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not signed in");
+  const messageId = Number(formData.get("message_id"));
+  const conversationId = Number(formData.get("conversation_id"));
+  const { error } = await supabase
+    .from("conversation_messages")
+    .update({ body: "", deleted_at: new Date().toISOString(), mentioned_profile_ids: [] })
+    .eq("id", messageId)
+    .eq("author_id", user.id);
+  if (error) redirect(`/dashboard/messages/${conversationId}?error=${encodeURIComponent(error.message)}`);
+  revalidatePath(`/dashboard/messages/${conversationId}`);
+  redirect(`/dashboard/messages/${conversationId}`);
 }
