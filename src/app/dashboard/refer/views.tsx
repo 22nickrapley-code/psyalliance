@@ -7,6 +7,7 @@ import {
   Banner,
   Progress,
   Empty,
+  QuietEmpty,
   Status,
   MatchCard,
   NeedFields,
@@ -332,7 +333,7 @@ export function ReferIndexView({
         <section className="card">
           <div className="card-title"><h3>Your referrals</h3><span className="micro-note">{mine.length} total</span></div>
           {mine.length === 0 ? (
-            <Empty symbol={"↗"} title="No referrals yet." body="When you can't take a patient, start here: describe the need and PsyAlliance shortlists the right colleagues." action={<a className="btn secondary small-btn" href="/dashboard/refer/new">Make a referral</a>} />
+            <QuietEmpty title="No referrals yet." body="When you can't take a patient, start here: describe the need and PsyAlliance shortlists the right colleagues." action={<a className="btn secondary small-btn" href="/dashboard/refer/new">Make a referral</a>} />
           ) : (
             mine.map((r) => {
               const s = STATUS_LABEL[r.status] || { label: r.status, tone: "neutral" as const };
@@ -351,7 +352,7 @@ export function ReferIndexView({
         <section className="card">
           <div className="card-title"><h3>Offered to you</h3><span className="micro-note">Matched to your practice</span></div>
           {offered.length === 0 ? (
-            <Empty symbol={"◎"} title="Nothing waiting for you." body="Referrals that fit your profile and availability appear here. Keeping your availability current helps colleagues find you." action={<a className="btn secondary small-btn" href="/dashboard/availability">Update availability</a>} />
+            <QuietEmpty title="Nothing waiting for you." body="Referrals that fit your profile and availability appear here. Keeping your availability current helps colleagues find you." action={<a className="btn secondary small-btn" href="/dashboard/availability">Update availability</a>} />
           ) : (
             offered.map((r) => (
               <a key={r.id} className="list-row" href={`/dashboard/refer/${r.id}`} style={{ textDecoration: "none", color: "inherit" }}>

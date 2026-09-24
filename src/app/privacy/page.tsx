@@ -1,7 +1,7 @@
 import "../premium.css";
 import { PublicNav, PublicFooter } from "../_public/chrome";
 
-export const metadata = { title: "Privacy · PsyAlliance" };
+export const metadata = { title: "Privacy" };
 
 // Plain-language privacy notes. Not yet a reviewed legal policy: that needs
 // counsel (data handling across Supabase and Cloudflare, state rules)

@@ -185,23 +185,14 @@ export function SettingsView({ sp, email, me, prefs, profile, emergency, exclude
             </form>
           </section>
 
-          {(profile?.is_admin || profile?.demo_view) && (
+          {/* The in-production demo view is retired: the demo lives on its own
+              site now. Anyone still switched on can switch it off. */}
+          {profile?.demo_view && (
             <form action={setDemoViewAction} className="card" id="demo">
-              <h3>Demo network</h3>
-              <p className="small">
-                See PsyAlliance filled with fake, clearly-labelled demo members so you can try every feature. Real members never see the demo network, and demo activity never reaches them.
-              </p>
-              <div className="seg">
-                <label>
-                  <input type="radio" name="demo_view" value="on" defaultChecked={!!profile?.demo_view} disabled={!profile?.is_admin && !profile?.demo_view} />
-                  Show the demo network
-                </label>
-                <label>
-                  <input type="radio" name="demo_view" value="off" defaultChecked={!profile?.demo_view} />
-                  Show the real network
-                </label>
-              </div>
-              <button type="submit" className="btn secondary small-btn" style={{ marginTop: 10 }}>Save</button>
+              <h3>Demo network view</h3>
+              <p className="small">This account is still showing the old demo network. Switch back to the real network.</p>
+              <input type="hidden" name="demo_view" value="off" />
+              <button type="submit" className="btn secondary small-btn">Show the real network</button>
             </form>
           )}
 

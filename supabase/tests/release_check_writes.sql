@@ -10,7 +10,7 @@ declare
   r3 uuid := gen_random_uuid();
   r4 uuid := gen_random_uuid();
   r5 uuid := gen_random_uuid();
-  demo uuid := (select id from profiles where is_demo and verification_status = 'verified' order by id limit 1);
+  demo uuid := gen_random_uuid();
   ref_id bigint; con_id bigint; conv_id bigint; plan_id bigint; case_ny bigint; case_tx bigint; ev_id bigint;
   procedure_ok boolean;
 
@@ -22,13 +22,15 @@ begin
     (r2, 'r2@release-check.test', 'authenticated', 'authenticated'),
     (r3, 'r3@release-check.test', 'authenticated', 'authenticated'),
     (r4, 'r4@release-check.test', 'authenticated', 'authenticated'),
-    (r5, 'r5@release-check.test', 'authenticated', 'authenticated');
+    (r5, 'r5@release-check.test', 'authenticated', 'authenticated'),
+    (demo, 'demo@release-check.test', 'authenticated', 'authenticated');
   insert into profiles (id, full_name, qualification_level, verification_status, primary_state) values
     (r1, 'Check One', 'PhD', 'verified', 'NY'),
     (r2, 'Check Two', 'PsyD', 'verified', 'TX'),
     (r3, 'Check Three', 'PhD', 'pending', 'NY'),
     (r4, 'Check Four', 'MD', 'verified', 'NY')
   on conflict (id) do update set verification_status = excluded.verification_status;
+  insert into profiles (id, full_name, qualification_level, verification_status, primary_state, is_demo) values (demo, 'Check Demo', 'PhD', 'verified', 'NY', true);
   insert into licenses (profile_id, state, license_number, status, reviewed_at) values
     (r1, 'NY', 'X1', 'active', now()), (r2, 'TX', 'X2', 'active', now()), (r4, 'NY', 'X4', 'active', now());
 
@@ -182,6 +184,25 @@ begin
     exception when others then out := out || E'\nok   cannot ask a demo account to cover a real case';
     end;
   exception when others then out := out || E'\nFAIL cover setup: ' || sqlerrm;
+  end;
+  -- 8b. The full loop with another eligible clinician (r4, NY)
+  declare nyref bigint; cons bigint;
+  begin
+    insert into referral_requests (requesting_profile_id, state, status, audience_type, modality) values (r1, 'NY', 'open', 'wider_network', 'in_person') returning id into nyref;
+    select id into cons from consultations where author_profile_id = r1 limit 1;
+    reset role;
+    perform set_config('request.jwt.claims', json_build_object('sub', r4, 'role', 'authenticated')::text, true);
+    set local role authenticated;
+    insert into referral_responses (referral_request_id, responding_profile_id, status, message) values (nyref, r4, 'interested', 'I can take this');
+    insert into consultation_responses (consultation_id, responder_profile_id, response_type, body) values (cons, r4, 'reply', 'Here is my thinking');
+    update coverage_requests set status = 'accepted', responded_at = now() where requested_profile_id = r4 and coverage_plan_case_id = case_ny;
+    reset role;
+    out := out || E'\nok   full loop with an eligible colleague: referral reply=' || (select count(*) from referral_responses where referral_request_id = nyref)
+      || ', consult reply=' || (select count(*) from consultation_responses where consultation_id = cons)
+      || ', cover case=' || (select status::text from coverage_plan_cases where id = case_ny);
+    perform set_config('request.jwt.claims', json_build_object('sub', r1, 'role', 'authenticated')::text, true);
+    set local role authenticated;
+  exception when others then out := out || E'\nFAIL full loop: ' || sqlerrm;
   end;
   -- 9. Notifications: only on-site links, only within partition
   begin

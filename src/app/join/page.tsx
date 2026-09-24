@@ -2,7 +2,7 @@ import "../premium.css";
 import { PublicNav, PublicFooter } from "../_public/chrome";
 import { requestToJoinAction } from "../auth/actions";
 
-export const metadata = { title: "Join the founding cohort · PsyAlliance" };
+export const metadata = { title: "Join the founding cohort" };
 
 // Ask for an invitation. PsyAlliance opens to a founding cohort of
 // verified clinicians who overlap by state and specialty, so we invite

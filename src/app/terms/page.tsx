@@ -1,7 +1,7 @@
 import "../premium.css";
 import { PublicNav, PublicFooter } from "../_public/chrome";
 
-export const metadata = { title: "Terms · PsyAlliance" };
+export const metadata = { title: "Terms" };
 
 // Plain-language terms while the full terms complete legal review.
 export default function TermsPage() {

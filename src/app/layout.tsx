@@ -1,3 +1,4 @@
+import { IS_DEMO_SITE } from "@/lib/env";
 import "./globals.css";
 // Self-hosted via @fontsource rather than next/font/google: this bundles the
 // font files at build time with no network fetch required, so the build
@@ -24,7 +25,7 @@ export const metadata = {
   metadataBase: new URL(siteUrl),
   title: {
     default: "PsyAlliance: a professional network for psychologists and psychiatrists",
-    template: "%s | psyalliance.org",
+    template: IS_DEMO_SITE ? "%s | PsyAlliance demo" : "%s | psyalliance.org",
   },
   description:
     "A closed, credential-reviewed professional network for doctoral-level psychologists (PhD, PsyD, EdD) and psychiatrists (MD, DO) in independent practice: cover for time away, considered referrals and peer consultation with verified colleagues. Not a public therapist directory.",
@@ -45,9 +46,10 @@ export const metadata = {
     siteName: "psyalliance.org",
     type: "website",
   },
+  // The demo site is never indexed.
   robots: {
-    index: true,
-    follow: true,
+    index: !IS_DEMO_SITE,
+    follow: !IS_DEMO_SITE,
   },
 };
 

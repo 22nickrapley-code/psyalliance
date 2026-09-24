@@ -3,9 +3,9 @@ import { resolveAvatarUrls } from "@/lib/avatars";
 import { findMatches } from "@/lib/match-engine";
 import { professionFor } from "@/lib/profession";
 import { US_STATES } from "@/lib/us-states";
+import { effectiveReferral } from "@/lib/availability";
 import { NetworkView, type NetworkTab, type Person } from "./views";
 
-const AVAIL: Record<string, string> = { yes: "Accepting referrals", limited: "Selected referrals", no: "Not accepting" };
 
 export default async function NetworkPage(props: {
   searchParams: Promise<{ tab?: string; q?: string; focus?: string; state?: string; available?: string; profession?: string; insurance?: string; age?: string; language?: string; modality?: string; session?: string; psypact?: string }>;
@@ -111,7 +111,7 @@ export default async function NetworkPage(props: {
           .sort((a: any, b: any) => (a.rank ?? 99) - (b.rank ?? 99))
           .slice(0, 3)
           .map((f: any) => f.v),
-        availability: AVAIL[p.referral_availability] || "Availability not set",
+        availability: effectiveReferral(p.referral_availability, p.availability_confirmed_at).label,
         fresh: p.referral_availability === "yes" && age !== null && age <= 30,
         confirmedDaysAgo: age,
         psypact: !!p.psypact_participating,
@@ -187,6 +187,7 @@ export default async function NetworkPage(props: {
       moreOptions={moreOptions}
       states={US_STATES}
       counts={counts}
+      networkSize={byId.size}
     />
   );
 }

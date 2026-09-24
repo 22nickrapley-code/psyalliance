@@ -435,3 +435,35 @@
 .pa details.report-content[open]{display:block; margin-top:6px}
 .pa .admin-funnel{grid-template-columns:repeat(4,1fr)}
 @media (max-width:760px){.pa .admin-funnel{grid-template-columns:repeat(2,1fr)}}
+/* Guided tour (demo site) */
+.pa .tour-bar{position:sticky;top:0;z-index:60;background:#173b31;color:#f7f5f0;box-shadow:0 2px 12px rgba(0,0,0,.12)}
+.pa .tour-bar-inner{display:flex;gap:16px;align-items:center;padding:12px 24px;max-width:1400px;margin:0 auto;flex-wrap:wrap}
+.pa .tour-count{font-size:11px;font-weight:650;letter-spacing:.08em;text-transform:uppercase;color:#e2c49c;white-space:nowrap}
+.pa .tour-text{flex:1;min-width:240px;display:flex;flex-direction:column;gap:2px}
+.pa .tour-text b{font-family:var(--display);font-size:17px;font-weight:500}
+.pa .tour-text span{font-size:12px;color:#cfe0d8;line-height:1.5}
+.pa .tour-who{font-size:11px;font-weight:650;padding:5px 10px;border-radius:5px;background:#24503f;white-space:nowrap}
+.pa .tour-who.maya{background:#7a5a2c}
+.pa .tour-nav{display:flex;gap:8px}
+.pa .tour-bar .btn.ghost{color:#f7f5f0}
+.pa .tour-bar .btn.ghost:hover{background:#24503f}
+.pa .tour-fiction{font-size:11px;text-align:center;padding:4px 24px 8px;color:#a9c4b8}
+.pa .tour-outline{columns:2;gap:28px;padding-left:18px;font-size:13px;line-height:2}
+@media (max-width:760px){.pa .tour-outline{columns:1}.pa .tour-bar-inner{padding:10px 16px}.pa .tour-nav{width:100%;justify-content:space-between}}
+.pa.tour-top{min-height:0}
+@media (max-width:760px){.pa .tour-bar{position:static}.pa .tour-text b{font-size:15px}.pa .tour-text span{font-size:11px}.pa .tour-count{width:100%}}
+/* Profile editor sections */
+.pa details.profile-section > summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:12px}
+.pa details.profile-section > summary::-webkit-details-marker{display:none}
+.pa details.profile-section > summary::after{content:"+";font:20px/1 var(--display);color:var(--brass);margin-left:8px}
+.pa details.profile-section[open] > summary::after{content:"–"}
+.pa details.profile-section > summary .status{margin-left:auto}
+.pa .profile-section-title{font-family:var(--display);font-size:19px;color:var(--ink)}
+.pa details.profile-section[open] > summary{margin-bottom:6px}
+.pa details.profile-section > summary:focus-visible{outline:2px solid var(--forest);outline-offset:4px;border-radius:4px}
+.pa .save-bar{position:sticky;bottom:12px;z-index:20;display:flex;justify-content:space-between;align-items:center;gap:12px;background:#fff;border:1px solid var(--line);border-radius:8px;padding:10px 12px 10px 16px;box-shadow:var(--shadow)}
+@media (max-width:760px){.pa .save-bar{bottom:76px}}
+.pa .avatar-picker{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.pa .avatar-preview{width:72px;height:72px;border-radius:50%;object-fit:cover;border:2px solid var(--sage)}
+.pa .avatar-picker label.btn:focus-visible{outline:2px solid var(--forest);outline-offset:2px}
+.pa details.profile-section > summary .micro-note{margin-left:auto}

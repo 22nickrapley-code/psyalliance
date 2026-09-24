@@ -1,3 +1,4 @@
+import { effectiveReferral, effectiveCover } from "@/lib/availability";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { resolveAvatarUrl } from "@/lib/avatars";
@@ -165,8 +166,8 @@ export default async function PersonPage(props: { params: Promise<{ id: string }
             <div className="card-title"><h3>Current availability</h3><span className="micro-note">{confirmed}</span></div>
             <SummaryList
               rows={[
-                ["Referrals", AVAIL.referral[p.referral_availability] || "Not set"],
-                ["Cover", AVAIL.cover[p.coverage_availability] || "Not set"],
+                ["Referrals", effectiveReferral(p.referral_availability, p.availability_confirmed_at, extra?.availability_paused_until).label],
+                ["Cover", effectiveCover(p.coverage_availability, p.availability_confirmed_at, extra?.availability_paused_until).label],
                 ["Consultation", AVAIL.consult[p.consultation_availability] || "Not set"],
                 ["Supervision", p.open_to_give_supervision ? "Open to supervise" : p.open_to_receive_supervision ? "Seeking supervision" : "Not listed"],
                 ...(typeof extra?.approx_spaces === "number" ? ([["Spaces for new patients", `About ${extra.approx_spaces}`]] as [string, string][]) : []),

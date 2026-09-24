@@ -23,7 +23,7 @@ const options: NeedOptions = {
     { id: 3, value: "Depression" },
     { id: 4, value: "ADHD" },
   ],
-  insurance: [{ id: 10, value: "AETNA Health, Inc." }, { id: 11, value: "CIGNA HealthCare (PPO)" }],
+  insurance: [{ id: 10, value: "Aetna" }, { id: 11, value: "Cigna" }],
   language: [{ id: 20, value: "Spanish" }],
   ageBands: ["Children", "Adolescents", "Young Adults", "Adults", "Seniors"],
   states: US_STATES,
@@ -45,11 +45,11 @@ const m = (id: string, name: string, tier: Match["tier"], reasons: string[], q =
   reasons,
 });
 const matches: Match[] = [
-  m("a", "Maya Chen", "trusted", ["Trusted colleague", "Trauma / PTSD is their top specialty", "Practises in Brooklyn", "NY licence on file", "In network: AETNA Health, Inc.", "Accepting referrals, confirmed 3 days ago"]),
+  m("a", "Maya Chen", "trusted", ["Trusted colleague", "Trauma / PTSD is their top specialty", "Practises in Brooklyn", "NY licence on file", "In network: Aetna", "Accepting referrals, confirmed 3 days ago"]),
   m("b", "Eli Ramirez", "worked_with", ["Worked together before", "Works with Trauma / PTSD", "NY licence on file", "Accepting referrals, confirmed 5 days ago"], "MD", "Manhattan"),
   m("c", "Imani Brooks", "none", ["Trauma / PTSD is their top specialty", "NY licence on file", "Sees adults", "Selected referrals only, not recently confirmed"]),
 ];
-const need = { focusIds: [2], state: "NY", city: "Brooklyn", insurance: "AETNA Health, Inc.", ageBand: "Adults", setting: "either" as const, languageId: null, prescribing: false };
+const need = { focusIds: [2], state: "NY", city: "Brooklyn", insurance: "Aetna", ageBand: "Adults", setting: "either" as const, languageId: null, prescribing: false };
 const plan = { id: 7, title: "October leave", absenceType: "extended_leave", starts: "2026-10-12", ends: "2026-11-20", state: "NY", status: "active", counts: { total: 4, covered: 2, invited: 1, open: 1 } };
 const cases = [
   { id: 1, reference: "Case 1", focus: "Trauma / PTSD", details: ["Adults", "Virtual or in person", "Weekly"], status: "confirmed" as const, invited: [{ name: "Dr. Maya Chen", status: "accepted" }], assignedName: "Dr. Maya Chen", assignedId: "a", queueCount: 0 },
@@ -84,7 +84,7 @@ const lookups = [
   ...["CBT", "DBT", "EMDR", "ACT", "Psychodynamic"].map((v, i) => ({ id: 200 + i, category: "treatment_modality", value: v })),
   ...["Children", "Adolescents", "Adults", "Seniors"].map((v, i) => ({ id: 300 + i, category: "age_group_specialism", value: v })),
   ...["Telehealth", "In person"].map((v, i) => ({ id: 400 + i, category: "session_type", value: v })),
-  ...["AETNA Health, Inc.", "CIGNA HealthCare (PPO)"].map((v, i) => ({ id: 500 + i, category: "insurance", value: v })),
+  ...["Aetna", "Cigna"].map((v, i) => ({ id: 500 + i, category: "insurance", value: v })),
   ...["English", "Spanish"].map((v, i) => ({ id: 600 + i, category: "language", value: v })),
 ];
 

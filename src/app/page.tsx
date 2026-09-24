@@ -1,4 +1,6 @@
 import "./premium.css";
+import { redirect } from "next/navigation";
+import { IS_DEMO_SITE, DEMO_URL } from "@/lib/env";
 
 // Public landing (Product Spec v1, built from the premium concept Nick
 // chose). Sections: hero with an illustrative cover plan, the three
@@ -51,6 +53,8 @@ const faqData = {
 };
 
 export default function HomePage() {
+  // The demo site opens on the guided tour.
+  if (IS_DEMO_SITE) redirect("/tour");
   return (
     <div className="pa">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }} />
@@ -81,7 +85,11 @@ export default function HomePage() {
             </p>
             <div className="hero-actions">
               <a className="btn" href="#how">See how it works &rarr;</a>
-              <a className="btn secondary" href="#story">Our story</a>
+              {DEMO_URL ? (
+                <a className="btn secondary" href={`${DEMO_URL}/tour`}>Take the guided tour</a>
+              ) : (
+                <a className="btn secondary" href="#story">Our story</a>
+              )}
             </div>
             <div className="hero-proof">
               <span className="seal" aria-hidden="true">ψ</span>

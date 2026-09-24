@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { CredentialsView } from "./view";
+import { PageHead } from "../_components/ui";
 
 export default async function CredentialsPage(props: { searchParams: Promise<{ saved?: string; added?: string; error?: string }> }) {
   const sp = await props.searchParams;
@@ -26,5 +27,12 @@ export default async function CredentialsPage(props: { searchParams: Promise<{ s
       .limit(1),
   ]);
 
+  if (profile?.account_kind === "operator") {
+    return (
+      <>
+        <PageHead eyebrow="Credentials" title="Not needed for admin accounts." lead="Admin-only accounts hold no licences and are never verified as clinicians." />
+      </>
+    );
+  }
   return <CredentialsView sp={sp} profile={profile} licences={licences} ce={ce} panels={panels} npiChecks={npiChecks} />;
 }

@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { effectiveReferral, effectiveCover } from "@/lib/availability";
 import { createClient } from "@/lib/supabase/server";
 import { loadNeedOptions } from "@/lib/need-options";
 import { HomeView, type HomeData, type NextStep } from "./home-view";
@@ -14,8 +15,8 @@ const AVAIL = {
 
 const nameOf = (p: any) => (p ? `${p.credential_prefix ? p.credential_prefix + " " : ""}${p.full_name}` : "A colleague");
 
-export default async function HomePage(props: { searchParams: Promise<{ reconfirmed?: string }> }) {
-  const { reconfirmed } = await props.searchParams;
+export default async function HomePage(props: { searchParams: Promise<{ reconfirmed?: string; welcome?: string }> }) {
+  const { reconfirmed, welcome } = await props.searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -24,6 +25,12 @@ export default async function HomePage(props: { searchParams: Promise<{ reconfir
 
   const { data: profile } = await supabase.rpc("my_profile").maybeSingle<any>();
   if (!profile) redirect("/dashboard/profile");
+  // Admin-only logins have no practice: their home is the admin overview.
+  if (profile.account_kind === "operator") redirect("/dashboard/admin");
+  const [{ data: status }, { count: licenceCount }] = await Promise.all([
+    supabase.rpc("my_network_status").maybeSingle<any>(),
+    supabase.from("licenses").select("id", { count: "exact", head: true }).eq("profile_id", myself),
+  ]);
 
   const monthAgo = new Date(Date.now() - 30 * 86_400_000).toISOString();
   const weekAgo = new Date(Date.now() - 7 * 86_400_000).toISOString();
@@ -186,8 +193,15 @@ export default async function HomePage(props: { searchParams: Promise<{ reconfir
   }
 
   // ---- Getting started (new members) ----
-  const gettingStarted =
-    trustedIds.length === 0 && age === null
+  // Not yet in the network: the steps that get them verified.
+  const gettingStarted = !status?.is_member
+    ? [
+        { label: "Complete your profile: specialties and practice state", done: myFocus.size > 0 && !!profile.primary_state, href: "/dashboard/profile" },
+        { label: "Add your licence so we can review it", done: (licenceCount || 0) > 0, href: "/dashboard/credentials" },
+        { label: "Set your availability", done: age !== null, href: "/dashboard/availability" },
+        { label: "We check your credentials against the state board", done: false, href: "/dashboard/credentials" },
+      ]
+    : trustedIds.length === 0 && age === null
       ? [
           { label: "Complete your profile", done: myFocus.size > 0 && !!profile.primary_state, href: "/dashboard/profile" },
           { label: "Confirm your availability", done: age !== null, href: "/dashboard/availability" },
@@ -214,8 +228,8 @@ export default async function HomePage(props: { searchParams: Promise<{ reconfir
     steps: steps.slice(0, 6),
     gettingStarted,
     availability: {
-      referrals: AVAIL.referral[profile.referral_availability] || "Not set",
-      cover: AVAIL.cover[profile.coverage_availability] || "Not set",
+      referrals: effectiveReferral(profile.referral_availability, profile.availability_confirmed_at, profile.availability_paused_until).label,
+      cover: effectiveCover(profile.coverage_availability, profile.availability_confirmed_at, profile.availability_paused_until).label,
       consult: AVAIL.consult[profile.consultation_availability] || "Not set",
       confirmedLabel:
         age === null ? "Never confirmed" : age === 0 ? "Confirmed today" : `Last confirmed ${age} day${age === 1 ? "" : "s"} ago${stale ? ". Reconfirm to stay in suggestions" : ""}`,
@@ -241,7 +255,13 @@ export default async function HomePage(props: { searchParams: Promise<{ reconfir
     circle: { trusted: trustedIds.length, saved: savedCount || 0, workedWith: (worked || []).length, newThisMonth, recentlyAvailable },
     resources,
     options,
-    notice: reconfirmed ? "Availability reconfirmed. Colleagues will see it as current." : undefined,
+    notice: reconfirmed
+      ? "Availability reconfirmed. Colleagues will see it as current."
+      : welcome === "sandbox"
+        ? "Welcome. You're Dr. Alex Rivers, a fictional psychologist in Austin. Your cover plan, referrals and messages below are sample activity; anything you send gets a reply from a fictional colleague within a minute or two."
+        : welcome === "reset"
+          ? "Your sandbox is back to the start of the story."
+          : undefined,
   };
 
   return <HomeView d={d} />;

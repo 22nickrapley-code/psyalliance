@@ -27,6 +27,8 @@ export default function PremiumShell({
   children,
   demoView,
   gateNotice,
+  demoSite,
+  resetSandboxAction,
 }: {
   groups: NavGroup[];
   displayName: string;
@@ -38,6 +40,8 @@ export default function PremiumShell({
   children: React.ReactNode;
   demoView?: boolean;
   gateNotice?: string | null;
+  demoSite?: { label: string | null; expires: string | null } | null;
+  resetSandboxAction?: () => Promise<void>;
 }) {
   const pathname = usePathname() || "/dashboard";
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -132,6 +136,19 @@ export default function PremiumShell({
           {demoView && (
             <div className="demo-bar" role="status">
               Demo network: everyone you see here is fake. <Link href="/dashboard/settings#demo">Switch back to the real network</Link>
+            </div>
+          )}
+          {demoSite && (
+            <div className="demo-bar" role="status">
+              Demo site: everyone here is fictional and nothing is emailed.
+              {demoSite.label ? ` Sandbox for ${demoSite.label}` : ""}
+              {demoSite.expires ? `, open until ${new Date(demoSite.expires).toLocaleDateString("en-US", { month: "short", day: "numeric" })}.` : "."}
+              {resetSandboxAction && demoSite.label && (
+                <form action={resetSandboxAction} style={{ display: "inline" }}>
+                  <button type="submit" className="plain-button small" style={{ marginLeft: 8 }}>Start the story again</button>
+                </form>
+              )}
+              <Link href="/tour">Guided tour</Link>
             </div>
           )}
           {gateNotice && !demoView && (

@@ -83,12 +83,15 @@ function availabilityFor(kind: MatchKind, p: any): { value: string | null; label
   }
   if (kind === "cover") {
     const v = p.coverage_availability as string | null;
+    if (!p.availability_confirmed_at) return { value: v, label: "Availability not confirmed" };
     return { value: v, label: v === "yes" ? "Available for cover" : v === "ask_me" ? "Cover: ask me" : v === "no" ? "Not available for cover" : "Cover availability not set" };
   }
   if (kind === "supervision") {
     return { value: p.open_to_give_supervision ? "yes" : "no", label: p.open_to_give_supervision ? "Open to supervise" : "Not supervising" };
   }
   const v = p.referral_availability as string | null;
+  // Never confirmed: don't present an unconfirmed setting as current.
+  if (!p.availability_confirmed_at) return { value: v, label: "Availability not confirmed" };
   return { value: v, label: v === "yes" ? "Accepting referrals" : v === "limited" ? "Selected referrals only" : v === "no" ? "Not accepting referrals" : "Referral availability not set" };
 }
 

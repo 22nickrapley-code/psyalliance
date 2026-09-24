@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import type { Match } from "@/lib/match-engine";
 import type { NeedOptions } from "@/lib/need-options";
-import { PageHead, Banner, Progress, Empty, Status, MatchCard, SummaryList, PersonAvatar } from "../_components/ui";
+import { QuietEmpty, PageHead, Banner, Progress, Empty, Status, MatchCard, SummaryList, PersonAvatar } from "../_components/ui";
 import {
   createPlanAction,
   addCaseAction,
@@ -184,8 +184,7 @@ export function CoverIndexView({
         <section className="card">
           <div className="card-title"><h3>Your cover plans</h3></div>
           {active.length === 0 ? (
-            <Empty
-              symbol={"◇"}
+            <QuietEmpty
               title="No cover planned."
               body="Going away, closing a practice, or just want a backup? A plan tracks every case from need to a confirmed colleague."
               action={<a className="btn secondary small-btn" href="/dashboard/cover/new">Plan cover</a>}
@@ -241,9 +240,9 @@ export function CoverPlanStepView({ options, error }: { options: NeedOptions; er
           <div className="eyebrow">Step 1 &middot; Plan</div>
           <h2>What kind of cover do you need?</h2>
           <div className="choose-grid">
-            {Object.entries(ABSENCE).map(([k, v], i) => (
+            {Object.entries(ABSENCE).map(([k, v]) => (
               <label key={k} className="radio-card">
-                <input type="radio" name="absence_type" value={k} defaultChecked={i === 1} required />
+                <input type="radio" name="absence_type" value={k} required />
                 <b>{v.label}</b>
                 <span>{v.blurb}</span>
               </label>

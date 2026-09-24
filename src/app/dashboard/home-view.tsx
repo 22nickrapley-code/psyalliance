@@ -1,5 +1,5 @@
 import type { NeedOptions } from "@/lib/need-options";
-import { Banner, Status, NeedFields, Empty } from "./_components/ui";
+import { Banner, Status, NeedFields, Empty , QuietEmpty } from "./_components/ui";
 import { reconfirmAvailability } from "./availability/actions";
 
 // Home (Product Spec v1): answers one question, "what needs me right
@@ -59,19 +59,20 @@ export function HomeView({ d }: { d: HomeData }) {
           </div>
           {d.gettingStarted ? (
             <>
-              <p className="small">Three steps make the network useful to you from day one.</p>
+              <p className="small">{d.gettingStarted.length === 4 ? "Referrals, cover, consults and messages open once your credentials are verified. Here's what gets you there." : "Three steps make the network useful to you from day one."}</p>
               {d.gettingStarted.map((g, i) => (
                 <div key={g.label} className="item row between">
                   <span className="row">
                     <span className="round-number">{g.done ? "✓" : i + 1}</span>
                     <strong style={{ textDecoration: g.done ? "line-through" : undefined }}>{g.label}</strong>
                   </span>
-                  {!g.done && <a className="btn secondary small-btn" href={g.href}>Start</a>}
+                  {!g.done && i < 3 && <a className="btn secondary small-btn" href={g.href}>Start</a>}
+                  {!g.done && i === 3 && <Status tone="neutral">With us</Status>}
                 </div>
               ))}
             </>
           ) : d.steps.length === 0 ? (
-            <Empty symbol={"✓"} title="You're all caught up." body="Nothing needs you right now. New referrals, cover requests and replies will appear here as they happen." />
+            <QuietEmpty title="You're all caught up." body="Nothing needs you right now. New referrals, cover requests and replies appear here as they happen." action={<a className="btn secondary small-btn" href="/dashboard/refer/new">Make a referral</a>} />
           ) : (
             d.steps.map((s, i) => (
               <div key={s.key} className="item row between">

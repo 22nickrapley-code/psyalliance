@@ -18,7 +18,21 @@
   // Worker, so they're available at runtime there too.
   "vars": {
     "NEXT_PUBLIC_SUPABASE_URL": "https://vvmulsyvyjsxhcpqfpyo.supabase.co",
-    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_DHIdNnOs7O5y6ucrl2T4Eg_Q3QslBZl"
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_DHIdNnOs7O5y6ucrl2T4Eg_Q3QslBZl",
+    "NEXT_PUBLIC_APP_ENV": "production"
+  },
+  // The demo site: a separately named Worker pointed at its own Supabase
+  // project. Deploy it only with `npm run cf:deploy:demo` (it builds with
+  // the demo settings from .env.demo, then deploys with --env demo).
+  // Environments don't inherit the vars above, so the demo's are set here
+  // and in .env.demo. Never point this at the production project.
+  "env": {
+    "demo": {
+      "name": "psyalliance-demo",
+      "vars": {
+        "NEXT_PUBLIC_APP_ENV": "demo"
+      }
+    }
   }
   // ANTHROPIC_API_KEY (used by the "paste your bio" and "import caseload
   // from a file" AI-fill features) is NOT set here - it's a real secret, not

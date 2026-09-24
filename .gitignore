@@ -10,3 +10,4 @@ next-env.d.ts
 # Cloudflare/OpenNext build output - generated fresh on every build/deploy
 .open-next
 .wrangler
+.env.demo

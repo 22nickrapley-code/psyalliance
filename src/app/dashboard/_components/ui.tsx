@@ -293,3 +293,15 @@ export function SummaryList({ rows }: { rows: [string, ReactNode][] }) {
     </ul>
   );
 }
+
+// A short, purposeful empty state for lists that sit beside other content
+// (the large Empty is for pages that are empty as a whole).
+export function QuietEmpty({ title, body, action }: { title: string; body: ReactNode; action?: ReactNode }) {
+  return (
+    <div className="quiet-panel">
+      <strong className="small">{title}</strong>
+      <p className="small" style={{ margin: "5px 0 0" }}>{body}</p>
+      {action && <div style={{ marginTop: 10 }}>{action}</div>}
+    </div>
+  );
+}

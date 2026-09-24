@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { resolveAvatarUrl } from "@/lib/avatars";
 import { ProfileView } from "./view";
+import { PageHead } from "../_components/ui";
 
 export default async function ProfilePage(props: {
   searchParams: Promise<{ saved?: string; avatar_saved?: string; avatar_error?: string; error?: string }>;
@@ -19,6 +20,18 @@ export default async function ProfilePage(props: {
     supabase.from("licenses").select("id", { count: "exact", head: true }).eq("profile_id", me),
   ]);
 
+  if (profile?.account_kind === "operator") {
+    return (
+      <>
+        <PageHead eyebrow="Your account" title={profile.full_name || "Admin"} lead="An admin-only account: full access to run PsyAlliance, no clinical profile, never listed or matched." />
+        <section className="card">
+          <p className="small" style={{ marginBottom: 0 }}>
+            Admin accounts don&rsquo;t hold credentials or appear in the network. To take part as a clinician, use a separate, verified clinician account.
+          </p>
+        </section>
+      </>
+    );
+  }
   const avatarUrl = await resolveAvatarUrl(supabase, profile?.avatar_path);
   return <ProfileView sp={sp} profile={profile} lookups={lookups} selectedRows={selectedRows} licenceCount={licenceCount} avatarUrl={avatarUrl} me={me} />;
 }

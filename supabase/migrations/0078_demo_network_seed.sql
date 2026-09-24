@@ -54,7 +54,7 @@ declare
   tx_cities text[] := array['Austin','Houston','Dallas','San Antonio','Fort Worth','Plano','El Paso','Round Rock'];
   common_spec int[] := array[7,16,61,2,24,36,27,41,21,1,10,45,35,57,34,44,58,12];
   common_mod int[] := array[67,71,94,98,82,97,81,96,64,86];
-  other_lang int[] := array[181,181,181,140,171,151,179,159,135,192,167,191,176,152,158];
+  other_lang int[] := array[181,181,181,171,171,151,179,159,135,192,167,191,176,152,158];
   ids uuid[] := '{}';
   sts text[] := '{}';
   s int; i int; k int; idx int; g text; fn text; ln text; pid uuid; q text; st text; city text;
@@ -150,7 +150,7 @@ begin
       insert into profile_lookup_values (profile_id, lookup_value_id, rank)
       select pid, x, null from unnest(ages) x;
       insert into profile_lookup_values (profile_id, lookup_value_id, rank)
-      select pid, x, null from (select x from generate_series(103, 128) x order by random() limit 2 + floor(random() * 4)::int) z;
+      select pid, x, null from (select id as x from lookup_values where category = 'insurance' and value <> 'Other' order by random() limit 2 + floor(random() * 4)::int) z;
       if random() < 0.25 then insert into profile_lookup_values values (pid, 130, null); end if;
       insert into profile_lookup_values values (pid, 131, null);
       if random() < 0.3 then insert into profile_lookup_values values (pid, other_lang[1 + floor(random() * array_length(other_lang, 1))::int], null) on conflict do nothing; end if;
@@ -316,7 +316,7 @@ begin
       insert into referral_requests (requesting_profile_id, specialism_lookup_ids, specialism_lookup_id, state, city, insurance, age_band, modality, timeframe,
         notes, status, audience_type, audience_profile_ids, created_at)
       values (a, (array[array[7, 57], array[61, 0], array[16, 35]])[n:n], (array[7, 61, 16])[n], 'TX', 'Austin',
-        (array['AETNA Health, Inc.', 'Out of Pocket Pay', 'United Healthcare'])[n], (array['Adults', 'Young Adults', 'Adults'])[n],
+        (array['Aetna', 'Self-pay (out of network)', 'UnitedHealthcare / Optum'])[n], (array['Adults', 'Young Adults', 'Adults'])[n],
         (array['either', 'virtual', 'in_person'])[n], (array['within_month', 'urgent', 'flexible'])[n],
         (array['Weekday evenings preferred. Happy to talk through fit first.', 'Needs someone soon; current clinician is relocating.', 'Prefers in-person, flexible on timing.'])[n],
         'sent', case when n = 2 then 'trusted' else 'selected' end, array[p_nick], now() - ((n * 1.5) || ' days')::interval)
@@ -331,7 +331,7 @@ begin
     -- the real account's own referral, with replies
     insert into referral_requests (requesting_profile_id, specialism_lookup_ids, specialism_lookup_id, state, city, insurance, age_band, modality, timeframe,
       notes, status, audience_type, audience_profile_ids, created_at)
-    values (p_nick, array[41], 41, 'TX', 'Austin', 'CIGNA HealthCare (PPO)', 'Adolescents', 'either', 'within_month',
+    values (p_nick, array[41], 41, 'TX', 'Austin', 'Cigna', 'Adolescents', 'either', 'within_month',
       'Adolescent, needs ERP experience. Parent involvement expected.', 'sent', 'selected', array[tx_ids[3], tx_ids[6], tx_ids[11]], now() - interval '3 days')
     returning id into new_id;
     insert into private.demo_rows values ('referral_requests', new_id);
@@ -357,7 +357,7 @@ begin
     values (tx_ids[7], 'Unexpected absence, this week', 'unexpected', 'TX', 'parallel', 'active', current_date, current_date + 10, 'ad_hoc', now() - interval '6 hours')
     returning id into plan_id;
     insert into coverage_plan_cases (coverage_plan_id, case_reference, specialism_lookup_ids, age_band, modality, insurance, frequency, status)
-    values (plan_id, 'Case 1', array[7], 'Adults', 'virtual', 'Out of Pocket Pay', 'Weekly', 'awaiting_response') returning id into case_id;
+    values (plan_id, 'Case 1', array[7], 'Adults', 'virtual', 'Self-pay (out of network)', 'Weekly', 'awaiting_response') returning id into case_id;
     insert into coverage_requests (coverage_plan_case_id, requested_profile_id, sequence_order, status, message, sent_at)
     values (case_id, p_nick, 1, 'sent', 'Could you hold two sessions while I''m out? Summary to follow once you agree.', now() - interval '6 hours');
     insert into notification_events (event_type, actor_profile_id, actor_type, summary, deep_link, metadata)
@@ -370,15 +370,15 @@ begin
     returning id into plan_id;
     insert into private.demo_rows values ('coverage_plans', plan_id);
     insert into coverage_plan_cases (coverage_plan_id, case_reference, specialism_lookup_ids, age_band, modality, insurance, frequency, status, assigned_clinician_id)
-    values (plan_id, 'Case 1', array[7, 57], 'Adults', 'either', 'AETNA Health, Inc.', 'Weekly', 'confirmed', tx_ids[1]) returning id into case_id;
+    values (plan_id, 'Case 1', array[7, 57], 'Adults', 'either', 'Aetna', 'Weekly', 'confirmed', tx_ids[1]) returning id into case_id;
     insert into coverage_requests (coverage_plan_case_id, requested_profile_id, sequence_order, status, sent_at, responded_at)
     values (case_id, tx_ids[1], 1, 'accepted', now() - interval '4 days', now() - interval '3 days');
     insert into coverage_plan_cases (coverage_plan_id, case_reference, specialism_lookup_ids, age_band, modality, insurance, frequency, status, outreach_queue)
-    values (plan_id, 'Case 2', array[61], 'Young Adults', 'virtual', 'Out of Pocket Pay', 'Weekly', 'awaiting_response', array[tx_ids[16]]) returning id into case_id;
+    values (plan_id, 'Case 2', array[61], 'Young Adults', 'virtual', 'Self-pay (out of network)', 'Weekly', 'awaiting_response', array[tx_ids[16]]) returning id into case_id;
     insert into coverage_requests (coverage_plan_case_id, requested_profile_id, sequence_order, status, sent_at)
     values (case_id, tx_ids[4], 1, 'sent', now() - interval '1 day');
     insert into coverage_plan_cases (coverage_plan_id, case_reference, specialism_lookup_ids, age_band, modality, insurance, frequency, prescribing_needed, status)
-    values (plan_id, 'Case 3', array[10], 'Adults', 'in_person', 'United Healthcare', 'Fortnightly', true, 'needs_cover');
+    values (plan_id, 'Case 3', array[10], 'Adults', 'in_person', 'UnitedHealthcare / Optum', 'Fortnightly', true, 'needs_cover');
     insert into notification_events (event_type, actor_profile_id, actor_type, summary, deep_link, metadata)
     values ('coverage_confirmed', tx_ids[1], 'member_web', 'confirmed they can cover your case', '/dashboard/cover/' || plan_id || '?step=track', '{"demo":true}') returning id into ev_id;
     insert into notification_deliveries (notification_event_id, recipient_profile_id, channel, status, delivered_at) values (ev_id, p_nick, 'in_app', 'sent', now());
@@ -459,4 +459,7 @@ $$;
 revoke all on function private.seed_demo_network(uuid) from public, anon, authenticated;
 revoke all on function private.purge_demo_network() from public, anon, authenticated;
 
-select private.seed_demo_network('80f99ddc-39bd-4c82-9d7e-5965c3473613');
+-- Seeding happens only on the demo project (see docs/ENVIRONMENTS.md):
+--   select private.seed_demo_network(null);
+-- It originally ran here against a test account on production; that data
+-- was removed with the real-site purge (supabase/ops/2026-09-24_real_site_purge.sql).

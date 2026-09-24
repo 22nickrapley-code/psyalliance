@@ -1,3 +1,5 @@
+import { IS_DEMO_SITE } from "@/lib/env";
+import { resetSandboxAction } from "../sandbox/[token]/actions";
 import { createClient } from "@/lib/supabase/server";
 import { signOutAction } from "../auth/actions";
 import { redirect } from "next/navigation";
@@ -68,6 +70,8 @@ export default async function DashboardLayout({
       : (licenceCount || 0) === 0
         ? "Add a licence to be reviewed. Referrals, cover, consults and messages open once you're verified."
         : "Your credentials are with us for review. Referrals, cover, consults and messages open once you're verified.";
+
+  const { data: sandbox } = IS_DEMO_SITE ? await supabase.rpc("my_sandbox").maybeSingle<any>() : { data: null };
 
   // Cheap presence signal used only for match tie-breaking ("last login") -
   // not awaited-critical, but kept simple and correct rather than clever.
@@ -154,7 +158,9 @@ export default async function DashboardLayout({
       unreadNotifications={notificationPipelineUnreadCount || 0}
       signOutAction={signOutAction}
       demoView={!!profile?.demo_view}
-      gateNotice={gateNotice}
+      gateNotice={IS_DEMO_SITE ? null : gateNotice}
+      demoSite={IS_DEMO_SITE ? { label: sandbox?.label || null, expires: sandbox?.expires_at || null } : null}
+      resetSandboxAction={IS_DEMO_SITE ? resetSandboxAction : undefined}
     >
       {children}
     </PremiumShell>

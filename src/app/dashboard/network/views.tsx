@@ -95,6 +95,7 @@ export function NetworkView({
   moreOptions,
   states,
   counts,
+  networkSize = 1,
 }: {
   tab: NetworkTab;
   people: Person[];
@@ -107,6 +108,7 @@ export function NetworkView({
   moreOptions?: { insurance: string[]; age: string[]; language: string[]; modality: string[]; session: string[] };
   states: { code: string; name: string }[];
   counts: Record<NetworkTab, number>;
+  networkSize?: number;
 }) {
   return (
     <>
@@ -215,6 +217,12 @@ export function NetworkView({
                 />
               ))
             )
+          ) : people.length === 0 && networkSize === 0 ? (
+            <Empty
+              symbol={"◎"}
+              title="The founding circle is forming."
+              body="Verified members appear here as they join, a few states at a time. Know a psychologist or psychiatrist who should be here? Send them to psyalliance.org/join."
+            />
           ) : people.length === 0 ? (
             <Empty
               title={tab === "directory" ? "No one matches these filters." : "No one here yet."}

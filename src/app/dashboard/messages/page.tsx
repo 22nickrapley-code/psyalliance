@@ -45,6 +45,14 @@ export default async function MessagesPage(props: { searchParams: Promise<{ erro
   return (
     <MessagesShell list={<ConversationList items={items} />}>
       <Banner error={sp.error} />
+      {items.length === 0 && contacts.size === 0 ? (
+        <Empty
+          symbol={"✉"}
+          title="No conversations yet."
+          body="Messages start from a colleague's profile, a referral reply or a cover request, and stay attached to what they're about. Start by finding someone in Network."
+          action={<a className="btn secondary small-btn" href="/dashboard/network">Find a colleague</a>}
+        />
+      ) : (
       <section className="card">
         <div className="eyebrow">New message</div>
         <h3>Write to a colleague</h3>
@@ -70,12 +78,9 @@ export default async function MessagesPage(props: { searchParams: Promise<{ erro
           </form>
         )}
       </section>
-
-      {items.length === 0 && (
-        <div style={{ marginTop: 14 }}>
-          <Empty symbol={"✉"} title="No conversations yet." body="Conversations start from a referral handoff, a cover discussion, or a message you send from a colleague's profile." />
-        </div>
       )}
+
+
 
       {(providerReferrals || []).length > 0 && (
         <section className="card" style={{ marginTop: 14 }}>

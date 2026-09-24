@@ -1,3 +1,4 @@
+import { IS_DEMO_SITE } from "@/lib/env";
 // Navigation for the member workspace (Product Spec v1, "Site map").
 // Plain data, deliberately NOT a "use client" module: the server-rendered
 // dashboard layout builds the groups here and passes them to the client
@@ -58,7 +59,7 @@ export function buildNavGroups(opts: {
       label: "Admin",
       items: [
         { href: "/dashboard/admin", label: "Admin overview", glyph: "▣" },
-        { href: "/dashboard/admin/invitations", label: "Invitations", glyph: "✉" },
+        ...(IS_DEMO_SITE ? [{ href: "/dashboard/admin/sandbox", label: "Sandbox passes", glyph: "◈" }] : [{ href: "/dashboard/admin/invitations", label: "Invitations", glyph: "✉" }]),
         { href: "/dashboard/admin/verifications", label: "Verification", glyph: "✓" },
         { href: "/dashboard/admin/members", label: "Members", glyph: "☷" },
         { href: "/dashboard/admin/library", label: "Library governance", glyph: "▤" },

@@ -1,7 +1,10 @@
+import { effectiveReferral } from "@/lib/availability";
 import { saveProfile, uploadAvatar } from "./actions";
 import { professionFor, professionLabel } from "@/lib/profession";
 import { US_STATES } from "@/lib/us-states";
 import BioImportBox from "./bio-import";
+import { AvatarPicker } from "./avatar-picker";
+import { HashOpener } from "./hash-opener";
 import { PageHead, Banner, PersonAvatar, Status } from "../_components/ui";
 
 // Profile (Product Spec v1): the facts every match is computed against.
@@ -31,13 +34,19 @@ function CheckGrid({ items, selected }: { items: LV[]; selected: Map<number, num
   );
 }
 
-function Section({ title, help, children, id }: { title: string; help?: string; children: React.ReactNode; id?: string }) {
+// Each part of the editor folds away and says whether it's done, so the
+// long form reads as a short checklist. Everything is one form: nothing is
+// lost by folding a section, and one Save covers them all.
+function Section({ title, help, children, id, done, open }: { title: string; help?: string; children: React.ReactNode; id?: string; done?: boolean; open?: boolean }) {
   return (
-    <section className="card" id={id}>
-      <h3>{title}</h3>
-      {help && <p className="small">{help}</p>}
+    <details className="card profile-section" id={id} open={open}>
+      <summary>
+        <span className="profile-section-title">{title}</span>
+        {done === undefined ? <span className="micro-note">Optional</span> : done ? <Status>Done</Status> : <Status tone="warn">To do</Status>}
+      </summary>
+      {help && <p className="small" style={{ marginTop: 10 }}>{help}</p>}
       {children}
-    </section>
+    </details>
   );
 }
 
@@ -68,13 +77,13 @@ export function ProfileView({ sp, profile, lookups, selectedRows, licenceCount, 
     { label: "Licence in Credentials", done: (licenceCount || 0) > 0, href: "/dashboard/credentials" },
     { label: "Availability confirmed", done: !!profile?.availability_confirmed_at, href: "/dashboard/availability" },
   ];
+  const basicsDone = !!(profile?.full_name && profile?.qualification_level && profile?.primary_state && profile?.primary_practice_city);
   const doneCount = checks.filter((c) => c.done).length;
   const pct = Math.round((doneCount / checks.length) * 100);
 
   const name = profile?.full_name || "Your name";
   const display = profile?.credential_prefix ? `${profile.credential_prefix} ${name}` : name;
   const where = [profile?.primary_practice_city, profile?.primary_state].filter(Boolean).join(", ");
-  const refLabel: Record<string, string> = { yes: "Accepting referrals", limited: "Selected referrals only", no: "Not accepting referrals" };
 
   return (
     <>
@@ -88,22 +97,22 @@ export function ProfileView({ sp, profile, lookups, selectedRows, licenceCount, 
         error={sp.error || sp.avatar_error}
         ok={sp.saved ? "Profile saved." : sp.avatar_saved ? "Photo updated." : null}
       />
+      <HashOpener />
       <div className="split">
         <div className="stack">
           <BioImportBox />
 
-          <Section title="Photo" id="photo" help="A professional headshot. Only verified, signed-in members see it.">
-            <div className="row wrap" style={{ gap: 16 }}>
+          <section className="card" id="photo">
+            <div className="card-title"><h3>Photo</h3>{profile?.avatar_path ? <Status>Done</Status> : <Status tone="warn">To do</Status>}</div>
+            <p className="small">A professional headshot. Only verified, signed-in members see it.</p>
+            <div className="row wrap" style={{ gap: 16, alignItems: "center" }}>
               <PersonAvatar name={name} url={avatarUrl} size={72} />
-              <form action={uploadAvatar} encType="multipart/form-data" className="row wrap" style={{ gap: 8 }}>
-                <input name="avatar" type="file" accept="image/jpeg,image/png,image/webp" required aria-label="Photo file" className="small" />
-                <button type="submit" className="btn secondary small-btn">{avatarUrl ? "Replace photo" : "Upload photo"}</button>
-              </form>
+              <AvatarPicker action={uploadAvatar} hasPhoto={!!avatarUrl} />
             </div>
-          </Section>
+          </section>
 
           <form action={saveProfile} id="profile-form" className="stack">
-            <Section title="The basics" id="basics">
+            <Section title="The basics" id="basics" done={basicsDone} open={!basicsDone}>
               <div className="fields">
                 <label className="field">
                   Full name
@@ -115,7 +124,8 @@ export function ProfileView({ sp, profile, lookups, selectedRows, licenceCount, 
                 </label>
                 <label className="field">
                   Qualification
-                  <select id="qualification_level" name="qualification_level" defaultValue={profile?.qualification_level || "PhD"}>
+                  <select id="qualification_level" name="qualification_level" defaultValue={profile?.qualification_level || ""} required>
+                    <option value="" disabled>Choose your degree</option>
                     <option value="PhD">PhD, psychologist</option>
                     <option value="PsyD">PsyD, psychologist</option>
                     <option value="EdD">EdD, psychologist</option>
@@ -162,6 +172,8 @@ export function ProfileView({ sp, profile, lookups, selectedRows, licenceCount, 
             <Section
               title="Specialties"
               id="specialties"
+              done={ranked.length >= 3}
+              open={ranked.length < 3}
               help="Rank your top five. Rank 1 counts most in matching. Tick anything else you treat below."
             >
               <div className="rank-list">
@@ -185,7 +197,7 @@ export function ProfileView({ sp, profile, lookups, selectedRows, licenceCount, 
               </details>
             </Section>
 
-            <Section title="Who you see" id="populations" help="Age groups and session types are used in matching; populations are shown on your profile.">
+            <Section title="Who you see" id="populations" done={pick("age_group_specialism").length > 0 && pick("session_type").length > 0} help="Age groups and session types are used in matching; populations are shown on your profile.">
               <p className="label-line">Age groups</p>
               <CheckGrid items={by.age_group_specialism || []} selected={selected} />
               <p className="label-line" style={{ marginTop: 14 }}>Session types</p>
@@ -194,7 +206,7 @@ export function ProfileView({ sp, profile, lookups, selectedRows, licenceCount, 
               <CheckGrid items={by.sexual_orientation_specialism || []} selected={selected} />
             </Section>
 
-            <Section title="Modalities" id="modalities">
+            <Section title="Modalities" id="modalities" done={pick("treatment_modality").length > 0}>
               <details open={pick("treatment_modality").length === 0}>
                 <summary className="small" style={{ cursor: "pointer" }}>{pick("treatment_modality").length ? <>{pick("treatment_modality").map((l) => l.value).slice(0, 6).join(", ") + (pick("treatment_modality").length > 6 ? "..." : "")}<span className="change">Change</span></> : "Choose modalities"}</summary>
                 <div style={{ marginTop: 10 }}>
@@ -203,7 +215,7 @@ export function ProfileView({ sp, profile, lookups, selectedRows, licenceCount, 
               </details>
             </Section>
 
-            <Section title="Insurance" id="insurance" help="Panels you're in network with. Leave all unticked if you're self-pay only.">
+            <Section title="Insurance" id="insurance" done={pick("insurance").length > 0} help="Panels you're in network with. Leave all unticked if you're self-pay only.">
               <details open={pick("insurance").length === 0}>
                 <summary className="small" style={{ cursor: "pointer" }}>{pick("insurance").length ? <>{pick("insurance").map((l) => l.value).slice(0, 6).join(", ") + (pick("insurance").length > 6 ? "..." : "")}<span className="change">Change</span></> : "Choose insurance"}</summary>
                 <div style={{ marginTop: 10 }}>
@@ -212,7 +224,7 @@ export function ProfileView({ sp, profile, lookups, selectedRows, licenceCount, 
               </details>
             </Section>
 
-            <Section title="Languages" id="languages" help="Languages you can offer therapy in.">
+            <Section title="Languages" id="languages" done={pick("language").length > 0} help="Languages you can offer therapy in.">
               <details open={pick("language").length === 0}>
                 <summary className="small" style={{ cursor: "pointer" }}>{pick("language").length ? <>{pick("language").map((l) => l.value).join(", ")}<span className="change">Change</span></> : "Choose languages"}</summary>
                 <div style={{ marginTop: 10 }}>
@@ -238,7 +250,7 @@ export function ProfileView({ sp, profile, lookups, selectedRows, licenceCount, 
               </div>
             </Section>
 
-            <Section title="Contact for colleagues" help="Optional. Most members keep contact inside PsyAlliance messages.">
+            <Section title="Contact details" id="contact" help="Private: only you and PsyAlliance admins see these. Colleagues reach you through messages.">
               <div className="fields">
                 <label className="field">
                   Phone
@@ -282,7 +294,8 @@ export function ProfileView({ sp, profile, lookups, selectedRows, licenceCount, 
               ))}
             </details>
 
-            <div className="row" style={{ justifyContent: "flex-end" }}>
+            <div className="save-bar">
+              <span className="small">One save covers every section, including folded ones.</span>
               <button type="submit" className="btn">Save profile</button>
             </div>
           </form>
@@ -320,7 +333,7 @@ export function ProfileView({ sp, profile, lookups, selectedRows, licenceCount, 
                 </div>
               </div>
               <ul className="reasons" style={{ marginTop: 10 }}>
-                <li>{profile?.referral_availability ? refLabel[profile.referral_availability] || "Availability set" : "Availability not confirmed"}</li>
+                <li>{effectiveReferral(profile?.referral_availability, profile?.availability_confirmed_at, profile?.availability_paused_until).label}</li>
                 {ranked.slice(0, 3).map((lv) => <li key={lv.id}>{lv.value}</li>)}
                 {profile?.psypact_participating && <li>PSYPACT</li>}
               </ul>
