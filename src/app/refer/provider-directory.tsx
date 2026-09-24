@@ -121,18 +121,21 @@ export default function ProviderDirectory({
             </div>
             <div className="directory-condensed-actions">
               <details className="endorsement-compose-trigger">
-                <summary>Send a referral</summary>
+                <summary>Ask about availability</summary>
                 <div className="endorsement-compose-panel refer-compose-panel">
+                  <p className="muted">Send an office-only inquiry. Arrange any patient handoff in your established secure channel.</p>
                   <form action={submitReferral}>
                     <input type="hidden" name="target_profile_id" value={p.id} />
                     <div className="field-row">
                       <div className="field">
-                        <label>Patient initials</label>
-                        <input name="patient_initials" type="text" maxLength={8} placeholder="Optional, e.g. J.D." />
-                      </div>
-                      <div className="field">
-                        <label>Age range</label>
-                        <input name="patient_age_range" type="text" maxLength={40} placeholder="Optional, e.g. Adult, 8-12" />
+                        <label htmlFor={`reason-${p.id}`}>Inquiry type</label>
+                        <select id={`reason-${p.id}`} name="reason" required defaultValue="">
+                          <option value="" disabled>Choose a purpose</option>
+                          <option value="Assessment inquiry">Assessment</option>
+                          <option value="Therapy inquiry">Therapy</option>
+                          <option value="Medication consultation inquiry">Medication consultation</option>
+                          <option value="Other professional inquiry">Other professional inquiry</option>
+                        </select>
                       </div>
                       <div className="field">
                         <label>Urgency</label>
@@ -143,15 +146,8 @@ export default function ProviderDirectory({
                         </select>
                       </div>
                     </div>
-                    <div className="field">
-                      <label>Reason for referral</label>
-                      <textarea name="reason" rows={2} required placeholder="Brief clinical reason, no need for detail" />
-                    </div>
-                    <div className="field">
-                      <label>How should their office reach you?</label>
-                      <input name="contact_details" type="text" required placeholder="Your office phone or email" />
-                    </div>
-                    <button type="submit" style={{ marginTop: "0.35rem" }}>Send referral</button>
+                    <p className="muted">Replies go to your registered office email.</p>
+                    <button type="submit" style={{ marginTop: "0.35rem" }}>Send inquiry</button>
                   </form>
                 </div>
               </details>

@@ -67,8 +67,8 @@ export default async function ProviderDirectoryPage(
       <h1>Find a specialist</h1>
       <p className="muted">
         A curated, read-only view of PsyAlliance's verified psychologists and psychiatrists who
-        are currently accepting referrals. Send a structured referral directly to the specialist
-        you choose - their office gets a heads-up, not an open inbox thread.
+        are currently accepting referrals. Send an office-only availability inquiry and
+        arrange any patient handoff outside PsyAlliance through your usual secure channel.
       </p>
 
       {searchParams.error && <div className="error-banner">{searchParams.error}</div>}

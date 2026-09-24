@@ -14,6 +14,7 @@ import {
   createReferralRequest,
   respondToReferralRequest,
   establishProfessionalConnection,
+  markReferralHandoff,
   closeReferralRequest,
   addReferralAudienceProfiles,
 } from "@/lib/referrals-v2";
@@ -245,8 +246,8 @@ export async function respondToReferralRequestAction(formData: FormData) {
   if (!user) throw new Error("Not signed in");
 
   const referralRequestId = Number(formData.get("referral_request_id"));
-  const response = String(formData.get("response") || "") as "interested" | "unavailable" | "question";
-  if (!["interested", "unavailable", "question"].includes(response)) requestsError("Choose a valid response", "referrals");
+  const response = String(formData.get("response") || "") as "interested" | "unavailable" | "question" | "waitlist";
+  if (!["interested", "unavailable", "question", "waitlist"].includes(response)) requestsError("Choose a valid response", "referrals");
   const message = String(formData.get("message") || "") || undefined;
 
   const { error } = await respondToReferralRequest(supabase, user.id, referralRequestId, response, message);
@@ -281,9 +282,23 @@ export async function closeReferralRequestAction(formData: FormData) {
   if (!user) throw new Error("Not signed in");
 
   const referralRequestId = Number(formData.get("referral_request_id"));
-  const { error } = await closeReferralRequest(supabase, user.id, referralRequestId);
+  const outcome = String(formData.get("outcome") || "") as "matched" | "no_match" | "withdrawn" | "other";
+  if (!["matched", "no_match", "withdrawn", "other"].includes(outcome)) requestsError("Choose a referral outcome", "referrals");
+  const { error } = await closeReferralRequest(supabase, user.id, referralRequestId, outcome);
   if (error) requestsError(error, "referrals");
 
+  revalidatePath("/dashboard/requests");
+  redirect("/dashboard/requests?tab=referrals");
+}
+
+export async function markReferralHandoffAction(formData: FormData) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not signed in");
+  const referralRequestId = Number(formData.get("referral_request_id"));
+  if (!Number.isSafeInteger(referralRequestId) || referralRequestId < 1) requestsError("Invalid referral request", "referrals");
+  const { error } = await markReferralHandoff(supabase, user.id, referralRequestId);
+  if (error) requestsError(error, "referrals");
   revalidatePath("/dashboard/requests");
   redirect("/dashboard/requests?tab=referrals");
 }

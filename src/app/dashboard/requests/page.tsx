@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import ToggleBox from "@/components/toggle-box";
 import UsStateDatalist from "@/components/us-state-datalist";
 import ReferralAudienceField from "@/components/referral-audience-field";
+import WorkflowResources from "@/components/workflow-resources";
 import { suggestCliniciansForCase } from "@/lib/coverage";
 import { suggestCliniciansForReferral } from "@/lib/referrals-v2";
 import { startConversation } from "../messages/actions";
@@ -14,6 +15,7 @@ import {
   createReferralRequestAction,
   respondToReferralRequestAction,
   establishProfessionalConnectionAction,
+  markReferralHandoffAction,
   closeReferralRequestAction,
   addReferralAudienceProfilesAction,
 } from "./actions";
@@ -576,7 +578,7 @@ export default async function RequestsPage(props: { searchParams: Promise<{ tab?
           <div key={r.id} style={{ borderBottom: "1px solid var(--border)", paddingBottom: "0.75rem", marginBottom: "0.75rem" }}>
             <div>
               <strong>{r.lookup_values?.value || "Any specialism"}</strong>
-              {r.state ? ` - ${r.state}` : ""} <span className="tag">{r.status}</span>{" "}
+              {r.state ? ` - ${r.state}` : ""} <span className="tag">{r.status === "open" && r.audience_type === "selected" ? "Choose recipients" : r.status.replace("_", " ")}</span>{" "}
               <span className="tag">{r.audience_type.replace("_", " ")}</span>
               {referralCriteriaTags(r)}
             </div>
@@ -586,20 +588,37 @@ export default async function RequestsPage(props: { searchParams: Promise<{ tab?
                   <div key={resp.id} className="person-row">
                     <span className="person-row-info">
                       {resp.profiles?.full_name} - <span className="tag">{resp.status}</span>
+                      {resp.message && <span className="muted" style={{ display: "block", marginTop: ".3rem" }}>{resp.message}</span>}
                     </span>
-                    {resp.status === "interested" && r.status !== "connected" && (
-                      <span className="person-row-actions">
+                    <span className="person-row-actions">
+                      {resp.status === "question" && <form action={startConversation}>
+                        <input type="hidden" name="participant_ids" value={resp.responding_profile_id} />
+                        <input type="hidden" name="title" value="Referral question" />
+                        <input type="hidden" name="body" value="Thanks for your question. " />
+                        <button type="submit" className="secondary">Reply privately</button>
+                      </form>}
+                      {(["interested", "offered", "accepted"].includes(resp.status)) && ["open", "sent", "matched"].includes(r.status) && (
                         <form action={establishProfessionalConnectionAction}>
                           <input type="hidden" name="referral_request_id" value={r.id} />
                           <input type="hidden" name="responding_profile_id" value={resp.responding_profile_id} />
                           <button type="submit">Connect</button>
                         </form>
-                      </span>
-                    )}
+                      )}
+                    </span>
                   </div>
                 ))}
               </div>
             )}
+            {r.selected_profile_id && (
+              <p className="muted" style={{ marginTop: "0.4rem" }}>
+                Connected with a clinician. Arrange the clinical transition in your usual secure channel; do not put patient details here.
+              </p>
+            )}
+            {r.status === "connected" && <form action={markReferralHandoffAction}>
+              <input type="hidden" name="referral_request_id" value={r.id} />
+              <button type="submit" className="secondary">Handoff arranged off platform</button>
+            </form>}
+            {r.status === "closed" && r.outcome && <p className="muted">Outcome: {r.outcome.replace("_", " ")}</p>}
             {!["closed", "connected", "handoff"].includes(r.status) && (
               <>
                 <div className="request-match-control" id={`referral-${r.id}`}>
@@ -672,12 +691,20 @@ export default async function RequestsPage(props: { searchParams: Promise<{ tab?
                     </div>
                   );
                 })()}
-                <form action={closeReferralRequestAction} style={{ marginTop: "0.35rem" }}>
-                  <input type="hidden" name="referral_request_id" value={r.id} />
-                  <button type="submit" className="secondary">Close</button>
-                </form>
               </>
             )}
+            {r.status !== "closed" && <form action={closeReferralRequestAction} className="referral-outcome-form">
+              <input type="hidden" name="referral_request_id" value={r.id} />
+              <label htmlFor={`referral-outcome-${r.id}`}>Close with outcome</label>
+              <select id={`referral-outcome-${r.id}`} name="outcome" required defaultValue="">
+                <option value="" disabled>Choose outcome</option>
+                {r.selected_profile_id && <option value="matched">Connected with clinician</option>}
+                <option value="no_match">No match found</option>
+                <option value="withdrawn">No longer needed</option>
+                <option value="other">Other resolution</option>
+              </select>
+              <button type="submit" className="secondary">Close request</button>
+            </form>}
           </div>
         ))}
         {(myReferralRequests || []).length === 0 && <p className="muted">You haven't posted any requests.</p>}
@@ -707,6 +734,18 @@ export default async function RequestsPage(props: { searchParams: Promise<{ tab?
                   <input type="hidden" name="response" value="unavailable" />
                   <button type="submit" className="secondary">Can't help</button>
                 </form>
+                <form action={respondToReferralRequestAction}>
+                  <input type="hidden" name="referral_request_id" value={r.id} />
+                  <input type="hidden" name="response" value="waitlist" />
+                  <button type="submit" className="secondary">Waitlist</button>
+                </form>
+                <form action={respondToReferralRequestAction}>
+                  <input type="hidden" name="referral_request_id" value={r.id} />
+                  <input type="hidden" name="response" value="question" />
+                  <label className="sr-only" htmlFor={`referral-question-${r.id}`}>Your question for this referral</label>
+                  <input id={`referral-question-${r.id}`} name="message" type="text" maxLength={500} placeholder="Ask a question (no patient details)" required />
+                  <button type="submit" className="secondary">Send question</button>
+                </form>
               </span>
             )}
           </div>
@@ -733,6 +772,7 @@ export default async function RequestsPage(props: { searchParams: Promise<{ tab?
         <span><b>01</b> Describe the need</span><span><b>02</b> Review who fits</span><span><b>03</b> Confirm the arrangement</span>
       </div>
       {error && <div className="error-banner">{error}</div>}
+      <WorkflowResources codes={tab === "referrals" ? ["PA-07"] : ["PA-01", "PA-02"]} />
       <ToggleBox
         defaultTab={tab === "referrals" ? "referrals" : "coverage"}
         tabs={[

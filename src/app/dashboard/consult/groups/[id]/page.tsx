@@ -10,6 +10,7 @@ import {
   postGroupConsultationAction,
 } from "../actions";
 import { respondToConsultationAction, resolveConsultationAction } from "../../actions";
+import WorkflowResources from "@/components/workflow-resources";
 
 const MEMBER_STATUS_LABELS: Record<string, string> = {
   invited: "Invited",
@@ -65,7 +66,7 @@ export default async function ConsultationGroupPage(props: { params: Promise<{ i
   // everything by virtue of being the creator), shouldn't be blocked from
   // viewing - but only an actual invited/joined member or the creator
   // should be able to act on invitations below.
-  if (!isCreator && !myMembership) redirect("/dashboard/consult/groups?error=" + encodeURIComponent("That group isn't available."));
+  if (!isCreator && !["invited", "joined"].includes(myMembership?.status || "")) redirect("/dashboard/consult/groups?error=" + encodeURIComponent("That group isn't available."));
 
   const existingMemberIds = new Set((members || []).map((m: any) => m.profile_id).filter(Boolean));
   const inviteCandidates = (myConnections || [])
@@ -78,6 +79,7 @@ export default async function ConsultationGroupPage(props: { params: Promise<{ i
         <a href="/dashboard/consult/groups">&larr; All consultation groups</a>
       </p>
       <h1>{group.name}</h1>
+      <WorkflowResources codes={["PA-04"]} />
       {group.purpose && <p className="muted">{group.purpose}</p>}
       <p className="muted" style={{ fontSize: "0.85rem" }}>
         {group.cadence && <>Cadence: {group.cadence} · </>}
@@ -93,6 +95,7 @@ export default async function ConsultationGroupPage(props: { params: Promise<{ i
             <form action={respondToGroupInviteAction}>
               <input type="hidden" name="membership_id" value={myMembership.id} />
               <input type="hidden" name="status" value="joined" />
+              <label className="checkbox-row"><input type="checkbox" name="acknowledge_charter" required /> I have read and agree to the charter below.</label>
               <button type="submit">Join</button>
             </form>
             <form action={respondToGroupInviteAction}>

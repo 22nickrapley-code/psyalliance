@@ -192,7 +192,7 @@ export async function createReferralRequest(
       notes: opts.notes ?? null,
       audience_type: opts.audienceType,
       audience_profile_ids: opts.audienceType === "selected" ? opts.audienceProfileIds ?? [] : [],
-      status: "sent",
+      status: opts.audienceType === "selected" && !opts.audienceProfileIds?.length ? "open" : "sent",
     })
     .select("id")
     .single();
@@ -217,7 +217,7 @@ export async function respondToReferralRequest(
   supabase: Awaited<ReturnType<typeof createClient>>,
   respondingProfileId: string,
   referralRequestId: number,
-  response: "interested" | "unavailable" | "question",
+  response: "interested" | "unavailable" | "question" | "waitlist",
   message?: string
 ) {
   const { error } = await supabase.from("referral_responses").insert({
@@ -270,26 +270,12 @@ export async function addReferralAudienceProfiles(
   referralRequestId: number,
   profileIds: string[]
 ) {
-  const { data: request } = await supabase
-    .from("referral_requests")
-    .select("requesting_profile_id, audience_profile_ids")
-    .eq("id", referralRequestId)
-    .maybeSingle();
-  if (!request) return { error: "Referral request not found" };
-  if (request.requesting_profile_id !== requestingProfileId) {
-    return { error: "Only the requester can choose who sees this referral" };
-  }
-
-  const existing = new Set<string>(request.audience_profile_ids || []);
-  const added = profileIds.filter((id) => id && !existing.has(id));
-  if (added.length === 0) return { error: null };
-  added.forEach((id) => existing.add(id));
-
-  const { error } = await supabase
-    .from("referral_requests")
-    .update({ audience_type: "selected", audience_profile_ids: Array.from(existing) })
-    .eq("id", referralRequestId);
+  const { data: added, error } = await supabase.rpc("add_referral_recipients", {
+    p_request_id: referralRequestId,
+    p_recipients: [...new Set(profileIds)],
+  });
   if (error) return { error: error.message };
+  if (!added?.length) return { error: null };
 
   await raiseNotification(supabase, {
     eventType: "referral_sent",
@@ -314,11 +300,11 @@ export async function establishProfessionalConnection(
   referralRequestId: number,
   respondingProfileId: string
 ) {
-  const { error } = await supabase
-    .from("referral_requests")
-    .update({ status: "connected" })
-    .eq("id", referralRequestId)
-    .eq("requesting_profile_id", requestingProfileId);
+  const { error } = await supabase.rpc("advance_referral_request", {
+    p_request_id: referralRequestId,
+    p_action: "connect",
+    p_responder: respondingProfileId,
+  });
   if (error) return { error: error.message };
 
   await logProfessionalEvent(supabase, {
@@ -351,11 +337,10 @@ export async function markReferralHandoff(
   requestingProfileId: string,
   referralRequestId: number
 ) {
-  const { error } = await supabase
-    .from("referral_requests")
-    .update({ status: "handoff" })
-    .eq("id", referralRequestId)
-    .eq("requesting_profile_id", requestingProfileId);
+  const { error } = await supabase.rpc("advance_referral_request", {
+    p_request_id: referralRequestId,
+    p_action: "handoff",
+  });
   return { error: error?.message ?? null };
 }
 
@@ -363,20 +348,20 @@ export async function closeReferralRequest(
   supabase: Awaited<ReturnType<typeof createClient>>,
   requestingProfileId: string,
   referralRequestId: number,
-  outcome?: string
+  outcome: "matched" | "no_match" | "withdrawn" | "other"
 ) {
-  const { error } = await supabase
-    .from("referral_requests")
-    .update({ status: "closed", closed_at: new Date().toISOString() })
-    .eq("id", referralRequestId)
-    .eq("requesting_profile_id", requestingProfileId);
+  const { error } = await supabase.rpc("advance_referral_request", {
+    p_request_id: referralRequestId,
+    p_action: "close",
+    p_outcome: outcome,
+  });
   if (error) return { error: error.message };
 
   await logProfessionalEvent(supabase, {
     eventType: "referral_outcome",
     actorProfileId: requestingProfileId,
-    summary: outcome ?? "closed a referral request",
-    metadata: { referralRequestId },
+    summary: `closed a referral request: ${outcome.replace("_", " ")}`,
+    metadata: { referralRequestId, outcome },
   });
 
   return { error: null };

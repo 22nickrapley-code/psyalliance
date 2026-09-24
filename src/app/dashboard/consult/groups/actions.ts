@@ -105,14 +105,26 @@ export async function respondToGroupInviteAction(formData: FormData) {
   if (!user) throw new Error("Not signed in");
 
   const membershipId = Number(formData.get("membership_id"));
-  const status = String(formData.get("status") || "") as "joined" | "declined" | "left";
+  const status = String(formData.get("status") || "");
+  if (!["joined", "declined"].includes(status)) groupsError("Choose a valid response to the invitation");
+  const { data: invitation } = await supabase.from("consultation_group_members")
+    .select("group_id, status, consultation_groups(charter_body)")
+    .eq("id", membershipId).eq("profile_id", user.id).maybeSingle();
+  if (!invitation || invitation.status !== "invited") groupsError("This invitation is no longer open");
+  const charter = Array.isArray(invitation.consultation_groups)
+    ? invitation.consultation_groups[0]?.charter_body
+    : (invitation.consultation_groups as { charter_body?: string } | null)?.charter_body;
+  if (status === "joined" && (!charter || formData.get("acknowledge_charter") !== "on")) {
+    groupsError("Read and acknowledge the group's charter before joining");
+  }
 
-  const { error } = await supabase
+  const { data: updated, error } = await supabase
     .from("consultation_group_members")
     .update({ status, responded_at: new Date().toISOString() })
     .eq("id", membershipId)
-    .eq("profile_id", user.id);
-  if (error) groupsError(error.message);
+    .eq("profile_id", user.id).eq("status", "invited")
+    .select("id").maybeSingle();
+  if (error || !updated) groupsError(error?.message || "This invitation is no longer open");
 
   revalidatePath("/dashboard/consult/groups");
   redirect("/dashboard/consult/groups");
@@ -128,12 +140,13 @@ export async function leaveGroupAction(formData: FormData) {
   const groupId = Number(formData.get("group_id"));
   const membershipId = Number(formData.get("membership_id"));
 
-  const { error } = await supabase
+  const { data: updated, error } = await supabase
     .from("consultation_group_members")
     .update({ status: "left", responded_at: new Date().toISOString() })
     .eq("id", membershipId)
-    .eq("profile_id", user.id);
-  if (error) groupError(groupId, error.message);
+    .eq("profile_id", user.id).eq("group_id", groupId).eq("status", "joined")
+    .select("id").maybeSingle();
+  if (error || !updated) groupError(groupId, error?.message || "You're no longer in this group");
 
   revalidatePath("/dashboard/consult/groups");
   redirect("/dashboard/consult/groups");
@@ -149,10 +162,12 @@ export async function removeGroupMemberAction(formData: FormData) {
   const groupId = Number(formData.get("group_id"));
   const membershipId = Number(formData.get("membership_id"));
 
-  // RLS ("group creator manages membership") is the real gate here - this
-  // delete only succeeds when the caller created the group.
-  const { error } = await supabase.from("consultation_group_members").delete().eq("id", membershipId);
-  if (error) groupError(groupId, error.message);
+  const { data: updated, error } = await supabase.from("consultation_group_members")
+    .update({ status: "removed", responded_at: new Date().toISOString() })
+    .eq("id", membershipId).eq("group_id", groupId)
+    .neq("profile_id", user.id).in("status", ["invited", "joined"])
+    .select("id").maybeSingle();
+  if (error || !updated) groupError(groupId, error?.message || "Member not found or already removed");
 
   revalidatePath(`/dashboard/consult/groups/${groupId}`);
   redirect(`/dashboard/consult/groups/${groupId}`);

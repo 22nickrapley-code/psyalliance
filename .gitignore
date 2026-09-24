@@ -2,6 +2,7 @@ node_modules
 .next
 .env
 .env.local
+wrangler.preview.generated.json
 *.log
 .DS_Store
 *.tsbuildinfo

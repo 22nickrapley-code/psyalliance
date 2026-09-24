@@ -1,5 +1,7 @@
 # PsyAlliance release candidate: implementation and remaining gates
 
+**24 September continuation:** Further referral, group, notification, provider-inquiry, and workflow Library changes are in the draft branch. Read [the isolated preview runbook](2026-09-24-preview-runbook.md) for the new migrations and test sequence. This original ledger records the earlier cut; its checklist alone is no longer sufficient for deployment.
+
 This branch implements a substantial part of the 23 September re-audit. It has not been merged, deployed, or applied to the production database. The earlier live URL returned Cloudflare Worker 1102 during the audit; it loaded again on 24 September, serving the old landing page. A successful build is not evidence that the deployed Worker is healthy.
 
 | Audit area | State in this branch | Evidence / release condition |

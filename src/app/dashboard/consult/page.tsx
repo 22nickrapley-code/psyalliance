@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createConsultationAction, respondToConsultationAction, resolveConsultationAction, setResponseUsefulAction } from "./actions";
 import { startConversation } from "../messages/actions";
 import { fileReportAction } from "../moderation-actions";
+import WorkflowResources from "@/components/workflow-resources";
 
 const CONSULTATION_TYPE_LABELS: Record<string, string> = {
   diagnostic_clarification: "Diagnostic clarification",
@@ -55,6 +56,7 @@ export default async function ConsultPage(props: { searchParams: Promise<{ error
   return (
     <div>
       <h1>Consult</h1>
+      <WorkflowResources codes={["PA-05"]} />
       <p className="muted">
         Ask a specific question for selected clinicians, trusted colleagues, or the verified network. Keep it de-identified: no
         patient names, exact dates, addresses, or other identifying details.

@@ -9,11 +9,8 @@ import type { ActorType } from "@/lib/professional-events";
 // other modules (Coverage, Referrals, Consult, credentials) raise events
 // into.
 //
-// THE EMAIL PROVIDER SWAP POINT: deliverEmailStub() below is the only
-// place a real provider (Resend or otherwise) plugs in. Per Nick's call -
-// "build the email function and hook up later" - it currently only logs
-// and marks the delivery sent; nothing else in this file, or in any
-// caller, needs to change when a real provider is wired in.
+// Email deliveries are queued for a future provider. Never mark them sent
+// without a provider acknowledgement; the in-app channel works now.
 
 export type NotificationEventType =
   | "coverage_request"
@@ -134,35 +131,15 @@ export async function raiseNotification(
     }
   }
 
-  const { data: insertedDeliveries, error: deliveryError } = await supabase
+  const { error: deliveryError } = await supabase
     .from("notification_deliveries")
-    .insert(deliveries)
-    .select("id, channel, recipient_profile_id");
+    .insert(deliveries);
   if (deliveryError) {
     console.error("raiseNotification delivery insert failed:", deliveryError.message);
     return { eventId: event.id, error: deliveryError.message };
   }
 
-  const emailDeliveries = (insertedDeliveries || []).filter((d: any) => d.channel === "email");
-  await Promise.all(emailDeliveries.map((d: any) => deliverEmailStub(supabase, d.id, d.recipient_profile_id, opts.summary)));
-
   return { eventId: event.id, error: null };
-}
-
-// THE PROVIDER SWAP POINT (see file header). Replace this function's body
-// with a real send (Resend, etc.) when a provider is chosen - every
-// caller above stays the same.
-async function deliverEmailStub(
-  supabase: Awaited<ReturnType<typeof createClient>>,
-  deliveryId: number,
-  recipientProfileId: string,
-  summary: string
-) {
-  console.log(`[email stub] would send to ${recipientProfileId}: ${summary}`);
-  await supabase
-    .from("notification_deliveries")
-    .update({ status: "sent", delivered_at: new Date().toISOString() })
-    .eq("id", deliveryId);
 }
 
 export async function getUnreadNotificationCount(

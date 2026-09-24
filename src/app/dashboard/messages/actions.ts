@@ -63,9 +63,8 @@ async function postInitialMessage(
   // Task #68 (Sept 23 audit): "message_received" has had a notification
   // type, a preference column (email_on_message, defaulting to on), and a
   // Notifications-page label since Phase 4/16 - nothing ever actually
-  // raised one. This is that wiring. Still only reaches the existing email
-  // stub (deliverEmailStub() in notifications-v2.ts) until Nick picks a
-  // real provider - the point is that the whole in-app pipeline (event,
+  // raised one. This is that wiring. Email remains queued until a
+  // provider is configured; the in-app pipeline (event,
   // per-user opt-out, dedup) is exercised now, so flipping on real email
   // later needs no further code changes here. Deduped per conversation for
   // 24h so an active back-and-forth thread raises one notification, not
