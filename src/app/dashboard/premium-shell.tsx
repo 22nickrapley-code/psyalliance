@@ -25,6 +25,7 @@ export default function PremiumShell({
   unreadNotifications,
   signOutAction,
   children,
+  demoView,
 }: {
   groups: NavGroup[];
   displayName: string;
@@ -34,6 +35,7 @@ export default function PremiumShell({
   unreadNotifications: number;
   signOutAction: (formData: FormData) => void;
   children: React.ReactNode;
+  demoView?: boolean;
 }) {
   const pathname = usePathname() || "/dashboard";
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -125,6 +127,11 @@ export default function PremiumShell({
               </Link>
             </div>
           </header>
+          {demoView && (
+            <div className="demo-bar" role="status">
+              Demo network: everyone you see here is fake. <Link href="/dashboard/settings#demo">Switch back to the real network</Link>
+            </div>
+          )}
           <main className="page" id="main" tabIndex={-1}>{children}</main>
         </div>
       </div>

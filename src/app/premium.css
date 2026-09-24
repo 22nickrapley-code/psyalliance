@@ -427,3 +427,5 @@
 .pa .micro-note{color:#5b6a60}
 .pa .progress-step{color:#5b6a60}
 .pa .bubble small{color:#4f5e54}
+.pa .demo-bar{background:#f7efe3;border-bottom:1px solid #e6d3b8;color:#6b4a22;font-size:12px;font-weight:600;padding:8px 28px;text-align:center}
+.pa .demo-bar a{color:#6b4a22;margin-left:6px}

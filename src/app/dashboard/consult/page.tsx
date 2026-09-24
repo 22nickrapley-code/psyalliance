@@ -1,3 +1,4 @@
+import { viewerIsDemo } from "@/lib/demo";
 import { createClient } from "@/lib/supabase/server";
 import { findMatches } from "@/lib/match-engine";
 import { resolveAvatarUrls } from "@/lib/avatars";
@@ -14,6 +15,7 @@ export default async function ConsultPage(props: { searchParams: Promise<{ tab?:
     data: { user },
   } = await supabase.auth.getUser();
   const myself = user!.id;
+  const viewerDemo = await viewerIsDemo(supabase);
 
   const [{ data: follows }, { data: myFocus }, { data: trustedRows }, { data: profile }] = await Promise.all([
     supabase.from("consult_tag_follows").select("tag").eq("profile_id", myself),
@@ -74,7 +76,7 @@ export default async function ConsultPage(props: { searchParams: Promise<{ tab?:
     }
     const { data } = await q;
     posts = (data || [])
-      .filter((c: any) => c.author_profile_id === myself || !c.author?.is_demo)
+      .filter((c: any) => c.author_profile_id === myself || !!c.author?.is_demo === viewerDemo)
       .map((c: any) => {
         const tagHit = (c.tags || []).find((t: string) => interests.has(t));
         const why = trusted.has(c.author_profile_id) ? "From your trusted circle" : tagHit ? `Matches ${tagHit}` : undefined;

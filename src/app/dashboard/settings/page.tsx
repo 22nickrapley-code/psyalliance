@@ -11,7 +11,7 @@ export default async function SettingsPage(props: { searchParams: Promise<{ save
 
   const [{ data: prefs }, { data: profile }, { data: emergency }, { data: excluded }, { data: blocked }, { data: circle }] = await Promise.all([
     supabase.from("notification_preferences").select("*").eq("profile_id", me).maybeSingle(),
-    supabase.from("profiles").select("directory_visible").eq("id", me).maybeSingle(),
+    supabase.from("profiles").select("directory_visible, demo_view, is_admin").eq("id", me).maybeSingle(),
     supabase.from("emergency_contacts").select("*, contact:contact_profile_id(id, full_name, credential_prefix)").eq("profile_id", me).maybeSingle(),
     supabase.from("do_not_work_with").select("blocked_profile_id, blocked:blocked_profile_id(id, full_name, credential_prefix)").eq("profile_id", me),
     supabase.from("blocked_members").select("blocked_profile_id, created_at").eq("profile_id", me),

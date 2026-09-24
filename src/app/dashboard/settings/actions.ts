@@ -172,3 +172,18 @@ export async function unblockMemberAction(formData: FormData) {
   revalidatePath("/dashboard/settings");
   revalidatePath("/dashboard/network");
 }
+
+// Demo network view (0076). Admins can switch it on; anyone who has it can
+// switch it off. The database enforces the same rule.
+export async function setDemoViewAction(formData: FormData) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not signed in");
+  const on = formData.get("demo_view") === "on";
+  const { error } = await supabase.from("profiles").update({ demo_view: on }).eq("id", user.id);
+  if (error) settingsError(error.message);
+  revalidatePath("/dashboard", "layout");
+  redirect(`/dashboard/settings?saved=${on ? "demo-on" : "demo-off"}#demo`);
+}

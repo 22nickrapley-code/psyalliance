@@ -299,41 +299,9 @@ export async function respondToCoverageRequest(
     .eq("id", coverageRequestId);
   if (error) return { error: error.message };
 
-  const caseUpdates: Record<string, unknown> = {};
-  if (response === "accepted") {
-    caseUpdates.status = "confirmed";
-    caseUpdates.assigned_clinician_id = requestedProfileId;
-  } else if (response === "declined") {
-    // Task #132 (Sept 23 audit): this used to just leave the case at
-    // 'awaiting_response' forever with a "Phase 5+ UI logic decides"
-    // comment - no UI ever did, so a declined request was a dead end with
-    // no suggested-clinicians list and no way to ask anyone else. This is
-    // the fix: if nothing else is still pending for this case, check
-    // whether there's anyone left to ask (same staged matching, excluding
-    // everyone already asked) - if so, cycle back to 'needs_cover' so the
-    // case resurfaces on the Requests page for another round; if the pool
-    // is genuinely exhausted, land on 'declined_all' instead, a real
-    // "nobody available" state rather than silently pretending nobody's
-    // been tried yet.
-    const { data: otherPending } = await supabase
-      .from("coverage_requests")
-      .select("id")
-      .eq("coverage_plan_case_id", request.coverage_plan_case_id)
-      .eq("status", "sent")
-      .neq("id", coverageRequestId);
-    if (!otherPending || otherPending.length === 0) {
-      const { data: everAsked } = await supabase
-        .from("coverage_requests")
-        .select("requested_profile_id")
-        .eq("coverage_plan_case_id", request.coverage_plan_case_id);
-      const askedIds = Array.from(new Set((everAsked || []).map((r) => r.requested_profile_id)));
-      const remaining = await suggestCliniciansForCase(supabase, request.coverage_plan_case_id, askedIds);
-      caseUpdates.status = remaining.length > 0 ? "needs_cover" : "declined_all";
-    }
-  }
-  if (Object.keys(caseUpdates).length > 0) {
-    await supabase.from("coverage_plan_cases").update(caseUpdates).eq("id", request.coverage_plan_case_id);
-  }
+  // The case's own status (covered / still needs cover) follows its
+  // requests in the database (sync_cover_case_status trigger, 0077): the
+  // colleague answering can't write the owner's case directly.
 
   await logProfessionalEvent(supabase, {
     eventType: "coverage_response",

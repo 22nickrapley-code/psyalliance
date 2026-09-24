@@ -23,7 +23,7 @@ export default async function DashboardLayout({
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("full_name, verification_status, is_admin, avatar_path")
+    .select("full_name, verification_status, is_admin, avatar_path, demo_view")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -161,6 +161,7 @@ export default async function DashboardLayout({
       verificationLabel={verificationLabel}
       unreadNotifications={notificationPipelineUnreadCount || 0}
       signOutAction={signOutAction}
+      demoView={!!profile?.demo_view}
     >
       {children}
     </PremiumShell>

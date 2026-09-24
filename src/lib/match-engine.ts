@@ -1,3 +1,4 @@
+import { viewerIsDemo } from "@/lib/demo";
 import { createClient } from "@/lib/supabase/server";
 
 // The shared matching engine (Product Spec v1, "The matching engine").
@@ -98,6 +99,7 @@ export async function findMatches(
   opts: { exclude?: string[]; limit?: number } = {}
 ): Promise<MatchResult> {
   const needState = need.state ? need.state.trim().toUpperCase() : null;
+  const demo = await viewerIsDemo(supabase);
   const needCity = need.city ? need.city.trim().toLowerCase() : null;
   const focusIds = (need.focusIds || []).filter((n) => Number.isFinite(n) && n > 0);
   const allowsTelehealth = need.setting === "virtual" || need.setting === "either" || !need.setting;
@@ -119,7 +121,7 @@ export async function findMatches(
       )
       .eq("verification_status", "verified")
       .eq("account_status", "active")
-      .eq("is_demo", false)
+      .eq("is_demo", demo)
       .neq("id", requesterId),
     supabase
       .from("connections")

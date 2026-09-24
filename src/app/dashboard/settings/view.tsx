@@ -5,6 +5,7 @@ import {
   removeFromBlocklist,
   unblockMemberAction,
   savePrivacyAction,
+  setDemoViewAction,
 } from "./actions";
 import { PageHead, Banner } from "../_components/ui";
 
@@ -36,7 +37,7 @@ export function SettingsView({ sp, email, me, prefs, profile, emergency, exclude
   const listed = profile?.directory_visible !== false;
 
   const okMsg =
-    sp.saved === "privacy" ? "Privacy setting saved." : sp.saved === "blocked" ? "Blocked. They can't contact you and you're hidden from each other." : sp.saved ? "Notification settings saved." : null;
+    sp.saved === "demo-on" ? "Demo network on. You're now seeing the fake demo members, not the real network." : sp.saved === "demo-off" ? "Demo network off. You're back on the real network." : sp.saved === "privacy" ? "Privacy setting saved." : sp.saved === "blocked" ? "Blocked. They can't contact you and you're hidden from each other." : sp.saved ? "Notification settings saved." : null;
 
   return (
     <>
@@ -183,6 +184,26 @@ export function SettingsView({ sp, email, me, prefs, profile, emergency, exclude
               <div><button type="submit" className="btn secondary small-btn">Save</button></div>
             </form>
           </section>
+
+          {(profile?.is_admin || profile?.demo_view) && (
+            <form action={setDemoViewAction} className="card" id="demo">
+              <h3>Demo network</h3>
+              <p className="small">
+                See PsyAlliance filled with fake, clearly-labelled demo members so you can try every feature. Real members never see the demo network, and demo activity never reaches them.
+              </p>
+              <div className="seg">
+                <label>
+                  <input type="radio" name="demo_view" value="on" defaultChecked={!!profile?.demo_view} disabled={!profile?.is_admin && !profile?.demo_view} />
+                  Show the demo network
+                </label>
+                <label>
+                  <input type="radio" name="demo_view" value="off" defaultChecked={!profile?.demo_view} />
+                  Show the real network
+                </label>
+              </div>
+              <button type="submit" className="btn secondary small-btn" style={{ marginTop: 10 }}>Save</button>
+            </form>
+          )}
 
           <section className="card" id="data">
             <h3>Your data</h3>
