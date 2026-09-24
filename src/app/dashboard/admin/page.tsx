@@ -40,6 +40,12 @@ export default async function AdminOverviewPage() {
     supabase.from("reports").select("*", { count: "exact", head: true }).in("status", ["open", "reviewing"]),
   ]);
 
+  const [{ data: emailHealthRows }, { count: licencesAwaitingReview }] = await Promise.all([
+    supabase.rpc("admin_email_health"),
+    supabase.from("licenses").select("id", { count: "exact", head: true }).is("reviewed_at", null),
+  ]);
+  const email = Array.isArray(emailHealthRows) ? emailHealthRows[0] : null;
+
   const stateCounts = new Map<string, number>();
   for (const row of byState || []) {
     const s = row.primary_state || "-";
@@ -69,6 +75,25 @@ export default async function AdminOverviewPage() {
         <a href="/dashboard/admin/moderation">Moderation queue</a>, and Practice Library
         publication sign-off is under <a href="/dashboard/admin/library">Library governance</a>.
       </p>
+
+      <div className="card">
+        <h2>Needs you</h2>
+        <p>
+          <a href="/dashboard/admin/verifications">{licencesAwaitingReview || 0} licence{licencesAwaitingReview === 1 ? "" : "s"} awaiting review</a>
+          {" · "}
+          <a href="/dashboard/admin/moderation">{openReportCount || 0} open report{openReportCount === 1 ? "" : "s"}</a>
+        </p>
+        <h2 style={{ marginTop: "1rem" }}>Email</h2>
+        {email ? (
+          <p className="muted">
+            {email.configured ? "Switched on." : "Not switched on yet: add the provider API key to Supabase Vault as 'email_api_key'. Emails queue for up to 3 days, then lapse."}{" "}
+            Last 7 days: {email.sent_7d} sent, {email.failed_7d} failed. {email.pending} waiting.
+            {email.last_error ? ` Last error: ${email.last_error}` : ""}
+          </p>
+        ) : (
+          <p className="muted">Email status unavailable.</p>
+        )}
+      </div>
 
       <div className="card">
         <h2>Members</h2>

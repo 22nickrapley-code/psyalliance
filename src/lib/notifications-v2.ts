@@ -9,11 +9,12 @@ import type { ActorType } from "@/lib/professional-events";
 // other modules (Coverage, Referrals, Consult, credentials) raise events
 // into.
 //
-// THE EMAIL PROVIDER SWAP POINT: deliverEmailStub() below is the only
-// place a real provider (Resend or otherwise) plugs in. Per Nick's call -
-// "build the email function and hook up later" - it currently only logs
-// and marks the delivery sent; nothing else in this file, or in any
-// caller, needs to change when a real provider is wired in.
+// EMAIL: this file only queues email deliveries (status 'pending'). The
+// database sends them (public.dispatch_email_outbox, run every minute by
+// pg_cron, migration 0071) once an email API key is stored in Supabase
+// Vault. It also applies each recipient's email switches at send time,
+// skips demo accounts, and holds "new message" emails for an hour so
+// they only go if the message is still unread.
 
 export type NotificationEventType =
   | "coverage_request"
@@ -57,6 +58,9 @@ const PREFERENCE_COLUMN_BY_EVENT_TYPE: Partial<Record<NotificationEventType, str
 // occurrence days later.
 const DEDUP_WINDOW_HOURS = 24;
 
+// "New message" emails wait this long, and go only if still unread.
+const MESSAGE_EMAIL_DELAY_MINUTES = 60;
+
 export type RaiseNotificationOptions = {
   eventType: NotificationEventType;
   recipientProfileIds: string[];
@@ -93,30 +97,25 @@ export async function raiseNotification(
     return { eventId: null, error: eventError.message };
   }
 
-  const preferenceColumn = PREFERENCE_COLUMN_BY_EVENT_TYPE[opts.eventType];
-  const { data: preferences } = await supabase
-    .from("notification_preferences")
-    .select(preferenceColumn ? `profile_id, ${preferenceColumn}` : "profile_id")
-    .in("profile_id", recipients);
-  const emailEnabledFor = new Map((preferences || []).map((p: any) => [p.profile_id, preferenceColumn ? p[preferenceColumn] !== false : true]));
+  const wantsEmail = !!PREFERENCE_COLUMN_BY_EVENT_TYPE[opts.eventType];
 
-  let dedupedRecipients = new Set(recipients);
+  // Other recipients' deliveries are hidden by RLS, so dedup asks the
+  // database which of them were already told about this key recently.
+  let alreadyNotified = new Set<string>();
   if (opts.dedupKey) {
-    const since = new Date(Date.now() - DEDUP_WINDOW_HOURS * 60 * 60 * 1000).toISOString();
-    const { data: recent } = await supabase
-      .from("notification_deliveries")
-      .select("recipient_profile_id, notification_events!inner(dedup_key)")
-      .eq("notification_events.dedup_key", opts.dedupKey)
-      .in("status", ["pending", "sent"])
-      .gte("created_at", since)
-      .in("recipient_profile_id", recipients);
-    const alreadyNotified = new Set((recent || []).map((r: any) => r.recipient_profile_id));
-    dedupedRecipients = new Set(recipients.filter((id) => !alreadyNotified.has(id)));
+    const { data: recent } = await supabase.rpc("recently_notified", {
+      p_dedup_key: opts.dedupKey,
+      p_recipients: recipients,
+      p_hours: DEDUP_WINDOW_HOURS,
+    });
+    alreadyNotified = new Set((recent as string[] | null) || []);
   }
 
+  const sendAfter =
+    opts.eventType === "message_received" ? new Date(Date.now() + MESSAGE_EMAIL_DELAY_MINUTES * 60_000).toISOString() : new Date().toISOString();
   const deliveries: any[] = [];
   for (const recipientId of recipients) {
-    const suppressed = !dedupedRecipients.has(recipientId);
+    const suppressed = alreadyNotified.has(recipientId);
     deliveries.push({
       notification_event_id: event.id,
       recipient_profile_id: recipientId,
@@ -124,45 +123,24 @@ export async function raiseNotification(
       status: suppressed ? "suppressed_dedup" : "sent",
       delivered_at: suppressed ? null : new Date().toISOString(),
     });
-    if (!suppressed && preferenceColumn && emailEnabledFor.get(recipientId) !== false) {
+    if (!suppressed && wantsEmail) {
       deliveries.push({
         notification_event_id: event.id,
         recipient_profile_id: recipientId,
         channel: "email",
         status: "pending",
+        send_after: sendAfter,
       });
     }
   }
 
-  const { data: insertedDeliveries, error: deliveryError } = await supabase
-    .from("notification_deliveries")
-    .insert(deliveries)
-    .select("id, channel, recipient_profile_id");
+  const { error: deliveryError } = await supabase.from("notification_deliveries").insert(deliveries);
   if (deliveryError) {
     console.error("raiseNotification delivery insert failed:", deliveryError.message);
     return { eventId: event.id, error: deliveryError.message };
   }
 
-  const emailDeliveries = (insertedDeliveries || []).filter((d: any) => d.channel === "email");
-  await Promise.all(emailDeliveries.map((d: any) => deliverEmailStub(supabase, d.id, d.recipient_profile_id, opts.summary)));
-
   return { eventId: event.id, error: null };
-}
-
-// THE PROVIDER SWAP POINT (see file header). Replace this function's body
-// with a real send (Resend, etc.) when a provider is chosen - every
-// caller above stays the same.
-async function deliverEmailStub(
-  supabase: Awaited<ReturnType<typeof createClient>>,
-  deliveryId: number,
-  recipientProfileId: string,
-  summary: string
-) {
-  console.log(`[email stub] would send to ${recipientProfileId}: ${summary}`);
-  await supabase
-    .from("notification_deliveries")
-    .update({ status: "sent", delivered_at: new Date().toISOString() })
-    .eq("id", deliveryId);
 }
 
 export async function getUnreadNotificationCount(
@@ -174,6 +152,7 @@ export async function getUnreadNotificationCount(
     .select("id", { count: "exact", head: true })
     .eq("recipient_profile_id", profileId)
     .eq("channel", "in_app")
+    .eq("status", "sent")
     .is("read_at", null);
   return count ?? 0;
 }

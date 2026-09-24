@@ -59,6 +59,7 @@ export default async function NotificationsPage() {
       )
       .eq("recipient_profile_id", myself)
       .eq("channel", "in_app")
+      .eq("status", "sent")
       .order("created_at", { ascending: false })
       .limit(50),
     // Sept 23 audit finding: this page said "All caught up" while unread
