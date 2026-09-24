@@ -68,20 +68,21 @@ export async function suggestCliniciansForReferral(
   const { data: candidates, error } = await candidatesQuery;
   if (error) {
     console.error("suggestCliniciansForReferral failed:", error.message);
-    return [];
+    throw new Error("Referral matching is temporarily unavailable");
   }
 
-  const candidateIds = (candidates || []).map((c: any) => c.id).filter((id: string) => !excludedIds.has(id));
+  const uniqueCandidates = [...new Map((candidates || []).map((candidate: any) => [candidate.id, candidate])).values()] as any[];
+  const candidateIds = uniqueCandidates.map((c) => c.id).filter((id: string) => !excludedIds.has(id));
   if (candidateIds.length === 0) return [];
 
-  const [{ data: specialisms }, { data: relationshipRows }, { data: savedRows }, { data: workedWithRows }] = await Promise.all([
+  const [specialismResult, relationshipResult, savedResult, workedWithResult] = await Promise.all([
     request.specialism_lookup_id
       ? supabase
           .from("profile_lookup_values")
           .select("profile_id, lookup_value_id")
           .in("profile_id", candidateIds)
           .eq("lookup_value_id", request.specialism_lookup_id)
-      : Promise.resolve({ data: [] as any[] }),
+      : Promise.resolve({ data: [] as any[], error: null }),
     // Sept 23 audit finding (task #123): same restoration as
     // suggestCliniciansForCase in src/lib/coverage.ts - the old grid engine
     // weighted Bench between Trusted Colleague and no relationship at all;
@@ -96,6 +97,14 @@ export async function suggestCliniciansForReferral(
     supabase.from("saved_clinicians").select("clinician_id").eq("profile_id", request.requesting_profile_id),
     supabase.from("worked_with_before").select("colleague_id, interaction_count").eq("profile_id", request.requesting_profile_id),
   ]);
+  if (specialismResult.error || relationshipResult.error || savedResult.error || workedWithResult.error) {
+    console.error("Referral matching context failed", specialismResult.error || relationshipResult.error || savedResult.error || workedWithResult.error);
+    throw new Error("Referral matching is temporarily unavailable");
+  }
+  const specialisms = specialismResult.data;
+  const relationshipRows = relationshipResult.data;
+  const savedRows = savedResult.data;
+  const workedWithRows = workedWithResult.data;
 
   const specialtyMatchIds = new Set((specialisms || []).map((s: any) => s.profile_id));
   const trustedIds = new Set(
@@ -111,7 +120,7 @@ export async function suggestCliniciansForReferral(
   const savedIds = new Set((savedRows || []).map((s: any) => s.clinician_id));
   const workedWithCount = new Map((workedWithRows || []).map((w: any) => [w.colleague_id, w.interaction_count as number]));
 
-  const eligible = (candidates || []).filter(
+  const eligible = uniqueCandidates.filter(
     (c: any) =>
       !excludedIds.has(c.id) &&
       c.referral_availability !== "no" &&
@@ -125,8 +134,7 @@ export async function suggestCliniciansForReferral(
     if (workedWithCount.has(c.id)) reasons.push({ code: "worked_with_before", label: "Worked together before" });
     if (savedIds.has(c.id)) reasons.push({ code: "saved_clinician", label: "Saved clinician" });
     if (specialtyMatchIds.has(c.id)) reasons.push({ code: "specialty_match", label: "Relevant specialty" });
-    const licenceState = c.primary_state || request.state;
-    if (licenceState) reasons.push({ code: "licence_on_file", label: `Verified ${licenceState} licence on file` });
+    reasons.push({ code: "licence_on_file", label: request.state ? `${request.state} licence listed as active` : "Active licence on file" });
     if (c.referral_availability === "yes") reasons.push({ code: "available_for_referrals", label: "Accepting referrals" });
     return {
       profileId: c.id,

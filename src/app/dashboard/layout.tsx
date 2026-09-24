@@ -78,7 +78,7 @@ export default async function DashboardLayout({
       .from("coverage_requests")
       .select("id", { count: "exact", head: true })
       .eq("requested_profile_id", user.id)
-      .eq("status", "sent"),
+      .in("status", ["sent", "discussing"]),
     // Notifications nav badge (Phase 16): the new notification_events/
     // notification_deliveries pipeline, separate from the legacy
     // system_notifications count above (that one stays feeding the

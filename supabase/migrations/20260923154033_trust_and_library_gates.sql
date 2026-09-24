@@ -428,6 +428,15 @@ on conflict (profile_id, clinician_id) do nothing;
 
 -- A restricted fixture or pending applicant cannot use an old browser tab
 -- or call PostgREST directly to create network conversations or coverage.
+-- Match the service jurisdiction of a case, never an assumed jurisdiction
+-- based on the plan owner's licences. Historical cases can be audited and
+-- supplied with a state; new cases must explicitly provide one.
+alter table public.coverage_plan_cases add column if not exists service_state text;
+alter table public.coverage_plan_cases add constraint coverage_case_service_state_format
+  check (service_state is null or service_state ~ '^[A-Z]{2}$');
+create policy "new coverage cases identify state of service" on public.coverage_plan_cases
+  as restrictive for insert to authenticated with check (service_state is not null);
+
 create or replace function private.is_active_verified_member()
 returns boolean language sql stable security definer set search_path = '' as $$
   select exists (select 1 from public.profiles p
@@ -438,13 +447,163 @@ revoke execute on function private.is_active_verified_member() from public, anon
 grant execute on function private.is_active_verified_member() to authenticated;
 create policy "verified member creates coverage plans" on public.coverage_plans
   as restrictive for insert to authenticated with check (private.is_active_verified_member());
+create policy "coverage plan type has required context" on public.coverage_plans
+  as restrictive for insert to authenticated with check (
+    (plan_type <> 'extended_leave' or
+      (track is not null and starts_on is not null and ends_on is not null))
+    and (plan_type <> 'reciprocal' or
+      (reciprocal_partner_profile_id is not null and reciprocal_partner_profile_id <> (select auth.uid())
+        and exists (select 1 from public.profiles partner
+          where partner.id = reciprocal_partner_profile_id and partner.verification_status = 'verified'
+            and partner.account_status = 'active')
+        and exists (select 1 from public.connections c
+          where c.status = 'accepted' and c.tier = 'trusted_colleague'
+            and ((c.requester_id = (select auth.uid()) and c.addressee_id = reciprocal_partner_profile_id)
+              or (c.addressee_id = (select auth.uid()) and c.requester_id = reciprocal_partner_profile_id)))))
+  );
 create policy "verified member creates coverage cases" on public.coverage_plan_cases
   as restrictive for insert to authenticated with check (private.is_active_verified_member());
 create policy "verified member creates coverage outreach" on public.coverage_requests
   as restrictive for insert to authenticated with check (private.is_active_verified_member());
+create policy "coverage outreach starts with a verified recipient" on public.coverage_requests
+  as restrictive for insert to authenticated with check (
+    status = 'sent' and responded_at is null
+    and requested_profile_id <> (select auth.uid())
+    and exists (select 1 from public.profiles recipient
+      where recipient.id = requested_profile_id
+        and recipient.verification_status = 'verified'
+        and recipient.account_status = 'active')
+  );
 create policy "verified member creates connections" on public.connections
   as restrictive for insert to authenticated with check (private.is_active_verified_member());
 create policy "verified member opens conversations" on public.conversations
   as restrictive for insert to authenticated with check (private.is_active_verified_member());
 create policy "verified member sends messages" on public.conversation_messages
   as restrictive for insert to authenticated with check (private.is_active_verified_member());
+
+-- A recipient's direct update to coverage_requests could succeed while the
+-- following application update to the owner's coverage_plan_cases row was
+-- denied by RLS. Respond and transition the case in one transaction. Only
+-- the addressed verified clinician can move a sent request, and an accepted
+-- case expires other outstanding invitations before they can be accepted.
+create or replace function public.respond_to_coverage_request(
+  p_request_id bigint, p_response public.coverage_request_status
+)
+returns table(owner_profile_id uuid, coverage_case_id bigint, initial_sent_at timestamptz)
+language plpgsql security definer set search_path = '' as $$
+declare
+  v_owner uuid;
+  v_case bigint;
+  v_recipient uuid;
+  v_status public.coverage_request_status;
+  v_case_status public.coverage_case_status;
+  v_sent timestamptz;
+begin
+  if p_response not in ('accepted', 'declined', 'discussing') then
+    raise exception 'Choose a valid coverage response';
+  end if;
+  if not private.is_active_verified_member() then
+    raise exception 'A verified active account is required';
+  end if;
+
+  select p.profile_id, c.id, r.requested_profile_id, r.status, c.status, r.sent_at
+    into v_owner, v_case, v_recipient, v_status, v_case_status, v_sent
+  from public.coverage_requests r
+  join public.coverage_plan_cases c on c.id = r.coverage_plan_case_id
+  join public.coverage_plans p on p.id = c.coverage_plan_id
+  where r.id = p_request_id
+  for update of r, c;
+
+  if v_case is null or v_recipient is distinct from auth.uid() then
+    raise exception 'Coverage request not found';
+  end if;
+  if v_status not in ('sent', 'discussing') or v_case_status <> 'awaiting_response'
+     or (v_status = 'discussing' and p_response = 'discussing') then
+    raise exception 'This coverage request is no longer awaiting a response';
+  end if;
+
+  update public.coverage_requests
+    set status = p_response, responded_at = now()
+    where id = p_request_id;
+
+  if p_response = 'accepted' then
+    update public.coverage_plan_cases
+      set status = 'confirmed', assigned_clinician_id = v_recipient
+      where id = v_case;
+    update public.coverage_requests
+      set status = 'expired'
+      where coverage_plan_case_id = v_case and id <> p_request_id and status in ('sent', 'discussing');
+  elsif p_response = 'declined' and not exists (
+    select 1 from public.coverage_requests
+    where coverage_plan_case_id = v_case and status in ('sent', 'discussing')
+  ) then
+    update public.coverage_plan_cases
+      set status = 'needs_cover', assigned_clinician_id = null
+      where id = v_case;
+  end if;
+
+  return query select v_owner, v_case, v_sent;
+end;
+$$;
+revoke all on function public.respond_to_coverage_request(bigint, public.coverage_request_status) from public, anon;
+grant execute on function public.respond_to_coverage_request(bigint, public.coverage_request_status) to authenticated;
+-- The old broad RLS update policy must not provide a direct REST bypass.
+revoke update on public.coverage_requests from authenticated;
+
+-- A member could previously insert a rejection for somebody else's case by
+-- supplying their own profile_id, poisoning its exclusion list. Both the
+-- read and the write must be tied to ownership of the underlying plan.
+drop policy if exists "coverage_case_rejections_insert_own" on public.coverage_case_rejections;
+drop policy if exists "coverage_case_rejections_select_own" on public.coverage_case_rejections;
+drop policy if exists "coverage_case_rejections_delete_own" on public.coverage_case_rejections;
+create policy "coverage_case_rejections_select_own" on public.coverage_case_rejections
+  for select to authenticated using (
+    profile_id = (select auth.uid()) and exists (
+      select 1 from public.coverage_plan_cases c
+      join public.coverage_plans p on p.id = c.coverage_plan_id
+      where c.id = coverage_plan_case_id and p.profile_id = (select auth.uid())
+    )
+  );
+create policy "coverage_case_rejections_insert_own" on public.coverage_case_rejections
+  for insert to authenticated with check (
+    profile_id = (select auth.uid()) and exists (
+      select 1 from public.coverage_plan_cases c
+      join public.coverage_plans p on p.id = c.coverage_plan_id
+      where c.id = coverage_plan_case_id and p.profile_id = (select auth.uid())
+    )
+  );
+create policy "coverage_case_rejections_delete_own" on public.coverage_case_rejections
+  for delete to authenticated using (
+    profile_id = (select auth.uid()) and exists (
+      select 1 from public.coverage_plan_cases c
+      join public.coverage_plans p on p.id = c.coverage_plan_id
+      where c.id = coverage_plan_case_id and p.profile_id = (select auth.uid())
+    )
+  );
+
+-- A case cannot be presented as confirmed without an actual accepted
+-- invitation to the clinician assigned to it. An awaiting case likewise
+-- needs at least one active invitation.
+create or replace function private.guard_coverage_case_claim()
+returns trigger language plpgsql security definer set search_path = '' as $$
+begin
+  if new.status = 'confirmed' and not exists (
+    select 1 from public.coverage_requests r
+    where r.coverage_plan_case_id = new.id and r.status = 'accepted'
+      and r.requested_profile_id = new.assigned_clinician_id
+  ) then
+    raise exception 'Confirmed cover requires an accepted clinician request';
+  end if;
+  if new.status = 'awaiting_response' and not exists (
+    select 1 from public.coverage_requests r
+    where r.coverage_plan_case_id = new.id and r.status in ('sent', 'discussing')
+  ) then
+    raise exception 'Awaiting response requires an active clinician request';
+  end if;
+  return new;
+end;
+$$;
+revoke execute on function private.guard_coverage_case_claim() from public, anon, authenticated;
+create trigger guard_coverage_case_claim
+  before insert or update on public.coverage_plan_cases
+  for each row execute function private.guard_coverage_case_claim();

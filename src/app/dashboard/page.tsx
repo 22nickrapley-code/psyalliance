@@ -23,7 +23,7 @@ export default async function DashboardHome() {
   ] = await Promise.all([
     supabase.from("profiles").select("full_name,verification_status,availability_confirmed_at,coverage_availability,referral_availability,consultation_availability").eq("id", memberId).maybeSingle(),
     supabase.from("connections").select("id", { count: "exact", head: true }).eq("addressee_id", memberId).eq("status", "pending"),
-    supabase.from("coverage_requests").select("id", { count: "exact", head: true }).eq("requested_profile_id", memberId).eq("status", "sent"),
+    supabase.from("coverage_requests").select("id", { count: "exact", head: true }).eq("requested_profile_id", memberId).in("status", ["sent", "discussing"]),
     supabase.from("provider_referrals").select("id", { count: "exact", head: true }).eq("target_profile_id", memberId).eq("status", "sent"),
     supabase.from("documents").select("id,title,version,review_date").eq("owner_scope", "world").eq("review_status", "published").order("publish_date", { ascending: false }).limit(2),
   ]);
