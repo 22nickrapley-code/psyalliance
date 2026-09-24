@@ -34,7 +34,7 @@ export function buildNavGroups(opts: {
       label: "Workspace",
       items: [
         { href: "/dashboard", label: "Home", glyph: "⌂" },
-        { href: "/dashboard/cover", label: "Cover", glyph: "◇", badge: opts.pendingCoverRequests, matches: ["/dashboard/requests"] },
+        { href: "/dashboard/cover", label: "Cover", glyph: "◇", badge: opts.pendingCoverRequests },
         { href: "/dashboard/refer", label: "Refer", glyph: "↗", badge: opts.pendingReferrals },
         { href: "/dashboard/network", label: "Network", glyph: "◎", matches: ["/dashboard/people"] },
         { href: "/dashboard/consult", label: "Consult", glyph: "✳" },

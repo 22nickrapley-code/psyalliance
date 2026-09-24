@@ -49,3 +49,26 @@ export async function confirmAvailability(formData: FormData) {
   revalidatePath("/refer");
   redirect("/dashboard/availability?confirmed=1");
 }
+
+// One-tap "nothing's changed" reconfirmation from Home (Product Spec v1,
+// "Reconfirm all in one tap even when nothing has changed"). Only valid
+// once all three statuses have been set at least once.
+export async function reconfirmAvailability(formData: FormData) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not signed in");
+  const returnTo = String(formData.get("return_to") || "/dashboard");
+  const { data: p } = await supabase
+    .from("profiles")
+    .select("referral_availability, coverage_availability, consultation_availability")
+    .eq("id", user.id)
+    .maybeSingle();
+  if (!p?.referral_availability || !p?.coverage_availability || !p?.consultation_availability) {
+    redirect("/dashboard/availability");
+  }
+  await supabase.from("profiles").update({ availability_confirmed_at: new Date().toISOString() }).eq("id", user.id);
+  revalidatePath("/dashboard");
+  redirect(`${returnTo}${returnTo.includes("?") ? "&" : "?"}reconfirmed=1`);
+}

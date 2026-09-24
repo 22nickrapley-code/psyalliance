@@ -263,7 +263,7 @@ export async function sendCoverageRequest(
       actorProfileId,
       actorType: "member_web",
       summary: "sent you a coverage request",
-      deepLink: "/dashboard/requests?tab=coverage",
+      deepLink: "/dashboard/cover",
       dedupKey: `coverage_request:${data.id}`,
       metadata: { coveragePlanCaseId, coverageRequestId: data.id },
     }),
@@ -358,7 +358,7 @@ export async function respondToCoverageRequest(
       actorProfileId: requestedProfileId,
       actorType: "member_web",
       summary: response === "accepted" ? "confirmed they can cover your case" : `responded "${response}" to your coverage request`,
-      deepLink: "/dashboard/requests?tab=coverage",
+      deepLink: "/dashboard/cover",
       dedupKey: `coverage_response:${coverageRequestId}`,
       metadata: { coverageRequestId, response },
     });

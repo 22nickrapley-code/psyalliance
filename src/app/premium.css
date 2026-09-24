@@ -74,7 +74,7 @@
 .pa .public-quote{display:grid; grid-template-columns:1.3fr .7fr; gap:65px; align-items:center}
 .pa .quote{font-family:var(--display); font-size:33px; line-height:1.25; letter-spacing:-.03em; color:var(--forest)}
 .pa .quote-note{border-left:1px solid #b8c7b9; padding-left:23px; color:var(--muted); font-size:14px}
-.pa .public-footer{background:#102f29; color:#d5e4db; padding:48px max(24px,calc((100vw - 1120px)/2)); display:flex; gap:35px; justify-content:space-between; align-items:end}
+.pa .public-footer{background:#102f29; color:#d5e4db; padding:48px max(24px,calc((100vw - 1120px)/2)); display:flex; gap:35px; justify-content:space-between; align-items:flex-end}
 .pa .public-footer p{color:#9eb8aa; font-size:12px; margin:15px 0 0}
 .pa .public-footer .brand{color:#fff}
 .pa .public-footer .foot-links{display:flex; gap:18px; font-size:12px; flex-wrap:wrap}
@@ -106,7 +106,7 @@
 .pa .red-dot{position:absolute; width:6px; height:6px; right:7px; top:6px; border-radius:50%; background:#ad7450; border:1px solid white}
 .pa .mobile-menu{display:none}
 .pa .page{max-width:1250px; margin:auto; padding:43px clamp(24px,4vw,58px) 95px}
-.pa .page-head{display:flex; align-items:end; justify-content:space-between; gap:22px; margin-bottom:31px}
+.pa .page-head{display:flex; align-items:flex-end; justify-content:space-between; gap:22px; margin-bottom:31px}
 .pa .page-head h1{font-size:clamp(39px,3.5vw,48px); margin:7px 0 4px}
 .pa .page-head p{margin:0; max-width:700px; font-size:14px}
 .pa .page-head .head-actions{display:flex; gap:9px; flex-wrap:wrap; justify-content:flex-end}
@@ -130,7 +130,7 @@
 .pa .item:last-child{padding-bottom:1px}
 .pa .item p{font-size:12px; margin:4px 0 0}
 .pa .item strong{font-size:13px}
-.pa .section-heading{display:flex; align-items:end; justify-content:space-between; gap:16px; margin:37px 0 15px}
+.pa .section-heading{display:flex; align-items:flex-end; justify-content:space-between; gap:16px; margin:37px 0 15px}
 .pa .section-heading h2{font-size:27px; margin:0}
 .pa .tile-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:12px}
 .pa .task-tile{min-height:126px; text-align:left; background:#fff; border:1px solid var(--line); border-radius:8px; padding:18px; display:flex; flex-direction:column; align-items:flex-start; justify-content:space-between; color:var(--ink)}
@@ -199,7 +199,7 @@
 .pa .bubble{padding:12px 14px; border-radius:8px; background:#f0f4ef; max-width:84%; font-size:12px; margin:9px 0}
 .pa .bubble.me{margin-left:auto; background:#dfece2}
 .pa .bubble small{display:block; color:#657568; margin-top:5px}
-.pa .message-compose{margin-top:auto; display:flex; gap:8px; align-items:end}
+.pa .message-compose{margin-top:auto; display:flex; gap:8px; align-items:flex-end}
 .pa .message-compose textarea{flex:1; min-height:57px; max-height:120px; padding:11px; border:1px solid var(--line); border-radius:7px; resize:vertical}
 .pa .group-banner{padding:22px; background:#e7eee7; border:1px solid #d4e2d7; border-radius:8px}
 .pa .group-banner h3{font-family:var(--display); font-size:24px; margin-bottom:7px}
@@ -306,3 +306,42 @@
 .pa .workspace>.page{margin:0 auto;width:100%}
 .pa h1,.pa h2{font-weight:400}
 .pa .page-head h1{letter-spacing:-.03em}
+.pa .fields.four{grid-template-columns:1.4fr 1fr 1.2fr 1fr}
+.pa .mini-person.selectable{cursor:pointer}
+.pa .mini-person.selectable>input{margin:12px 2px 0 0;accent-color:var(--forest);width:16px;height:16px;flex:0 0 auto}
+.pa .mini-person.selectable:has(input:checked){border-color:#6f9b80;background:#f4f8f2}
+.pa .mini-person h3 a{text-decoration:none;color:var(--ink)}
+.pa .mini-person h3 a:hover{text-decoration:underline;text-underline-offset:3px}
+.pa .mini-person .rank{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--soft);color:var(--forest);font-size:10px;margin-right:8px;vertical-align:1px}
+.pa .reasons{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-wrap:wrap;gap:6px}
+.pa .reasons li{font-size:11px;color:#486053;background:#f5f7f2;border:1px solid #e3e9e2;border-radius:5px;padding:4px 7px}
+.pa .reasons li:first-child{background:#e8f0e9;border-color:#cfe0d4;color:var(--forest);font-weight:600}
+.pa form.inline{display:inline}
+.pa .radio-card{display:flex;gap:11px;align-items:flex-start;border:1px solid var(--line);border-radius:8px;padding:15px;background:#fff;cursor:pointer;margin-bottom:9px}
+.pa .radio-card:has(input:checked){border:2px solid #24644d;background:#f0f6ee;padding:14px}
+.pa .radio-card input{accent-color:var(--forest);margin-top:3px}
+.pa .radio-card b{display:block;font-size:13px}
+.pa .radio-card span{font-size:12px;color:var(--muted)}
+.pa .choose-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:6px 0 20px}
+.pa .choose-grid .radio-card{flex-direction:column;gap:6px;margin:0;min-height:128px}
+.pa .pa-case{border:1px solid var(--line);border-radius:8px;background:#fff;padding:15px 17px;margin-bottom:10px}
+.pa .pa-case .row{gap:10px}
+.pa .kv{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.pa .step-actions{display:flex;justify-content:space-between;align-items:center;gap:12px;border-top:1px solid var(--line);padding-top:18px;margin-top:22px}
+.pa .list-row{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:15px 0;border-top:1px solid #e6ebe5}
+.pa .list-row:first-child{border-top:0;padding-top:4px}
+.pa .list-row strong{display:block;font-size:13px}
+.pa .list-row small{color:var(--muted);font-size:12px}
+.pa .quick-search{background:var(--forest);color:#fff;border-radius:10px;padding:22px 23px}
+.pa .quick-search .field{color:#e3eee6}
+.pa .quick-search .field select,.pa .quick-search .field input{border-color:#3e6a5d}
+.pa .quick-search h3{color:#fff;font-family:var(--display);font-weight:400;font-size:22px;margin-bottom:12px}
+.pa .quick-search .btn{background:#f7f5f0;color:var(--forest)}
+.pa .quick-search .btn:hover{background:#fff}
+@media (max-width:1080px){.pa .fields.four{grid-template-columns:1fr 1fr}.pa .choose-grid{grid-template-columns:1fr 1fr}}
+@media (max-width:560px){.pa .fields.four{grid-template-columns:1fr}.pa .choose-grid{grid-template-columns:1fr}}
+.pa a.task-tile,.pa a.plain-button,.pa .item,.pa a.chip,.pa .tab{text-decoration:none}
+.pa .split{align-items:start}
+.pa .tab{display:inline-block}
+.pa .card.dark h3{color:#fff;font-family:var(--display);font-weight:400;font-size:22px}
+.pa .pa-case strong{font-size:13px}

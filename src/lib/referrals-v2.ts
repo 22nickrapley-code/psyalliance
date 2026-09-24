@@ -156,6 +156,7 @@ export async function createReferralRequest(
   requestingProfileId: string,
   opts: {
     specialismLookupId?: number;
+    specialismLookupIds?: number[];
     state?: string;
     city?: string;
     insurance?: string;
@@ -173,7 +174,8 @@ export async function createReferralRequest(
     .from("referral_requests")
     .insert({
       requesting_profile_id: requestingProfileId,
-      specialism_lookup_id: opts.specialismLookupId ?? null,
+      specialism_lookup_id: opts.specialismLookupId ?? opts.specialismLookupIds?.[0] ?? null,
+      specialism_lookup_ids: opts.specialismLookupIds ?? (opts.specialismLookupId ? [opts.specialismLookupId] : []),
       state: opts.state ?? null,
       city: opts.city ?? null,
       insurance: opts.insurance ?? null,
@@ -194,7 +196,7 @@ export async function createReferralRequest(
   await logProfessionalEvent(supabase, {
     eventType: "referral_sent",
     actorProfileId: requestingProfileId,
-    specialismLookupIds: opts.specialismLookupId ? [opts.specialismLookupId] : [],
+    specialismLookupIds: opts.specialismLookupIds ?? (opts.specialismLookupId ? [opts.specialismLookupId] : []),
     state: opts.state ?? null,
     summary: "sent a referral request",
     metadata: { referralRequestId: data.id, audienceType: opts.audienceType },
@@ -240,7 +242,7 @@ export async function respondToReferralRequest(
       actorProfileId: respondingProfileId,
       actorType: "member_web",
       summary: `responded "${response}" to your referral request`,
-      deepLink: "/dashboard/requests?tab=referrals",
+      deepLink: `/dashboard/refer/${referralRequestId}`,
       metadata: { referralRequestId, response },
     });
   }
@@ -290,7 +292,7 @@ export async function addReferralAudienceProfiles(
     actorProfileId: requestingProfileId,
     actorType: "member_web",
     summary: "sent you a referral request",
-    deepLink: "/dashboard/requests?tab=referrals",
+    deepLink: `/dashboard/refer/${referralRequestId}`,
     metadata: { referralRequestId },
   });
 
@@ -314,6 +316,14 @@ export async function establishProfessionalConnection(
     .eq("requesting_profile_id", requestingProfileId);
   if (error) return { error: error.message };
 
+  // Record who was chosen, so closing the referral can credit the
+  // relationship (Worked with before) to the right colleague.
+  await supabase
+    .from("referral_responses")
+    .update({ status: "accepted", responded_at: new Date().toISOString() })
+    .eq("referral_request_id", referralRequestId)
+    .eq("responding_profile_id", respondingProfileId);
+
   await logProfessionalEvent(supabase, {
     eventType: "professional_relationship_created",
     actorProfileId: requestingProfileId,
@@ -327,8 +337,8 @@ export async function establishProfessionalConnection(
     recipientProfileIds: [respondingProfileId],
     actorProfileId: requestingProfileId,
     actorType: "member_web",
-    summary: "connected with you on a referral request",
-    deepLink: "/dashboard/requests?tab=referrals",
+    summary: "chose you for a referral",
+    deepLink: `/dashboard/refer/${referralRequestId}`,
     metadata: { referralRequestId },
   });
 
@@ -365,9 +375,19 @@ export async function closeReferralRequest(
     .eq("requesting_profile_id", requestingProfileId);
   if (error) return { error: error.message };
 
+  // Credit the chosen colleague (if any) so the referral counts towards
+  // Worked with before for both members.
+  const { data: chosen } = await supabase
+    .from("referral_responses")
+    .select("responding_profile_id")
+    .eq("referral_request_id", referralRequestId)
+    .eq("status", "accepted")
+    .maybeSingle();
+
   await logProfessionalEvent(supabase, {
     eventType: "referral_outcome",
     actorProfileId: requestingProfileId,
+    relatedProfileId: chosen?.responding_profile_id ?? null,
     summary: outcome ?? "closed a referral request",
     metadata: { referralRequestId },
   });
