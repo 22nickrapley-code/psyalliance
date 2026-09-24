@@ -7,6 +7,12 @@ import { ReferShortlistView, ReferReviewView, ReferIndexView, ReferTrackView } f
 import { NetworkView } from "../../../dashboard/network/views";
 import { ConsultIndexView, ConsultComposeView, ConsultDetailView } from "../../../dashboard/consult/views";
 import { ConversationList, MessagesShell } from "../../../dashboard/messages/views";
+import { LibraryView, MyLibraryView, ResourceDetailView } from "../../../dashboard/documents/views";
+import { AvailabilityView } from "../../../dashboard/availability/view";
+import { CredentialsView } from "../../../dashboard/credentials/view";
+import { ProfileView } from "../../../dashboard/profile/view";
+import { SettingsView } from "../../../dashboard/settings/view";
+import type { LibraryResource } from "@/lib/library";
 import { CoverIndexView, CoverCandidatesView, CoverTrackView, CoverPlanStepView, CoverInviteView } from "../../../dashboard/cover/views";
 
 // Illustrative fixtures for the dev-only preview. Not real members.
@@ -50,6 +56,35 @@ const cases = [
   { id: 2, reference: "Case 2", focus: "Anxiety", details: ["Adolescents", "Virtual", "Weekly"], status: "awaiting_response" as const, invited: [{ name: "Dr. Eli Ramirez", status: "sent" }], assignedName: null, assignedId: null, queueCount: 2 },
   { id: 3, reference: "Case 3", focus: "Depression", details: ["Adults", "In person", "Fortnightly", "Prescribing needed"], status: "needs_cover" as const, invited: [{ name: "Dr. Imani Brooks", status: "declined" }], assignedName: null, assignedId: null, queueCount: 0 },
   { id: 4, reference: "Case 4", focus: "ADHD", details: ["Children", "Virtual"], status: "confirmed" as const, invited: [{ name: "Dr. Maya Chen", status: "accepted" }], assignedName: "Dr. Maya Chen", assignedId: "a", queueCount: 0 },
+];
+
+
+const res = (code: string, title: string, category: string, summary: string): LibraryResource => ({
+  id: Number(code.slice(3)),
+  code,
+  title,
+  summary,
+  category,
+  audience: "Psychologists · Psychiatrists",
+  tags: ["coverage", "continuity of care", "handoff"],
+  version: 1,
+  reviewDate: "2026-09-23",
+  nextReviewDate: "2027-09-23",
+  storagePath: "",
+});
+const resources: LibraryResource[] = [
+  res("PA-01", "Reciprocal Coverage Agreement", "Coverage & Continuity", "Two-clinician reciprocal coverage agreement with per-patient coverage summary and post-coverage debrief."),
+  res("PA-02", "Extended Leave Coverage Plan & Clinical Handoff Pack", "Coverage & Continuity", "Step-by-step plan and letter templates for stepping away from practice for more than two weeks without stranding patients."),
+  res("PA-05", "Case Consultation Presentation Template", "Consultation & Collaboration", "De-identified case presentation form, de-identification checklist, ethics decision steps and consultation response sheet."),
+  res("PA-09", "Informed Consent for Psychotherapy (Adult)", "Clinical Practice", "Adult psychotherapy informed consent with optional modules for couples/family, minors, assessment and group."),
+];
+const lookups = [
+  ...["Anxiety", "Depression", "Trauma / PTSD", "ADHD", "OCD", "Grief", "Couples", "Eating concerns"].map((v, i) => ({ id: 100 + i, category: "treatment_specialism", value: v })),
+  ...["CBT", "DBT", "EMDR", "ACT", "Psychodynamic"].map((v, i) => ({ id: 200 + i, category: "treatment_modality", value: v })),
+  ...["Children", "Adolescents", "Adults", "Seniors"].map((v, i) => ({ id: 300 + i, category: "age_group_specialism", value: v })),
+  ...["Telehealth", "In person"].map((v, i) => ({ id: 400 + i, category: "session_type", value: v })),
+  ...["AETNA Health, Inc.", "CIGNA HealthCare (PPO)"].map((v, i) => ({ id: 500 + i, category: "insurance", value: v })),
+  ...["English", "Spanish"].map((v, i) => ({ id: 600 + i, category: "language", value: v })),
 ];
 
 export const previewScreens: Record<string, () => ReactNode> = {
@@ -171,4 +206,61 @@ export const previewScreens: Record<string, () => ReactNode> = {
   "cover-candidates": () => <CoverCandidatesView plan={{ ...plan, counts: { total: 2, covered: 0, invited: 0, open: 2 } }} cases={cases.slice(2).map((c) => ({ ...c, status: "needs_cover" as const }))} suggestions={{ 3: matches, 4: matches.slice(0, 1) }} avatarUrls={{}} />,
   "cover-invite": () => <CoverInviteView plan={plan} rows={[{ caseId: 3, reference: "Case 3", focus: "Depression", picks: [{ id: "b", name: "Dr. Eli Ramirez" }, { id: "c", name: "Dr. Imani Brooks" }] }]} />,
   "cover-track": () => <CoverTrackView plan={plan} cases={cases} nextSuggestion={{ 3: { id: "b", name: "Dr. Eli Ramirez" } }} toRate={[]} />,
+  library: () => <LibraryView resources={resources} q="" category="" mineCount={2} />,
+  "library-mine": () => (
+    <MyLibraryView
+      docs={[{ id: 1, title: "PA-02: Extended Leave Coverage Plan (working copy)", storagePath: "", folderId: null, createdAt: "2026-09-20T10:00:00Z", source: "Working copy of PA-02, version 1", url: "#" }]}
+      folders={[{ id: 1, name: "Leave planning" }]}
+      folder="all"
+      folderCounts={{ unfiled: 1 }}
+      total={1}
+      notice="Working copy of PA-02 saved. Only you can see it."
+    />
+  ),
+  resource: () => <ResourceDetailView r={resources[1]} url="#" />,
+  availability: () => (
+    <AvailabilityView
+      p={{ referral_availability: "limited", coverage_availability: "ask_me", consultation_availability: "yes", availability_confirmed_at: new Date(Date.now() - 34 * 86400000).toISOString(), approx_spaces: 3, availability_paused_until: null }}
+      sp={{}}
+    />
+  ),
+  "availability-new": () => <AvailabilityView p={{ referral_availability: null, coverage_availability: null, consultation_availability: null, availability_confirmed_at: null, approx_spaces: null, availability_paused_until: null }} sp={{}} />,
+  credentials: () => (
+    <CredentialsView
+      sp={{ added: "licence" }}
+      profile={{ verification_status: "verified", verified_at: "2026-09-01T10:00:00Z", account_status: "active", qualification_level: "PsyD", npi_number: "1234567890", caqh_provider_id: null, caqh_last_attested_date: "2026-06-10", malpractice_carrier: "The Trust", malpractice_expires: "2026-11-01" }}
+      licences={[
+        { id: 1, state: "NY", license_number: "019283", license_type: "Licensed Psychologist", expiration_date: "2027-08-31", status: "active", reviewed_at: "2026-09-02T10:00:00Z" },
+        { id: 2, state: "NJ", license_number: "35SI00123", license_type: "Licensed Psychologist", expiration_date: "2026-12-01", status: "active", reviewed_at: null },
+      ]}
+      ce={[{ id: 1, title: "Ethics in telehealth", provider: "APA", hours: 3, completed_date: "2026-05-12" }]}
+      panels={[]}
+      npiChecks={[{ matched: true, flagged_reason: null, created_at: "2026-09-01" }]}
+    />
+  ),
+  profile: () => (
+    <ProfileView
+      sp={{}}
+      profile={{ full_name: "Alex Rivers", credential_prefix: "Dr.", qualification_level: "PsyD", primary_practice_city: "Brooklyn", primary_state: "NY", bio: "I work with adults and adolescents with anxiety and trauma, mostly CBT and EMDR, in person in Brooklyn and by telehealth across New York.", referral_availability: "limited", availability_confirmed_at: new Date().toISOString(), psypact_participating: true, avatar_path: null }}
+      lookups={lookups}
+      selectedRows={[{ lookup_value_id: 102, rank: 1 }, { lookup_value_id: 100, rank: 2 }, { lookup_value_id: 101, rank: 3 }, { lookup_value_id: 200, rank: null }, { lookup_value_id: 302, rank: null }, { lookup_value_id: 600, rank: null }]}
+      licenceCount={1}
+      avatarUrl={null}
+      me="me"
+    />
+  ),
+  settings: () => (
+    <SettingsView
+      sp={{}}
+      email="alex@riverspsych.com"
+      me="me"
+      prefs={null}
+      profile={{ directory_visible: true }}
+      emergency={null}
+      excluded={[]}
+      blocked={[]}
+      blockedProfiles={[]}
+      circle={[{ id: "a", full_name: "Maya Chen", credential_prefix: "Dr." }]}
+    />
+  ),
 };

@@ -39,26 +39,27 @@ export async function saveProfile(formData: FormData) {
   } = await supabase.auth.getUser();
   if (!user) throw new Error("Not signed in");
 
-  const statesRaw = String(formData.get("states_qualified") || "");
-  const statesQualified = statesRaw
-    .split(",")
-    .map((s) => s.trim().toUpperCase())
-    .filter(Boolean);
+  // Practice state comes from a US state picker now. Licensed states live
+  // in Credentials (reviewed licences); states_qualified is kept only as a
+  // legacy mirror so older read paths still see the practice state.
+  const primaryState = String(formData.get("primary_state") || "").trim().toUpperCase() || null;
+  const { data: existing } = await supabase.from("profiles").select("states_qualified").eq("id", user.id).maybeSingle();
+  const prevStates: string[] = existing?.states_qualified || [];
+  const statesQualified = primaryState ? [primaryState, ...prevStates.filter((s) => s !== primaryState)] : prevStates;
+  const bio = String(formData.get("bio") || "").trim().slice(0, 700);
 
   const profileRow = {
     id: user.id,
-    full_name: String(formData.get("full_name") || ""),
-    credential_prefix: String(formData.get("credential_prefix") || "") || null,
+    full_name: String(formData.get("full_name") || "").trim(),
+    credential_prefix: String(formData.get("credential_prefix") || "").trim() || null,
     qualification_level: String(formData.get("qualification_level") || "PhD"),
     board_certified: formData.get("board_certified") === "on",
-    primary_practice_city: String(formData.get("primary_practice_city") || "") || null,
+    primary_practice_city: String(formData.get("primary_practice_city") || "").trim() || null,
     states_qualified: statesQualified,
-    primary_state: statesQualified[0] || null,
-    // accepting_referrals is deliberately NOT written here any more (Sept 23
-    // audit fix) - it's now a derived mirror of the confirmed Availability
-    // tri-state, written only by confirmAvailability() in
-    // dashboard/availability/actions.ts. Two independently-editable places
-    // for the same signal is exactly what let them disagree.
+    primary_state: primaryState,
+    bio: bio || null,
+    // accepting_referrals is deliberately NOT written here (Sept 23 audit
+    // fix): it's a derived mirror of the confirmed Availability status.
     pronoun: String(formData.get("pronoun") || "") || null,
     practice_website: String(formData.get("practice_website") || "") || null,
     contact_phone: String(formData.get("contact_phone") || "") || null,
@@ -67,10 +68,9 @@ export async function saveProfile(formData: FormData) {
     open_to_give_supervision: formData.get("open_to_give_supervision") === "on",
     open_to_receive_supervision: formData.get("open_to_receive_supervision") === "on",
     psypact_participating: formData.get("psypact_participating") === "on",
-    runs_private_practice: formData.get("runs_private_practice") === "on",
-    employed_by_group_practice: formData.get("employed_by_group_practice") === "on",
     updated_at: new Date().toISOString(),
   };
+  if (!profileRow.full_name) profileError("Add your full name");
 
   const { error: upsertError } = await supabase.from("profiles").upsert(profileRow);
   if (upsertError) {
@@ -87,7 +87,22 @@ export async function saveProfile(formData: FormData) {
     const chosen = formData.get(`single_${category}`);
     if (chosen) singleSelectIdsChosen.add(String(chosen));
   }
+  // "Your top five" specialties: spec_rank_1..5 selects. A specialty
+  // picked there is saved with that rank whether or not its checkbox is
+  // ticked; ticked-only specialties are saved unranked.
+  const topRank = new Map<number, number>();
+  for (let n = 1; n <= 5; n++) {
+    const id = Number(formData.get(`spec_rank_${n}`));
+    if (Number.isFinite(id) && id > 0 && !topRank.has(id)) topRank.set(id, n);
+  }
+  const usesTopFive = formData.has("spec_rank_1");
   for (const lv of allLookups || []) {
+    if (usesTopFive && lv.category === "treatment_specialism") {
+      const checked = formData.get(`lv_${lv.id}`) === "on";
+      const r = topRank.get(lv.id);
+      if (r || checked) rows.push({ profile_id: user.id, lookup_value_id: lv.id, rank: r ?? null });
+      continue;
+    }
     if (SINGLE_SELECT_CATEGORIES.includes(lv.category)) {
       if (singleSelectIdsChosen.has(String(lv.id))) {
         rows.push({ profile_id: user.id, lookup_value_id: lv.id, rank: null });

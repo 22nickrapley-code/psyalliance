@@ -20,18 +20,25 @@ export async function saveNotificationPreferences(formData: FormData) {
   } = await supabase.auth.getUser();
   if (!user) throw new Error("Not signed in");
 
+  // One switch per trigger in the spec's notification table. Some switches
+  // cover several underlying event columns (e.g. "replies" covers replies
+  // to referrals, cover requests and questions).
+  const on = (k: string) => formData.get(k) === "on";
+  const digest = String(formData.get("digest_frequency") || "weekly");
   const row = {
     profile_id: user.id,
-    email_on_connection_request: formData.get("email_on_connection_request") === "on",
-    email_on_referral_request: formData.get("email_on_referral_request") === "on",
-    email_on_referral_response: formData.get("email_on_referral_response") === "on",
-    email_on_message: formData.get("email_on_message") === "on",
-    email_on_town_hall_reply: formData.get("email_on_town_hall_reply") === "on",
-    email_on_endorsement: formData.get("email_on_endorsement") === "on",
-    email_on_new_colleague_in_location: formData.get("email_on_new_colleague_in_location") === "on",
-    email_on_new_colleague_matching_specialism: formData.get("email_on_new_colleague_matching_specialism") === "on",
-    email_on_new_colleague_matching_caseload: formData.get("email_on_new_colleague_matching_caseload") === "on",
-    digest_frequency: String(formData.get("digest_frequency") || "realtime"),
+    email_on_coverage_request: on("n_cover_request"),
+    email_on_referral_request: on("n_referral_match"),
+    email_on_referral_response: on("n_replies"),
+    email_on_coverage_response: on("n_replies"),
+    email_on_consultation_response: on("n_replies"),
+    email_on_trusted_invitation: on("n_invitations"),
+    email_on_consultation_invite: on("n_invitations"),
+    email_on_connection_request: on("n_invitations"),
+    email_on_message: on("n_messages"),
+    email_on_availability_reminder: on("n_availability"),
+    email_on_credential_reminder: on("n_credentials"),
+    digest_frequency: ["weekly", "fortnightly", "off"].includes(digest) ? digest : "weekly",
     updated_at: new Date().toISOString(),
   };
 
@@ -117,4 +124,51 @@ export async function removeFromBlocklist(formData: FormData) {
   revalidatePath("/dashboard/settings");
   revalidatePath("/dashboard/network");
   revalidatePath(`/dashboard/people/${blockedProfileId}`);
+}
+
+// "Who can see your profile" (Product Spec v1, Settings > Privacy).
+export async function savePrivacyAction(formData: FormData) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not signed in");
+  const visible = formData.get("directory_visible") === "listed";
+  const { error } = await supabase.from("profiles").update({ directory_visible: visible }).eq("id", user.id);
+  if (error) settingsError(error.message);
+  revalidatePath("/dashboard/settings");
+  revalidatePath("/dashboard/network");
+  redirect("/dashboard/settings?saved=privacy#privacy");
+}
+
+// Block: they can't message or invite you and you're hidden from each
+// other's directory and suggestions. Never shown to the other person.
+export async function blockMemberAction(formData: FormData) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not signed in");
+  const target = String(formData.get("blocked_profile_id") || "");
+  const returnTo = String(formData.get("return_to") || "/dashboard/settings#privacy");
+  if (!target) settingsError("Choose a member first");
+  if (target === user.id) settingsError("You can't block yourself");
+  const { error } = await supabase.from("blocked_members").upsert({ profile_id: user.id, blocked_profile_id: target });
+  if (error) settingsError(error.message);
+  revalidatePath("/dashboard/settings");
+  revalidatePath("/dashboard/network");
+  redirect(returnTo.startsWith("/dashboard") ? returnTo : "/dashboard/settings#privacy");
+}
+
+export async function unblockMemberAction(formData: FormData) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not signed in");
+  const target = String(formData.get("blocked_profile_id") || "");
+  const { error } = await supabase.from("blocked_members").delete().eq("profile_id", user.id).eq("blocked_profile_id", target);
+  if (error) settingsError(error.message);
+  revalidatePath("/dashboard/settings");
+  revalidatePath("/dashboard/network");
 }

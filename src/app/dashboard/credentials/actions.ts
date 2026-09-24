@@ -3,6 +3,13 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { US_STATES } from "@/lib/us-states";
+
+function stateCode(raw: string): string | null {
+  const v = raw.trim().toUpperCase();
+  const hit = US_STATES.find((s) => s.code === v || s.name.toUpperCase() === v);
+  return hit ? hit.code : null;
+}
 
 // A plain `throw` inside a server action wired to a bare <form action={fn}>
 // (no client-side handling) crashes the whole page with Next.js's generic
@@ -23,10 +30,15 @@ export async function addLicense(formData: FormData) {
   } = await supabase.auth.getUser();
   if (!user) throw new Error("Not signed in");
 
+  const state = stateCode(String(formData.get("state") || ""));
+  if (!state) credentialsError("Choose the state the licence was issued in");
+  const licenseNumber = String(formData.get("license_number") || "").trim();
+  if (!licenseNumber) credentialsError("Add the licence number");
+
   const { error } = await supabase.from("licenses").insert({
     profile_id: user.id,
-    state: String(formData.get("state") || "").toUpperCase(),
-    license_number: String(formData.get("license_number") || ""),
+    state,
+    license_number: licenseNumber,
     license_type: String(formData.get("license_type") || "") || null,
     issued_date: String(formData.get("issued_date") || "") || null,
     expiration_date: String(formData.get("expiration_date") || "") || null,
@@ -35,6 +47,7 @@ export async function addLicense(formData: FormData) {
   if (error) credentialsError(error.message);
 
   revalidatePath("/dashboard/credentials");
+  redirect("/dashboard/credentials?added=licence");
 }
 
 export async function deleteLicense(formData: FormData) {
@@ -230,4 +243,23 @@ export async function checkNpiRegistry() {
 
   revalidatePath("/dashboard/credentials");
   revalidatePath("/dashboard/profile");
+}
+
+// Self-tracked malpractice cover (Product Spec v1, Credentials renewals).
+export async function saveMalpracticeAction(formData: FormData) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not signed in");
+  const carrier = String(formData.get("malpractice_carrier") || "").trim().slice(0, 120);
+  const expires = String(formData.get("malpractice_expires") || "").trim();
+  if (expires && !/^\d{4}-\d{2}-\d{2}$/.test(expires)) credentialsError("Use a valid expiry date");
+  const { error } = await supabase
+    .from("profiles")
+    .update({ malpractice_carrier: carrier || null, malpractice_expires: expires || null })
+    .eq("id", user.id);
+  if (error) credentialsError(error.message);
+  revalidatePath("/dashboard/credentials");
+  redirect("/dashboard/credentials?saved=1");
 }

@@ -20,6 +20,14 @@ export async function confirmAvailability(formData: FormData) {
   const referralAvailability = String(formData.get("referral_availability") || "no");
   const coverageAvailability = String(formData.get("coverage_availability") || "no");
   const consultationAvailability = String(formData.get("consultation_availability") || "no");
+  const spacesRaw = String(formData.get("approx_spaces") || "").trim();
+  const spaces = spacesRaw === "" ? null : Math.max(0, Math.min(99, Math.round(Number(spacesRaw))));
+  const pauseRaw = String(formData.get("paused_until") || "").trim();
+  const today = new Date().toISOString().slice(0, 10);
+  if (pauseRaw && !/^\d{4}-\d{2}-\d{2}$/.test(pauseRaw)) {
+    redirect(`/dashboard/availability?error=${encodeURIComponent("Pause-until needs a valid date")}`);
+  }
+  const pausedUntil = pauseRaw && pauseRaw >= today ? pauseRaw : null;
 
   const { error } = await supabase
     .from("profiles")
@@ -27,6 +35,8 @@ export async function confirmAvailability(formData: FormData) {
       referral_availability: referralAvailability,
       coverage_availability: coverageAvailability,
       consultation_availability: consultationAvailability,
+      approx_spaces: Number.isFinite(spaces as number) ? spaces : null,
+      availability_paused_until: pausedUntil,
       availability_confirmed_at: new Date().toISOString(),
       // Sept 23 audit finding: this confirmed tri-state and the legacy
       // `accepting_referrals` boolean (still read by the Profile page badge
@@ -36,7 +46,7 @@ export async function confirmAvailability(formData: FormData) {
       // the audit caught. This is now the ONLY place `accepting_referrals`
       // gets written (the Profile edit form's old checkbox was removed) - it's
       // a derived mirror of this confirmed answer, not a second source of truth.
-      accepting_referrals: referralAvailability === "yes",
+      accepting_referrals: referralAvailability === "yes" && !pausedUntil,
     })
     .eq("id", user.id);
   if (error) redirect(`/dashboard/availability?error=${encodeURIComponent(error.message)}`);
@@ -70,5 +80,6 @@ export async function reconfirmAvailability(formData: FormData) {
   }
   await supabase.from("profiles").update({ availability_confirmed_at: new Date().toISOString() }).eq("id", user.id);
   revalidatePath("/dashboard");
+  revalidatePath("/dashboard/availability");
   redirect(`${returnTo}${returnTo.includes("?") ? "&" : "?"}reconfirmed=1`);
 }

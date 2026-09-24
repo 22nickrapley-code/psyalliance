@@ -58,6 +58,14 @@ function fmt(d: string | null) {
   return d ? new Date(d + "T00:00:00").toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" }) : "Not set";
 }
 
+function PLAN_RESOURCE(type: string | null) {
+  if (type === "reciprocal" || type === "short_planned")
+    return { code: "PA-01", title: "Reciprocal Coverage Agreement", purpose: "PA-01 sets out roles, response expectations and a per-case summary for the colleague covering." };
+  if (type === "closing_practice")
+    return { code: "PA-03", title: "Professional Will & Succession Plan", purpose: "PA-03 covers records custody, patient notice and handing over a practice." };
+  return { code: "PA-02", title: "Extended Leave & Handoff Pack", purpose: "PA-02 covers plan continuity, patient letters, responsibilities and the return." };
+}
+
 function PlanAside({ plan, extra }: { plan: PlanSummary; extra?: ReactNode }) {
   return (
     <aside className="stack">
@@ -78,14 +86,10 @@ function PlanAside({ plan, extra }: { plan: PlanSummary; extra?: ReactNode }) {
       </section>
       <section className="card">
         <div className="eyebrow">From the Practice Library</div>
-        <h3>{plan.absenceType === "reciprocal" ? "Reciprocal Coverage Agreement" : "Extended Leave & Handoff Pack"}</h3>
-        <p className="small">
-          {plan.absenceType === "reciprocal"
-            ? "PA-01 helps define roles and response expectations with a colleague."
-            : "PA-02 covers plan continuity, responsibilities and the return."}
-        </p>
-        <a className="btn secondary small-btn" href={`/dashboard/documents?q=${plan.absenceType === "reciprocal" ? "PA-01" : "PA-02"}`}>
-          View {plan.absenceType === "reciprocal" ? "PA-01" : "PA-02"}
+        <h3>{PLAN_RESOURCE(plan.absenceType).title}</h3>
+        <p className="small">{PLAN_RESOURCE(plan.absenceType).purpose}</p>
+        <a className="btn secondary small-btn" href={`/dashboard/documents/${PLAN_RESOURCE(plan.absenceType).code}`}>
+          View {PLAN_RESOURCE(plan.absenceType).code}
         </a>
       </section>
       {extra}

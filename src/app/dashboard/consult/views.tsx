@@ -188,7 +188,7 @@ export function ConsultIndexView({
             <div className="eyebrow">Before you post</div>
             <h3>Keep it focused and de-identified.</h3>
             <p className="small">Use a short question, relevant context and an intentional audience. Do not include patient names, dates, contact details or an unusual combination of details that could identify someone.</p>
-            <a className="btn secondary small-btn" href="/dashboard/documents?q=PA-05">Use the question guide (PA-05)</a>
+            <a className="btn secondary small-btn" href="/dashboard/documents/PA-05">Use the question guide (PA-05)</a>
           </section>
           <section className="card">
             <div className="eyebrow">Audience, deliberately chosen</div>
@@ -212,6 +212,7 @@ export function ConsultComposeView({
   colleagues,
   groups,
   preselect,
+  preselectGroup,
   error,
 }: {
   kind: "question" | "supervision_request" | "supervision_offer";
@@ -219,6 +220,7 @@ export function ConsultComposeView({
   colleagues: { id: string; name: string; relation: string }[];
   groups: { id: number; name: string }[];
   preselect?: string;
+  preselectGroup?: number;
   error?: string;
 }) {
   const title = kind === "supervision_request" ? "Request supervision." : kind === "supervision_offer" ? "Offer supervision." : "Ask colleagues a question.";
@@ -284,12 +286,12 @@ export function ConsultComposeView({
           </label>
           {groups.map((g) => (
             <label key={g.id} className="radio-card">
-              <input type="radio" name="audience" value={`group:${g.id}`} />
+              <input type="radio" name="audience" value={`group:${g.id}`} defaultChecked={preselectGroup === g.id} />
               <span><b>{g.name}</b><span>Your consultation group. Members only.</span></span>
             </label>
           ))}
           <label className="radio-card">
-            <input type="radio" name="audience" value="trusted" defaultChecked={!preselect} />
+            <input type="radio" name="audience" value="trusted" defaultChecked={!preselect && !preselectGroup} />
             <span><b>My trusted colleagues</b><span>Your circle. The default.</span></span>
           </label>
           <label className="radio-card">
@@ -325,7 +327,7 @@ export function ConsultComposeView({
             <div className="eyebrow">Practice Library</div>
             <h3>PA-05 &middot; Case Consultation</h3>
             <p className="small">A structure for a concise question and a clear record of the advice you received.</p>
-            <a className="btn secondary small-btn" href="/dashboard/documents?q=PA-05">View PA-05</a>
+            <a className="btn secondary small-btn" href="/dashboard/documents/PA-05">View PA-05</a>
           </section>
         </aside>
       </form>
@@ -445,7 +447,7 @@ export function ConsultDetailView({ c, ok, error, extra }: { c: ConsultDetail; o
             <div className="eyebrow">Practice Library</div>
             <h3>PA-05 &middot; Case Consultation</h3>
             <p className="small">Record the advice you received and your decision.</p>
-            <a className="btn secondary small-btn" href="/dashboard/documents?q=PA-05">View PA-05</a>
+            <a className="btn secondary small-btn" href="/dashboard/documents/PA-05">View PA-05</a>
           </section>
         </aside>
       </div>

@@ -11,7 +11,7 @@ import { assertIsAdmin } from "@/lib/admin";
 // this instead, so a bad input or a failed insert sends the user back to this
 // same page with an inline banner rather than taking the page down.
 function documentsError(message: string): never {
-  redirect(`/dashboard/documents?error=${encodeURIComponent(message)}`);
+  redirect(`/dashboard/documents?tab=mine&error=${encodeURIComponent(message)}`);
 }
 
 // Keep uploads to the kinds of files a practice actually needs to share
@@ -48,8 +48,11 @@ export async function uploadDocument(formData: FormData) {
     );
   }
 
-  const ownerScope = String(formData.get("owner_scope") || "personal");
-  const storageFolder = ownerScope === "world" ? "shared" : "personal";
+  // Product Spec v1: the member-facing Library is curated. Members upload
+  // to My Library only; shared resources are added and reviewed by admins
+  // in Admin > Library.
+  const ownerScope = "personal";
+  const storageFolder = "personal";
   const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
   const storagePath = `${storageFolder}/${user.id}/${Date.now()}-${safeName}`;
 
@@ -74,7 +77,7 @@ export async function uploadDocument(formData: FormData) {
 
   // Folders are a personal-documents concept only; ignore any folder_id sent
   // alongside a shared-library upload rather than trusting the client.
-  const rawFolderId = ownerScope === "personal" ? Number(formData.get("folder_id")) : NaN;
+  const rawFolderId = Number(formData.get("folder_id"));
   const folderId = Number.isFinite(rawFolderId) && rawFolderId > 0 ? rawFolderId : null;
   if (folderId) {
     // Confirm the folder is actually this user's own before filing into it -
@@ -116,7 +119,7 @@ export async function uploadDocument(formData: FormData) {
   // document was uploaded" confirmation banner and, for a personal upload
   // filed into a folder, lands the user looking at that folder so the new
   // document is immediately visible in the list below.
-  const confirmParams = new URLSearchParams({ uploaded: "1" });
+  const confirmParams = new URLSearchParams({ tab: "mine", uploaded: "1" });
   if (folderId) confirmParams.set("folder", String(folderId));
   redirect(`/dashboard/documents?${confirmParams.toString()}`);
 }
@@ -221,24 +224,42 @@ export async function moveDocumentToFolder(formData: FormData) {
   revalidatePath("/dashboard/documents");
 }
 
-// "Is there a way of rating the documents? So that people can see what
-// others have found to be best?" - one star rating per person per shared
-// document; re-rating just upserts over your own prior rating.
-export async function rateDocument(formData: FormData) {
+// "Save a working copy": copies a reviewed Library resource into the
+// member's private My Library so they can fill it in or adapt it. The
+// copy records which resource and version it came from in `sources`.
+export async function saveWorkingCopyAction(formData: FormData) {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) throw new Error("Not signed in");
 
-  const documentId = Number(formData.get("document_id"));
-  const rating = Number(formData.get("rating"));
-  if (rating < 1 || rating > 5) documentsError("Rating must be between 1 and 5");
+  const id = Number(formData.get("document_id"));
+  const { data: doc } = await supabase
+    .from("documents")
+    .select("id, title, library_code, version, storage_path, review_status, review_date, owner_scope")
+    .eq("id", id)
+    .maybeSingle();
+  if (!doc || doc.owner_scope !== "world" || doc.review_status !== "published" || !doc.review_date) {
+    documentsError("That resource isn't available");
+  }
 
-  const { error } = await supabase
-    .from("document_ratings")
-    .upsert({ document_id: documentId, rated_by: user.id, rating }, { onConflict: "document_id,rated_by" });
+  const fileName = String(doc.storage_path).split("/").pop() || "resource.pdf";
+  const target = `personal/${user.id}/${Date.now()}-copy-${fileName.replace(/^\d+-/, "")}`;
+  const { error: copyError } = await supabase.storage.from("documents").copy(doc.storage_path, target);
+  if (copyError) documentsError(`Couldn't copy the file: ${copyError.message}`);
+
+  const { error } = await supabase.from("documents").insert({
+    profile_id: user.id,
+    owner_scope: "personal",
+    title: `${doc.title} (working copy)`,
+    storage_path: target,
+    uploaded_by: user.id,
+    is_general: true,
+    sources: `Working copy of ${doc.library_code || doc.title}, version ${doc.version || 1}`,
+  });
   if (error) documentsError(error.message);
 
   revalidatePath("/dashboard/documents");
+  redirect(`/dashboard/documents?tab=mine&copied=${encodeURIComponent(doc.library_code || "1")}`);
 }

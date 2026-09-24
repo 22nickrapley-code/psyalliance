@@ -1,125 +1,16 @@
 import { createClient } from "@/lib/supabase/server";
-import { confirmAvailability } from "./actions";
+import { AvailabilityView } from "./view";
 
-function daysAgo(iso: string | null): string {
-  if (!iso) return "Never confirmed";
-  const days = Math.floor((Date.now() - new Date(iso).getTime()) / (1000 * 60 * 60 * 24));
-  if (days < 1) return "Confirmed today";
-  return `Confirmed ${days} day${days === 1 ? "" : "s"} ago`;
-}
-
-// Master Brief #31-32: availability as one of the most important pieces of
-// professional data, kept fresh with a deliberately tiny, frequent
-// interaction rather than a buried profile field. This is what Coverage's
-// operational-fit matching stage and the future availability-reminder
-// notification both read.
-//
-// Sept 23 launch-readiness audit finding: the radios used to fall back to
-// `|| "yes"` / `|| "ask_me"` whenever a field was unset, so a colleague never
-// confirmed for coverage still saw "Yes" pre-selected on their own screen -
-// a silent, false affirmative. "Never confirmed" (above the form) and "Yes"
-// pre-checked (inside the form) directly contradicted each other. Per the
-// audit's instruction to treat Unconfirmed as its own state and never an
-// implied Yes: when availability_confirmed_at is null, nothing is
-// pre-checked and the person has to make an active choice in every group
-// before they can submit (`required` on each radio group).
-export default async function AvailabilityPage(props: { searchParams: Promise<{ confirmed?: string; error?: string }> }) {
-  const { confirmed, error } = await props.searchParams;
+export default async function AvailabilityPage(props: { searchParams: Promise<{ confirmed?: string; reconfirmed?: string; error?: string }> }) {
+  const sp = await props.searchParams;
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-
-  const { data: profile } = await supabase
+  const { data: p } = await supabase
     .from("profiles")
-    .select("referral_availability, coverage_availability, consultation_availability, availability_confirmed_at")
+    .select("referral_availability, coverage_availability, consultation_availability, availability_confirmed_at, approx_spaces, availability_paused_until")
     .eq("id", user!.id)
     .maybeSingle();
-
-  const neverConfirmed = !profile?.availability_confirmed_at;
-
-  return (
-    <div>
-      <h1>Availability</h1>
-      <p className="muted">
-        Keep this current - it's what colleagues see when deciding whether to send you a referral,
-        ask for coverage, or invite you into a consultation.
-      </p>
-
-      {confirmed && <div className="message-banner">Availability confirmed.</div>}
-      {error && <div className="error-banner">{error}</div>}
-
-      <div className="card">
-        {neverConfirmed ? (
-          <p className="muted">
-            <strong>Never confirmed.</strong> Nothing below is pre-selected - pick your current
-            status in each row, then confirm.
-          </p>
-        ) : (
-          <p className="muted">{daysAgo(profile!.availability_confirmed_at)}</p>
-        )}
-        <form action={confirmAvailability}>
-          <div className="field">
-            <label>Accepting referrals</label>
-            <div className="field-row">
-              {["yes", "limited", "no"].map((v) => (
-                <label key={v} style={{ display: "flex", alignItems: "center", gap: "0.3rem" }}>
-                  <input
-                    type="radio"
-                    name="referral_availability"
-                    value={v}
-                    required
-                    defaultChecked={!neverConfirmed && profile?.referral_availability === v}
-                  />
-                  {v === "yes" ? "Yes" : v === "limited" ? "Limited" : "No"}
-                </label>
-              ))}
-            </div>
-          </div>
-
-          <div className="field">
-            <label>Available for temporary coverage</label>
-            <div className="field-row">
-              {[
-                { v: "yes", label: "Yes" },
-                { v: "ask_me", label: "Ask me" },
-                { v: "no", label: "No" },
-              ].map(({ v, label }) => (
-                <label key={v} style={{ display: "flex", alignItems: "center", gap: "0.3rem" }}>
-                  <input
-                    type="radio"
-                    name="coverage_availability"
-                    value={v}
-                    required
-                    defaultChecked={!neverConfirmed && profile?.coverage_availability === v}
-                  />
-                  {label}
-                </label>
-              ))}
-            </div>
-          </div>
-
-          <div className="field">
-            <label>Available for consultation</label>
-            <div className="field-row">
-              {["yes", "limited", "no"].map((v) => (
-                <label key={v} style={{ display: "flex", alignItems: "center", gap: "0.3rem" }}>
-                  <input
-                    type="radio"
-                    name="consultation_availability"
-                    value={v}
-                    required
-                    defaultChecked={!neverConfirmed && profile?.consultation_availability === v}
-                  />
-                  {v === "yes" ? "Yes" : v === "limited" ? "Limited" : "No"}
-                </label>
-              ))}
-            </div>
-          </div>
-
-          <button type="submit">Confirm availability</button>
-        </form>
-      </div>
-    </div>
-  );
+  return <AvailabilityView p={p} sp={sp} />;
 }

@@ -26,7 +26,7 @@ export default function BioImportBox() {
     setValue("credential_prefix", fields.credential_prefix);
     setValue("qualification_level", fields.qualification_level);
     setValue("primary_practice_city", fields.primary_practice_city);
-    if (fields.states_qualified.length > 0) setValue("states_qualified", fields.states_qualified.join(", "));
+    if (fields.states_qualified.length > 0) setValue("primary_state", fields.states_qualified[0].toUpperCase());
     setValue("pronoun", fields.pronoun);
     setValue("practice_website", fields.practice_website);
     setValue("contact_phone", fields.contact_phone);
@@ -68,33 +68,27 @@ export default function BioImportBox() {
   }
 
   return (
-    <div className="card">
-      <h2>Quick start (optional)</h2>
-      <p className="muted">
-        Paste your bio from Psychology Today, your practice website, LinkedIn, a CV, anywhere you
-        already have one written. We'll pre-fill what we can below so you're not starting from a
-        blank page; you still review and save it yourself.
+    <details className="card tint">
+      <summary style={{ cursor: "pointer" }}>
+        <strong>Quick start:</strong> <span className="small">paste an existing bio and we&rsquo;ll pre-fill what we can</span>
+      </summary>
+      <p className="small" style={{ marginTop: 10 }}>
+        From Psychology Today, your practice website, LinkedIn or a CV. Nothing is saved until you review the form and press Save.
       </p>
-      <textarea
-        value={bioText}
-        onChange={(e) => setBioText(e.target.value)}
-        rows={6}
-        placeholder="Paste your bio text here…"
-        style={{ width: "100%", fontFamily: "inherit", fontSize: "0.9rem", padding: "0.6rem" }}
-      />
-      <div style={{ marginTop: "0.6rem", display: "flex", alignItems: "center", gap: "0.75rem" }}>
-        <button type="button" className="secondary" onClick={handleParse} disabled={isPending || !bioText.trim()}>
-          {isPending ? "Reading…" : "Fill in from this text"}
+      <label className="field">
+        Your existing bio
+        <textarea value={bioText} onChange={(e) => setBioText(e.target.value)} rows={5} placeholder="Paste your bio text here" />
+      </label>
+      <div className="row wrap" style={{ marginTop: 10 }}>
+        <button type="button" className="btn secondary small-btn" onClick={handleParse} disabled={isPending || !bioText.trim()}>
+          {isPending ? "Reading..." : "Fill in from this text"}
         </button>
         {message && (
-          <span
-            className={isError ? undefined : "muted"}
-            style={{ fontSize: "0.85rem", color: isError ? "#b3392c" : undefined }}
-          >
+          <span className="small" role="status" style={{ color: isError ? "#9b2c22" : undefined }}>
             {message}
           </span>
         )}
       </div>
-    </div>
+    </details>
   );
 }

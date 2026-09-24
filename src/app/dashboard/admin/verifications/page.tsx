@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { requireAdminOrRedirectPath } from "@/lib/admin";
-import { reviewCredential, setProfileVerificationStatus } from "./actions";
+import { reviewCredential, setProfileVerificationStatus, reviewLicenceAction } from "./actions";
 
 export default async function AdminVerificationsPage(
   props: { searchParams: Promise<{ error?: string }> }
@@ -17,6 +17,12 @@ export default async function AdminVerificationsPage(
     .neq("verification_status", "rejected")
     .order("created_at", { ascending: true });
 
+  const { data: unreviewedLicences } = await supabase
+    .from("licenses")
+    .select("id, state, license_number, license_type, expiration_date, created_at, profile:profiles!licenses_profile_id_fkey(id, full_name, credential_prefix, qualification_level, is_demo)")
+    .is("reviewed_at", null)
+    .order("created_at", { ascending: true });
+
   const pending = (profiles || []).filter((p) => p.verification_status !== "verified");
   const verified = (profiles || []).filter((p) => p.verification_status === "verified");
 
@@ -30,6 +36,34 @@ export default async function AdminVerificationsPage(
       </p>
 
       {error && <div className="error-banner">{error}</div>}
+
+      <div className="card">
+        <h2>Licences awaiting review ({(unreviewedLicences || []).length})</h2>
+        <p className="muted">
+          A member is listed and matched in a state only after its licence is reviewed here. Check the number and expiry against the state board before approving.
+        </p>
+        {(unreviewedLicences || []).map((l: any) => (
+          <div key={l.id} className="person-row">
+            <span className="person-row-info">
+              <strong>{l.profile?.credential_prefix} {l.profile?.full_name}</strong> ({l.profile?.qualification_level}) · {l.state} · #{l.license_number}
+              {l.license_type ? ` · ${l.license_type}` : ""} · expires {l.expiration_date || "not given"}
+            </span>
+            <span className="person-row-actions">
+              <form action={reviewLicenceAction}>
+                <input type="hidden" name="id" value={l.id} />
+                <input type="hidden" name="decision" value="approve" />
+                <button type="submit">Mark reviewed</button>
+              </form>
+              <form action={reviewLicenceAction}>
+                <input type="hidden" name="id" value={l.id} />
+                <input type="hidden" name="decision" value="query" />
+                <button type="submit" className="secondary">Ask member to check</button>
+              </form>
+            </span>
+          </div>
+        ))}
+        {(unreviewedLicences || []).length === 0 && <p className="muted">No licences waiting.</p>}
+      </div>
 
       <div className="card">
         <h2>Awaiting review ({pending.length})</h2>

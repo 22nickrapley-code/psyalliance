@@ -68,7 +68,18 @@ function daysSince(iso: string | null) {
   return Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000);
 }
 
+function pausedUntil(p: any): string | null {
+  const d = p.availability_paused_until as string | null;
+  return d && d >= new Date().toISOString().slice(0, 10) ? d : null;
+}
+
 function availabilityFor(kind: MatchKind, p: any): { value: string | null; label: string } {
+  // A pause-until date closes referrals and cover until that day, whatever
+  // the statuses say (Product Spec v1, Availability).
+  const paused = pausedUntil(p);
+  if (paused && (kind === "cover" || kind === "referral")) {
+    return { value: "no", label: `Paused until ${new Date(paused + "T12:00:00Z").toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" })}` };
+  }
   if (kind === "cover") {
     const v = p.coverage_availability as string | null;
     return { value: v, label: v === "yes" ? "Available for cover" : v === "ask_me" ? "Cover: ask me" : v === "no" ? "Not available for cover" : "Cover availability not set" };
@@ -104,7 +115,7 @@ export async function findMatches(
     supabase
       .from("profiles")
       .select(
-        "id, full_name, credential_prefix, qualification_level, primary_state, primary_practice_city, psypact_participating, referral_availability, coverage_availability, availability_confirmed_at, last_active_at, open_to_give_supervision, avatar_path"
+        "id, full_name, credential_prefix, qualification_level, primary_state, primary_practice_city, psypact_participating, referral_availability, coverage_availability, availability_confirmed_at, availability_paused_until, approx_spaces, last_active_at, open_to_give_supervision, avatar_path"
       )
       .eq("verification_status", "verified")
       .eq("account_status", "active")
@@ -277,6 +288,9 @@ export async function findMatches(
             ? `${avail.label}, not recently confirmed`
             : "Availability not confirmed"
       );
+      if (need.kind === "referral" && typeof p.approx_spaces === "number" && freshness !== "unconfirmed") {
+        reasons.push(p.approx_spaces === 0 ? "No spaces right now" : `About ${p.approx_spaces} space${p.approx_spaces === 1 ? "" : "s"} available`);
+      }
     }
 
     results.push({

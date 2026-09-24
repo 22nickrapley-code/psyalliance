@@ -54,12 +54,21 @@ export default async function DashboardLayout({
     .eq("profile_id", user.id)
     .eq("status", "active")
     .or(`expiration_date.is.null,expiration_date.gte.${today}`);
+  const { count: reviewedLicenceCount } = await supabase
+    .from("licenses")
+    .select("id", { count: "exact", head: true })
+    .eq("profile_id", user.id)
+    .eq("status", "active")
+    .not("reviewed_at", "is", null)
+    .or(`expiration_date.is.null,expiration_date.gte.${today}`);
   const verificationLabel = !profile
     ? null
     : profile.verification_status === "verified"
-      ? (activeLicenceCount || 0) > 0
+      ? (reviewedLicenceCount || 0) > 0
         ? "Verified"
-        : "Verified - add your licence"
+        : (activeLicenceCount || 0) > 0
+          ? "Licence awaiting review"
+          : "Verified - add your licence"
       : profile.verification_status === "pending"
         ? "Verification pending"
         : profile.verification_status === "flagged"

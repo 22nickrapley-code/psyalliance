@@ -4,7 +4,7 @@ import { resolveAvatarUrl } from "@/lib/avatars";
 import { professionFor, professionLabel } from "@/lib/profession";
 import { sendConnectionRequest, respondToConnection, removeConnection, saveClinicianAction, removeSavedClinicianAction } from "../../network/actions";
 import { startConversation } from "../../messages/actions";
-import { addToBlocklist, removeFromBlocklist } from "../../settings/actions";
+import { addToBlocklist, removeFromBlocklist, blockMemberAction } from "../../settings/actions";
 import { fileReportAction } from "../../moderation-actions";
 import { PageHead, Empty, Banner, PersonAvatar, Status, SummaryList } from "../../_components/ui";
 
@@ -38,6 +38,11 @@ export default async function PersonPage(props: { params: Promise<{ id: string }
   const myself = user!.id;
   if (id === myself) redirect("/dashboard/profile");
 
+  const { data: extra } = await supabase
+    .from("profiles")
+    .select("bio, approx_spaces, availability_paused_until")
+    .eq("id", id)
+    .maybeSingle();
   const [{ data: rows }, { data: licenceRows }, { data: connection }, { data: savedRow }, { data: excludedRow }, { data: workedRows }, { data: coverEvents }, { data: responseEvents }, { data: workedWithMe }] =
     await Promise.all([
       supabase.from("public_directory").select("*").eq("id", id),
@@ -150,6 +155,12 @@ export default async function PersonPage(props: { params: Promise<{ id: string }
 
       <div className="split" style={{ marginTop: 20 }}>
         <div className="stack">
+          {extra?.bio && (
+            <section className="card">
+              <div className="eyebrow">About</div>
+              <p style={{ marginTop: 8, marginBottom: 0, whiteSpace: "pre-line" }}>{extra.bio}</p>
+            </section>
+          )}
           <section className="card">
             <div className="card-title"><h3>Current availability</h3><span className="micro-note">{confirmed}</span></div>
             <SummaryList
@@ -158,6 +169,10 @@ export default async function PersonPage(props: { params: Promise<{ id: string }
                 ["Cover", AVAIL.cover[p.coverage_availability] || "Not set"],
                 ["Consultation", AVAIL.consult[p.consultation_availability] || "Not set"],
                 ["Supervision", p.open_to_give_supervision ? "Open to supervise" : p.open_to_receive_supervision ? "Seeking supervision" : "Not listed"],
+                ...(typeof extra?.approx_spaces === "number" ? ([["Spaces for new patients", `About ${extra.approx_spaces}`]] as [string, string][]) : []),
+                ...(extra?.availability_paused_until && extra.availability_paused_until >= new Date().toISOString().slice(0, 10)
+                  ? ([["Paused until", new Date(extra.availability_paused_until + "T12:00:00Z").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" })]] as [string, string][])
+                  : []),
               ]}
             />
           </section>
@@ -213,6 +228,15 @@ export default async function PersonPage(props: { params: Promise<{ id: string }
             </div>
             <p className="micro-note" style={{ marginTop: 8 }}>Saved and Exclude are private. They are never told.</p>
           </section>
+          <details className="card tight">
+            <summary className="small">Block this member</summary>
+            <p className="small" style={{ marginTop: 10 }}>They won&rsquo;t be able to message or invite you, and you&rsquo;ll disappear from each other&rsquo;s directory and suggestions. They aren&rsquo;t told. Undo it in Settings.</p>
+            <form action={blockMemberAction}>
+              <input type="hidden" name="blocked_profile_id" value={id} />
+              <input type="hidden" name="return_to" value="/dashboard/settings?saved=blocked#privacy" />
+              <button type="submit" className="btn secondary small-btn">Block</button>
+            </form>
+          </details>
           <details className="card tight">
             <summary className="small">Report this profile</summary>
             <form action={fileReportAction} style={{ marginTop: 10 }}>

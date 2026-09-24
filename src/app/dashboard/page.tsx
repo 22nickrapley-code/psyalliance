@@ -78,7 +78,7 @@ export default async function HomePage(props: { searchParams: Promise<{ reconfir
       .or(`requester_id.eq.${myself},addressee_id.eq.${myself}`),
     supabase.from("saved_clinicians").select("id", { count: "exact", head: true }).eq("profile_id", myself),
     supabase.from("worked_with_before").select("colleague_id").eq("profile_id", myself),
-    supabase.from("licenses").select("state, status, expiration_date").eq("profile_id", myself),
+    supabase.from("licenses").select("state, status, expiration_date, reviewed_at").eq("profile_id", myself),
     supabase
       .from("profile_lookup_values")
       .select("lookup_value_id, lookup_values!inner(category)")
@@ -158,6 +158,9 @@ export default async function HomePage(props: { searchParams: Promise<{ reconfir
     const days = Math.ceil((new Date(l.expiration_date).getTime() - Date.now()) / 86_400_000);
     steps.push({ key: `lic-${l.state}`, title: `Your ${l.state} licence expires in ${days} day${days === 1 ? "" : "s"}`, detail: "Renew it and update Credentials to stay listed", href: "/dashboard/credentials", action: "Open", urgent: days <= 7 });
   }
+  if (activeLicences.length > 0 && !activeLicences.some((l: any) => l.reviewed_at) && profile.verification_status === "verified") {
+    steps.push({ key: "lic-review", title: "Your licence is awaiting review", detail: "You'll be listed and matched as soon as an admin has checked it. Nothing to do.", href: "/dashboard/credentials", action: "View" });
+  }
   if (activeLicences.length === 0 && profile.verification_status === "verified") {
     steps.push({ key: "lic-none", title: "Add your licence", detail: "Members are only listed and matched with an active licence on record", href: "/dashboard/credentials", action: "Add" });
   }
@@ -195,7 +198,7 @@ export default async function HomePage(props: { searchParams: Promise<{ reconfir
   // ---- Resources for this moment ----
   const pick = (code: string, purpose: string) => {
     const doc = (resourceRows || []).find((d: any) => String(d.title).startsWith(code));
-    return doc ? { code, title: String(doc.title).replace(/^PA-\d+:\s*/, ""), purpose, href: `/dashboard/documents?q=${code}` } : null;
+    return doc ? { code, title: String(doc.title).replace(/^PA-\d+:\s*/, ""), purpose, href: `/dashboard/documents/${code}` } : null;
   };
   const resources = [
     (myPlans || []).length ? pick("PA-02", "Guidance and a handoff pack for your cover plan.") : null,

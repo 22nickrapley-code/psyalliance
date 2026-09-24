@@ -50,7 +50,9 @@ function ResourceAside() {
       <div className="eyebrow">From the Practice Library</div>
       <h3>Referral &amp; Transfer Toolkit</h3>
       <p className="small">PA-07 gives a framework for referral outcomes and handoff responsibilities once a colleague agrees.</p>
-      <a className="btn secondary small-btn" href="/dashboard/documents?q=PA-07">View PA-07</a>
+      <a className="btn secondary small-btn" href="/dashboard/documents/PA-07">View PA-07</a>
+      <p className="small" style={{ marginTop: 12 }}>Referring for medication while you keep therapy? PA-08 sets out a split-treatment agreement.</p>
+      <a className="plain-button small" href="/dashboard/documents/PA-08">View PA-08 &rarr;</a>
     </section>
   );
 }

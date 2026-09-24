@@ -7,22 +7,15 @@ import {
   leaveGroupAction,
   removeGroupMemberAction,
   updateCharterAction,
-  postGroupConsultationAction,
 } from "../actions";
-import { respondToConsultationAction, resolveConsultationAction } from "../../actions";
+import { PageHead, Banner, Empty, Status, PersonAvatar } from "../../../_components/ui";
 
-const MEMBER_STATUS_LABELS: Record<string, string> = {
-  invited: "Invited",
-  joined: "Joined",
-  declined: "Declined",
-  left: "Left",
-  removed: "Removed",
-};
+const MEMBER_STATUS: Record<string, string> = { invited: "Invited", joined: "Member", declined: "Declined", left: "Left", removed: "Removed" };
 
-// PsyA2 #66 (Group space): member list, charter, group discussion
-// (consultations posted to this group). Agenda templates and a private
-// group-resources area aren't in this first pass - see the file header on
-// ../actions.ts for the full scope note.
+// One consultation group: charter first (it's what members agree to),
+// then the group's threads, then members. Posting goes through the normal
+// Consult compose with the group preselected, so the de-identification
+// check and the review step apply here too.
 export default async function ConsultationGroupPage(props: { params: Promise<{ id: string }>; searchParams: Promise<{ error?: string }> }) {
   const { id } = await props.params;
   const { error } = await props.searchParams;
@@ -31,260 +24,191 @@ export default async function ConsultationGroupPage(props: { params: Promise<{ i
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  const myself = user!.id;
+  const me = user!.id;
 
   const { data: group } = await supabase.from("consultation_groups").select("*").eq("id", groupId).maybeSingle();
-  // RLS already hides a group you're not a member or creator of - a null
-  // row here means "not found or not yours to see," same thing to the UI.
   if (!group) redirect("/dashboard/consult/groups?error=" + encodeURIComponent("That group isn't available."));
+  const isCreator = group.created_by === me;
 
-  const isCreator = group.created_by === myself;
-
-  const [{ data: members }, { data: myMembership }, { data: consultations }, { data: myConnections }] = await Promise.all([
+  const [{ data: members }, { data: mine }, { data: threads }, { data: conns }] = await Promise.all([
     supabase
       .from("consultation_group_members")
-      .select("id, profile_id, external_email, status, role, invited_at, member:profile_id(full_name, credential_prefix)")
+      .select("id, profile_id, external_email, status, role, member:profile_id(full_name, credential_prefix)")
       .eq("group_id", groupId)
       .order("invited_at", { ascending: true }),
-    supabase.from("consultation_group_members").select("id, status").eq("group_id", groupId).eq("profile_id", myself).maybeSingle(),
+    supabase.from("consultation_group_members").select("id, status").eq("group_id", groupId).eq("profile_id", me).maybeSingle(),
     supabase
       .from("consultations")
-      .select("*, author:author_profile_id(full_name, credential_prefix), consultation_responses(*, profiles:responder_profile_id(full_name))")
+      .select("id, question, status, created_at, author_profile_id, author:author_profile_id(full_name, credential_prefix), consultation_responses(id)")
       .eq("group_id", groupId)
+      .neq("status", "draft")
       .order("created_at", { ascending: false }),
     isCreator
       ? supabase
           .from("connections")
           .select("requester_id, addressee_id, requester:requester_id(full_name, credential_prefix), addressee:addressee_id(full_name, credential_prefix)")
           .eq("status", "accepted")
-          .or(`requester_id.eq.${myself},addressee_id.eq.${myself}`)
+          .or(`requester_id.eq.${me},addressee_id.eq.${me}`)
       : Promise.resolve({ data: [] as any[] }),
   ]);
+  if (!isCreator && !mine) redirect("/dashboard/consult/groups?error=" + encodeURIComponent("That group isn't available."));
 
-  // A member who has left/declined, or the creator (already seeing
-  // everything by virtue of being the creator), shouldn't be blocked from
-  // viewing - but only an actual invited/joined member or the creator
-  // should be able to act on invitations below.
-  if (!isCreator && !myMembership) redirect("/dashboard/consult/groups?error=" + encodeURIComponent("That group isn't available."));
-
-  const existingMemberIds = new Set((members || []).map((m: any) => m.profile_id).filter(Boolean));
-  const inviteCandidates = (myConnections || [])
-    .map((c: any) => (c.requester_id === myself ? { id: c.addressee_id, ...c.addressee } : { id: c.requester_id, ...c.requester }))
-    .filter((c: any) => c.id && !existingMemberIds.has(c.id));
+  const isMember = isCreator || mine?.status === "joined";
+  const nameOf = (p: any) => (p ? `${p.credential_prefix ? p.credential_prefix + " " : ""}${p.full_name}` : "Member");
+  const existing = new Set((members || []).map((m: any) => m.profile_id).filter(Boolean));
+  const candidates = (conns || [])
+    .map((c: any) => (c.requester_id === me ? { id: c.addressee_id, ...c.addressee } : { id: c.requester_id, ...c.requester }))
+    .filter((c: any) => c.id && !existing.has(c.id));
+  const activeMembers = (members || []).filter((m: any) => ["joined", "invited"].includes(m.status));
 
   return (
-    <div>
-      <p className="muted" style={{ marginBottom: "0.3rem" }}>
-        <a href="/dashboard/consult/groups">&larr; All consultation groups</a>
-      </p>
-      <h1>{group.name}</h1>
-      {group.purpose && <p className="muted">{group.purpose}</p>}
-      <p className="muted" style={{ fontSize: "0.85rem" }}>
-        {group.cadence && <>Cadence: {group.cadence} · </>}
-        {group.meeting_format && <>Format: {group.meeting_format.replace("_", " ")} · </>}
-        Charter v{group.charter_version}
-      </p>
-      {error && <div className="error-banner">{error}</div>}
+    <>
+      <div className="breadcrumbs small" style={{ marginBottom: 14 }}>
+        <a href="/dashboard/consult">Consult</a> / <a href="/dashboard/consult/groups">Groups</a> / <b>{group.name}</b>
+      </div>
+      <PageHead
+        eyebrow="Consultation group"
+        title={group.name}
+        lead={[group.purpose, group.cadence, group.meeting_format ? String(group.meeting_format).replace("_", " ") : null].filter(Boolean).join(" · ") || undefined}
+        actions={
+          isMember && group.charter_body ? (
+            <a className="btn" href={`/dashboard/consult/new?group=${group.id}`}>Ask this group</a>
+          ) : undefined
+        }
+      />
+      <Banner error={error} />
 
-      {myMembership && myMembership.status === "invited" && (
-        <div className="card">
-          <h2>You're invited</h2>
-          <span className="person-row-actions">
-            <form action={respondToGroupInviteAction}>
-              <input type="hidden" name="membership_id" value={myMembership.id} />
+      {mine?.status === "invited" && (
+        <section className="card tint" style={{ marginBottom: 20 }}>
+          <div className="card-title"><h3>You&rsquo;re invited</h3><Status tone="warn">Read the charter first</Status></div>
+          <p className="small">Joining means agreeing to the charter below.</p>
+          <div className="row" style={{ gap: 8 }}>
+            <form action={respondToGroupInviteAction} className="inline">
+              <input type="hidden" name="membership_id" value={mine.id} />
               <input type="hidden" name="status" value="joined" />
-              <button type="submit">Join</button>
+              <button type="submit" className="btn small-btn">Join the group</button>
             </form>
-            <form action={respondToGroupInviteAction}>
-              <input type="hidden" name="membership_id" value={myMembership.id} />
+            <form action={respondToGroupInviteAction} className="inline">
+              <input type="hidden" name="membership_id" value={mine.id} />
               <input type="hidden" name="status" value="declined" />
-              <button type="submit" className="secondary">Decline</button>
+              <button type="submit" className="btn ghost small-btn">Decline</button>
             </form>
-          </span>
-        </div>
+          </div>
+        </section>
       )}
 
-      <div className="card">
-        <h2>Charter</h2>
-        <p className="muted" style={{ fontSize: "0.85rem" }}>
-          A working document, not fixed - confidentiality, de-identification, consultation vs. supervision,
-          no automatic recording, no patient detail in general group discussion.
-        </p>
-        {group.charter_body ? (
-          <p style={{ whiteSpace: "pre-wrap" }}>{group.charter_body}</p>
-        ) : (
-          <p className="muted">No charter written yet.</p>
-        )}
-        {isCreator && (
-          <details style={{ marginTop: "0.4rem" }}>
-            <summary className="muted" style={{ cursor: "pointer", fontSize: "0.85rem" }}>Edit charter</summary>
-            <form action={updateCharterAction} style={{ marginTop: "0.4rem" }}>
-              <input type="hidden" name="group_id" value={group.id} />
-              <div className="field">
-                <textarea name="charter_body" rows={4} defaultValue={group.charter_body || ""} />
-              </div>
-              <button type="submit" className="secondary">Save charter (bumps to v{group.charter_version + 1})</button>
-            </form>
-          </details>
-        )}
-      </div>
-
-      {/* Sept 23 audit (task #125): a group used to be immediately usable
-          (invite people, post consultations) with no charter at all, even
-          though the charter card above frames it as the thing that makes a
-          group different from a one-off consult - confidentiality,
-          de-identification, consultation vs. supervision. Now it has to
-          actually be written first; the invite/post forms below are gated
-          on it server-side too (inviteInternalMemberAction,
-          inviteExternalAction, postGroupConsultationAction). */}
-      {isCreator && !group.charter_body && (
-        <div className="card" style={{ borderColor: "var(--accent, #d97)", background: "rgba(217,153,0,0.08)" }}>
-          Write the charter above before inviting anyone or posting to this group - it's what sets the
-          confidentiality and de-identification expectations everyone in it is agreeing to.
-        </div>
-      )}
-
-      <div className="card">
-        <h2>Members ({(members || []).length})</h2>
-        {(members || []).map((m: any) => (
-          <div key={m.id} className="person-row">
-            <span className="person-row-info">
-              {m.profile_id ? (
-                <a href={`/dashboard/people/${m.profile_id}`} className="person-link">
-                  {m.member?.credential_prefix ? `${m.member.credential_prefix} ` : ""}
-                  {m.member?.full_name || "Member"}
+      <div className="split">
+        <div className="stack">
+          <section className="card">
+            <div className="card-title"><h3>Group threads</h3><span className="micro-note">Members only</span></div>
+            {!group.charter_body ? (
+              <div className="tone-panel">This group needs a charter before anyone can post. {isCreator ? "Write it on the right." : "The organiser is writing it."}</div>
+            ) : (threads || []).length === 0 ? (
+              <Empty symbol={"✳"} title="Nothing posted yet." body="Bring a de-identified case question to the group." action={isMember ? <a className="btn secondary small-btn" href={`/dashboard/consult/new?group=${group.id}`}>Ask this group</a> : undefined} />
+            ) : (
+              (threads || []).map((t: any) => (
+                <a key={t.id} href={`/dashboard/consult/${t.id}`} className="list-row" style={{ textDecoration: "none", color: "inherit" }}>
+                  <span>
+                    <strong>{t.question}</strong>
+                    <small>
+                      {t.author_profile_id === me ? "You" : nameOf(t.author)} &middot; {new Date(t.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })} &middot; {(t.consultation_responses || []).length} repl{(t.consultation_responses || []).length === 1 ? "y" : "ies"}
+                    </small>
+                  </span>
+                  <Status tone={t.status === "resolved" ? "neutral" : ""}>{t.status === "resolved" ? "Resolved" : "Open"}</Status>
                 </a>
-              ) : (
-                <span>{m.external_email} <span className="muted">(external)</span></span>
-              )}{" "}
-              <span className="tag">{m.role}</span> <span className="tag">{MEMBER_STATUS_LABELS[m.status] || m.status}</span>
-            </span>
-            {isCreator && m.profile_id !== group.created_by && (
-              <span className="person-row-actions">
-                <form action={removeGroupMemberAction}>
+              ))
+            )}
+          </section>
+
+          <section className="card">
+            <div className="card-title"><h3>Members</h3><span className="micro-note">{activeMembers.length}</span></div>
+            {(members || []).map((m: any) => (
+              <div key={m.id} className="item row between">
+                <span className="row" style={{ gap: 10 }}>
+                  {m.profile_id ? <PersonAvatar name={m.member?.full_name || "?"} size={30} /> : null}
+                  <span>
+                    {m.profile_id ? (
+                      <a href={m.profile_id === me ? "/dashboard/profile" : `/dashboard/people/${m.profile_id}`}><strong>{m.profile_id === me ? "You" : nameOf(m.member)}</strong></a>
+                    ) : (
+                      <strong>{m.external_email} <span className="micro-note">(invited by email)</span></strong>
+                    )}
+                    <p>{m.role === "owner" || m.profile_id === group.created_by ? "Organiser" : MEMBER_STATUS[m.status] || m.status}</p>
+                  </span>
+                </span>
+                {isCreator && m.profile_id !== group.created_by && ["joined", "invited"].includes(m.status) && (
+                  <form action={removeGroupMemberAction} className="inline">
+                    <input type="hidden" name="group_id" value={group.id} />
+                    <input type="hidden" name="membership_id" value={m.id} />
+                    <button type="submit" className="plain-button small">Remove</button>
+                  </form>
+                )}
+              </div>
+            ))}
+            {isCreator && group.charter_body && (
+              <div className="fields" style={{ marginTop: 14 }}>
+                <form action={inviteInternalMemberAction} className="stack" style={{ gap: 8 }}>
                   <input type="hidden" name="group_id" value={group.id} />
-                  <input type="hidden" name="membership_id" value={m.id} />
-                  <button type="submit" className="danger">Remove</button>
+                  <label className="field">
+                    Invite a trusted colleague
+                    <select name="profile_id" defaultValue="" required>
+                      <option value="" disabled>{candidates.length ? "Choose someone" : "No trusted colleagues to invite"}</option>
+                      {candidates.map((c: any) => (
+                        <option key={c.id} value={c.id}>{nameOf(c)}</option>
+                      ))}
+                    </select>
+                  </label>
+                  <button type="submit" className="btn secondary small-btn" style={{ alignSelf: "flex-start" }}>Invite</button>
                 </form>
-              </span>
-            )}
-          </div>
-        ))}
-
-        {isCreator && group.charter_body && (
-          <div style={{ marginTop: "0.75rem", display: "flex", flexWrap: "wrap", gap: "1rem" }}>
-            <form action={inviteInternalMemberAction}>
-              <input type="hidden" name="group_id" value={group.id} />
-              <div className="field-row" style={{ alignItems: "flex-end" }}>
-                <div className="field">
-                  <label htmlFor="profile_id">Invite a trusted colleague</label>
-                  <select id="profile_id" name="profile_id" defaultValue="">
-                    <option value="" disabled>Choose someone</option>
-                    {inviteCandidates.map((c: any) => (
-                      <option key={c.id} value={c.id}>
-                        {c.credential_prefix ? `${c.credential_prefix} ` : ""}
-                        {c.full_name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <button type="submit" className="secondary">Invite</button>
-              </div>
-            </form>
-            <form action={inviteExternalAction}>
-              <input type="hidden" name="group_id" value={group.id} />
-              <div className="field-row" style={{ alignItems: "flex-end" }}>
-                <div className="field">
-                  <label htmlFor="external_email">Cold-start invite by email</label>
-                  <input id="external_email" name="external_email" type="email" placeholder="colleague@example.com" />
-                </div>
-                <button type="submit" className="secondary">Invite</button>
-              </div>
-            </form>
-          </div>
-        )}
-
-        {!isCreator && myMembership?.status === "joined" && (
-          <form action={leaveGroupAction} style={{ marginTop: "0.75rem" }}>
-            <input type="hidden" name="group_id" value={group.id} />
-            <input type="hidden" name="membership_id" value={myMembership.id} />
-            <button type="submit" className="danger">Leave group</button>
-          </form>
-        )}
-      </div>
-
-      <div className="card">
-        <h2>Group consultations</h2>
-        <p className="muted" style={{ fontSize: "0.85rem" }}>
-          Visible only to this group's members, whatever else the audience picker says - still keep it
-          de-identified.
-        </p>
-        {(myMembership?.status === "joined" || isCreator) && group.charter_body && (
-          <form action={postGroupConsultationAction} style={{ marginBottom: "1rem" }}>
-            <input type="hidden" name="group_id" value={group.id} />
-            <div className="field">
-              <label htmlFor="gq">What do you need help thinking through?</label>
-              <input id="gq" name="question" type="text" placeholder="One-sentence question" required />
-            </div>
-            <div className="field">
-              <label htmlFor="gctx">Context (optional, de-identified)</label>
-              <textarea id="gctx" name="context" rows={2} />
-            </div>
-            <div className="checkbox-row">
-              <input id="g_deidentification_confirmed" name="deidentification_confirmed" type="checkbox" required />
-              <label htmlFor="g_deidentification_confirmed" style={{ margin: 0, fontWeight: 400 }}>
-                I confirm this is de-identified - no patient names, exact dates, addresses, or other identifying details
-              </label>
-            </div>
-            <button type="submit" className="secondary" style={{ marginTop: "0.5rem" }}>Post to this group</button>
-          </form>
-        )}
-        {(myMembership?.status === "joined" || isCreator) && !group.charter_body && (
-          <p className="muted" style={{ marginBottom: "1rem" }}>
-            This group needs a charter before anyone can post to it - see above.
-          </p>
-        )}
-
-        {(consultations || []).map((c: any) => (
-          <div key={c.id} style={{ borderBottom: "1px solid var(--border)", paddingBottom: "0.75rem", marginBottom: "0.75rem" }}>
-            <div>
-              <strong>{c.question}</strong> <span className="tag">{c.status.replace("_", " ")}</span>
-            </div>
-            <p className="muted" style={{ fontSize: "0.85rem" }}>
-              {c.author?.credential_prefix ? `${c.author.credential_prefix} ` : ""}
-              {c.author?.full_name}
-            </p>
-            {c.context && <p className="muted">{c.context}</p>}
-            {(c.consultation_responses || []).length > 0 && (
-              <div style={{ marginTop: "0.4rem" }}>
-                {c.consultation_responses.map((r: any) => (
-                  <p key={r.id} style={{ fontSize: "0.9rem", margin: "0.2rem 0" }}>
-                    <strong>{r.profiles?.full_name}:</strong> {r.body}
-                  </p>
-                ))}
+                <form action={inviteExternalAction} className="stack" style={{ gap: 8 }}>
+                  <input type="hidden" name="group_id" value={group.id} />
+                  <label className="field">
+                    Invite a colleague not on PsyAlliance yet
+                    <input name="external_email" type="email" placeholder="colleague@practice.com" required />
+                  </label>
+                  <button type="submit" className="btn secondary small-btn" style={{ alignSelf: "flex-start" }}>Invite by email</button>
+                </form>
               </div>
             )}
-            {c.author_profile_id !== myself && (myMembership?.status === "joined" || isCreator) && (
-              <form action={respondToConsultationAction} style={{ marginTop: "0.4rem" }}>
-                <input type="hidden" name="consultation_id" value={c.id} />
-                <div className="field-row">
-                  <div className="field" style={{ flex: 1 }}>
-                    <input name="body" type="text" placeholder="Reply" />
-                  </div>
-                  <button type="submit" className="secondary">Reply</button>
-                </div>
+            {!isCreator && mine?.status === "joined" && (
+              <form action={leaveGroupAction} style={{ marginTop: 12 }}>
+                <input type="hidden" name="group_id" value={group.id} />
+                <input type="hidden" name="membership_id" value={mine.id} />
+                <button type="submit" className="plain-button small">Leave this group</button>
               </form>
             )}
-            {c.author_profile_id === myself && ["open", "responses_received"].includes(c.status) && (
-              <form action={resolveConsultationAction} style={{ marginTop: "0.3rem" }}>
-                <input type="hidden" name="consultation_id" value={c.id} />
-                <button type="submit" className="secondary">Mark resolved</button>
-              </form>
+          </section>
+        </div>
+
+        <aside className="stack">
+          <section className="card tint">
+            <div className="card-title"><h3>Charter</h3><span className="micro-note">Version {group.charter_version}</span></div>
+            {group.charter_body ? (
+              <p className="small" style={{ whiteSpace: "pre-wrap", marginBottom: 0 }}>{group.charter_body}</p>
+            ) : (
+              <p className="small">No charter yet.</p>
             )}
-          </div>
-        ))}
-        {(consultations || []).length === 0 && <p className="muted">Nothing posted to this group yet.</p>}
+            {isCreator && (
+              <details style={{ marginTop: 12 }} open={!group.charter_body}>
+                <summary className="small" style={{ cursor: "pointer" }}>{group.charter_body ? "Edit the charter" : "Write the charter"}</summary>
+                <form action={updateCharterAction} style={{ marginTop: 10 }}>
+                  <input type="hidden" name="group_id" value={group.id} />
+                  <label className="field">
+                    <span className="sr-only">Charter</span>
+                    <textarea name="charter_body" rows={6} defaultValue={group.charter_body || ""} placeholder="Confidentiality, de-identification, consultation not supervision, no recording, how cases are presented." />
+                  </label>
+                  <button type="submit" className="btn secondary small-btn" style={{ marginTop: 8 }}>Save as version {group.charter_version + 1}</button>
+                </form>
+              </details>
+            )}
+          </section>
+          <section className="card">
+            <div className="eyebrow">From the Practice Library</div>
+            <h3>PA-04 &middot; Group Charter</h3>
+            <p className="small">A model charter, member agreement and 90-minute agenda.</p>
+            <a className="btn secondary small-btn" href="/dashboard/documents/PA-04">View PA-04</a>
+          </section>
+        </aside>
       </div>
-    </div>
+    </>
   );
 }

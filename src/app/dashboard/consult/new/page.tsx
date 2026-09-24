@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { ConsultComposeView } from "../views";
 
-export default async function NewConsultPage(props: { searchParams: Promise<{ kind?: string; to?: string; error?: string }> }) {
+export default async function NewConsultPage(props: { searchParams: Promise<{ kind?: string; to?: string; group?: string; error?: string }> }) {
   const sp = await props.searchParams;
   const kind = (sp.kind === "supervision_request" || sp.kind === "supervision_offer" ? sp.kind : "question") as
     | "question"
@@ -41,6 +41,7 @@ export default async function NewConsultPage(props: { searchParams: Promise<{ ki
       colleagues={Array.from(colleagues.values())}
       groups={(memberships || []).filter((m: any) => m.consultation_groups?.charter_body).map((m: any) => ({ id: m.group_id, name: m.consultation_groups.name }))}
       preselect={sp.to}
+      preselectGroup={sp.group ? Number(sp.group) : undefined}
       error={sp.error}
     />
   );
