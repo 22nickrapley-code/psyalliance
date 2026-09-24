@@ -23,11 +23,11 @@ const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://psyalliance.workers
 export const metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: "psyalliance.org: for doctoral-level psychologists & psychiatrists",
+    default: "PsyAlliance: a professional network for psychologists and psychiatrists",
     template: "%s | psyalliance.org",
   },
   description:
-    "A closed, credential-verified professional network and virtual-practice toolkit exclusively for doctoral-level psychologists (PhD, PsyD, EdD) and psychiatrists (MD, DO). Not a public therapist directory. Caseload and practice administration, coverage matching, peer consultation, a shared document library, and a referral network fed by verified colleagues and physicians. Free, forever.",
+    "A closed, credential-reviewed professional network for doctoral-level psychologists (PhD, PsyD, EdD) and psychiatrists (MD, DO) in independent practice: cover for time away, considered referrals and peer consultation with verified colleagues. Not a public therapist directory.",
   keywords: [
     "psychologist network",
     "psychiatrist network",
@@ -35,13 +35,12 @@ export const metadata = {
     "PsyD referral network",
     "doctoral-level clinician network",
     "practice coverage for psychologists",
-    "psychologist caseload management",
     "clinician referral network",
   ],
   openGraph: {
-    title: "psyalliance.org: for doctoral-level psychologists & psychiatrists",
+    title: "PsyAlliance: independent practice, stronger together",
     description:
-      "A closed, credential-verified network and practice toolkit exclusively for doctoral-level psychologists and psychiatrists: coverage, community, consultation, and referrals. Free, forever.",
+      "A closed, credential-reviewed network for doctoral-level psychologists and psychiatrists: cover for time away, considered referrals and peer consultation.",
     url: siteUrl,
     siteName: "psyalliance.org",
     type: "website",

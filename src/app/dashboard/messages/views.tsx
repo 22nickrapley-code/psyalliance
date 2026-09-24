@@ -18,7 +18,7 @@ export function ConversationList({ items, activeId }: { items: ConversationItem[
               <b style={{ fontWeight: c.unread ? 750 : 600 }}>{c.title}</b>
               <small>{c.when}</small>
             </span>
-            {c.context && <small style={{ display: "block", color: "var(--brass)" }}>{c.context}</small>}
+            {c.context && <small style={{ display: "block", color: "#82572a" }}>{c.context}</small>}
             <small style={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
               {c.unread ? "● " : ""}{c.preview}
             </small>

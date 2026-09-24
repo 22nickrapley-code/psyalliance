@@ -11,7 +11,7 @@ export default function PrivacyPage() {
         <a href="/" className="brand">psyalliance.org</a>
         <div style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
           <a href="/auth/sign-in" className="btn secondary">Sign in</a>
-          <a href="/auth/sign-up" className="btn">Get started, it's free</a>
+          <a href="/auth/sign-up" className="btn">Join the network</a>
         </div>
       </nav>
       <section className="section-band" style={{ borderTop: "none" }}>

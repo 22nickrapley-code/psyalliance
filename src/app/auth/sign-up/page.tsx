@@ -10,15 +10,15 @@ export default async function SignUpPage(
   return (
     <div className="auth-shell">
       <div className="auth-card-wrap">
-        <a href="/" className="brand">psyalliance.org</a>
+        <a href="/" className="brand"><span aria-hidden="true" style={{ display: "inline-grid", placeItems: "center", width: 30, height: 30, border: "1.5px solid currentColor", borderRadius: "50%", fontFamily: "Georgia, serif", transform: "rotate(-18deg)", marginRight: 10, fontSize: 20 }}>ψ</span>psyalliance</a>
 
         {searchParams.error && <div className="error-banner">{searchParams.error}</div>}
 
         <form action={signUp} className="card">
           <h2>Create your account</h2>
           <p className="muted" style={{ marginTop: "-0.5rem" }}>
-            For PhD, PsyD, EdD psychologists and psychiatrists. Credential verification happens
-            after sign-up, from your profile.
+            For PhD, PsyD and EdD psychologists and MD and DO psychiatrists. After you sign up, add
+            your licence in Credentials: a person reviews it before you&rsquo;re listed.
           </p>
           <div className="field">
             <label htmlFor="fullName">Full name</label>

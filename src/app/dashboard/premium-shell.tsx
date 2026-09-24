@@ -48,6 +48,7 @@ export default function PremiumShell({
 
   return (
     <div className="pa">
+      <a className="skip-link" href="#main">Skip to content</a>
       <div className="shell">
         {drawerOpen && <div className="drawer-backdrop" onClick={() => setDrawerOpen(false)} />}
         <aside className={`sidebar${drawerOpen ? " open" : ""}`} aria-label="Workspace navigation">
@@ -124,7 +125,7 @@ export default function PremiumShell({
               </Link>
             </div>
           </header>
-          <main className="page">{children}</main>
+          <main className="page" id="main" tabIndex={-1}>{children}</main>
         </div>
       </div>
 

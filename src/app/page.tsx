@@ -1,376 +1,276 @@
-// Structured data so answer engines and LLM-driven research (a newly
-// licensed psychologist asking their assistant "where do I find colleagues
-// like me" or "how do I get referral coverage") have something precise and
-// machine-readable to cite back, not just prose to guess at.
-//
-// Sept 23 launch-readiness audit: rewrote this whole page to lead with
-// coverage/referrals/consult/network (what's actually built and what the
-// Master Brief scopes this product as) instead of caseload/income practice
-// administration, which the rebuild is retiring. Also dropped the "free,
-// forever" lifetime pricing promise (a commercial commitment this page
-// shouldn't be making unilaterally - "free to join" describes today's
-// reality without promising it never changes) and the sweeping Psychology
-// Today comparison in favor of the brief's cleaner distinction: a directory
-// helps patients find clinicians, this helps clinicians find each other.
+import "./premium.css";
+
+// Public landing (Product Spec v1, built from the premium concept Nick
+// chose). Sections: hero with an illustrative cover plan, the three
+// requests that matter, how verification works, the founder story, the
+// trust rules, FAQ, and a founding-cohort call to action. No pricing is
+// shown until it's decided.
+
+const FAQ: [string, string][] = [
+  [
+    "Who can join?",
+    "Doctoral-level psychologists (PhD, PsyD, EdD) and psychiatrists (MD, DO) in the US. It isn't open to the public or to master's-level clinicians.",
+  ],
+  [
+    "How is this different from Psychology Today?",
+    "A directory helps patients find you. PsyAlliance helps clinicians find each other: someone to cover you while you're away, the right colleague for a referral, and peers to think a case through with.",
+  ],
+  [
+    "What does verified mean?",
+    "An admin has reviewed your professional identity, your doctoral degree and at least one in-date licence, checked against the state board. You're listed and matched only in states where a reviewed licence is on file.",
+  ],
+  [
+    "Do patient details go into PsyAlliance?",
+    "No. Cover plans and referrals describe needs without identifiers (\"Case 3: adult, anxiety, telehealth, Aetna\"). Free text is checked for names, dates and contact details. The clinical handoff happens outside PsyAlliance once a colleague agrees.",
+  ],
+  [
+    "How do I get cover while I'm on leave?",
+    "Start a cover plan: add each case that needs cover without identifiers, and PsyAlliance suggests colleagues with the right licence, specialty and recently confirmed availability, trusted colleagues first. You choose who is asked and in what order.",
+  ],
+  [
+    "Will I get a flood of notifications?",
+    "No. You hear about things that need you: a cover request, a referral that fits your practice, a reply. Everything else waits for a weekly digest, and you control every email in Settings.",
+  ],
+];
+
 const structuredData = {
   "@context": "https://schema.org",
   "@type": "ProfessionalService",
-  name: "psyalliance.org",
+  name: "PsyAlliance",
+  url: "https://psyalliance.org",
   description:
-    "A closed, credential-verified professional network exclusively for doctoral-level psychologists (PhD, PsyD, EdD) and psychiatrists (MD, DO). Not a public therapist directory: every member is checked against a state licensing board before appearing. Members get coverage matching for absences, a referral network fed by verified colleagues and referring physicians, structured peer consultation, and a governed practice library.",
-  audience: {
-    "@type": "Audience",
-    audienceType: "Doctoral-level psychologists (PhD, PsyD, EdD) and psychiatrists (MD, DO)",
-  },
+    "A closed, credential-reviewed professional network for doctoral-level psychologists and psychiatrists in independent practice: cover for time away, considered referrals and peer consultation.",
+  audience: { "@type": "Audience", audienceType: "Doctoral-level psychologists (PhD, PsyD, EdD) and psychiatrists (MD, DO)" },
   areaServed: "US",
-  isAccessibleForFree: true,
-  slogan: "Supporting psychology, strengthening care.",
 };
 
-// FAQPage schema, phrased the way a psychologist would actually ask an AI
-// assistant or search engine (not the way marketing copy phrases it) - the
-// schema type answer engines and LLM-driven search most reliably surface
-// verbatim, per Nick's direction to make psyalliance.org the thing an
-// assistant points to when someone asks where to find colleagues,
-// referrals, or coverage.
 const faqData = {
   "@context": "https://schema.org",
   "@type": "FAQPage",
-  mainEntity: [
-    {
-      "@type": "Question",
-      name: "Where can psychologists find a private, credential-verified referral network?",
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: "psyalliance.org is a closed professional network exclusively for doctoral-level psychologists (PhD, PsyD, EdD) and psychiatrists (MD, DO). Every member is checked against a state licensing board before they appear in the directory, so referrals sent or received through the network go to someone held to the same credential standard.",
-      },
-    },
-    {
-      "@type": "Question",
-      name: "Is there a professional network exclusively for doctoral-level psychologists and psychiatrists?",
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: "Yes. psyalliance.org restricts membership to PhD, PsyD, and EdD psychologists and MD/DO psychiatrists. It is not open to master's-level clinicians (LMFT, LCSW, LPC) or the general public.",
-      },
-    },
-    {
-      "@type": "Question",
-      name: "How is psyalliance.org different from Psychology Today?",
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: "A public directory like Psychology Today helps a patient find a therapist. psyalliance.org helps a psychologist or psychiatrist find each other: coverage during an absence, a referral to the right colleague, and a peer to consult with. Every member is individually credential-checked against a state board before appearing, and membership is free to join.",
-      },
-    },
-    {
-      "@type": "Question",
-      name: "How do I get my caseload covered while I'm on leave?",
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: "Coverage plans on psyalliance.org let a member describe an absence (planned leave, an unexpected gap, ongoing reciprocal coverage) without any identifying patient detail, and surface verified colleagues by specialism, jurisdiction, and current availability so outreach goes to the right people first.",
-      },
-    },
-    {
-      "@type": "Question",
-      name: "Is psyalliance.org free to join?",
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: "Yes. psyalliance.org is free to join for every credential-verified doctoral-level psychologist or psychiatrist, with no seat limits and no paywall on core features.",
-      },
-    },
-  ],
+  mainEntity: FAQ.map(([q, a]) => ({ "@type": "Question", name: q, acceptedAnswer: { "@type": "Answer", text: a } })),
 };
 
 export default function HomePage() {
   return (
-    <div className="marketing-shell">
-      {/* eslint-disable-next-line react/no-danger */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
-      />
-      {/* eslint-disable-next-line react/no-danger */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqData) }}
-      />
-      <nav className="marketing-nav">
-        <a href="/" className="brand">psyalliance.org</a>
-        <div className="marketing-nav-links">
-          <a href="#how-it-works">How verification works</a>
-          <a href="#compare">Why not a directory</a>
-          <a href="#founders">Our story</a>
-        </div>
-        <div style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
-          <a href="/auth/sign-in" className="btn secondary">Sign in</a>
-          <a href="/auth/sign-up" className="btn">Get started, it's free</a>
+    <div className="pa">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqData) }} />
+
+      <nav className="public-nav" aria-label="Public">
+        <a className="brand" href="/">
+          <span className="brand-mark" aria-hidden="true">ψ</span>psyalliance
+        </a>
+        <div className="links">
+          <a className="text-link" href="#how">How it works</a>
+          <a className="text-link" href="#verification">Verification</a>
+          <a className="text-link" href="#story">Our story</a>
+          <a className="btn secondary small-btn" href="/auth/sign-in">Sign in</a>
+          <a className="btn small-btn" href="/auth/sign-up">Join the network</a>
         </div>
       </nav>
 
-      <header className="hero">
-        <span className="eyebrow">
-          For doctoral-level psychologists (PhD/PsyD/EdD) &amp; psychiatrists (MD/DO)
-        </span>
-        <h1>Never scramble to cover your caseload again.</h1>
-        <p className="lede">
-          psyalliance.org is a credential-verified network built for coverage, referrals, and
-          peer consultation between doctoral-level psychologists and psychiatrists. Post a
-          coverage need and reach the right colleagues first, send and receive referrals from
-          people whose credentials are actually checked, and ask a specific clinical question
-          without it turning into a public feed.
-        </p>
-        <div className="hero-actions">
-          <a href="/auth/sign-up" className="btn">Create your free profile</a>
-          <a href="/auth/sign-in" className="btn secondary">I already have an account</a>
-        </div>
-      </header>
-
-      <p className="trust-strip">
-        <strong>Built by <a href="#founders">a psychologist</a>, with feedback from her peers</strong>, not by an ad platform.
-        <span className="dot">·</span>
-        No data sold, no attention monetized.
-      </p>
-
-      <section className="section-band" style={{ borderTop: "none", paddingBottom: 0 }}>
-        <div className="section-band-inner">
-          <h2 style={{ fontSize: "1.1rem", textAlign: "center", marginBottom: "1.5rem", color: "var(--muted)", letterSpacing: "0.02em" }}>
-            What you actually get
-          </h2>
-        </div>
-      </section>
-
-      <section className="pillars">
-        <div className="pillar">
-          <div className="letter">C</div>
-          <h3>Coverage when you're away</h3>
-          <p>
-            Parental leave, illness, vacation, or ongoing reciprocal coverage: describe the
-            absence without any identifying patient detail, and see the verified colleagues
-            best placed to help, by jurisdiction, specialism, and current availability.
-          </p>
-        </div>
-        <div className="pillar">
-          <div className="letter">R</div>
-          <h3>Referrals that find you</h3>
-          <p>
-            Verified colleagues and physicians on the platform can send referrals directly to
-            you, not just the other way around, to trusted colleagues, selected clinicians, or
-            the wider verified network.
-          </p>
-        </div>
-        <div className="pillar">
-          <div className="letter">A</div>
-          <h3>Ask a specific question</h3>
-          <p>
-            Structured peer consultation, not a public forum: ask trusted colleagues or the
-            verified network a de-identified clinical question, or start a closed, ongoing
-            peer group.
-          </p>
-        </div>
-        <div className="pillar">
-          <div className="letter">N</div>
-          <h3>A professional network, not a feed</h3>
-          <p>
-            Trusted colleagues, saved clinicians, and who you've actually worked with before,
-            in a closed directory of doctoral-level psychologists and psychiatrists.
-          </p>
-        </div>
-      </section>
-
-      <section className="section-band" id="how-it-works" style={{ borderTop: "none" }}>
-        <div className="section-band-inner">
-          <h2 style={{ fontSize: "1.4rem", textAlign: "center", marginBottom: "0.5rem" }}>
-            Every member is checked before they ever appear.
-          </h2>
-          <p className="lede" style={{ margin: "0 auto 2.25rem", textAlign: "center", maxWidth: 620, fontSize: "1rem" }}>
-            No self-attestation, no pay-for-a-badge. Getting into the directory takes a real
-            credential check, not just a status flip.
-          </p>
-          <div className="verify-steps">
-            <div className="verify-step">
-              <div className="verify-step-num">1</div>
-              <h3>Submit your credentials</h3>
-              <p>Your name, degree (PhD/PsyD/EdD or MD/DO), state, and license number.</p>
+      <main>
+        <section className="public-hero">
+          <div>
+            <div className="eyebrow">For psychologists and psychiatrists</div>
+            <h1>
+              Independent practice. <em>Stronger together.</em>
+            </h1>
+            <p className="lead">
+              Find trusted cover, exchange referrals and consult with verified colleagues. A professional circle built around the work you actually do.
+            </p>
+            <div className="hero-actions">
+              <a className="btn" href="#how">See how it works &rarr;</a>
+              <a className="btn secondary" href="#story">Our story</a>
             </div>
-            <div className="verify-step">
-              <div className="verify-step-num">2</div>
-              <h3>We check the record</h3>
-              <p>Cross-referenced against your state licensing board, and the NPI registry where available.</p>
-            </div>
-            <div className="verify-step">
-              <div className="verify-step-num">3</div>
-              <h3>A human signs off</h3>
-              <p>Verification isn't fully automated: every submission gets a final human review, on file, before you appear in the directory.</p>
+            <div className="hero-proof">
+              <span className="seal" aria-hidden="true">ψ</span>
+              <span>
+                <b>Credentials reviewed before anyone joins the network</b>
+                Identity, doctoral degree and state licence, checked by a person.
+              </span>
             </div>
           </div>
-        </div>
-      </section>
-
-      <section className="section-band" id="compare" style={{ borderTop: "none" }}>
-        <div className="section-band-inner">
-          <h2 style={{ fontSize: "1.4rem", textAlign: "center", marginBottom: "0.5rem" }}>
-            Not another public listing site
-          </h2>
-          <p className="lede" style={{ margin: "0 auto 2rem", textAlign: "center", maxWidth: 680, fontSize: "1rem" }}>
-            A public directory like Psychology Today helps a patient find a therapist.
-            psyalliance.org helps a psychologist or psychiatrist find each other.
-          </p>
-          <div className="compare-grid">
-            <div className="compare-col">
-              <h3>Public directories</h3>
-              <ul>
-                <li><span className="x">&#10005;</span> Built for patients searching for a therapist, not clinicians finding each other</li>
-                <li><span className="x">&#10005;</span> Every discipline mixed together, with thin specialism filters</li>
-                <li><span className="x">&#10005;</span> No way to find coverage for your own caseload</li>
-                <li><span className="x">&#10005;</span> You're a profile in a sea of thousands</li>
-              </ul>
+          <div className="hero-visual" aria-label="Illustrative cover plan">
+            <div className="visual-top">
+              <span>Inside PsyAlliance</span>
+              <span>Illustrative</span>
             </div>
-            <div className="compare-col compare-col-highlight">
-              <h3>psyalliance.org</h3>
-              <ul>
-                <li><span className="check">&#10003;</span> Every member checked against a state licensing board first</li>
-                <li><span className="check">&#10003;</span> Doctoral-level psychologists and psychiatrists only</li>
-                <li><span className="check">&#10003;</span> Post a coverage need and reach the right colleague first</li>
-                <li><span className="check">&#10003;</span> A closed, credential-verified professional community</li>
-              </ul>
-            </div>
-          </div>
-          <div style={{ textAlign: "center", marginTop: "2rem" }}>
-            <a href="/auth/sign-up" className="btn">Join the network</a>
-          </div>
-        </div>
-      </section>
-
-      <section className="section-band" style={{ paddingTop: 0, borderTop: "none" }}>
-        <div className="section-band-inner">
-          <h2 style={{ fontSize: "1.4rem", textAlign: "center", marginBottom: "1.5rem" }}>
-            A look inside
-          </h2>
-          <div className="product-preview" aria-hidden="true">
-            <div className="product-preview-chrome">
-              <span />
-              <span />
-              <span />
-            </div>
-            <div className="product-preview-body">
-              <div className="product-preview-sidebar">
-                <div className="product-preview-brand">psyalliance.org</div>
-                <div className="product-preview-navlabel">psyalliance</div>
-                <div className="product-preview-nav">Home</div>
-                <div className="product-preview-nav">Requests</div>
-                <div className="product-preview-nav">Network</div>
-                <div className="product-preview-nav">Consult</div>
-                <div className="product-preview-navlabel">My practice</div>
-                <div className="product-preview-nav">Credentials</div>
-                <div className="product-preview-nav">Availability</div>
-                <div className="product-preview-nav">Library</div>
+            <div className="visual-card">
+              <div className="eyebrow">Cover plan</div>
+              <h3>A cover plan, without the scramble.</h3>
+              <p>Extended leave &middot; New York &middot; October &middot; 2 cases</p>
+              <div className="divider" style={{ margin: "16px 0 8px" }} />
+              <div className="line">
+                <span className="round-number">1</span>
+                <span><b>Outline the need</b><br />Dates, jurisdiction and what each case needs</span>
               </div>
-              <div className="product-preview-main">
-                <div className="product-preview-stats">
-                  <div className="product-preview-stat">
-                    <div className="product-preview-stat-value">Verified</div>
-                    <div className="product-preview-stat-label">Credential status</div>
-                  </div>
-                  <div className="product-preview-stat">
-                    <div className="product-preview-stat-value">2</div>
-                    <div className="product-preview-stat-label">Coverage requests awaiting a response</div>
-                  </div>
-                  <div className="product-preview-stat">
-                    <div className="product-preview-stat-value">Confirmed</div>
-                    <div className="product-preview-stat-label">Availability, updated this week</div>
-                  </div>
-                </div>
-                <div className="product-preview-rows">
-                  <div className="product-preview-row" />
-                  <div className="product-preview-row" />
-                  <div className="product-preview-row" />
-                </div>
+              <div className="line">
+                <span className="round-number">2</span>
+                <span><b>Review colleagues</b><br />Licence on file, specialty and fresh availability</span>
+              </div>
+              <div className="line">
+                <span className="round-number">3</span>
+                <span><b>Confirm the plan</b><br />Track every reply until each case is covered</span>
+              </div>
+            </div>
+            <div className="visual-card row between">
+              <div>
+                <b style={{ fontSize: 13 }}>Case 1 covered</b>
+                <div className="micro-note">Case 2 invited, awaiting a reply</div>
+              </div>
+              <span className="status warn">1 open</span>
+            </div>
+            <p className="micro-note" style={{ color: "#c6dbd2", margin: 0 }}>
+              Example only. No patient identifiers are entered in PsyAlliance.
+            </p>
+          </div>
+        </section>
+
+        <div className="trust-row">
+          <span>Credential review</span>
+          <span>Clinician-to-clinician relationships</span>
+          <span>No patient identifiers</span>
+          <span>Never sold, never advertised to</span>
+        </div>
+
+        <section className="public-section tint" id="how">
+          <div className="section-inner">
+            <div className="section-intro">
+              <div className="eyebrow">The network behind your practice</div>
+              <h2>One place for the three requests that matter.</h2>
+              <p>Make a clear request, choose who sees it and keep the next step visible.</p>
+            </div>
+            <div className="three-grid">
+              <article className="editorial-card">
+                <div className="n">01 / Cover</div>
+                <h3>Plan for time away</h3>
+                <p>A week off, parental leave, an unexpected absence or closing a practice. Describe each case without identifiers, invite colleagues deliberately and follow every open case to confirmation.</p>
+              </article>
+              <article className="editorial-card">
+                <div className="n">02 / Refer</div>
+                <h3>Make a considered referral</h3>
+                <p>Search by specialty, state licence, insurance and current availability. Share a structured, non-identifying need with the colleagues you choose, then close the loop.</p>
+              </article>
+              <article className="editorial-card">
+                <div className="n">03 / Consult</div>
+                <h3>Think with peers</h3>
+                <p>Ask one focused question of a colleague, your trusted circle or the wider network. Or run a closed consultation group with a written charter. Supervision lives here too.</p>
+              </article>
+            </div>
+            <p style={{ marginTop: 26, maxWidth: 720 }}>
+              Behind all three is your <b style={{ color: "var(--ink)" }}>circle</b>: trusted colleagues you choose, people you&rsquo;ve worked with before, and a reviewed Practice Library of templates for cover, referrals and consultation.
+            </p>
+          </div>
+        </section>
+
+        <section className="public-section" id="verification">
+          <div className="section-inner">
+            <div className="section-intro">
+              <div className="eyebrow">Verification</div>
+              <h2>Everyone is checked before they appear.</h2>
+              <p>No self-attestation and no paid badge. Verified means a person reviewed the evidence.</p>
+            </div>
+            <div className="steps-grid">
+              <div className="step">
+                <span className="k">Step 1</span>
+                <b>You share your credentials</b>
+                <p>Your degree, the states you&rsquo;re licensed in and each licence number and expiry.</p>
+              </div>
+              <div className="step">
+                <span className="k">Step 2</span>
+                <b>We check the record</b>
+                <p>Against the state licensing board, with the NPI registry as a cross-check where it helps.</p>
+              </div>
+              <div className="step">
+                <span className="k">Step 3</span>
+                <b>A person signs off</b>
+                <p>Only then are you listed. Each licence is reviewed separately, and expired licences drop off automatically.</p>
               </div>
             </div>
           </div>
-          <p className="muted" style={{ textAlign: "center", marginTop: "1rem" }}>
-            A simplified look at the dashboard: coverage, referrals, your network, and peer
-            consultation, all in one place.
-          </p>
-        </div>
-      </section>
+        </section>
 
-      <section className="section-band" style={{ paddingTop: 0 }}>
-        <div className="section-band-inner">
-          <h2 style={{ fontSize: "1.4rem", textAlign: "center", marginBottom: "1.25rem" }}>
-            Common questions
-          </h2>
-          <div style={{ maxWidth: 720, margin: "0 auto" }}>
-            {faqData.mainEntity.map((faq) => (
-              <details key={faq.name} className="card" style={{ marginBottom: "0.75rem" }}>
-                <summary style={{ cursor: "pointer", fontWeight: 600 }}>{faq.name}</summary>
-                <p className="muted" style={{ marginTop: "0.6rem", marginBottom: 0 }}>
-                  {faq.acceptedAnswer.text}
-                </p>
-              </details>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="section-band" id="founders" style={{ borderTop: "none" }}>
-        <div className="section-band-inner">
-          <h2 style={{ fontSize: "1.3rem", textAlign: "center", marginBottom: "1.75rem" }}>
-            Why this exists
-          </h2>
-          <div className="founder-block">
-            <img
-              src="/team/rena-pazienza.jpg"
-              alt="Rena Pazienza, PhD"
-              className="founder-photo"
-            />
-            <div className="founder-copy">
-              <h3 style={{ marginBottom: "0.6rem" }}>Rena Pazienza, PhD</h3>
+        <section className="public-section tint" id="story">
+          <div className="section-inner founder">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/team/rena-pazienza.jpg" alt="Rena Pazienza, PhD" />
+            <div>
+              <div className="eyebrow">A note from the founder</div>
+              <p className="quote" style={{ margin: "10px 0 18px" }}>&ldquo;Independent clinicians deserve a dependable professional circle.&rdquo;</p>
               <p>
-                psyalliance.org started as the answer to one problem Rena, a licensed
-                psychologist, couldn't find anywhere: when she went on maternity leave, she needed
-                her caseload covered by someone qualified, and there was no way to do that.
+                PsyAlliance began with a problem Rena Pazienza, PhD, a licensed psychologist, couldn&rsquo;t solve: going on maternity leave, she needed her caseload covered by someone qualified, and there was no good way to find them.
               </p>
               <p>
-                Directories like Psychology Today are built for clients to find a therapist, not
-                for one psychologist to find another. There was nowhere to search specifically for
-                verified colleagues who could take on her clients while she was out, reach out to
-                them directly, and manage the handoff.
+                Directories are built for patients to find a therapist, not for one clinician to find another. So she built the professional circle she wished she&rsquo;d had, shaped with feedback from her peers, and co-founded it with Nick Rapley.
               </p>
-              <p>
-                So she built the tool she wished had existed: a closed, credential-verified
-                network where a psychologist can actually find coverage, not just a listing. She
-                shaped it with feedback from her clinical peers before it ever went live, and
-                co-founded it with her husband, Nick Rapley.
+              <p style={{ marginBottom: 0 }}>
+                <b style={{ color: "var(--ink)" }}>A directory helps patients find you. PsyAlliance helps clinicians find each other.</b>
               </p>
             </div>
           </div>
+        </section>
+
+        <section className="public-section" id="approach">
+          <div className="section-inner">
+            <div className="section-intro">
+              <div className="eyebrow">Our approach</div>
+              <h2>Rules we don&rsquo;t bend.</h2>
+            </div>
+            <ul className="rules">
+              <li><b>No patient identifiers, ever</b>Cases are system references. Free text is checked for names, dates and contact details.</li>
+              <li><b>Verified means reviewed</b>Listing and requests require a reviewed identity, degree and in-date licence.</li>
+              <li><b>Facts, not judgements</b>Profiles show facts on file with dates. Whether a colleague suits a patient is your professional call.</li>
+              <li><b>Nothing sends without review</b>Every request and post shows exactly who will see it before you confirm.</li>
+              <li><b>Private by default</b>Who you save, exclude or block is never visible to them.</li>
+              <li><b>Never sold, never advertised to</b>Your data isn&rsquo;t sold or used for advertising.</li>
+            </ul>
+          </div>
+        </section>
+
+        <section className="public-section tint" id="faq">
+          <div className="section-inner" style={{ maxWidth: 780 }}>
+            <div className="section-intro">
+              <div className="eyebrow">Questions</div>
+              <h2>What clinicians ask first.</h2>
+            </div>
+            <div className="faq">
+              {FAQ.map(([q, a]) => (
+                <details key={q}>
+                  <summary>{q}</summary>
+                  <p>{a}</p>
+                </details>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="public-section">
+          <div className="section-inner pa-cta">
+            <div>
+              <div className="eyebrow" style={{ color: "#e2c49c" }}>Founding members</div>
+              <h2>Join the first cohort.</h2>
+              <p>We&rsquo;re opening PsyAlliance to a founding group of psychologists and psychiatrists first.</p>
+            </div>
+            <a className="btn" href="/auth/sign-up">Apply to join &rarr;</a>
+          </div>
+        </section>
+      </main>
+
+      <footer className="public-footer">
+        <div>
+          <div className="brand"><span className="brand-mark" aria-hidden="true">ψ</span>psyalliance</div>
+          <p>A professional network for independent psychologists and psychiatrists.</p>
         </div>
-      </section>
-
-      <section className="cta-band">
-        <h2>Ready to stop practicing alone?</h2>
-        <p>
-          Join a closed, credential-verified network built for doctoral-level psychologists and
-          psychiatrists. Free to join.
-        </p>
-        <a href="/auth/sign-up" className="btn cta-band-btn">Create your free profile</a>
-      </section>
-
-      <footer style={{ textAlign: "center", padding: "2.5rem 1.75rem", color: "var(--muted)", fontSize: "0.85rem" }}>
-        <p style={{ margin: "0 0 0.75rem" }}>
-          psyalliance.org: a professional home for PhD, PsyD, EdD, and MD/DO behavioral health
-          practitioners.
-        </p>
-        <p style={{ margin: 0, display: "flex", justifyContent: "center", gap: "1rem", flexWrap: "wrap" }}>
-          <a href="/privacy" style={{ color: "var(--muted)" }}>Privacy</a>
-          <a href="/terms" style={{ color: "var(--muted)" }}>Terms</a>
-          <a href="mailto:hello@psyalliance.org" style={{ color: "var(--muted)" }}>Contact</a>
-        </p>
+        <div className="foot-links">
+          <a href="#how">How it works</a>
+          <a href="#verification">Verification</a>
+          <a href="/privacy">Privacy</a>
+          <a href="/terms">Terms</a>
+          <a href="mailto:hello@psyalliance.org">Contact</a>
+          <a href="/auth/sign-in">Sign in</a>
+        </div>
       </footer>
-
-      <div className="marketing-sticky-cta">
-        <a href="/auth/sign-up" className="btn">Get started, it's free</a>
-      </div>
     </div>
   );
 }
