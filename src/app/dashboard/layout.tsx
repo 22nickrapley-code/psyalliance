@@ -1,8 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
 import { signOutAction } from "../auth/actions";
 import { redirect } from "next/navigation";
-import SidebarNav from "./sidebar-nav";
+import PremiumShell from "./premium-shell";
 import { buildNavGroups } from "./nav-groups";
+import "../premium.css";
 import { resolveAvatarUrl } from "@/lib/avatars";
 import { getUnreadNotificationCount } from "@/lib/notifications-v2";
 
@@ -135,21 +136,24 @@ export default async function DashboardLayout({
     .map((p: string) => p[0]?.toUpperCase())
     .join("") || "U";
 
-  const groups = buildNavGroups(!!profile?.is_admin, unreadMessageCount, pendingCoverageRequestCount || 0, notificationPipelineUnreadCount || 0);
+  const groups = buildNavGroups({
+    isAdmin: !!profile?.is_admin,
+    unreadMessages: unreadConversationCount + (unreadNotificationCount || 0),
+    pendingCoverRequests: pendingCoverageRequestCount || 0,
+    pendingReferrals: (pendingProviderReferralCount || 0) + pendingPeerOfferCount,
+  });
 
   return (
-    <div className="app-shell">
-      <SidebarNav
-        groups={groups}
-        displayName={displayName}
-        initials={initials}
-        avatarUrl={avatarUrl}
-        verificationStatus={verificationLabel}
-        signOutAction={signOutAction}
-      />
-      <main className="app-main">
-        <div className="container">{children}</div>
-      </main>
-    </div>
+    <PremiumShell
+      groups={groups}
+      displayName={displayName}
+      initials={initials}
+      avatarUrl={avatarUrl}
+      verificationLabel={verificationLabel}
+      unreadNotifications={notificationPipelineUnreadCount || 0}
+      signOutAction={signOutAction}
+    >
+      {children}
+    </PremiumShell>
   );
 }

@@ -4,7 +4,7 @@ import { resolveAvatarUrl, resolveAvatarUrls } from "@/lib/avatars";
 import { sendConnectionRequest, respondToConnection, removeConnection, saveClinicianAction, removeSavedClinicianAction } from "../../network/actions";
 import { startConversation } from "../../messages/actions";
 import { addToBlocklist, removeFromBlocklist } from "../../settings/actions";
-import { submitEndorsement, deleteEndorsement, assignColleagueToClient, markSentToPatient } from "../actions";
+import { submitEndorsement, deleteEndorsement } from "../actions";
 import { ProfileView, type SpecialismValue } from "../../profile-view";
 import Avatar from "../../avatar";
 import { fileReportAction } from "../../moderation-actions";
@@ -22,10 +22,10 @@ export default async function PersonProfilePage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ error?: string; match?: string }>;
+  searchParams: Promise<{ error?: string }>;
 }) {
   const { id } = await params;
-  const { error, match } = await searchParams;
+  const { error } = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -41,11 +41,9 @@ export default async function PersonProfilePage({
     { data: connection },
     { data: myLookups },
     { data: myProfile },
-    { data: myActiveCases },
     { data: blockRow },
     { data: endorsements },
     { data: myEndorsement },
-    { data: myAssignments },
     { data: savedRow },
   ] = await Promise.all([
     supabase.from("public_directory").select("*").eq("id", id),
@@ -59,12 +57,6 @@ export default async function PersonProfilePage({
       .select("lookup_value_id, lookup_values(category, value)")
       .eq("profile_id", myself),
     supabase.from("profiles").select("primary_practice_city, primary_state").eq("id", myself).maybeSingle(),
-    supabase
-      .from("caseload_clients")
-      .select("id, private_label, primary_need, secondary_need, tertiary_need, state, session_type, insurance, book_of_business_id, books_of_business(name)")
-      .eq("profile_id", myself)
-      .eq("is_active", true)
-      .order("private_label"),
     supabase.from("do_not_work_with").select("blocked_profile_id").eq("profile_id", myself).eq("blocked_profile_id", id).maybeSingle(),
     supabase
       .from("endorsements")
@@ -72,12 +64,6 @@ export default async function PersonProfilePage({
       .eq("endorsee_id", id)
       .order("created_at", { ascending: false }),
     supabase.from("endorsements").select("body").eq("endorser_id", myself).eq("endorsee_id", id).maybeSingle(),
-    supabase
-      .from("referral_assignments")
-      .select("*, caseload_clients(private_label)")
-      .eq("profile_id", myself)
-      .eq("assigned_profile_id", id)
-      .order("created_at", { ascending: false }),
     supabase.from("saved_clinicians").select("id").eq("profile_id", myself).eq("clinician_id", id).maybeSingle(),
   ]);
 
@@ -138,34 +124,15 @@ export default async function PersonProfilePage({
     }
   }
 
-  // "Match me" / "Match my caseload" - two different overlap computations
-  // against this colleague, only offered while not yet connected (once
-  // connected, the existing shared-specialism "Recommended for you" logic
-  // above already covers the relevance story). Both span every specialism
-  // category (not just treatment specialisms), since the chip highlighting
-  // is generic - only the two locations differ in what they compare.
-  const matchMode = match === "caseload" ? "caseload" : "me";
+  // Shared-profile highlighting (Match me). The old "Match my caseload"
+  // mode read patient-level caseload records and was removed with the
+  // Legacy caseload (Product Spec v1, re-audit R4).
   let highlightValues: string[] = [];
   let locationMatch = false;
   if (!tier) {
-    if (matchMode === "caseload") {
-      const caseloadNeeds = new Set<string>();
-      const caseloadStates = new Set<string>();
-      for (const c of myActiveCases || []) {
-        for (const v of [c.primary_need, c.secondary_need, c.tertiary_need, c.session_type, c.insurance]) {
-          if (v) caseloadNeeds.add(v);
-        }
-        if (c.state) caseloadStates.add(c.state);
-      }
-      highlightValues = [...caseloadNeeds];
-      locationMatch = (!!first.primary_state && caseloadStates.has(first.primary_state)) || !!first.psypact_participating;
-    } else {
-      const myAllValues = new Set(
-        (myLookups || []).map((l: any) => l.lookup_values?.value).filter(Boolean)
-      );
-      highlightValues = [...myAllValues];
-      locationMatch = !!myProfile?.primary_state && myProfile.primary_state === first.primary_state;
-    }
+    const myAllValues = new Set((myLookups || []).map((l: any) => l.lookup_values?.value).filter(Boolean));
+    highlightValues = [...myAllValues];
+    locationMatch = !!myProfile?.primary_state && myProfile.primary_state === first.primary_state;
   }
 
   const isBlocked = !!blockRow;
@@ -178,26 +145,6 @@ export default async function PersonProfilePage({
   // above already computes.
   const bannerTier: "partner" | "trusted_colleague" | "bench" | "recommended" | "none" =
     tier === "partner" || tier === "trusted_colleague" ? "trusted_colleague" : tier === "bench" ? "bench" : !tier && relevantSpecialisms.length > 0 ? "recommended" : "none";
-
-  const MatchToggle = () => (
-    <>
-      <div className="match-toggle-group">
-        <a href={`/dashboard/people/${id}?match=me`} className={matchMode === "me" ? "active" : ""}>
-          Match me
-        </a>
-        <a href={`/dashboard/people/${id}?match=caseload`} className={matchMode === "caseload" ? "active" : ""}>
-          Match my caseload
-        </a>
-      </div>
-      <span
-        className="info-tip"
-        tabIndex={0}
-        data-tip="Match me highlights specialisms you both share. Match my caseload highlights specialisms that overlap with your active clients' needs instead."
-      >
-        ?
-      </span>
-    </>
-  );
 
   return (
     <div>
@@ -251,7 +198,6 @@ export default async function PersonProfilePage({
           relevantSpecialisms={!tier ? relevantSpecialisms : []}
           highlightValues={highlightValues}
           locationMatch={locationMatch}
-          matchToggle={!tier ? <MatchToggle /> : undefined}
           actions={
             <>
               <form action={startConversation} style={{ display: "inline" }}>
@@ -368,71 +314,6 @@ export default async function PersonProfilePage({
                 )}
               </div>
 
-              {!isBlocked && (
-                <div className="card">
-                  <details>
-                    <summary style={{ cursor: "pointer", fontWeight: 600 }}>
-                      Assign to Patient
-                    </summary>
-                    <div style={{ marginTop: "0.6rem" }}>
-                      {myActiveCases && myActiveCases.length > 0 ? (
-                        <form action={assignColleagueToClient}>
-                          <div className="field">
-                            <input type="hidden" name="assigned_profile_id" value={first.id} />
-                            <label htmlFor="caseload_client_id">Client</label>
-                            <select id="caseload_client_id" name="caseload_client_id" required>
-                              {myActiveCases.map((c: any) => (
-                                <option key={c.id} value={c.id}>
-                                  {c.private_label}{c.books_of_business?.name ? ` - ${c.books_of_business.name}` : ""}
-                                  {c.primary_need ? ` (${c.primary_need})` : ""}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-                          <div className="field">
-                            <label htmlFor="note">Note (optional)</label>
-                            <input id="note" name="note" type="text" maxLength={200} placeholder="Anything to flag for them" />
-                          </div>
-                          <button type="submit">Assign &amp; notify</button>
-                        </form>
-                      ) : (
-                        <p className="muted">
-                          You don't have any active clients to assign yet - add one on{" "}
-                          <a href="/dashboard/caseload">Caseload</a> first.
-                        </p>
-                      )}
-
-                      {myAssignments && myAssignments.length > 0 && (
-                        <div style={{ marginTop: "0.75rem" }}>
-                          {myAssignments.map((a: any) => (
-                            <div key={a.id} className="person-row">
-                              <span className="person-row-info">
-                                Client {a.caseload_clients?.private_label || "-"}
-                                <span className="muted" style={{ marginLeft: "0.4rem" }}>
-                                  assigned {new Date(a.created_at).toLocaleDateString()}
-                                </span>
-                              </span>
-                              <span className="person-row-actions">
-                                {a.sent_to_patient ? (
-                                  <span className="tag">Sent to patient</span>
-                                ) : (
-                                  <form action={markSentToPatient}>
-                                    <input type="hidden" name="id" value={a.id} />
-                                    <input type="hidden" name="assigned_profile_id" value={first.id} />
-                                    <button type="submit" className="secondary" style={{ padding: "0.15rem 0.5rem", fontSize: "0.8rem" }}>
-                                      Send Practitioner Details to Patient
-                                    </button>
-                                  </form>
-                                )}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </details>
-                </div>
-              )}
             </>
           }
         />

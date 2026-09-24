@@ -91,5 +91,4 @@ export async function reviewInsuranceRequest(formData: FormData) {
 
   revalidatePath("/dashboard/admin/insurance-requests");
   revalidatePath("/dashboard/admin");
-  revalidatePath("/dashboard/caseload");
 }

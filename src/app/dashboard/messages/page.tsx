@@ -468,7 +468,7 @@ export default async function MessagesPage(
         {!hasAny && (
           <p className="muted">
             Nothing here yet. Physician referrals and offers on your posted{" "}
-            <a href="/dashboard/referrals">referral requests</a> will show up here.
+            <a href="/dashboard/refer">referral requests</a> will show up here.
           </p>
         )}
       </>

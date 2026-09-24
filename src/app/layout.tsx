@@ -4,6 +4,8 @@ import "./globals.css";
 // can't fail (or silently fall back) because a Google Fonts request was
 // blocked, in this dev sandbox or in whatever host ends up building this
 // for production.
+import "@fontsource/fraunces/400.css";
+import "@fontsource/fraunces/400-italic.css";
 import "@fontsource/fraunces/500.css";
 import "@fontsource/fraunces/600.css";
 import "@fontsource/fraunces/700.css";

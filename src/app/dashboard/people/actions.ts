@@ -126,7 +126,6 @@ export async function assignColleagueToClient(formData: FormData) {
   );
 
   revalidatePath(`/dashboard/people/${assignedProfileId}`);
-  revalidatePath("/dashboard/caseload");
 }
 
 // Records that the referrer has told the patient about the assigned

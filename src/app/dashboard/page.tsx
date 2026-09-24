@@ -365,7 +365,7 @@ export default async function DashboardHome(
           )}
           {(plannerOfferCount ?? 0) > 0 && (
             <span>
-              <a href="/dashboard/planner">{plannerOfferCount} coverage offer{plannerOfferCount === 1 ? "" : "s"} (legacy Planner)</a>
+              <a href="/dashboard/cover">{plannerOfferCount} coverage offer{plannerOfferCount === 1 ? "" : "s"}</a>
             </span>
           )}
           {expiringLicenseCount > 0 && (
