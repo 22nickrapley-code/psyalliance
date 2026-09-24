@@ -21,12 +21,29 @@ export default async function DashboardHome() {
     { count: providerCount },
     { data: recentResources },
   ] = await Promise.all([
-    supabase.from("profiles").select("full_name,verification_status,availability_confirmed_at,coverage_availability,referral_availability,consultation_availability").eq("id", memberId).maybeSingle(),
+    supabase.from("profiles").select("full_name,primary_state,verification_status,availability_confirmed_at,coverage_availability,referral_availability,consultation_availability").eq("id", memberId).maybeSingle(),
     supabase.from("connections").select("id", { count: "exact", head: true }).eq("addressee_id", memberId).eq("status", "pending"),
     supabase.from("coverage_requests").select("id", { count: "exact", head: true }).eq("requested_profile_id", memberId).in("status", ["sent", "discussing"]),
     supabase.from("provider_referrals").select("id", { count: "exact", head: true }).eq("target_profile_id", memberId).eq("status", "sent"),
     supabase.from("documents").select("id,title,version,review_date").eq("owner_scope", "world").eq("review_status", "published").order("publish_date", { ascending: false }).limit(2),
   ]);
+
+  if (profile?.verification_status !== "verified") {
+    const firstName = profile?.full_name?.trim().split(/\s+/)[0] || "there";
+    const needsAttention = profile?.verification_status === "flagged" || profile?.verification_status === "rejected";
+    return <div className="pending-home">
+      <span className="section-kicker">Your first steps</span>
+      <h1>Welcome, {firstName}.</h1>
+      <p className="pending-lede">{needsAttention ? "Your credential review needs attention. Check your submission history and contact the team if you need help." : "Your clinician profile is still awaiting professional credential review. Complete the details below so the review can move forward. The member network opens after approval."}</p>
+      <div className="pending-status"><span aria-hidden="true">◎</span><div><strong>{needsAttention ? "Review needs attention" : "Credential review pending"}</strong><p>Submitting a licence or an NPI check does not approve an account automatically. Review the status of your submissions in your profile.</p></div></div>
+      <div className="pending-steps">
+        <a href="/dashboard/profile?edit=1"><small>01 / Your practice</small><h2>Introduce yourself.</h2><p>Add your professional details and state, then review what other clinicians will see after approval.</p><span>Complete profile →</span></a>
+        <a href="/dashboard/profile"><small>02 / Credentials</small><h2>Submit for review.</h2><p>Provide your licence details and check whether a reviewer has requested anything further.</p><span>See credential review →</span></a>
+        <a href="/dashboard/availability"><small>03 / Availability</small><h2>Set your signal.</h2><p>{profile?.availability_confirmed_at ? "Review your current availability before colleagues see it." : "Confirm when you are available for coverage, referrals and consultation."}</p><span>Update availability →</span></a>
+      </div>
+      <p className="pending-note">Need help with your application? <a href="mailto:hello@psyalliance.org">Contact PsyAlliance</a>.</p>
+    </div>;
+  }
 
   const stale = !profile?.availability_confirmed_at ||
     Date.now() - new Date(profile.availability_confirmed_at).getTime() > STALE_AFTER;
