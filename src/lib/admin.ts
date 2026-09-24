@@ -33,22 +33,19 @@ export async function requireAdminOrRedirectPath(
 // at a real credential. That's a direct contradiction of what "verified"
 // promises a clinician browsing the directory, so both admin verify actions
 // (members and verifications) now call this before allowing the transition.
-// A profile with neither a license on file nor a matched+reviewed credential
-// submission cannot be marked verified - the admin has to add/review one
-// first. This does not retroactively touch any profile already marked
-// verified; it only gates the next transition.
+// Self-entered licenses and NPI registry checks do not establish a reviewed
+// professional license. The database trigger repeats this condition for
+// direct writes, while this helper provides a useful action error.
 export async function hasReviewableCredentialEvidence(
   supabase: Awaited<ReturnType<typeof createClient>>,
   profileId: string
 ): Promise<boolean> {
-  const [{ count: licenseCount }, { count: reviewedCredentialCount }] = await Promise.all([
-    supabase.from("licenses").select("*", { count: "exact", head: true }).eq("profile_id", profileId),
-    supabase
-      .from("credential_verifications")
-      .select("*", { count: "exact", head: true })
-      .eq("profile_id", profileId)
-      .eq("matched", true)
-      .not("reviewed_by", "is", null),
-  ]);
-  return (licenseCount ?? 0) > 0 || (reviewedCredentialCount ?? 0) > 0;
+  const { data, error } = await supabase
+    .from("credential_verifications")
+    .select("reviewed_by")
+    .eq("profile_id", profileId)
+    .in("source", ["state_board", "asppb"])
+    .eq("matched", true)
+    .not("reviewed_at", "is", null);
+  return !error && !!data?.some((record) => record.reviewed_by && record.reviewed_by !== profileId);
 }

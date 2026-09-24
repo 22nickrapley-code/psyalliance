@@ -68,7 +68,7 @@ export async function setProfileVerificationStatus(formData: FormData) {
   if (status === "verified" && before?.verification_status !== "verified") {
     const hasEvidence = await hasReviewableCredentialEvidence(supabase, profileId);
     if (!hasEvidence) {
-      verificationsError("Can't mark verified: no license on file and no reviewed/matched credential submission. Add a license or review a submission first.");
+      verificationsError("Can't mark verified: a matched state-board or ASPPB credential needs human review first. A self-entered license or NPI pre-check isn't enough.");
     }
   }
 
@@ -85,7 +85,7 @@ export async function setProfileVerificationStatus(formData: FormData) {
     await notifyProfile(supabase, {
       profileId,
       title: "You're approved!",
-      body: "Your credential verification is complete and your PsyAlliance membership is now approved. You have full access to the network - Caseload, Messages, Network, and every other tool.",
+      body: "Your credential review is complete and your PsyAlliance network membership is approved.",
       createdBy: user.id,
     });
   }

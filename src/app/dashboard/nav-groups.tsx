@@ -227,24 +227,12 @@ export function buildNavGroups(
         { href: "/dashboard/credentials", label: "Credentials", icon: icon.credentials },
         { href: "/dashboard/availability", label: "Availability", icon: icon.availability },
         { href: "/dashboard/documents", label: "Library", icon: icon.library },
+        { href: "/dashboard/review", label: "Review resources", icon: icon.library },
       ],
     },
     {
       label: "Account",
       items: [{ href: "/dashboard/settings", label: "Settings", icon: icon.settings }],
-    },
-    {
-      label: "Legacy",
-      items: [
-        { href: "/dashboard/caseload", label: "Caseload", icon: icon.caseload },
-        { href: "/dashboard/referrals", label: "Referrals (old)", icon: icon.referrals },
-        { href: "/dashboard/town-hall", label: "Town Hall", icon: icon.townhall },
-        { href: "/dashboard/planner", label: "Planner", icon: icon.planner },
-        { href: "/dashboard/planner/coverage-plans", label: "Coverage plans (old)", icon: icon.planner },
-        { href: "/dashboard/capacity", label: "Capacity & Overhead", icon: icon.capacity },
-        { href: "/dashboard/income", label: "Income", icon: icon.income },
-        { href: "/dashboard/supervision", label: "Supervision", icon: icon.supervision },
-      ],
     },
   ];
 

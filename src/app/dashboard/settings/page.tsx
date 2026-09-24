@@ -86,6 +86,7 @@ export default async function SettingsPage(props: { searchParams: Promise<{ save
 
       <div className="card" id="notifications">
         <h2>Notifications</h2>
+        <p className="muted">In-app alerts are active. Email delivery and digest scheduling are pending provider setup; these preferences will apply when delivery is enabled.</p>
         <form action={saveNotificationPreferences}>
           <div className="checkbox-row">
             <input
@@ -188,7 +189,7 @@ export default async function SettingsPage(props: { searchParams: Promise<{ save
             </label>
           </div>
           <div className="field" style={{ maxWidth: 260, marginTop: "0.75rem" }}>
-            <label htmlFor="digest_frequency">How often should we email you, at most?</label>
+            <label htmlFor="digest_frequency">Preferred email frequency (when enabled)</label>
             <select id="digest_frequency" name="digest_frequency" defaultValue={prefs?.digest_frequency || "realtime"}>
               <option value="realtime">As it happens</option>
               <option value="daily">Daily digest</option>

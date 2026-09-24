@@ -40,6 +40,27 @@ export default async function DashboardLayout({
     if (provider) redirect("/refer");
   }
   const avatarUrl = await resolveAvatarUrl(supabase, profile?.avatar_path);
+  const displayName = profile?.full_name || user.email || "";
+  const initials = displayName
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part: string) => part[0]?.toUpperCase())
+    .join("") || "U";
+
+  // Applicants have setup tasks, not a populated member inbox. Avoid the
+  // six badge queries and keep the navigation focused on usable pages.
+  if (!profile || (profile.verification_status !== "verified" && !profile.is_admin)) {
+    const setupDestinations = new Set(["/dashboard", "/dashboard/profile", "/dashboard/credentials", "/dashboard/availability", "/dashboard/settings"]);
+    const groups = buildNavGroups(false)
+      .map((group) => ({ ...group, items: group.items.filter((item) => setupDestinations.has(item.href)) }))
+      .filter((group) => group.items.length > 0);
+    return <div className="app-shell">
+      <SidebarNav groups={groups} displayName={displayName} initials={initials} avatarUrl={avatarUrl}
+        verificationStatus={profile?.verification_status ?? null} signOutAction={signOutAction} />
+      <main className="app-main"><div className="container">{children}</div></main>
+    </div>;
+  }
 
   // Cheap presence signal used only for match tie-breaking ("last login") -
   // not awaited-critical, but kept simple and correct rather than clever.
@@ -78,7 +99,7 @@ export default async function DashboardLayout({
       .from("coverage_requests")
       .select("id", { count: "exact", head: true })
       .eq("requested_profile_id", user.id)
-      .eq("status", "sent"),
+      .in("status", ["sent", "discussing"]),
     // Notifications nav badge (Phase 16): the new notification_events/
     // notification_deliveries pipeline, separate from the legacy
     // system_notifications count above (that one stays feeding the
@@ -100,14 +121,6 @@ export default async function DashboardLayout({
   // stop splitting incoming requests between Messages and Referrals.
   const unreadMessageCount =
     unreadConversationCount + (unreadNotificationCount || 0) + (pendingProviderReferralCount || 0) + pendingPeerOfferCount;
-
-  const displayName = profile?.full_name || user.email || "";
-  const initials = displayName
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((p: string) => p[0]?.toUpperCase())
-    .join("") || "U";
 
   const groups = buildNavGroups(!!profile?.is_admin, unreadMessageCount, pendingCoverageRequestCount || 0, notificationPipelineUnreadCount || 0);
 

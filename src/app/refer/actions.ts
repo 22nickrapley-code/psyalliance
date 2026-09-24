@@ -83,10 +83,8 @@ export async function completeProviderOnboarding(formData: FormData) {
   redirect("/refer/pending");
 }
 
-// The structured "Send a referral" form - deliberately not open messaging.
-// RLS (provider_referrals' insert policy) is what actually enforces that
-// only an *approved* provider can create one; this just surfaces a clean
-// error if a not-yet-approved account somehow reaches the form.
+// Office-only availability inquiry. Patient information stays in the
+// sender's established secure handoff channel.
 export async function submitReferral(formData: FormData) {
   const supabase = await createClient();
   const {
@@ -96,18 +94,21 @@ export async function submitReferral(formData: FormData) {
 
   const targetProfileId = String(formData.get("target_profile_id") || "");
   const reason = String(formData.get("reason") || "").trim();
-  const contactDetails = String(formData.get("contact_details") || "").trim();
-  if (!reason) referError("/refer", "Describe the reason for the referral.");
-  if (!contactDetails) referError("/refer", "Let the specialist's office know how to reach you.");
+  if (!["Assessment inquiry", "Therapy inquiry", "Medication consultation inquiry", "Other professional inquiry"].includes(reason)) {
+    referError("/refer", "Choose a professional inquiry type.");
+  }
+  const { data: provider } = await supabase.from("referring_providers")
+    .select("email, approval_status").eq("id", user.id).maybeSingle();
+  if (!provider?.email || provider.approval_status !== "approved") referError("/refer", "Your office account must be approved first.");
 
   const { error } = await supabase.from("provider_referrals").insert({
     referring_provider_id: user.id,
     target_profile_id: targetProfileId,
-    patient_initials: String(formData.get("patient_initials") || "").trim() || null,
-    patient_age_range: String(formData.get("patient_age_range") || "").trim() || null,
+    patient_initials: null,
+    patient_age_range: null,
     reason,
     urgency: String(formData.get("urgency") || "routine"),
-    contact_details: contactDetails,
+    contact_details: provider.email,
   });
   if (error) referError("/refer", error.message);
 

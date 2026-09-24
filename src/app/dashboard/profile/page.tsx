@@ -97,9 +97,9 @@ export default async function ProfilePage({
     <div className="card">
       <h2>Credential verification</h2>
       <p className="muted">
-        Submit your license details for review. A human (Nick or Rena) checks this against your
-        state board's lookup before your profile is marked verified and appears in the
-        directory.
+        Submit your licence details for review against the relevant professional register.
+        An independent reviewer must approve a matching credential before your profile
+        can appear in the clinician network.
       </p>
       <table style={{ marginBottom: "1rem" }}>
         <thead>

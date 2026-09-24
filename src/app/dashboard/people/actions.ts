@@ -78,78 +78,13 @@ export async function deleteEndorsement(formData: FormData) {
   revalidatePath(`/dashboard/people/${endorseeId}`);
 }
 
-// One-off "assign this colleague to my client" quick action from the
-// profile page. Deliberately the same referral_assignments shape the
-// upcoming Planner recommendation table will read/write - see the
-// endorsements_and_referral_assignments migration.
-export async function assignColleagueToClient(formData: FormData) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error("Not signed in");
 
-  const assignedProfileId = String(formData.get("assigned_profile_id") || "");
-  const caseloadClientId = Number(formData.get("caseload_client_id"));
-  const note = String(formData.get("note") || "").trim() || null;
-  if (!assignedProfileId) throw new Error("Missing colleague");
-  if (!caseloadClientId) profileActionError(assignedProfileId, "Pick a client to assign this colleague to first");
-
-  const { data: caseRow } = await supabase
-    .from("caseload_clients")
-    .select("id, private_label, primary_need, state, session_type")
-    .eq("id", caseloadClientId)
-    .eq("profile_id", user.id)
-    .maybeSingle();
-  if (!caseRow) profileActionError(assignedProfileId, "That client wasn't found in your caseload");
-
-  const { data: myProfile } = await supabase.from("profiles").select("full_name").eq("id", user.id).maybeSingle();
-
-  const { error } = await supabase.from("referral_assignments").insert({
-    profile_id: user.id,
-    caseload_client_id: caseloadClientId,
-    assigned_profile_id: assignedProfileId,
-    message: note,
-    status: "assigned",
-  });
-  if (error) profileActionError(assignedProfileId, error.message);
-
-  const summary = [caseRow!.primary_need, caseRow!.state, caseRow!.session_type].filter(Boolean).join(" - ");
-  await sendNetworkNotice(
-    supabase,
-    user.id,
-    assignedProfileId,
-    `Referral from ${myProfile?.full_name || "a colleague"}`,
-    `${myProfile?.full_name || "A colleague"} assigned you a referral for client ${caseRow!.private_label}${
-      summary ? ` (${summary})` : ""
-    }.${note ? ` Note: ${note}` : ""}`
-  );
-
-  revalidatePath(`/dashboard/people/${assignedProfileId}`);
-  revalidatePath("/dashboard/caseload");
+// Legacy forms may still exist on cached clients. Reject them on the server;
+// they used to send client labels into network notifications.
+export async function assignColleagueToClient(_formData: FormData) {
+  redirect("/dashboard/requests?error=Patient-linked+assignments+are+retired");
 }
 
-// Records that the referrer has told the patient about the assigned
-// practitioner - there's no patient-facing login in this app, so this is a
-// log/checkbox action for the referrer's own record, not an actual message
-// sent anywhere. Mirrors the "Send Practitioner Details to Patient" column
-// planned for the Planner recommendation table (Task #78).
-export async function markSentToPatient(formData: FormData) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error("Not signed in");
-
-  const id = Number(formData.get("id"));
-  const assignedProfileId = String(formData.get("assigned_profile_id") || "");
-
-  const { error } = await supabase
-    .from("referral_assignments")
-    .update({ sent_to_patient: true, sent_to_patient_at: new Date().toISOString() })
-    .eq("id", id)
-    .eq("profile_id", user.id);
-  if (error) profileActionError(assignedProfileId, error.message);
-
-  revalidatePath(`/dashboard/people/${assignedProfileId}`);
+export async function markSentToPatient(_formData: FormData) {
+  redirect("/dashboard/requests?error=Patient-linked+assignments+are+retired");
 }

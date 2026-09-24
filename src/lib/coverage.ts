@@ -45,7 +45,7 @@ export async function suggestCliniciansForCase(
 ): Promise<SuggestedClinician[]> {
   const { data: coverageCase } = await supabase
     .from("coverage_plan_cases")
-    .select("specialism_lookup_ids, coverage_plan_id, coverage_plans(profile_id)")
+    .select("specialism_lookup_ids, service_state, coverage_plan_id, coverage_plans(profile_id)")
     .eq("id", coveragePlanCaseId)
     .maybeSingle();
   if (!coverageCase) return [];
@@ -53,12 +53,10 @@ export async function suggestCliniciansForCase(
   const ownerProfileId = (coverageCase as any).coverage_plans?.profile_id as string | undefined;
   if (!ownerProfileId) return [];
 
-  const { data: owner } = await supabase
-    .from("profiles")
-    .select("primary_state, states_qualified")
-    .eq("id", ownerProfileId)
-    .maybeSingle();
-  const relevantStates = owner?.states_qualified?.length ? owner.states_qualified : owner?.primary_state ? [owner.primary_state] : [];
+  // The patient's state of service is an explicit, non-identifying case
+  // requirement. The plan owner's licence states are not a safe proxy.
+  const serviceState = (coverageCase as any).service_state as string | null;
+  if (!serviceState) return [];
 
   const { data: excluded } = await supabase
     .from("do_not_work_with")
@@ -77,23 +75,22 @@ export async function suggestCliniciansForCase(
     .eq("verification_status", "verified")
     .eq("licenses.status", "active")
     .neq("id", ownerProfileId);
-  if (relevantStates.length > 0) {
-    candidatesQuery = candidatesQuery.in("licenses.state", relevantStates);
-  }
+  candidatesQuery = candidatesQuery.eq("licenses.state", serviceState);
   const { data: candidates, error } = await candidatesQuery;
   if (error) {
     console.error("suggestCliniciansForCase failed:", error.message);
-    return [];
+    throw new Error("Coverage matching is temporarily unavailable");
   }
 
+  const uniqueCandidates = [...new Map((candidates || []).map((candidate: any) => [candidate.id, candidate])).values()] as any[];
   const specialismIds: number[] = (coverageCase as any).specialism_lookup_ids || [];
-  const candidateIds = (candidates || []).map((c: any) => c.id).filter((id: string) => !excludedIds.has(id));
+  const candidateIds = uniqueCandidates.map((c) => c.id).filter((id: string) => !excludedIds.has(id));
   if (candidateIds.length === 0) return [];
 
-  const [{ data: specialisms }, { data: relationshipRows }, { data: savedRows }, { data: workedWithRows }] = await Promise.all([
+  const [specialismResult, relationshipResult, savedResult, workedWithResult] = await Promise.all([
     specialismIds.length > 0
       ? supabase.from("profile_lookup_values").select("profile_id, lookup_value_id").in("profile_id", candidateIds).in("lookup_value_id", specialismIds)
-      : Promise.resolve({ data: [] as any[] }),
+      : Promise.resolve({ data: [] as any[], error: null }),
     // Sept 23 audit finding (task #123): the old grid-based matching engine
     // weighted Bench connections between Trusted Colleague and no
     // relationship at all (TIER_ORDER in src/lib/matching.ts). This staged
@@ -110,6 +107,14 @@ export async function suggestCliniciansForCase(
     supabase.from("saved_clinicians").select("clinician_id").eq("profile_id", ownerProfileId),
     supabase.from("worked_with_before").select("colleague_id, interaction_count").eq("profile_id", ownerProfileId),
   ]);
+  if (specialismResult.error || relationshipResult.error || savedResult.error || workedWithResult.error) {
+    console.error("Coverage matching context failed", specialismResult.error || relationshipResult.error || savedResult.error || workedWithResult.error);
+    throw new Error("Coverage matching is temporarily unavailable");
+  }
+  const specialisms = specialismResult.data;
+  const relationshipRows = relationshipResult.data;
+  const savedRows = savedResult.data;
+  const workedWithRows = workedWithResult.data;
 
   const specialtyMatchIds = new Set((specialisms || []).map((s: any) => s.profile_id));
   const trustedIds = new Set(
@@ -126,7 +131,7 @@ export async function suggestCliniciansForCase(
   const workedWithCount = new Map((workedWithRows || []).map((w: any) => [w.colleague_id, w.interaction_count as number]));
 
   // Operational fit: excludes anyone who's said no to coverage requests.
-  const eligible = (candidates || []).filter(
+  const eligible = uniqueCandidates.filter(
     (c: any) => !excludedIds.has(c.id) && c.coverage_availability !== "no" && (specialismIds.length === 0 || specialtyMatchIds.has(c.id))
   );
 
@@ -137,8 +142,7 @@ export async function suggestCliniciansForCase(
     if (workedWithCount.has(c.id)) reasons.push({ code: "worked_with_before", label: "Worked together before" });
     if (savedIds.has(c.id)) reasons.push({ code: "saved_clinician", label: "Saved clinician" });
     if (specialtyMatchIds.has(c.id)) reasons.push({ code: "specialty_match", label: "Relevant specialty" });
-    const licenceState = c.primary_state || relevantStates[0];
-    if (licenceState) reasons.push({ code: "licence_on_file", label: `Verified ${licenceState} licence on file` });
+    reasons.push({ code: "licence_on_file", label: `${serviceState} licence listed as active` });
     if (c.coverage_availability === "yes") reasons.push({ code: "available_for_coverage", label: "Available for coverage" });
     return {
       profileId: c.id,
@@ -198,6 +202,7 @@ export async function addCoveragePlanCase(
   coveragePlanId: number,
   opts: {
     caseReference: string;
+    serviceState: string;
     specialismLookupIds?: number[];
     ageBand?: string;
     serviceNeeded?: string;
@@ -211,6 +216,7 @@ export async function addCoveragePlanCase(
     .insert({
       coverage_plan_id: coveragePlanId,
       case_reference: opts.caseReference,
+      service_state: opts.serviceState,
       specialism_lookup_ids: opts.specialismLookupIds ?? [],
       age_band: opts.ageBand ?? null,
       service_needed: opts.serviceNeeded ?? null,
@@ -235,6 +241,39 @@ export async function sendCoverageRequest(
   sequenceOrder: number,
   message?: string
 ) {
+  const { data: coverageCase, error: caseError } = await supabase
+    .from("coverage_plan_cases")
+    .select("status, coverage_plans!inner(profile_id)")
+    .eq("id", coveragePlanCaseId)
+    .maybeSingle();
+  if (caseError || !coverageCase || (coverageCase as any).coverage_plans?.profile_id !== actorProfileId) {
+    return { requestId: null, error: "This coverage case is not yours" };
+  }
+  if (!["needs_cover", "declined_all"].includes(coverageCase.status)) {
+    return { requestId: null, error: "This case is already awaiting a response or confirmed" };
+  }
+
+  const [{ data: priorRequests, error: requestsError }, { data: rejections, error: rejectionsError }] = await Promise.all([
+    supabase.from("coverage_requests").select("requested_profile_id, status").eq("coverage_plan_case_id", coveragePlanCaseId),
+    supabase.from("coverage_case_rejections").select("candidate_profile_id").eq("coverage_plan_case_id", coveragePlanCaseId).eq("profile_id", actorProfileId),
+  ]);
+  if (requestsError || rejectionsError) return { requestId: null, error: "Could not check earlier outreach for this case" };
+  if ((priorRequests || []).some((r) => r.status === "sent" || r.status === "discussing")) {
+    return { requestId: null, error: "Wait for the current response before asking another clinician" };
+  }
+  const excluded = [
+    ...(priorRequests || []).map((r) => r.requested_profile_id),
+    ...(rejections || []).map((r) => r.candidate_profile_id),
+  ];
+  let eligible: SuggestedClinician[];
+  try {
+    eligible = await suggestCliniciansForCase(supabase, coveragePlanCaseId, excluded);
+  } catch {
+    return { requestId: null, error: "Coverage matching is temporarily unavailable. Try again before sending." };
+  }
+  if (!eligible.some((candidate) => candidate.profileId === requestedProfileId)) {
+    return { requestId: null, error: "That clinician is no longer an eligible match. Review the suggestions again." };
+  }
   const { data, error } = await supabase
     .from("coverage_requests")
     .insert({
@@ -247,8 +286,13 @@ export async function sendCoverageRequest(
     .single();
   if (error) return { requestId: null, error: error.message };
 
+  const { error: transitionError } = await supabase
+    .from("coverage_plan_cases")
+    .update({ status: "awaiting_response" })
+    .eq("id", coveragePlanCaseId);
+  if (transitionError) return { requestId: data.id, error: "Request sent, but the case status could not be updated. Contact support before retrying." };
+
   await Promise.all([
-    supabase.from("coverage_plan_cases").update({ status: "awaiting_response" }).eq("id", coveragePlanCaseId),
     logProfessionalEvent(supabase, {
       eventType: "coverage_request_sent",
       actorProfileId,
@@ -270,69 +314,22 @@ export async function sendCoverageRequest(
   return { requestId: data.id, error: null };
 }
 
-// The three simple responses Master Brief #22 asks for: "I can help",
-// "Can't help", "Message / Discuss first". Updates the case status
-// automatically; the caller (Phase 5+ UI) is responsible for surfacing the
-// next suggested clinician immediately when the response is "declined".
+// The case transition and the response must commit together. The database
+// function also checks the actual recipient and rejects stale responses.
 export async function respondToCoverageRequest(
   supabase: Awaited<ReturnType<typeof createClient>>,
   requestedProfileId: string,
   coverageRequestId: number,
   response: "accepted" | "declined" | "discussing"
 ) {
-  const { data: request, error: fetchError } = await supabase
-    .from("coverage_requests")
-    .select("coverage_plan_case_id, sent_at, requested_profile_id, coverage_plan_cases(coverage_plan_id, coverage_plans(profile_id))")
-    .eq("id", coverageRequestId)
-    .maybeSingle();
-  if (fetchError || !request) return { error: fetchError?.message ?? "Request not found" };
-  if (request.requested_profile_id !== requestedProfileId) return { error: "Not your request" };
-  const planOwnerId = (request as any).coverage_plan_cases?.coverage_plans?.profile_id as string | undefined;
-
-  const respondedAt = new Date();
-  const responseTimeSeconds = Math.round((respondedAt.getTime() - new Date(request.sent_at).getTime()) / 1000);
-
-  const { error } = await supabase
-    .from("coverage_requests")
-    .update({ status: response, responded_at: respondedAt.toISOString() })
-    .eq("id", coverageRequestId);
+  const { data, error } = await supabase.rpc("respond_to_coverage_request", {
+    p_request_id: coverageRequestId,
+    p_response: response,
+  });
   if (error) return { error: error.message };
-
-  const caseUpdates: Record<string, unknown> = {};
-  if (response === "accepted") {
-    caseUpdates.status = "confirmed";
-    caseUpdates.assigned_clinician_id = requestedProfileId;
-  } else if (response === "declined") {
-    // Task #132 (Sept 23 audit): this used to just leave the case at
-    // 'awaiting_response' forever with a "Phase 5+ UI logic decides"
-    // comment - no UI ever did, so a declined request was a dead end with
-    // no suggested-clinicians list and no way to ask anyone else. This is
-    // the fix: if nothing else is still pending for this case, check
-    // whether there's anyone left to ask (same staged matching, excluding
-    // everyone already asked) - if so, cycle back to 'needs_cover' so the
-    // case resurfaces on the Requests page for another round; if the pool
-    // is genuinely exhausted, land on 'declined_all' instead, a real
-    // "nobody available" state rather than silently pretending nobody's
-    // been tried yet.
-    const { data: otherPending } = await supabase
-      .from("coverage_requests")
-      .select("id")
-      .eq("coverage_plan_case_id", request.coverage_plan_case_id)
-      .eq("status", "sent")
-      .neq("id", coverageRequestId);
-    if (!otherPending || otherPending.length === 0) {
-      const { data: everAsked } = await supabase
-        .from("coverage_requests")
-        .select("requested_profile_id")
-        .eq("coverage_plan_case_id", request.coverage_plan_case_id);
-      const askedIds = Array.from(new Set((everAsked || []).map((r) => r.requested_profile_id)));
-      const remaining = await suggestCliniciansForCase(supabase, request.coverage_plan_case_id, askedIds);
-      caseUpdates.status = remaining.length > 0 ? "needs_cover" : "declined_all";
-    }
-  }
-  if (Object.keys(caseUpdates).length > 0) {
-    await supabase.from("coverage_plan_cases").update(caseUpdates).eq("id", request.coverage_plan_case_id);
-  }
+  const transition = data?.[0];
+  if (!transition) return { error: "Could not confirm the coverage response" };
+  const responseTimeSeconds = Math.max(0, Math.round((Date.now() - new Date(transition.initial_sent_at).getTime()) / 1000));
 
   await logProfessionalEvent(supabase, {
     eventType: "coverage_response",
@@ -346,14 +343,14 @@ export async function respondToCoverageRequest(
     await logProfessionalEvent(supabase, {
       eventType: "coverage_confirmed",
       actorProfileId: requestedProfileId,
-      metadata: { coverageRequestId, coveragePlanCaseId: request.coverage_plan_case_id },
+      metadata: { coverageRequestId, coveragePlanCaseId: transition.coverage_case_id },
     });
   }
 
-  if (planOwnerId) {
+  if (transition.owner_profile_id) {
     await raiseNotification(supabase, {
       eventType: response === "accepted" ? "coverage_confirmed" : "coverage_response",
-      recipientProfileIds: [planOwnerId],
+      recipientProfileIds: [transition.owner_profile_id],
       actorProfileId: requestedProfileId,
       actorType: "member_web",
       summary: response === "accepted" ? "confirmed they can cover your case" : `responded "${response}" to your coverage request`,

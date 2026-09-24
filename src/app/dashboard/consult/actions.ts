@@ -22,7 +22,18 @@ export async function createConsultationAction(formData: FormData) {
   // Sept 23 audit (task #125): default narrowed from wider_network to
   // trusted, both here and in the form's own defaultValue - going wider is
   // now something the poster has to actively choose.
-  const audienceType = String(formData.get("audience_type") || "trusted") as "trusted" | "wider_network";
+  const audienceType = String(formData.get("audience_type") || "trusted") as "trusted" | "selected" | "wider_network";
+  if (!["trusted", "selected", "wider_network"].includes(audienceType)) consultError("Choose a valid audience");
+  const candidateIds = [...new Set(formData.getAll("audience_profile_ids").map(String))].filter((id) => id !== user.id);
+  let audienceProfileIds: string[] = [];
+  if (audienceType === "selected") {
+    if (!candidateIds.length || candidateIds.length > 25) consultError("Choose between one and 25 verified clinicians");
+    const { data: candidateRows, error: candidateError } = await supabase.from("public_directory")
+      .select("id").in("id", candidateIds);
+    const eligible = new Set((candidateRows || []).map((row) => row.id));
+    if (candidateError || candidateIds.some((id) => !eligible.has(id))) consultError("One of the selected clinicians is no longer verified or available");
+    audienceProfileIds = candidateIds;
+  }
   const tags = String(formData.get("tags") || "")
     .split(",")
     .map((t) => t.trim())
@@ -37,6 +48,7 @@ export async function createConsultationAction(formData: FormData) {
     question,
     consultationType,
     audienceType,
+    audienceProfileIds,
     tags,
     context: String(formData.get("context") || "") || undefined,
     deidentificationConfirmed,

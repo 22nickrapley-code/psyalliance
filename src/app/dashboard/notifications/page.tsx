@@ -162,7 +162,6 @@ export default async function NotificationsPage() {
                   {event.deep_link ? (
                     <form action={openNotificationAction}>
                       <input type="hidden" name="delivery_id" value={d.id} />
-                      <input type="hidden" name="deep_link" value={event.deep_link} />
                       <button type="submit" className="secondary">Open</button>
                     </form>
                   ) : unread ? (

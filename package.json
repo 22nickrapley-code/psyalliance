@@ -11,7 +11,8 @@
     "typecheck": "tsc --noEmit",
     "cf:build": "opennextjs-cloudflare build",
     "cf:preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
-    "cf:deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy"
+    "cf:deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
+    "preview:deploy": "node scripts/deploy-preview.mjs"
   },
   "dependencies": {
     "@fontsource/fraunces": "^5.3.0",

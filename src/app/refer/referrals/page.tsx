@@ -28,10 +28,10 @@ export default async function ProviderReferralsPage(
   return (
     <div>
       <h1>My referrals</h1>
-      <p className="muted">Every referral you've sent, and its status.</p>
+      <p className="muted">Office inquiries and their status. Keep patient information in your established secure systems.</p>
 
       {searchParams.sent === "1" && (
-        <div className="message-banner">Referral sent.</div>
+        <div className="message-banner">Office inquiry sent.</div>
       )}
 
       <div className="card">
@@ -46,17 +46,12 @@ export default async function ProviderReferralsPage(
               <span className="tag">{r.status}</span>
             </div>
             <p className="muted" style={{ margin: "0.25rem 0 0" }}>
-              {r.patient_initials ? `Patient ${r.patient_initials}` : "Patient"}
-              {r.patient_age_range ? `, ${r.patient_age_range}` : ""} · {r.reason}
+              {["Assessment inquiry", "Therapy inquiry", "Medication consultation inquiry", "Other professional inquiry"].includes(r.reason) && !r.patient_initials && !r.patient_age_range
+                ? r.reason : "Legacy referral record · handle via controlled retention"}
             </p>
             <p className="muted" style={{ margin: "0.15rem 0 0", fontSize: "0.82rem" }}>
               Sent {new Date(r.created_at).toLocaleDateString()}
             </p>
-            {r.status_note && (
-              <p className="muted" style={{ margin: "0.15rem 0 0", fontSize: "0.82rem" }}>
-                Their note: "{r.status_note}"
-              </p>
-            )}
           </div>
         ))}
         {(referrals || []).length === 0 && <p className="muted">You haven't sent any referrals yet.</p>}

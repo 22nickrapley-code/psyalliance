@@ -163,7 +163,7 @@ export default function RecipientPicker({
           Trusted Colleague
         </button>
         <button type="button" className={tierFilter.has("bench") ? "active" : ""} onClick={() => toggleTierFilter("bench")}>
-          Bench
+          Saved clinicians
         </button>
         <button
           type="button"

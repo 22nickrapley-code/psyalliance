@@ -1,7 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { startConversation, setConversationReadState, setNotificationReadState } from "./actions";
 import {
-  acceptResponse,
   acknowledgeProviderReferral,
   declineProviderReferral,
 } from "../referrals/actions";
@@ -11,6 +10,7 @@ import Avatar from "../avatar";
 import UsStateDatalist from "@/components/us-state-datalist";
 import ToggleBox from "@/components/toggle-box";
 import RecipientPicker, { type PickerContact } from "@/components/recipient-picker";
+import WorkflowResources from "@/components/workflow-resources";
 import type { ReactNode } from "react";
 
 type Tier = "partner" | "trusted_colleague" | "bench" | "recommended" | "none";
@@ -406,15 +406,13 @@ export default async function MessagesPage(
               <span className={`tag${r.urgency === "urgent" ? " danger" : ""}`}>{r.urgency}</span>
               <span className="tag">{r.status}</span>
               <p className="muted" style={{ margin: "0.25rem 0 0" }}>
-                {r.patient_initials ? `Patient ${r.patient_initials}` : "Patient"}
-                {r.patient_age_range ? `, ${r.patient_age_range}` : ""} · {r.reason}
+                {["Assessment inquiry", "Therapy inquiry", "Medication consultation inquiry", "Other professional inquiry"].includes(r.reason) && !r.patient_initials && !r.patient_age_range
+                  ? r.reason : "Legacy referral record · handle via controlled retention"}
               </p>
               <p className="muted" style={{ margin: "0.15rem 0 0", fontSize: "0.82rem" }}>
-                Contact: {r.contact_details}
+                Office contact: {r.referring_providers?.email || "contact unavailable"}
                 {r.referring_providers?.phone ? ` · ${r.referring_providers.phone}` : ""}
-                {r.referring_providers?.email ? ` · ${r.referring_providers.email}` : ""}
               </p>
-              {r.status_note && <p className="muted" style={{ margin: "0.15rem 0 0", fontSize: "0.82rem" }}>Your note: "{r.status_note}"</p>}
             </div>
             {r.status === "sent" && (
               <div className="provider-referral-actions">
@@ -428,7 +426,6 @@ export default async function MessagesPage(
                   <summary style={{ cursor: "pointer", fontSize: "0.8rem", color: "var(--muted)" }}>Decline</summary>
                   <form action={declineProviderReferral} style={{ marginTop: "0.4rem" }}>
                     <input type="hidden" name="id" value={r.id} />
-                    <input name="status_note" type="text" placeholder="Optional note for their office" style={{ fontSize: "0.8rem" }} />
                     <button type="submit" className="secondary" style={{ padding: "0.3rem 0.6rem", fontSize: "0.8rem", marginTop: "0.3rem" }}>
                       Confirm decline
                     </button>
@@ -455,12 +452,8 @@ export default async function MessagesPage(
                 <input type="hidden" name="body" value={`Hi ${o.profiles?.full_name || ""}, thanks for offering to help, could we discuss further?`} />
                 <button type="submit" className="secondary">Discuss</button>
               </form>
-              {o.status === "offered" && o.request.status === "open" && (
-                <form action={acceptResponse}>
-                  <input type="hidden" name="response_id" value={o.id} />
-                  <input type="hidden" name="referral_request_id" value={o.request.id} />
-                  <button type="submit">Accept</button>
-                </form>
+              {["offered", "interested"].includes(o.status) && ["open", "sent"].includes(o.request.status) && (
+                <a className="btn" href="/dashboard/requests?tab=referrals">Review request</a>
               )}
             </span>
           </div>
@@ -499,6 +492,7 @@ export default async function MessagesPage(
       </p>
 
       {searchParams?.error && <div className="error-banner">{searchParams.error}</div>}
+      <WorkflowResources codes={["PA-08"]} />
 
       <div className="card">
         <div className="widget-header">

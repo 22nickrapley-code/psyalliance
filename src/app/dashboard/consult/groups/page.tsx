@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { createConsultationGroupAction, respondToGroupInviteAction } from "./actions";
+import WorkflowResources from "@/components/workflow-resources";
 
 // PsyA2 #63 (PA-04 closed peer consultation groups): "Members can create
 // persistent closed peer groups." First-pass list page - create a group,
@@ -14,7 +15,7 @@ export default async function ConsultationGroupsPage(props: { searchParams: Prom
 
   const { data: memberships } = await supabase
     .from("consultation_group_members")
-    .select("id, status, role, group:group_id(id, name, purpose, cadence, created_by)")
+    .select("id, status, role, group:group_id(id, name, purpose, cadence, created_by, charter_body)")
     .eq("profile_id", myself)
     .order("invited_at", { ascending: false });
 
@@ -46,6 +47,7 @@ export default async function ConsultationGroupsPage(props: { searchParams: Prom
         posting a one-off consultation to your trusted colleagues or the wider network.
       </p>
       {error && <div className="error-banner">{error}</div>}
+      <WorkflowResources codes={["PA-04"]} />
 
       {invitations.length > 0 && (
         <div className="card">
@@ -60,6 +62,8 @@ export default async function ConsultationGroupsPage(props: { searchParams: Prom
                 <form action={respondToGroupInviteAction}>
                   <input type="hidden" name="membership_id" value={m.id} />
                   <input type="hidden" name="status" value="joined" />
+                  <p className="muted" style={{ whiteSpace: "pre-wrap", maxWidth: "34rem" }}>{m.group?.charter_body || "The charter is being prepared."}</p>
+                  <label className="checkbox-row"><input type="checkbox" name="acknowledge_charter" required /> I have read and agree to the group charter.</label>
                   <button type="submit">Join</button>
                 </form>
                 <form action={respondToGroupInviteAction}>

@@ -68,20 +68,21 @@ export async function suggestCliniciansForReferral(
   const { data: candidates, error } = await candidatesQuery;
   if (error) {
     console.error("suggestCliniciansForReferral failed:", error.message);
-    return [];
+    throw new Error("Referral matching is temporarily unavailable");
   }
 
-  const candidateIds = (candidates || []).map((c: any) => c.id).filter((id: string) => !excludedIds.has(id));
+  const uniqueCandidates = [...new Map((candidates || []).map((candidate: any) => [candidate.id, candidate])).values()] as any[];
+  const candidateIds = uniqueCandidates.map((c) => c.id).filter((id: string) => !excludedIds.has(id));
   if (candidateIds.length === 0) return [];
 
-  const [{ data: specialisms }, { data: relationshipRows }, { data: savedRows }, { data: workedWithRows }] = await Promise.all([
+  const [specialismResult, relationshipResult, savedResult, workedWithResult] = await Promise.all([
     request.specialism_lookup_id
       ? supabase
           .from("profile_lookup_values")
           .select("profile_id, lookup_value_id")
           .in("profile_id", candidateIds)
           .eq("lookup_value_id", request.specialism_lookup_id)
-      : Promise.resolve({ data: [] as any[] }),
+      : Promise.resolve({ data: [] as any[], error: null }),
     // Sept 23 audit finding (task #123): same restoration as
     // suggestCliniciansForCase in src/lib/coverage.ts - the old grid engine
     // weighted Bench between Trusted Colleague and no relationship at all;
@@ -96,6 +97,14 @@ export async function suggestCliniciansForReferral(
     supabase.from("saved_clinicians").select("clinician_id").eq("profile_id", request.requesting_profile_id),
     supabase.from("worked_with_before").select("colleague_id, interaction_count").eq("profile_id", request.requesting_profile_id),
   ]);
+  if (specialismResult.error || relationshipResult.error || savedResult.error || workedWithResult.error) {
+    console.error("Referral matching context failed", specialismResult.error || relationshipResult.error || savedResult.error || workedWithResult.error);
+    throw new Error("Referral matching is temporarily unavailable");
+  }
+  const specialisms = specialismResult.data;
+  const relationshipRows = relationshipResult.data;
+  const savedRows = savedResult.data;
+  const workedWithRows = workedWithResult.data;
 
   const specialtyMatchIds = new Set((specialisms || []).map((s: any) => s.profile_id));
   const trustedIds = new Set(
@@ -111,7 +120,7 @@ export async function suggestCliniciansForReferral(
   const savedIds = new Set((savedRows || []).map((s: any) => s.clinician_id));
   const workedWithCount = new Map((workedWithRows || []).map((w: any) => [w.colleague_id, w.interaction_count as number]));
 
-  const eligible = (candidates || []).filter(
+  const eligible = uniqueCandidates.filter(
     (c: any) =>
       !excludedIds.has(c.id) &&
       c.referral_availability !== "no" &&
@@ -125,8 +134,7 @@ export async function suggestCliniciansForReferral(
     if (workedWithCount.has(c.id)) reasons.push({ code: "worked_with_before", label: "Worked together before" });
     if (savedIds.has(c.id)) reasons.push({ code: "saved_clinician", label: "Saved clinician" });
     if (specialtyMatchIds.has(c.id)) reasons.push({ code: "specialty_match", label: "Relevant specialty" });
-    const licenceState = c.primary_state || request.state;
-    if (licenceState) reasons.push({ code: "licence_on_file", label: `Verified ${licenceState} licence on file` });
+    reasons.push({ code: "licence_on_file", label: request.state ? `${request.state} licence listed as active` : "Active licence on file" });
     if (c.referral_availability === "yes") reasons.push({ code: "available_for_referrals", label: "Accepting referrals" });
     return {
       profileId: c.id,
@@ -184,7 +192,7 @@ export async function createReferralRequest(
       notes: opts.notes ?? null,
       audience_type: opts.audienceType,
       audience_profile_ids: opts.audienceType === "selected" ? opts.audienceProfileIds ?? [] : [],
-      status: "sent",
+      status: opts.audienceType === "selected" && !opts.audienceProfileIds?.length ? "open" : "sent",
     })
     .select("id")
     .single();
@@ -209,7 +217,7 @@ export async function respondToReferralRequest(
   supabase: Awaited<ReturnType<typeof createClient>>,
   respondingProfileId: string,
   referralRequestId: number,
-  response: "interested" | "unavailable" | "question",
+  response: "interested" | "unavailable" | "question" | "waitlist",
   message?: string
 ) {
   const { error } = await supabase.from("referral_responses").insert({
@@ -262,26 +270,12 @@ export async function addReferralAudienceProfiles(
   referralRequestId: number,
   profileIds: string[]
 ) {
-  const { data: request } = await supabase
-    .from("referral_requests")
-    .select("requesting_profile_id, audience_profile_ids")
-    .eq("id", referralRequestId)
-    .maybeSingle();
-  if (!request) return { error: "Referral request not found" };
-  if (request.requesting_profile_id !== requestingProfileId) {
-    return { error: "Only the requester can choose who sees this referral" };
-  }
-
-  const existing = new Set<string>(request.audience_profile_ids || []);
-  const added = profileIds.filter((id) => id && !existing.has(id));
-  if (added.length === 0) return { error: null };
-  added.forEach((id) => existing.add(id));
-
-  const { error } = await supabase
-    .from("referral_requests")
-    .update({ audience_type: "selected", audience_profile_ids: Array.from(existing) })
-    .eq("id", referralRequestId);
+  const { data: added, error } = await supabase.rpc("add_referral_recipients", {
+    p_request_id: referralRequestId,
+    p_recipients: [...new Set(profileIds)],
+  });
   if (error) return { error: error.message };
+  if (!added?.length) return { error: null };
 
   await raiseNotification(supabase, {
     eventType: "referral_sent",
@@ -306,11 +300,11 @@ export async function establishProfessionalConnection(
   referralRequestId: number,
   respondingProfileId: string
 ) {
-  const { error } = await supabase
-    .from("referral_requests")
-    .update({ status: "connected" })
-    .eq("id", referralRequestId)
-    .eq("requesting_profile_id", requestingProfileId);
+  const { error } = await supabase.rpc("advance_referral_request", {
+    p_request_id: referralRequestId,
+    p_action: "connect",
+    p_responder: respondingProfileId,
+  });
   if (error) return { error: error.message };
 
   await logProfessionalEvent(supabase, {
@@ -343,11 +337,10 @@ export async function markReferralHandoff(
   requestingProfileId: string,
   referralRequestId: number
 ) {
-  const { error } = await supabase
-    .from("referral_requests")
-    .update({ status: "handoff" })
-    .eq("id", referralRequestId)
-    .eq("requesting_profile_id", requestingProfileId);
+  const { error } = await supabase.rpc("advance_referral_request", {
+    p_request_id: referralRequestId,
+    p_action: "handoff",
+  });
   return { error: error?.message ?? null };
 }
 
@@ -355,20 +348,20 @@ export async function closeReferralRequest(
   supabase: Awaited<ReturnType<typeof createClient>>,
   requestingProfileId: string,
   referralRequestId: number,
-  outcome?: string
+  outcome: "matched" | "no_match" | "withdrawn" | "other"
 ) {
-  const { error } = await supabase
-    .from("referral_requests")
-    .update({ status: "closed", closed_at: new Date().toISOString() })
-    .eq("id", referralRequestId)
-    .eq("requesting_profile_id", requestingProfileId);
+  const { error } = await supabase.rpc("advance_referral_request", {
+    p_request_id: referralRequestId,
+    p_action: "close",
+    p_outcome: outcome,
+  });
   if (error) return { error: error.message };
 
   await logProfessionalEvent(supabase, {
     eventType: "referral_outcome",
     actorProfileId: requestingProfileId,
-    summary: outcome ?? "closed a referral request",
-    metadata: { referralRequestId },
+    summary: `closed a referral request: ${outcome.replace("_", " ")}`,
+    metadata: { referralRequestId, outcome },
   });
 
   return { error: null };

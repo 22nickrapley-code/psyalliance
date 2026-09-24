@@ -36,7 +36,14 @@ export async function openNotificationAction(formData: FormData) {
   if (!user) throw new Error("Not signed in");
 
   const deliveryId = Number(formData.get("delivery_id"));
-  const deepLink = String(formData.get("deep_link") || "") || "/dashboard/notifications";
+  if (!Number.isSafeInteger(deliveryId) || deliveryId < 1) redirect("/dashboard/notifications");
+  const { data: delivery } = await supabase.from("notification_deliveries")
+    .select("notification_events(deep_link)")
+    .eq("id", deliveryId).eq("recipient_profile_id", user.id).eq("channel", "in_app").maybeSingle();
+  if (!delivery) redirect("/dashboard/notifications");
+  const path = (delivery.notification_events as { deep_link?: string } | null)?.deep_link;
+  const deepLink = path?.startsWith("/dashboard/") && !path.startsWith("//") && !/[\\\r\n]/.test(path)
+    ? path : "/dashboard/notifications";
   await markNotificationRead(supabase, user.id, deliveryId);
 
   revalidatePath("/dashboard/notifications");

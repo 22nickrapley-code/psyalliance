@@ -59,7 +59,7 @@ function ProfessionTag({ profession }: { profession: Profession }) {
 // coloring, used everywhere a connection tier shows up on this page.
 function TierTag({ tier }: { tier: Tier }) {
   if (tier === "none") return <span className="tag tier-none">Not yet connected</span>;
-  const label = tier === "partner" || tier === "trusted_colleague" ? "Trusted Colleague" : tier === "bench" ? "Bench" : "Suggested for you";
+  const label = tier === "partner" || tier === "trusted_colleague" ? "Trusted Colleague" : tier === "bench" ? "Saved clinician" : "Suggested for you";
   return <span className={`tag tier-${tier}`}>{label}</span>;
 }
 
@@ -128,7 +128,7 @@ export default async function NetworkPage(
   const engagementBadge = (personId: string) => {
     const score = scoreById.get(personId) || 0;
     if (score >= 20) return { label: "Highly engaged, consider Trusted Colleague", score };
-    if (score >= 10) return { label: "Community pick, consider Bench", score };
+    if (score >= 10) return { label: "Well connected in this network", score };
     return null;
   };
 
@@ -184,7 +184,6 @@ export default async function NetworkPage(
   }
 
   const partners = (connections || []).filter((c: any) => c.status === "accepted" && (c.tier === "trusted_colleague" || c.tier === "partner"));
-  const bench = (connections || []).filter((c: any) => c.status === "accepted" && c.tier === "bench");
   const incoming = (connections || []).filter((c: any) => c.status === "pending" && c.addressee_id === myself);
   const outgoing = (connections || []).filter((c: any) => c.status === "pending" && c.requester_id === myself);
 
@@ -236,13 +235,13 @@ export default async function NetworkPage(
   const specialismOptions = (allSpecialisms || []).map((s) => s.value);
 
   return (
-    <div>
-      <h1>Network</h1>
+    <div className="network-page">
+      <div className="network-intro"><div><span className="section-kicker">The people behind your practice</span><h1>Your network</h1><p>Find colleagues by location, practice and shared professional interests. Build trusted relationships one conversation at a time.</p></div><a className="btn" href="#clinicians">Find a clinician →</a></div>
       <p className="muted">
         <span className="tag tier-trusted_colleague" style={{ marginRight: "0.35rem" }}>Trusted Colleague</span>
         first-degree, mutual-consent connections.
-        <span className="tag tier-bench" style={{ margin: "0 0.35rem 0 0.75rem" }}>Bench</span>
-        a looser "known, not yet connected" tier.
+        <span className="tag" style={{ margin: "0 0.35rem 0 0.75rem" }}>Saved</span>
+        clinicians kept privately for your practice.
         <span className="tag tier-recommended" style={{ margin: "0 0.35rem 0 0.75rem" }}>Suggested for you</span>
         computed from shared specialisms, nothing here is stored until you connect.
       </p>
@@ -347,45 +346,6 @@ export default async function NetworkPage(
           );
         })}
         {partners.length === 0 && <p className="muted">No trusted colleagues yet.</p>}
-      </div>
-
-      <div className="card">
-        <h2>
-          <span className="tag tier-bench" style={{ marginRight: "0.5rem" }}>Bench</span>
-          Bench ({bench.length})
-        </h2>
-        {bench.map((c: any) => {
-          const otherId = otherIdOf(c);
-          const arrivedNote = c.requester_id === myself ? "You added them" : "They added you";
-          const badge = engagementBadge(otherId);
-          return (
-          <div key={c.id} className="person-row">
-            <span className="person-row-info">
-              <Avatar url={avatarOf(c)} name={nameOf(c) || ""} ring="bench" />
-              <PersonLink id={otherId} name={nameOf(c) || ""} tier="bench" />
-              <span className="muted" style={{ marginLeft: "0.5rem", fontSize: "0.8rem" }}>{arrivedNote}</span>
-              {badge && (
-                <span className="tag gold" style={{ marginLeft: "0.4rem" }} title={`Community score: ${badge.score}`}>
-                  {badge.label}
-                </span>
-              )}
-            </span>
-            <span className="person-row-actions">
-              <form action={startConversation}>
-                <input type="hidden" name="participant_ids" value={otherId} />
-                <input type="hidden" name="title" value={`${nameOf(c)}`} />
-                <input type="hidden" name="body" value={`Hi ${nameOf(c) || ""}, wanted to connect.`} />
-                <button type="submit" className="secondary">Message</button>
-              </form>
-              <form action={removeConnection}>
-                <input type="hidden" name="id" value={c.id} />
-                <button type="submit" className="secondary">Remove</button>
-              </form>
-            </span>
-          </div>
-          );
-        })}
-        {bench.length === 0 && <p className="muted">No bench connections yet.</p>}
       </div>
 
       <div className="card">
@@ -532,7 +492,7 @@ export default async function NetworkPage(
       </div>
 
       <div className="card">
-        <h2>Full verified directory ({people.size})</h2>
+        <h2 id="clinicians">Find verified clinicians ({people.size})</h2>
         <DirectoryBrowser
           people={directoryEntries}
           specialismOptions={specialismOptions}

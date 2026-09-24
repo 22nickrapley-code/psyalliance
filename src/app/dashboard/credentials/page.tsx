@@ -12,6 +12,7 @@ import {
   saveCaqhInfo,
 } from "./actions";
 import UsStateDatalist from "@/components/us-state-datalist";
+import WorkflowResources from "@/components/workflow-resources";
 
 // CAQH ProView requires re-attestation at least every 120 days (its own
 // "120-day rule") or the profile goes inactive - the same expiry-reminder
@@ -67,6 +68,7 @@ export default async function CredentialsPage(props: { searchParams: Promise<{ s
       </p>
 
       {error && <div className="error-banner">{error}</div>}
+      <WorkflowResources codes={["PA-19"]} />
 
       {saved === "1" && (
         <div className="card" style={{ borderColor: "var(--accent, #2a7)", background: "rgba(34,170,119,0.08)" }}>

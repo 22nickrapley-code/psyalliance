@@ -20,11 +20,13 @@ export default function ReferralAudienceField({
   trustedCount: number;
   networkCount: number;
 }) {
-  const [audience, setAudience] = useState("wider_network");
+  const [audience, setAudience] = useState("selected");
   const [confirmed, setConfirmed] = useState(false);
 
   const preview: Record<string, string> = {
-    wider_network: `This will be visible to everyone verified on PsyAlliance right now - about ${networkCount} clinician${networkCount === 1 ? "" : "s"}.`,
+    wider_network: networkCount > 0
+      ? `This will be visible to ${networkCount} active verified clinician${networkCount === 1 ? "" : "s"} in the directory right now. Review the need carefully before sharing it.`
+      : "No verified clinicians can receive a network-wide request yet. Choose selected clinicians or build your network first.",
     trusted:
       trustedCount > 0
         ? `This will be visible only to your ${trustedCount} trusted colleague${trustedCount === 1 ? "" : "s"}.`
@@ -45,9 +47,9 @@ export default function ReferralAudienceField({
             setConfirmed(false);
           }}
         >
-          <option value="wider_network">Verified network</option>
-          <option value="trusted">Trusted colleagues only</option>
           <option value="selected">Selected clinicians (choose after posting)</option>
+          <option value="trusted" disabled={trustedCount === 0}>Trusted colleagues only</option>
+          <option value="wider_network" disabled={networkCount === 0}>Verified network</option>
         </select>
       </div>
       <p className="muted" style={{ fontSize: "0.82rem", flexBasis: "100%", margin: "0.4rem 0 0" }}>
@@ -58,7 +60,7 @@ export default function ReferralAudienceField({
           className="checkbox-row"
           style={{ flexBasis: "100%", marginTop: "0.4rem", fontWeight: 400, fontSize: "0.85rem" }}
         >
-          <input type="checkbox" required checked={confirmed} onChange={(e) => setConfirmed(e.target.checked)} />
+          <input type="checkbox" name="confirm_network_audience" required checked={confirmed} onChange={(e) => setConfirmed(e.target.checked)} />
           I understand this will be visible to the entire verified network
         </label>
       )}
