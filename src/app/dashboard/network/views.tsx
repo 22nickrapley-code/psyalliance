@@ -92,6 +92,7 @@ export function NetworkView({
   sentCount,
   filters,
   focusOptions,
+  moreOptions,
   states,
   counts,
 }: {
@@ -101,8 +102,9 @@ export function NetworkView({
   suggestedAvatars: Record<string, string | null>;
   invitations: { id: number; name: string; profileId: string }[];
   sentCount: number;
-  filters: { q: string; focus: string; state: string; available: boolean; profession: string };
+  filters: { q: string; focus: string; state: string; available: boolean; profession: string; insurance?: string; age?: string; language?: string; modality?: string; session?: string; psypact?: boolean };
   focusOptions: string[];
+  moreOptions?: { insurance: string[]; age: string[]; language: string[]; modality: string[]; session: string[] };
   states: { code: string; name: string }[];
   counts: Record<NetworkTab, number>;
 }) {
@@ -149,6 +151,34 @@ export function NetworkView({
                 <input type="checkbox" name="available" value="1" defaultChecked={filters.available} /> Taking referrals now
               </label>
             </div>
+            {moreOptions && (
+              <details open={!!(filters.insurance || filters.age || filters.language || filters.modality || filters.session || filters.psypact)}>
+                <summary className="small" style={{ cursor: "pointer", fontWeight: 650 }}>More filters</summary>
+                <div className="fields four" style={{ marginTop: 10 }}>
+                  {(
+                    [
+                      ["insurance", "Insurance", moreOptions.insurance, filters.insurance],
+                      ["age", "Age group", moreOptions.age, filters.age],
+                      ["language", "Language", moreOptions.language, filters.language],
+                      ["modality", "Modality", moreOptions.modality, filters.modality],
+                      ["session", "Session type", moreOptions.session, filters.session],
+                    ] as [string, string, string[], string | undefined][]
+                  ).map(([name, label, opts, val]) => (
+                    <label key={name} className="field">
+                      {label}
+                      <select name={name} defaultValue={val || ""}>
+                        <option value="">Any</option>
+                        {opts.map((o) => <option key={o}>{o}</option>)}
+                      </select>
+                    </label>
+                  ))}
+                  <label className="checkline" style={{ alignSelf: "end", paddingBottom: 12 }}>
+                    <input type="checkbox" name="psypact" value="1" defaultChecked={filters.psypact} /> PSYPACT
+                  </label>
+                </div>
+                <button type="submit" className="btn secondary small-btn" style={{ marginTop: 10 }}>Apply filters</button>
+              </details>
+            )}
           </form>
 
           <nav className="tabs" aria-label="Relationship">

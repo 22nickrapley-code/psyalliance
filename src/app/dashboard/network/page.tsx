@@ -8,7 +8,7 @@ import { NetworkView, type NetworkTab, type Person } from "./views";
 const AVAIL: Record<string, string> = { yes: "Accepting referrals", limited: "Selected referrals", no: "Not accepting" };
 
 export default async function NetworkPage(props: {
-  searchParams: Promise<{ tab?: string; q?: string; focus?: string; state?: string; available?: string; profession?: string }>;
+  searchParams: Promise<{ tab?: string; q?: string; focus?: string; state?: string; available?: string; profession?: string; insurance?: string; age?: string; language?: string; modality?: string; session?: string; psypact?: string }>;
 }) {
   const sp = await props.searchParams;
   const tab = (["directory", "trusted", "saved", "worked", "suggested"].includes(sp.tab || "") ? sp.tab : "directory") as NetworkTab;
@@ -18,6 +18,12 @@ export default async function NetworkPage(props: {
     state: sp.state || "",
     available: sp.available === "1",
     profession: sp.profession || "",
+    insurance: sp.insurance || "",
+    age: sp.age || "",
+    language: sp.language || "",
+    modality: sp.modality || "",
+    session: sp.session || "",
+    psypact: sp.psypact === "1",
   };
   const supabase = await createClient();
   const {
@@ -71,10 +77,11 @@ export default async function NetworkPage(props: {
   for (const r of rows || []) {
     let p = byId.get(r.id);
     if (!p) {
-      p = { ...r, focus: [] as { v: string; rank: number | null }[] };
+      p = { ...r, focus: [] as { v: string; rank: number | null }[], cats: {} as Record<string, string[]> };
       byId.set(r.id, p);
     }
     if (r.category === "treatment_specialism") p.focus.push({ v: r.value, rank: r.rank });
+    if (r.category) (p.cats[r.category] ||= []).push(r.value);
   }
   const urls = await resolveAvatarUrls(supabase, Array.from(byId.values()).map((p) => p.avatar_path));
 
@@ -112,7 +119,8 @@ export default async function NetworkPage(props: {
         relationship: rel,
         saved: saved.has(p.id),
         _all: p.focus.map((f: any) => f.v.toLowerCase()),
-      } as Person & { _all: string[] };
+        _cats: p.cats,
+      } as Person & { _all: string[]; _cats: Record<string, string[]> };
     });
 
   const counts: Record<NetworkTab, number> = {
@@ -132,6 +140,13 @@ export default async function NetworkPage(props: {
   if (filters.state) people = people.filter((p) => p.licenceStates.includes(filters.state) || p.state === filters.state);
   if (filters.available) people = people.filter((p) => p.fresh);
   if (filters.profession) people = people.filter((p) => professionFor(p.qualification) === filters.profession);
+  const hasCat = (p: any, cat: string, v: string) => (p._cats[cat] || []).includes(v);
+  if (filters.insurance) people = people.filter((p) => hasCat(p, "insurance", filters.insurance));
+  if (filters.age) people = people.filter((p) => hasCat(p, "age_group_specialism", filters.age));
+  if (filters.language) people = people.filter((p) => hasCat(p, "language", filters.language));
+  if (filters.modality) people = people.filter((p) => hasCat(p, "treatment_modality", filters.modality));
+  if (filters.session) people = people.filter((p) => hasCat(p, "session_type", filters.session));
+  if (filters.psypact) people = people.filter((p) => p.psypact);
   people.sort((a, b) => Number(b.relationship === "trusted") - Number(a.relationship === "trusted") || Number(b.fresh) - Number(a.fresh) || a.name.localeCompare(b.name));
 
   let suggested: any[] = [];
@@ -148,6 +163,15 @@ export default async function NetworkPage(props: {
     suggestedAvatars = Object.fromEntries(matches.map((m) => [m.profileId, u.get(m.avatarPath || "") || null]));
   }
 
+  const optionsFor = (cat: string) =>
+    Array.from(new Set(Array.from(byId.values()).flatMap((p) => p.cats[cat] || []))).sort() as string[];
+  const moreOptions = {
+    insurance: optionsFor("insurance"),
+    age: optionsFor("age_group_specialism"),
+    language: optionsFor("language"),
+    modality: optionsFor("treatment_modality"),
+    session: optionsFor("session_type"),
+  };
   const focusOptions = Array.from(new Set(Array.from(byId.values()).flatMap((p) => p.focus.map((f: any) => f.v)))).sort();
 
   return (
@@ -160,6 +184,7 @@ export default async function NetworkPage(props: {
       sentCount={pendingOut.size}
       filters={filters}
       focusOptions={focusOptions}
+      moreOptions={moreOptions}
       states={US_STATES}
       counts={counts}
     />
