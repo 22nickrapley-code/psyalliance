@@ -49,7 +49,8 @@ export default async function NetworkHealthPage() {
     supabase
       .from("profiles")
       .select("id, primary_state, qualification_level, referral_availability, coverage_availability")
-      .eq("verification_status", "verified"),
+      .eq("verification_status", "verified")
+      .eq("is_demo", false),
     supabase.from("referral_requests").select("id, created_at, specialism_lookup_id, status"),
     supabase.from("referral_responses").select("referral_request_id, created_at"),
     supabase.from("coverage_plan_cases").select("id, created_at, specialism_lookup_ids, status"),

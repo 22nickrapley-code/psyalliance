@@ -21,15 +21,16 @@ export default async function AdminOverviewPage() {
     { count: pendingProviderCount },
     { count: openReportCount },
   ] = await Promise.all([
-    supabase.from("profiles").select("*", { count: "exact", head: true }),
-    supabase.from("profiles").select("*", { count: "exact", head: true }).eq("verification_status", "verified"),
-    supabase.from("profiles").select("*", { count: "exact", head: true }).eq("verification_status", "pending"),
-    supabase.from("profiles").select("*", { count: "exact", head: true }).eq("verification_status", "flagged"),
-    supabase.from("profiles").select("*", { count: "exact", head: true }).eq("verification_status", "rejected"),
-    supabase.from("profiles").select("primary_state"),
+    supabase.from("profiles").select("*", { count: "exact", head: true }).eq("is_demo", false),
+    supabase.from("profiles").select("*", { count: "exact", head: true }).eq("verification_status", "verified").eq("is_demo", false),
+    supabase.from("profiles").select("*", { count: "exact", head: true }).eq("verification_status", "pending").eq("is_demo", false),
+    supabase.from("profiles").select("*", { count: "exact", head: true }).eq("verification_status", "flagged").eq("is_demo", false),
+    supabase.from("profiles").select("*", { count: "exact", head: true }).eq("verification_status", "rejected").eq("is_demo", false),
+    supabase.from("profiles").select("primary_state").eq("is_demo", false),
     supabase
       .from("profiles")
       .select("id, full_name, credential_prefix, qualification_level, verification_status, created_at")
+      .eq("is_demo", false)
       .order("created_at", { ascending: false })
       .limit(8),
     supabase.from("credential_verifications").select("*", { count: "exact", head: true }).eq("matched", false),

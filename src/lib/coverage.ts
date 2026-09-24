@@ -75,6 +75,7 @@ export async function suggestCliniciansForCase(
       "id, full_name, credential_prefix, primary_state, coverage_availability, availability_confirmed_at, licenses!inner(state, status)"
     )
     .eq("verification_status", "verified")
+    .eq("is_demo", false)
     .eq("licenses.status", "active")
     .neq("id", ownerProfileId);
   if (relevantStates.length > 0) {

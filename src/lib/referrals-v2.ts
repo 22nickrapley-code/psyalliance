@@ -60,6 +60,7 @@ export async function suggestCliniciansForReferral(
     .from("profiles")
     .select("id, full_name, credential_prefix, primary_state, referral_availability, licenses!inner(state, status)")
     .eq("verification_status", "verified")
+    .eq("is_demo", false)
     .eq("licenses.status", "active")
     .neq("id", request.requesting_profile_id);
   if (request.state) {

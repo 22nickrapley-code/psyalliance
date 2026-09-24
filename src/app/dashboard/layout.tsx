@@ -41,6 +41,32 @@ export default async function DashboardLayout({
   }
   const avatarUrl = await resolveAvatarUrl(supabase, profile?.avatar_path);
 
+  // Spec rule 2, "verified means reviewed" (re-audit R3): the badge only
+  // says Verified when an admin has verified the member AND an active,
+  // unexpired licence is on record. A verified account with no licence was
+  // previously shown as "verified" while Credentials said "No licenses
+  // added yet" - it now says what's actually missing instead.
+  const today = new Date().toISOString().slice(0, 10);
+  const { count: activeLicenceCount } = await supabase
+    .from("licenses")
+    .select("id", { count: "exact", head: true })
+    .eq("profile_id", user.id)
+    .eq("status", "active")
+    .or(`expiration_date.is.null,expiration_date.gte.${today}`);
+  const verificationLabel = !profile
+    ? null
+    : profile.verification_status === "verified"
+      ? (activeLicenceCount || 0) > 0
+        ? "Verified"
+        : "Verified - add your licence"
+      : profile.verification_status === "pending"
+        ? "Verification pending"
+        : profile.verification_status === "flagged"
+          ? "Action required"
+          : profile.verification_status === "rejected"
+            ? "Not verified"
+            : String(profile.verification_status);
+
   // Cheap presence signal used only for match tie-breaking ("last login") -
   // not awaited-critical, but kept simple and correct rather than clever.
   supabase.from("profiles").update({ last_active_at: new Date().toISOString() }).eq("id", user.id).then(() => {});
@@ -118,7 +144,7 @@ export default async function DashboardLayout({
         displayName={displayName}
         initials={initials}
         avatarUrl={avatarUrl}
-        verificationStatus={profile?.verification_status ?? null}
+        verificationStatus={verificationLabel}
         signOutAction={signOutAction}
       />
       <main className="app-main">
