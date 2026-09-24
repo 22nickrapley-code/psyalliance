@@ -132,7 +132,7 @@ export default async function ConsultationGroupPage(props: { params: Promise<{ i
                     ) : (
                       <strong>{m.external_email} <span className="micro-note">(invited by email)</span></strong>
                     )}
-                    <p>{m.role === "owner" || m.profile_id === group.created_by ? "Organiser" : MEMBER_STATUS[m.status] || m.status}</p>
+                    <p>{m.role === "creator" || m.profile_id === group.created_by ? "Organiser" : MEMBER_STATUS[m.status] || m.status}</p>
                   </span>
                 </span>
                 {isCreator && m.profile_id !== group.created_by && ["joined", "invited"].includes(m.status) && (
