@@ -13,7 +13,7 @@ export default async function AdminChannelRequestsPage(
 
   const { data: requests } = await supabase
     .from("channel_requests")
-    .select("*, requester:requested_by(full_name, credential_prefix)")
+    .select("*, requester:requested_by(full_name, credential_prefix, qualification_level)")
     .order("created_at", { ascending: true });
 
   const pending = (requests || []).filter((r: any) => r.status === "pending");

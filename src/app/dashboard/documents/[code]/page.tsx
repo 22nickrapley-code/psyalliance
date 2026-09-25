@@ -1,3 +1,4 @@
+import { clinicianName } from "@/lib/profession";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { LIBRARY_SELECT, isMemberVisible, toResource } from "@/lib/library";
@@ -29,7 +30,7 @@ export default async function ResourcePage(props: {
     r.reviewed
       ? supabase
           .from("document_reviews")
-          .select("reviewer_role, approved, reviewer:reviewer_profile_id(full_name, credential_prefix)")
+          .select("reviewer_role, approved, reviewer:reviewer_profile_id(full_name, credential_prefix, qualification_level)")
           .eq("document_id", r.id)
           .eq("document_version", r.version)
           .eq("approved", true)
@@ -38,7 +39,7 @@ export default async function ResourcePage(props: {
   ]);
   const reviewers = (reviews || []).map((rv: any) => ({
     role: REVIEWER_ROLE_LABELS[rv.reviewer_role as ReviewerRole] || rv.reviewer_role,
-    name: rv.reviewer ? `${rv.reviewer.credential_prefix ? rv.reviewer.credential_prefix + " " : ""}${rv.reviewer.full_name}` : "Appointed reviewer",
+    name: rv.reviewer ? clinicianName(rv.reviewer?.full_name, rv.reviewer?.qualification_level, rv.reviewer?.credential_prefix) : "Appointed reviewer",
   }));
   return <ResourceDetailView r={r} url={signed?.signedUrl || null} error={sp.error} reviewers={reviewers} />;
 }

@@ -1,3 +1,4 @@
+import { clinicianName } from "@/lib/profession";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { requireAdminOrRedirectPath } from "@/lib/admin";
@@ -35,7 +36,7 @@ export default async function ModerationQueuePage(props: { searchParams: Promise
   const [{ data: openRaw }, { data: resolvedReports }] = await Promise.all([
     supabase
       .from("reports")
-      .select("*, reporter:reporter_profile_id(full_name, credential_prefix)")
+      .select("*, reporter:reporter_profile_id(full_name, credential_prefix, qualification_level)")
       .in("status", ["open", "reviewing"])
       .order("created_at", { ascending: true }),
     supabase
@@ -54,7 +55,7 @@ export default async function ModerationQueuePage(props: { searchParams: Promise
       texts.set(r.id, (data as string) ?? null);
     })
   );
-  const nameOf = (p: any) => (p ? `${p.credential_prefix ? p.credential_prefix + " " : ""}${p.full_name}` : "a member");
+  const nameOf = (p: any) => (p ? clinicianName(p?.full_name, p?.qualification_level, p?.credential_prefix) : "a member");
 
   return (
     <>

@@ -1,3 +1,4 @@
+import { clinicianName } from "@/lib/profession";
 import { createClient } from "@/lib/supabase/server";
 import type { NeedOptions } from "@/lib/need-options";
 import type { CaseItem, PlanSummary } from "./views";
@@ -40,14 +41,14 @@ export function summarise(plan: any, cases: { status: string }[]): PlanSummary {
   };
 }
 
-const nameOf = (p: any) => (p ? `${p.credential_prefix ? p.credential_prefix + " " : ""}${p.full_name}` : "A colleague");
+const nameOf = (p: any) => (p ? clinicianName(p?.full_name, p?.qualification_level, p?.credential_prefix) : "A colleague");
 
 export async function loadPlan(supabase: Supabase, userId: string, planId: number, options: NeedOptions) {
   const { data: plan } = await supabase.from("coverage_plans").select("*").eq("id", planId).eq("profile_id", userId).maybeSingle();
   if (!plan) return null;
   const { data: caseRows } = await supabase
     .from("coverage_plan_cases")
-    .select("*, assigned:assigned_clinician_id(full_name, credential_prefix), coverage_requests(requested_profile_id, status, sequence_order, requested:requested_profile_id(full_name, credential_prefix))")
+    .select("*, assigned:assigned_clinician_id(full_name, credential_prefix, qualification_level), coverage_requests(requested_profile_id, status, sequence_order, requested:requested_profile_id(full_name, credential_prefix, qualification_level))")
     .eq("coverage_plan_id", planId)
     .order("id");
   const cases: CaseItem[] = (caseRows || []).map((c: any) => ({

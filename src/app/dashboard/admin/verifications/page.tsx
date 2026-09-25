@@ -1,6 +1,7 @@
+import { clinicianName } from "@/lib/profession";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { requireAdminOrRedirectPath } from "@/lib/admin";
+import { requireAdminOrRedirectPath, allAdminMembers } from "@/lib/admin";
 import { reviewCredential, setProfileVerificationStatus, reviewLicenceAction } from "./actions";
 import { PageHead, Banner, Status, Empty } from "../../_components/ui";
 
@@ -14,7 +15,7 @@ export default async function VerificationQueuePage(props: { searchParams: Promi
   const { error } = await props.searchParams;
 
   const [{ data: membersRaw }, { data: licencesRaw }] = await Promise.all([
-    supabase.rpc("admin_members"),
+    allAdminMembers(supabase).then((data) => ({ data })),
     supabase
       .from("licenses")
       .select("id, profile_id, state, license_number, license_type, expiration_date, created_at, profile:profiles!licenses_profile_id_fkey!inner(id, full_name, credential_prefix, qualification_level, is_demo, account_kind)")
@@ -39,7 +40,7 @@ export default async function VerificationQueuePage(props: { searchParams: Promi
     if (!subsBy.has(s.profile_id)) subsBy.set(s.profile_id, []);
     subsBy.get(s.profile_id)!.push(s);
   }
-  const nameOf = (p: any) => `${p?.credential_prefix ? p.credential_prefix + " " : ""}${p?.full_name || "Member"}`;
+  const nameOf = (p: any) => clinicianName(p?.full_name || "Member", p?.qualification_level, p?.credential_prefix);
 
   return (
     <>

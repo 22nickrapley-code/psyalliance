@@ -1,6 +1,6 @@
 import "./premium.css";
 import { redirect } from "next/navigation";
-import { IS_DEMO_SITE, DEMO_URL } from "@/lib/env";
+import { IS_DEMO_SITE, DEMO_URL, SITE_URL } from "@/lib/env";
 
 // Public landing (Product Spec v1, built from the premium concept Nick
 // chose). Sections: hero with an illustrative cover plan, the three
@@ -39,7 +39,7 @@ const structuredData = {
   "@context": "https://schema.org",
   "@type": "ProfessionalService",
   name: "PsyAlliance",
-  url: "https://psyalliance.org",
+  url: SITE_URL,
   description:
     "A closed, credential-reviewed professional network for doctoral-level psychologists and psychiatrists in independent practice: cover for time away, considered referrals and peer consultation.",
   audience: { "@type": "Audience", audienceType: "Doctoral-level psychologists (PhD, PsyD, EdD) and psychiatrists (MD, DO)" },
@@ -167,7 +167,7 @@ export default function HomePage() {
               </article>
             </div>
             <p style={{ marginTop: 26, maxWidth: 720 }}>
-              Behind all three is your <b style={{ color: "var(--ink)" }}>circle</b>: trusted colleagues you choose, people you&rsquo;ve worked with before, and a reviewed Practice Library of templates for cover, referrals and consultation.
+              Behind all three is your <b style={{ color: "var(--ink)" }}>circle</b>: trusted colleagues you choose, people you&rsquo;ve worked with before, and a versioned Practice Library of templates for cover, referrals and consultation, with the review status shown on each one.
             </p>
           </div>
         </section>

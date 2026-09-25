@@ -1,4 +1,5 @@
 import { IS_DEMO_SITE } from "@/lib/env";
+import { clinicianName, roleLabel } from "@/lib/profession";
 import { resetSandboxAction } from "../sandbox/[token]/actions";
 import { createClient } from "@/lib/supabase/server";
 import { signOutAction } from "../auth/actions";
@@ -25,7 +26,7 @@ export default async function DashboardLayout({
 
   const { data: profile } = await supabase
     .rpc("my_profile")
-    .select("full_name, verification_status, is_admin, avatar_path, demo_view, account_kind")
+    .select("full_name, verification_status, is_admin, avatar_path, demo_view, account_kind, qualification_level, credential_prefix, primary_practice_city, primary_state")
     .maybeSingle<any>();
 
   // A referring provider (GP/physician portal account) has no `profiles`
@@ -133,8 +134,19 @@ export default async function DashboardLayout({
   const unreadMessageCount =
     unreadConversationCount + (unreadNotificationCount || 0) + (pendingProviderReferralCount || 0) + pendingPeerOfferCount;
 
-  const displayName = profile?.full_name || user.email || "";
-  const initials = displayName
+  const displayName = profile?.full_name
+    ? isOperator
+      ? profile.full_name
+      : clinicianName(profile.full_name, profile.qualification_level, profile.credential_prefix)
+    : user.email || "";
+
+  // Sandbox expiry in one stated time zone so server and browser agree.
+  const expiresLabel = sandbox?.expires_at
+    ? new Date(sandbox.expires_at).toLocaleString("en-US", { timeZone: "America/New_York", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) + " ET"
+    : null;
+  const where = [profile?.primary_practice_city, profile?.primary_state].filter(Boolean).join(", ");
+  const initials = String(profile?.full_name || displayName)
+    .replace(/^(dr\.?)\s+/i, "")
     .split(/\s+/)
     .filter(Boolean)
     .slice(0, 2)
@@ -143,6 +155,7 @@ export default async function DashboardLayout({
 
   const groups = buildNavGroups({
     isAdmin: !!profile?.is_admin,
+    isOperator,
     unreadMessages: unreadConversationCount + (unreadNotificationCount || 0),
     pendingCoverRequests: pendingCoverageRequestCount || 0,
     pendingReferrals: (pendingProviderReferralCount || 0) + pendingPeerOfferCount,
@@ -159,7 +172,17 @@ export default async function DashboardLayout({
       signOutAction={signOutAction}
       demoView={!!profile?.demo_view}
       gateNotice={IS_DEMO_SITE ? null : gateNotice}
-      demoSite={IS_DEMO_SITE ? { label: sandbox?.label || null, expires: sandbox?.expires_at || null } : null}
+      homeHref={isOperator ? "/dashboard/admin" : "/dashboard"}
+      demoSite={
+        IS_DEMO_SITE
+          ? {
+              label: sandbox?.label || null,
+              expires: expiresLabel,
+              who: sandbox?.label && !isOperator ? displayName : null,
+              role: sandbox?.label && !isOperator ? `A fictional ${roleLabel(profile?.qualification_level).toLowerCase()}${where ? ` in ${where}` : ""}` : null,
+            }
+          : null
+      }
       resetSandboxAction={IS_DEMO_SITE ? resetSandboxAction : undefined}
     >
       {children}

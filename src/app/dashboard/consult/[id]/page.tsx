@@ -1,9 +1,10 @@
+import { clinicianName } from "@/lib/profession";
 import { createClient } from "@/lib/supabase/server";
 import { resolveAvatarUrls } from "@/lib/avatars";
 import { PageHead, Empty } from "../../_components/ui";
 import { ConsultDetailView, CONSULT_TYPES, audienceLabel } from "../views";
 
-const nameOf = (p: any) => (p ? `${p.credential_prefix ? p.credential_prefix + " " : ""}${p.full_name}` : "A colleague");
+const nameOf = (p: any) => (p ? clinicianName(p?.full_name, p?.qualification_level, p?.credential_prefix) : "A colleague");
 
 export default async function ConsultDetailPage(props: { params: Promise<{ id: string }>; searchParams: Promise<{ error?: string; published?: string }> }) {
   const { id } = await props.params;
@@ -16,7 +17,7 @@ export default async function ConsultDetailPage(props: { params: Promise<{ id: s
 
   const { data: c } = await supabase
     .from("consultations")
-    .select("*, author:author_profile_id(full_name, credential_prefix), consultation_groups(name)")
+    .select("*, author:author_profile_id(full_name, credential_prefix, qualification_level), consultation_groups(name)")
     .eq("id", Number(id))
     .maybeSingle();
   if (!c) {
@@ -30,7 +31,7 @@ export default async function ConsultDetailPage(props: { params: Promise<{ id: s
   const [{ data: responses }, { data: recipients }] = await Promise.all([
     supabase
       .from("consultation_responses")
-      .select("id, body, response_type, marked_useful, created_at, responder:responder_profile_id(full_name, credential_prefix, avatar_path)")
+      .select("id, body, response_type, marked_useful, created_at, responder:responder_profile_id(full_name, credential_prefix, qualification_level, avatar_path)")
       .eq("consultation_id", c.id)
       .order("created_at"),
     c.author_profile_id === myself && (c.audience_profile_ids || []).length

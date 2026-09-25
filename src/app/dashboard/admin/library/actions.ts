@@ -235,7 +235,7 @@ export async function seedStarterLibraryAction() {
   const failures: string[] = [];
 
   for (const row of manifestRows) {
-    const { id, filename, title, category, audience } = row;
+    const { id, filename, title, category, audience, summary, tags } = row;
     if (existingIds.has(id)) {
       skipped++;
       continue;
@@ -264,6 +264,12 @@ export async function seedStarterLibraryAction() {
       profile_id: user.id,
       owner_scope: "world",
       title: `${id}: ${title}`,
+      library_code: id,
+      summary: summary || null,
+      category: category || null,
+      audience: audience || null,
+      tags: (tags || "").split(";").map((t) => t.trim()).filter(Boolean),
+      publish_date: new Date().toISOString().slice(0, 10),
       storage_path: storagePath,
       uploaded_by: user.id,
       is_general: true,

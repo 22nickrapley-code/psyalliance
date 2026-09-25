@@ -1,3 +1,4 @@
+import { clinicianName } from "@/lib/profession";
 import {
   saveNotificationPreferences,
   saveEmergencyContact,
@@ -24,7 +25,7 @@ const TRIGGERS: { key: string; label: string; when: string; col: string; always?
 ];
 
 function nameOf(p: any) {
-  return p ? `${p.credential_prefix ? p.credential_prefix + " " : ""}${p.full_name}` : "Member";
+  return p ? clinicianName(p?.full_name, p?.qualification_level, p?.credential_prefix) : "Member";
 }
 
 export function SettingsView({ sp, email, me, prefs, profile, emergency, excluded, blocked, blockedProfiles, circle }: { sp: { saved?: string; error?: string }; email: string; me: string; prefs: any; profile: any; emergency: any; excluded: any[] | null; blocked: { blocked_profile_id: string }[] | null; blockedProfiles: any[] | null; circle: any[] | null }) {

@@ -1,4 +1,4 @@
-import { IS_DEMO_SITE } from "@/lib/env";
+import { IS_DEMO_SITE, SITE_URL } from "@/lib/env";
 import "./globals.css";
 // Self-hosted via @fontsource rather than next/font/google: this bundles the
 // font files at build time with no network fetch required, so the build
@@ -19,7 +19,7 @@ import "@fontsource/inter/700.css";
 // so it falls back to the current *.workers.dev URL until a custom domain is
 // live - set NEXT_PUBLIC_SITE_URL (see wrangler.jsonc) once it is, so OG
 // images/canonical links resolve to the real domain instead.
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://psyalliance.workers.dev";
+const siteUrl = SITE_URL;
 
 export const metadata = {
   metadataBase: new URL(siteUrl),

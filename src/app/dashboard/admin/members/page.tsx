@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { requireAdminOrRedirectPath } from "@/lib/admin";
+import { requireAdminOrRedirectPath, allAdminMembers } from "@/lib/admin";
 import { setMemberVerificationStatus, setMemberAdminFlag, setMemberAccountStatusAction, setAccountKindAction } from "./actions";
 import { PageHead, Banner, Status } from "../../_components/ui";
 
@@ -29,7 +29,7 @@ export default async function AdminMembersPage(props: {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { data } = await supabase.rpc("admin_members");
+  const data = await allAdminMembers(supabase);
   const all = ((data as any[]) || []).sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)));
   const inKind = all.filter((p) => (kind === "demo" ? p.is_demo || p.demo_view : kind === "operator" ? p.account_kind === "operator" && !p.is_demo : p.account_kind === "clinician" && !p.is_demo && !p.demo_view));
   const rows = inKind.filter((p) => {

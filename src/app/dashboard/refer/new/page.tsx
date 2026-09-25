@@ -1,3 +1,4 @@
+import { clinicianName } from "@/lib/profession";
 import { createClient } from "@/lib/supabase/server";
 import { loadNeedOptions, parseNeed } from "@/lib/need-options";
 import { findMatches } from "@/lib/match-engine";
@@ -55,7 +56,7 @@ export default async function NewReferralPage(props: { searchParams: Promise<SP>
     ]);
     const picked = (pickedRows || []).map((p: any) => ({
       profileId: p.id,
-      name: `${p.credential_prefix ? p.credential_prefix + " " : ""}${p.full_name}`,
+      name: clinicianName(p?.full_name, p?.qualification_level, p?.credential_prefix),
     }));
     return (
       <ReferReviewView

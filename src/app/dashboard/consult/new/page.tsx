@@ -1,3 +1,4 @@
+import { clinicianName } from "@/lib/profession";
 import { createClient } from "@/lib/supabase/server";
 import { ConsultComposeView } from "../views";
 
@@ -17,14 +18,14 @@ export default async function NewConsultPage(props: { searchParams: Promise<{ ki
     supabase.from("lookup_values").select("value").eq("category", "treatment_specialism").order("value"),
     supabase
       .from("connections")
-      .select("requester_id, addressee_id, requester:requester_id(full_name, credential_prefix), addressee:addressee_id(full_name, credential_prefix)")
+      .select("requester_id, addressee_id, requester:requester_id(full_name, credential_prefix, qualification_level), addressee:addressee_id(full_name, credential_prefix, qualification_level)")
       .eq("status", "accepted")
       .or(`requester_id.eq.${myself},addressee_id.eq.${myself}`),
-    supabase.from("saved_clinicians").select("clinician_id, clinician:clinician_id(full_name, credential_prefix)").eq("profile_id", myself),
+    supabase.from("saved_clinicians").select("clinician_id, clinician:clinician_id(full_name, credential_prefix, qualification_level)").eq("profile_id", myself),
     supabase.from("consultation_group_members").select("group_id, consultation_groups(id, name, charter_body)").eq("profile_id", myself).eq("status", "joined"),
     sp.to ? supabase.from("profiles").select("id, full_name, credential_prefix").eq("id", sp.to).maybeSingle() : Promise.resolve({ data: null as any }),
   ]);
-  const nameOf = (p: any) => (p ? `${p.credential_prefix ? p.credential_prefix + " " : ""}${p.full_name}` : "Colleague");
+  const nameOf = (p: any) => (p ? clinicianName(p?.full_name, p?.qualification_level, p?.credential_prefix) : "Colleague");
   const colleagues = new Map<string, { id: string; name: string; relation: string }>();
   if (pre) colleagues.set(pre.id, { id: pre.id, name: nameOf(pre), relation: "" });
   for (const c of conns || []) {

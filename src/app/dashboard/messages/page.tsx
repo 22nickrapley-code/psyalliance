@@ -3,6 +3,8 @@ import { startConversation, setNotificationReadState } from "./actions";
 import { acknowledgeProviderReferral, declineProviderReferral } from "../referrals/actions";
 import { loadConversations } from "./data";
 import { ConversationList, MessagesShell } from "./views";
+import { ThreadPanel } from "./thread";
+import { clinicianName } from "@/lib/profession";
 import { Banner, Empty } from "../_components/ui";
 
 // Messages (Product Spec v1): the direct inbox for professional
@@ -21,10 +23,10 @@ export default async function MessagesPage(props: { searchParams: Promise<{ erro
     loadConversations(supabase, myself),
     supabase
       .from("connections")
-      .select("requester_id, addressee_id, requester:requester_id(full_name, credential_prefix), addressee:addressee_id(full_name, credential_prefix)")
+      .select("requester_id, addressee_id, requester:requester_id(full_name, credential_prefix, qualification_level), addressee:addressee_id(full_name, credential_prefix, qualification_level)")
       .eq("status", "accepted")
       .or(`requester_id.eq.${myself},addressee_id.eq.${myself}`),
-    supabase.from("saved_clinicians").select("clinician_id, clinician:clinician_id(full_name, credential_prefix)").eq("profile_id", myself),
+    supabase.from("saved_clinicians").select("clinician_id, clinician:clinician_id(full_name, credential_prefix, qualification_level)").eq("profile_id", myself),
     supabase.from("system_notifications").select("id, title, body, created_at, read_at").eq("profile_id", myself).order("created_at", { ascending: false }).limit(10),
     supabase
       .from("provider_referrals")
@@ -33,7 +35,7 @@ export default async function MessagesPage(props: { searchParams: Promise<{ erro
       .order("created_at", { ascending: false })
       .limit(10),
   ]);
-  const nameOf = (p: any) => (p ? `${p.credential_prefix ? p.credential_prefix + " " : ""}${p.full_name}` : "Colleague");
+  const nameOf = (p: any) => (p ? clinicianName(p.full_name, p.qualification_level, p.credential_prefix) : "Colleague");
   const contacts = new Map<string, string>();
   for (const c of conns || []) {
     const mine = c.requester_id === myself;
@@ -42,10 +44,20 @@ export default async function MessagesPage(props: { searchParams: Promise<{ erro
   for (const s of saved || []) if (!contacts.has(s.clinician_id)) contacts.set(s.clinician_id, nameOf((s as any).clinician));
   const unreadNotices = (notices || []).filter((n: any) => !n.read_at);
 
+  // Messages opens on the latest conversation; "New" opens the composer.
+  const composing = !!sp.compose || !!sp.to || !!sp.error || items.length === 0;
+  const openId = composing ? null : items[0].id;
+  if (openId) {
+    await supabase.from("conversation_participants").update({ last_read_at: new Date().toISOString() }).eq("conversation_id", openId).eq("profile_id", myself);
+    items[0] = { ...items[0], unread: false };
+  }
+
   return (
-    <MessagesShell list={<ConversationList items={items} />}>
+    <MessagesShell list={<ConversationList items={items} activeId={openId ?? undefined} composing={composing} />}>
       <Banner error={sp.error} />
-      {items.length === 0 && contacts.size === 0 ? (
+      {openId ? (
+        <ThreadPanel id={openId} myself={myself} />
+      ) : items.length === 0 && contacts.size === 0 ? (
         <Empty
           symbol={"✉"}
           title="No conversations yet."
@@ -53,9 +65,9 @@ export default async function MessagesPage(props: { searchParams: Promise<{ erro
           action={<a className="btn secondary small-btn" href="/dashboard/network">Find a colleague</a>}
         />
       ) : (
-      <section className="card">
+      <section className="card compose-card">
         <div className="eyebrow">New message</div>
-        <h3>Write to a colleague</h3>
+        <h2 className="serif-title" style={{ fontSize: 26, margin: "6px 0 14px" }}>Write to a colleague</h2>
         {contacts.size === 0 ? (
           <p className="small">Message anyone from their profile in Network. Trusted colleagues and saved clinicians appear here for quick access.</p>
         ) : (
@@ -67,13 +79,13 @@ export default async function MessagesPage(props: { searchParams: Promise<{ erro
                 {Array.from(contacts.entries()).map(([id, n]) => <option key={id} value={id}>{n}</option>)}
               </select>
             </label>
-            <label className="field" style={{ marginTop: 10 }}>
+            <label className="field grow">
               Message
               <textarea name="body" required maxLength={4000} placeholder="Write a professional message. No patient-identifying details." />
             </label>
-            <div className="row between" style={{ marginTop: 10 }}>
-              <span className="micro-note">For a case question with several colleagues, use Consult.</span>
-              <button type="submit" className="btn small-btn">Send</button>
+            <div className="row between">
+              <span className="micro-note">For a case question with several colleagues, use <a href="/dashboard/consult">Consult</a>.</span>
+              <button type="submit" className="btn lg">Send</button>
             </div>
           </form>
         )}

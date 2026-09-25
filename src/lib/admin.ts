@@ -54,3 +54,16 @@ export async function setVerificationStatus(
   }
   return { error: null };
 }
+
+// admin_members returns one row per account. PostgREST caps a response at
+// 1,000 rows, so read it in pages until the last one comes back short.
+export async function allAdminMembers(supabase: Awaited<ReturnType<typeof createClient>>): Promise<any[]> {
+  const out: any[] = [];
+  for (let from = 0; from < 50_000; from += 1000) {
+    const { data, error } = await supabase.rpc("admin_members").order("id").range(from, from + 999);
+    if (error || !data) break;
+    out.push(...(data as any[]));
+    if ((data as any[]).length < 1000) break;
+  }
+  return out;
+}

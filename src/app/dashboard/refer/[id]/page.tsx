@@ -1,3 +1,4 @@
+import { clinicianName } from "@/lib/profession";
 import { createClient } from "@/lib/supabase/server";
 import { loadNeedOptions } from "@/lib/need-options";
 import { resolveAvatarUrls } from "@/lib/avatars";
@@ -22,7 +23,7 @@ export default async function ReferralDetailPage(props: {
     loadNeedOptions(supabase),
     supabase
       .from("referral_requests")
-      .select("*, requester:requesting_profile_id(full_name, credential_prefix)")
+      .select("*, requester:requesting_profile_id(full_name, credential_prefix, qualification_level)")
       .eq("id", Number(id))
       .maybeSingle(),
   ]);
@@ -39,11 +40,11 @@ export default async function ReferralDetailPage(props: {
   const isMine = r.requesting_profile_id === myself;
   const { data: responses } = await supabase
     .from("referral_responses")
-    .select("responding_profile_id, status, message, responder:responding_profile_id(full_name, credential_prefix, avatar_path)")
+    .select("responding_profile_id, status, message, responder:responding_profile_id(full_name, credential_prefix, qualification_level, avatar_path)")
     .eq("referral_request_id", r.id)
     .order("created_at", { ascending: true });
   const urls = await resolveAvatarUrls(supabase, (responses || []).map((x: any) => x.responder?.avatar_path));
-  const nameOf = (p: any) => (p ? `${p.credential_prefix ? p.credential_prefix + " " : ""}${p.full_name}` : "A colleague");
+  const nameOf = (p: any) => (p ? clinicianName(p?.full_name, p?.qualification_level, p?.credential_prefix) : "A colleague");
 
   const ids: number[] = (r.specialism_lookup_ids?.length ? r.specialism_lookup_ids : r.specialism_lookup_id ? [r.specialism_lookup_id] : []).map(Number);
   const focus = ids.map((i) => options.focus.find((f) => f.id === i)?.value).filter(Boolean).join(" + ") || "Any focus";
@@ -73,6 +74,7 @@ export default async function ReferralDetailPage(props: {
     where,
     status: r.status,
     audience: r.audience_type,
+    audienceCount: r.audience_type === "selected" ? (r.audience_profile_ids || []).length : null,
     timeframe: r.timeframe,
     notes: r.notes,
     createdAt: r.created_at,

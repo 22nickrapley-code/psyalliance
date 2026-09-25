@@ -1,3 +1,4 @@
+import { clinicianName } from "@/lib/profession";
 import { createClient } from "@/lib/supabase/server";
 import { loadNeedOptions } from "@/lib/need-options";
 import { findMatches, type Match } from "@/lib/match-engine";
@@ -60,7 +61,7 @@ export default async function CoverPlanPage(props: { params: Promise<{ id: strin
       : { data: [] as any[] };
     const nameOf = (pid: string) => {
       const p = (people || []).find((x: any) => x.id === pid);
-      return p ? `${p.credential_prefix ? p.credential_prefix + " " : ""}${p.full_name}` : "Colleague";
+      return p ? clinicianName(p?.full_name, p?.qualification_level, p?.credential_prefix) : "Colleague";
     };
     const rows = cases
       .filter((c) => c.status === "needs_cover" || c.status === "declined_all")

@@ -1,3 +1,4 @@
+import { readAll } from "@/lib/paged";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { requireAdminOrRedirectPath } from "@/lib/admin";
@@ -12,7 +13,7 @@ import { requireAdminOrRedirectPath } from "@/lib/admin";
 // A few #102 line items aren't computed here and are labeled as such
 // rather than faked: "invite conversion" (there's no cold-start invite
 // tracking table yet - see the progress doc's Network cold-start note)
-// and true growth-over-time for Northeast/Texas density (no historical
+// and true growth-over-time for Northeast density (no historical
 // snapshot table - this shows current counts, not a trend).
 //
 // NORTHEAST is #103's initial active acquisition cluster; TEXAS is called
@@ -53,10 +54,10 @@ export default async function NetworkHealthPage() {
       .eq("is_demo", false)
       .eq("account_kind", "clinician"),
     supabase.from("referral_requests").select("id, created_at, specialism_lookup_id, status"),
-    supabase.from("referral_responses").select("referral_request_id, created_at"),
+    readAll((a, b) => supabase.from("referral_responses").select("referral_request_id, created_at").order("id").range(a, b)).then((data) => ({ data })),
     supabase.from("coverage_plan_cases").select("id, created_at, specialism_lookup_ids, status"),
     supabase.from("coverage_requests").select("id, coverage_plan_case_id, sent_at, responded_at, status"),
-    supabase.from("profile_lookup_values").select("profile_id, lookup_value_id"),
+    readAll((a, b) => supabase.from("profile_lookup_values").select("profile_id, lookup_value_id").order("profile_id").order("lookup_value_id").range(a, b)).then((data) => ({ data })),
     supabase.from("lookup_values").select("id, value").eq("category", "treatment_specialism"),
   ]);
 
@@ -84,7 +85,7 @@ export default async function NetworkHealthPage() {
   const topProfessions = Array.from(byProfession.entries()).sort((a, b) => b[1] - a[1]);
 
   const northeastCount = verified.filter((p: any) => NORTHEAST_STATES.includes(p.primary_state)).length;
-  const texasCount = verified.filter((p: any) => p.primary_state === "TX").length;
+  const outsideCount = verified.length - northeastCount;
 
   // --- Referrals: response rate, zero-match rate, avg time to first response
   const responsesByRequestId = new Map<number, any[]>();
@@ -166,8 +167,8 @@ export default async function NetworkHealthPage() {
             <div className="label">Northeast (NY/NJ/CT/RI/MA/VT)</div>
           </div>
           <div className="stat">
-            <div className="value">{texasCount}</div>
-            <div className="label">Texas</div>
+            <div className="value">{outsideCount}</div>
+            <div className="label">Outside launch states</div>
           </div>
         </div>
         <div className="field-row" style={{ marginTop: "1rem", alignItems: "flex-start" }}>
@@ -287,7 +288,7 @@ export default async function NetworkHealthPage() {
         <p className="muted" style={{ fontSize: "0.85rem" }}>
           Two #102 line items aren&apos;t shown above because there&apos;s nothing to compute them from yet,
           rather than showing a made-up number: invite conversion (no cold-start invite tracking exists -
-          see the progress doc), and Northeast/Texas density as a trend over time (no historical snapshot
+          see the progress doc), and Northeast density as a trend over time (no historical snapshot
           table - the counts above are current, not a growth curve).
         </p>
       </div>

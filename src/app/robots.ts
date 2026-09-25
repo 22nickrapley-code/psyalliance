@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { IS_DEMO_SITE } from "@/lib/env";
+import { IS_DEMO_SITE, SITE_URL } from "@/lib/env";
 
 // Dashboard and API routes are behind auth anyway (redirect to sign-in), but
 // keeping crawlers off them explicitly avoids indexing sign-in-gated pages
@@ -9,7 +9,7 @@ import { IS_DEMO_SITE } from "@/lib/env";
 export default function robots(): MetadataRoute.Robots {
   // The demo site is never indexed.
   if (IS_DEMO_SITE) return { rules: { userAgent: "*", disallow: "/" } };
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://psyalliance.workers.dev";
+  const siteUrl = SITE_URL;
   return {
     rules: {
       userAgent: "*",

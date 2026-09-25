@@ -27,6 +27,7 @@ const options: NeedOptions = {
   language: [{ id: 20, value: "Spanish" }],
   ageBands: ["Children", "Adolescents", "Young Adults", "Adults", "Seniors"],
   states: US_STATES,
+  homeState: "NY",
 };
 
 const m = (id: string, name: string, tier: Match["tier"], reasons: string[], q = "PsyD", city = "Brooklyn"): Match => ({
@@ -141,12 +142,12 @@ export const previewScreens: Record<string, () => ReactNode> = {
     <NetworkView
       tab="directory"
       people={[
-        { id: "a", name: "Dr. Maya Chen", qualification: "PsyD", city: "Brooklyn", state: "NY", licenceStates: ["NY"], topFocus: ["Trauma / PTSD", "Anxiety"], availability: "Accepting referrals", fresh: true, confirmedDaysAgo: 2, psypact: true, avatarUrl: null, relationship: "trusted", saved: false },
-        { id: "b", name: "Dr. Eli Ramirez", qualification: "MD", city: "Manhattan", state: "NY", licenceStates: ["NY", "NJ"], topFocus: ["Depression"], availability: "Selected referrals", fresh: false, confirmedDaysAgo: 41, psypact: false, avatarUrl: null, relationship: "none", saved: true },
+        { id: "a", name: "Maya Chen, PsyD", qualification: "PsyD", city: "Brooklyn", state: "NY", licenceStates: ["NY"], topFocus: ["Trauma / PTSD", "Anxiety"], availability: "Accepting referrals", fresh: true, confirmedDaysAgo: 2, psypact: true, avatarUrl: null, relationship: "trusted", saved: false },
+        { id: "b", name: "Eli Ramirez, MD", qualification: "MD", city: "Manhattan", state: "NY", licenceStates: ["NY", "NJ"], topFocus: ["Depression"], availability: "Selected referrals", fresh: false, confirmedDaysAgo: 41, psypact: false, avatarUrl: null, relationship: "none", saved: true },
       ]}
       suggested={[]}
       suggestedAvatars={{}}
-      invitations={[{ id: 1, name: "Dr. Imani Brooks", profileId: "c" }]}
+      invitations={[{ id: 1, name: "Imani Brooks, PhD", profileId: "c", where: "Queens, NY", avatarUrl: null }]}
       sentCount={1}
       filters={{ q: "", focus: "", state: "", available: false, profession: "" }}
       focusOptions={["Anxiety", "Depression", "Trauma / PTSD"]}
@@ -200,7 +201,25 @@ export const previewScreens: Record<string, () => ReactNode> = {
   "cover-index": () => (
     <CoverIndexView
       plans={[plan, { ...plan, id: 8, title: "Conference week", absenceType: "short_planned", status: "draft", counts: { total: 1, covered: 0, invited: 0, open: 1 } }]}
-      incoming={[{ requestId: 1, ownerId: "x", ownerName: "Dr. Maya Chen", planTitle: "Unexpected absence", dates: "Oct 3 – Oct 17", caseLabel: "Anxiety", details: ["Adults", "Virtual", "Weekly"], urgent: true }]}
+      incoming={[
+        {
+          planId: 1,
+          ownerId: "x",
+          ownerName: "Maya Chen, PsyD",
+          ownerRole: "Clinical psychologist · Brooklyn, NY",
+          ownerAvatar: null,
+          absence: "Unexpected absence",
+          planTitle: "Unexpected absence",
+          dates: "Oct 3 to Oct 17",
+          length: "2 weeks",
+          location: "Brooklyn, New York",
+          outreach: "Asked of several colleagues at once",
+          note: "Family emergency. Could you hold two sessions?",
+          urgent: true,
+          sentAt: null,
+          cases: [{ requestId: 1, reference: "Case 1", focus: "Anxiety", details: [["Age band", "Adults"], ["Setting", "Virtual"], ["Frequency", "Weekly"]] }],
+        },
+      ]}
     />
   ),
   "cover-plan": () => <CoverPlanStepView options={options} />,

@@ -1,3 +1,4 @@
+import { clinicianName } from "@/lib/profession";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { requireAdminOrRedirectPath } from "@/lib/admin";
@@ -27,11 +28,13 @@ const STATUS: Record<string, [string, "" | "warn" | "neutral" | "danger"]> = {
 // reviewers record their own reviews at /dashboard/documents/review; the
 // database only counts independent approvals of the current version
 // (migration 0081), and only then can a resource be published.
-export default async function AdminLibraryPage(props: { searchParams: Promise<{ error?: string; seeded?: string; skipped?: string; appointed?: string }> }) {
+export default async function AdminLibraryPage(props: {
+  searchParams: Promise<{ error?: string; seeded?: string; skipped?: string; appointed?: string; status?: string; role?: string }>;
+}) {
   const supabase = await createClient();
   const redirectPath = await requireAdminOrRedirectPath(supabase);
   if (redirectPath) redirect(redirectPath);
-  const { error, seeded, skipped, appointed } = await props.searchParams;
+  const { error, seeded, skipped, appointed, status: statusFilter = "", role: roleFilter = "" } = await props.searchParams;
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -44,11 +47,11 @@ export default async function AdminLibraryPage(props: { searchParams: Promise<{ 
       .order("library_code", { ascending: true }),
     supabase
       .from("document_reviews")
-      .select("document_id, document_version, reviewer_role, approved, notes, reviewed_at, reviewer:reviewer_profile_id(full_name, credential_prefix)")
+      .select("document_id, document_version, reviewer_role, approved, notes, reviewed_at, reviewer:reviewer_profile_id(full_name, credential_prefix, qualification_level)")
       .is("invalidated_at", null),
     supabase
       .from("library_reviewers")
-      .select("id, role, qualification, active, appointed_at, person:profile_id(full_name, credential_prefix)")
+      .select("id, role, qualification, active, appointed_at, person:profile_id(full_name, credential_prefix, qualification_level)")
       .order("appointed_at", { ascending: true }),
     supabase
       .rpc("admin_profiles")
@@ -63,7 +66,7 @@ export default async function AdminLibraryPage(props: { searchParams: Promise<{ 
     if (!reviewsByDoc.has(r.document_id)) reviewsByDoc.set(r.document_id, []);
     reviewsByDoc.get(r.document_id)!.push(r);
   }
-  const nameOf = (p: any) => (p ? `${p.credential_prefix ? p.credential_prefix + " " : ""}${p.full_name}` : "Someone");
+  const nameOf = (p: any) => (p ? clinicianName(p?.full_name, p?.qualification_level, p?.credential_prefix) : "Someone");
   const counts = { published: 0, provisional: 0, hidden: 0 };
   for (const d of documents || []) {
     if (d.review_status === "published") counts.published++;
@@ -72,6 +75,15 @@ export default async function AdminLibraryPage(props: { searchParams: Promise<{ 
   }
   const activeByRole = new Map<string, number>();
   for (const r of reviewers || []) if (r.active) activeByRole.set(r.role, (activeByRole.get(r.role) || 0) + 1);
+  const isHidden = (st: string) => ["needs_review", "draft", "in_review"].includes(st);
+  const shown = (documents || []).filter((d: any) => {
+    if (statusFilter === "published" && d.review_status !== "published") return false;
+    if (statusFilter === "provisional" && d.review_status !== "provisional") return false;
+    if (statusFilter === "hidden" && !isHidden(d.review_status)) return false;
+    if (roleFilter === "none" && (d.required_reviewer_roles || []).length > 0) return false;
+    if (roleFilter && roleFilter !== "none" && !(d.required_reviewer_roles || []).includes(roleFilter)) return false;
+    return true;
+  });
   const starterSetCount = (documents || []).filter((d: any) => /^PA-\d\d$/.test(d.library_code || "")).length;
 
   return (
@@ -106,8 +118,31 @@ export default async function AdminLibraryPage(props: { searchParams: Promise<{ 
 
       <div className="split">
         <section className="card">
-          <div className="card-title"><h3>Resources</h3><span className="micro-note">Current version only</span></div>
-          {(documents || []).map((d: any) => {
+          <div className="card-title"><h3>Resources</h3><span className="micro-note">{shown.length} of {(documents || []).length} · current version only</span></div>
+          <form method="get" className="filter-grid" style={{ gridTemplateColumns: "1fr 1fr auto", marginBottom: 14 }}>
+            <label className="field">
+              Status
+              <select name="status" defaultValue={statusFilter}>
+                <option value="">All statuses</option>
+                <option value="published">Published, reviewed ({counts.published})</option>
+                <option value="provisional">Provisional ({counts.provisional})</option>
+                <option value="hidden">Hidden ({counts.hidden})</option>
+              </select>
+            </label>
+            <label className="field">
+              Review role needed
+              <select name="role" defaultValue={roleFilter}>
+                <option value="">Any role</option>
+                {ALL_ROLES.map((r) => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
+                <option value="none">No roles set yet</option>
+              </select>
+            </label>
+            <span className="row" style={{ gap: 6 }}>
+              <button type="submit" className="btn secondary small-btn">Filter</button>
+              {(statusFilter || roleFilter) && <a className="text-arrow" href="/dashboard/admin/library">Clear</a>}
+            </span>
+          </form>
+          {shown.map((d: any) => {
             const required = (d.required_reviewer_roles || []) as ReviewerRole[];
             const current = (reviewsByDoc.get(d.id) || []).filter((r) => r.document_version === d.version);
             const approvedRoles = new Set(current.filter((r) => r.approved).map((r) => r.reviewer_role));
@@ -142,11 +177,23 @@ export default async function AdminLibraryPage(props: { searchParams: Promise<{ 
                 </div>
                 <div className="row" style={{ gap: 8, marginTop: 10, flexWrap: "wrap", alignItems: "flex-start" }}>
                   {d.review_status !== "published" && (
-                    <form action={publishDocumentAction} className="inline">
+                    <form action={publishDocumentAction} className="inline publish-control">
                       <input type="hidden" name="document_id" value={d.id} />
-                      <button type="submit" className="btn small-btn" disabled={required.length === 0 || missing.length > 0}>
+                      <button
+                        type="submit"
+                        className="btn small-btn"
+                        disabled={required.length === 0 || missing.length > 0}
+                        aria-describedby={required.length === 0 || missing.length > 0 ? `why-${d.id}` : undefined}
+                      >
                         Publish
                       </button>
+                      {(required.length === 0 || missing.length > 0) && (
+                        <span id={`why-${d.id}`} className="why-disabled">
+                          {required.length === 0
+                            ? "Set the reviewer roles this resource needs first."
+                            : `Waiting for ${missing.length === 1 ? "an approval" : `${missing.length} approvals`}: ${missing.map((r) => ROLE_LABELS[r]).join(", ")}.`}
+                        </span>
+                      )}
                     </form>
                   )}
                   <form action={setResourceVisibilityAction} className="inline">
@@ -181,6 +228,7 @@ export default async function AdminLibraryPage(props: { searchParams: Promise<{ 
             );
           })}
           {(documents || []).length === 0 && <p className="small">No shared resources yet.</p>}
+          {(documents || []).length > 0 && shown.length === 0 && <p className="small">No resources match these filters.</p>}
         </section>
 
         <aside className="stack">

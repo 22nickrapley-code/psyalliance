@@ -124,6 +124,80 @@ function PlanHead({ plan, step, lead }: { plan: PlanSummary; step: number; lead:
 }
 
 // ---------- Index ----------
+export type IncomingPlan = {
+  planId: number;
+  ownerId: string;
+  ownerName: string;
+  ownerRole: string;
+  ownerAvatar: string | null;
+  absence: string;
+  planTitle: string;
+  dates: string;
+  length: string;
+  location: string;
+  outreach: string;
+  note: string | null;
+  urgent: boolean;
+  sentAt: string | null;
+  cases: { requestId: number; reference: string | null; focus: string; details: [string, string][] }[];
+};
+
+function IncomingCard({ r }: { r: IncomingPlan }) {
+  const n = r.cases.length;
+  return (
+    <section className={`card incoming-cover${r.urgent ? " urgent" : ""}`}>
+      <div className="incoming-head">
+        <PersonAvatar name={r.ownerName} url={r.ownerAvatar} size={48} />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div className="row between wrap" style={{ gap: 8 }}>
+            <h3 style={{ margin: 0 }}>
+              <a href={`/dashboard/people/${r.ownerId}`}>{r.ownerName}</a> asked you to cover {n === 1 ? "one patient" : `${n} patients`}
+            </h3>
+            <span className="row" style={{ gap: 6 }}>
+              {r.urgent && <Status tone="danger">Urgent</Status>}
+              <Status tone="warn">Needs your reply</Status>
+            </span>
+          </div>
+          <p className="small" style={{ margin: "3px 0 0" }}>{r.ownerRole}</p>
+        </div>
+      </div>
+      <ul className="glance incoming-glance">
+        <li><span>Patients</span><strong>{n}</strong></li>
+        <li><span>Patient location</span><strong>{r.location}</strong></li>
+        <li><span>Absence</span><strong>{r.absence}</strong></li>
+        <li><span>Dates</span><strong>{r.dates}{r.length ? ` · ${r.length}` : ""}</strong></li>
+        <li><span>How colleagues are asked</span><strong>{r.outreach}</strong></li>
+      </ul>
+      {r.note && <blockquote className="request-note">&ldquo;{r.note}&rdquo;</blockquote>}
+      <div className="incoming-cases">
+        {r.cases.map((c, i) => (
+          <div key={c.requestId} className="incoming-case">
+            <div className="row between wrap" style={{ gap: 8 }}>
+              <strong>
+                {c.reference && !/^case\s*\d+$/i.test(c.reference.trim()) ? c.reference : `Case ${i + 1}`} &middot; {c.focus}
+              </strong>
+            </div>
+            <dl className="case-facts">
+              {c.details.map(([k, v]) => (
+                <div key={k}><dt>{k}</dt><dd>{v}</dd></div>
+              ))}
+            </dl>
+            <form action={respondCoverAction} className="row wrap" style={{ marginTop: 12, gap: 8 }}>
+              <input type="hidden" name="coverage_request_id" value={c.requestId} />
+              <input type="hidden" name="owner_id" value={r.ownerId} />
+              <input type="hidden" name="thread_title" value={`Cover · ${r.planTitle}`} />
+              <button type="submit" name="response" value="accepted" className="btn small-btn">Accept this case</button>
+              <button type="submit" name="response" value="discussing" className="btn secondary small-btn">Discuss first</button>
+              <button type="submit" name="response" value="declined" className="btn ghost small-btn">Decline</button>
+            </form>
+          </div>
+        ))}
+      </div>
+      <p className="micro-note" style={{ margin: "12px 0 0" }}>No patient-identifying details are shared until you accept and agree a handoff.</p>
+    </section>
+  );
+}
+
 export function CoverIndexView({
   plans,
   incoming,
@@ -131,16 +205,7 @@ export function CoverIndexView({
   error,
 }: {
   plans: PlanSummary[];
-  incoming: {
-    requestId: number;
-    ownerId: string;
-    ownerName: string;
-    planTitle: string;
-    dates: string;
-    caseLabel: string;
-    details: string[];
-    urgent: boolean;
-  }[];
+  incoming: IncomingPlan[];
   ok?: string;
   error?: string;
 }) {
@@ -156,29 +221,15 @@ export function CoverIndexView({
       />
       <Banner ok={ok} error={error} />
       {incoming.length > 0 && (
-        <section className="card" style={{ marginBottom: 20 }}>
-          <div className="card-title"><h3>Cover requests for you</h3><Status tone="warn">{incoming.length} waiting</Status></div>
-          {incoming.map((r) => (
-            <div key={r.requestId} className="pa-case">
-              <div className="row between wrap">
-                <div>
-                  <strong>{r.ownerName} &middot; {r.planTitle}</strong>
-                  <p className="small" style={{ margin: "3px 0 0" }}>{r.dates} &middot; {r.caseLabel}</p>
-                </div>
-                {r.urgent && <Status tone="danger">Urgent</Status>}
-              </div>
-              <div className="kv">{r.details.map((d) => <span key={d} className="chip">{d}</span>)}</div>
-              <form action={respondCoverAction} className="row wrap" style={{ marginTop: 12 }}>
-                <input type="hidden" name="coverage_request_id" value={r.requestId} />
-                <input type="hidden" name="owner_id" value={r.ownerId} />
-                <input type="hidden" name="thread_title" value={`Cover · ${r.planTitle}`} />
-                <button type="submit" name="response" value="accepted" className="btn small-btn">Accept</button>
-                <button type="submit" name="response" value="discussing" className="btn secondary small-btn">Discuss first</button>
-                <button type="submit" name="response" value="declined" className="btn ghost small-btn">Decline</button>
-              </form>
-            </div>
-          ))}
-        </section>
+        <>
+          <div className="section-heading" style={{ marginTop: 0 }}>
+            <h2>Cover requests for you</h2>
+            <Status tone="warn">{incoming.reduce((n, r) => n + r.cases.length, 0)} waiting</Status>
+          </div>
+          <div className="stack" style={{ marginBottom: 26 }}>
+            {incoming.map((r) => <IncomingCard key={r.planId} r={r} />)}
+          </div>
+        </>
       )}
       <div className="split">
         <section className="card">
@@ -258,7 +309,7 @@ export function CoverPlanStepView({ options, error }: { options: NeedOptions; er
             <label className="field">Return date<input type="date" name="ends_on" /></label>
             <label className="field full">
               Jurisdiction
-              <select name="state" required defaultValue="">
+              <select name="state" required defaultValue={options.homeState || ""}>
                 <option value="">State your patients are in</option>
                 {options.states.map((s) => <option key={s.code} value={s.code}>{s.name}</option>)}
               </select>

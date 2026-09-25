@@ -1,3 +1,4 @@
+import { clinicianName } from "@/lib/profession";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import {
@@ -33,20 +34,20 @@ export default async function ConsultationGroupPage(props: { params: Promise<{ i
   const [{ data: members }, { data: mine }, { data: threads }, { data: conns }] = await Promise.all([
     supabase
       .from("consultation_group_members")
-      .select("id, profile_id, external_email, status, role, member:profile_id(full_name, credential_prefix)")
+      .select("id, profile_id, external_email, status, role, member:profile_id(full_name, credential_prefix, qualification_level)")
       .eq("group_id", groupId)
       .order("invited_at", { ascending: true }),
     supabase.from("consultation_group_members").select("id, status").eq("group_id", groupId).eq("profile_id", me).maybeSingle(),
     supabase
       .from("consultations")
-      .select("id, question, status, created_at, author_profile_id, author:author_profile_id(full_name, credential_prefix), consultation_responses(id)")
+      .select("id, question, status, created_at, author_profile_id, author:author_profile_id(full_name, credential_prefix, qualification_level), consultation_responses(id)")
       .eq("group_id", groupId)
       .neq("status", "draft")
       .order("created_at", { ascending: false }),
     isCreator
       ? supabase
           .from("connections")
-          .select("requester_id, addressee_id, requester:requester_id(full_name, credential_prefix), addressee:addressee_id(full_name, credential_prefix)")
+          .select("requester_id, addressee_id, requester:requester_id(full_name, credential_prefix, qualification_level), addressee:addressee_id(full_name, credential_prefix, qualification_level)")
           .eq("status", "accepted")
           .or(`requester_id.eq.${me},addressee_id.eq.${me}`)
       : Promise.resolve({ data: [] as any[] }),
@@ -54,7 +55,7 @@ export default async function ConsultationGroupPage(props: { params: Promise<{ i
   if (!isCreator && !mine) redirect("/dashboard/consult/groups?error=" + encodeURIComponent("That group isn't available."));
 
   const isMember = isCreator || mine?.status === "joined";
-  const nameOf = (p: any) => (p ? `${p.credential_prefix ? p.credential_prefix + " " : ""}${p.full_name}` : "Member");
+  const nameOf = (p: any) => (p ? clinicianName(p?.full_name, p?.qualification_level, p?.credential_prefix) : "Member");
   const existing = new Set((members || []).map((m: any) => m.profile_id).filter(Boolean));
   const candidates = (conns || [])
     .map((c: any) => (c.requester_id === me ? { id: c.addressee_id, ...c.addressee } : { id: c.requester_id, ...c.requester }))

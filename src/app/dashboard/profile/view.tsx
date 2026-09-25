@@ -1,6 +1,6 @@
 import { effectiveReferral } from "@/lib/availability";
 import { saveProfile, uploadAvatar } from "./actions";
-import { professionFor, professionLabel } from "@/lib/profession";
+import { professionFor, professionLabel, clinicianName, roleLabel } from "@/lib/profession";
 import { US_STATES } from "@/lib/us-states";
 import BioImportBox from "./bio-import";
 import { AvatarPicker } from "./avatar-picker";
@@ -50,7 +50,27 @@ function Section({ title, help, children, id, done, open }: { title: string; hel
   );
 }
 
-export function ProfileView({ sp, profile, lookups, selectedRows, licenceCount, avatarUrl, me }: { sp: { saved?: string; avatar_saved?: string; avatar_error?: string; error?: string }; profile: any; lookups: { id: number; category: string; value: string }[] | null; selectedRows: { lookup_value_id: number; rank: number | null }[] | null; licenceCount: number | null; avatarUrl: string | null; me: string }) {
+export function ProfileView({
+  sp,
+  profile,
+  lookups,
+  selectedRows,
+  licenceCount,
+  avatarUrl,
+  me,
+  editing = true,
+  licences = [],
+}: {
+  sp: { saved?: string; avatar_saved?: string; avatar_error?: string; error?: string };
+  profile: any;
+  lookups: { id: number; category: string; value: string }[] | null;
+  selectedRows: { lookup_value_id: number; rank: number | null }[] | null;
+  licenceCount: number | null;
+  avatarUrl: string | null;
+  me: string;
+  editing?: boolean;
+  licences?: { state: string; reviewed: boolean }[];
+}) {
   const selected = new Map<number, number | null>((selectedRows || []).map((s) => [s.lookup_value_id, s.rank]));
   const by: Record<string, LV[]> = {};
   for (const lv of lookups || []) (by[lv.category] ||= []).push({ id: lv.id, value: lv.value });
@@ -82,8 +102,77 @@ export function ProfileView({ sp, profile, lookups, selectedRows, licenceCount, 
   const pct = Math.round((doneCount / checks.length) * 100);
 
   const name = profile?.full_name || "Your name";
-  const display = profile?.credential_prefix ? `${profile.credential_prefix} ${name}` : name;
+  const display = clinicianName(name, profile?.qualification_level, profile?.credential_prefix);
   const where = [profile?.primary_practice_city, profile?.primary_state].filter(Boolean).join(", ");
+
+  if (!editing) {
+    const stateName = (c: string) => US_STATES.find((s) => s.code === c)?.name || c;
+    const reviewed = licences.filter((l) => l.reviewed);
+    const joinSome = (xs: string[], n: number) => (xs.length > n ? `${xs.slice(0, n).join(", ")} +${xs.length - n}` : xs.join(", "));
+    const glance: [string, string][] = [
+      ["Practice focus", ranked.slice(0, 3).map((l) => l.value).join(" · ") || "Not set"],
+      ["Approaches", joinSome(pick("treatment_modality").map((l) => l.value), 3) || "Not set"],
+      ["Age groups", pick("age_group_specialism").map((l) => l.value).join(", ") || "Not set"],
+      ["Sessions", pick("session_type").map((l) => l.value).join(", ") || "Not set"],
+      ["Languages", pick("language").map((l) => l.value).join(", ") || "Not set"],
+      ["Insurance", joinSome(pick("insurance").map((l) => l.value), 3) || "Self-pay only"],
+      ["Jurisdiction", licences.length ? licences.map((l) => stateName(l.state)).join(", ") + (profile?.psypact_participating ? " · PSYPACT" : "") : "No licence on file"],
+      ...(profile?.founding_member_since || profile?.created_at
+        ? ([["Member since", new Date(profile.founding_member_since || profile.created_at).toLocaleDateString("en-US", { month: "long", year: "numeric" })]] as [string, string][])
+        : []),
+    ];
+    return (
+      <>
+        <PageHead
+          eyebrow="Your account"
+          title="A clear professional profile."
+          lead="The information colleagues use to understand your practice, and every match is computed from."
+          actions={<a className="btn lg" href="/dashboard/profile?edit=1">Edit profile</a>}
+        />
+        <Banner ok={sp.saved ? "Profile saved." : sp.avatar_saved ? "Photo updated." : null} />
+        <div className="split">
+          <section className="card roomy">
+            <div className="row" style={{ gap: 18, alignItems: "center" }}>
+              <PersonAvatar name={name} url={avatarUrl} size={76} />
+              <div style={{ minWidth: 0 }}>
+                <h2 className="serif-title" style={{ fontSize: 32, margin: 0 }}>{display}</h2>
+                <p style={{ margin: "4px 0 10px", fontSize: 15 }}>{roleLabel(profile?.qualification_level)}{where ? ` · ${where}` : ""}</p>
+                {reviewed.length > 0 ? <Status>Professional evidence reviewed</Status> : licences.length ? <Status tone="warn">Licence awaiting review</Status> : <Status tone="warn">Add your licence</Status>}
+              </div>
+            </div>
+            {profile?.bio && <p className="lead-text" style={{ marginTop: 20 }}>{profile.bio}</p>}
+            <ul className="glance" style={{ marginTop: 16, borderTop: "1px solid #e3e9e2" }}>
+              {glance.map(([k, v]) => (
+                <li key={k}><span>{k}</span><strong>{v}</strong></li>
+              ))}
+            </ul>
+          </section>
+          <aside className="stack">
+            <section className="card tint roomy">
+              <div className="eyebrow">{pct === 100 ? "Complete" : `${pct}% complete`}</div>
+              <h2 className="serif-title" style={{ fontSize: 26 }}>{pct === 100 ? "Ready to be matched." : "Almost there."}</h2>
+              <div className="meter" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label="Profile completeness">
+                <span style={{ width: `${pct}%` }} />
+              </div>
+              <p className="small" style={{ marginTop: 10, marginBottom: 0 }}>
+                {pct === 100
+                  ? "Every field matching uses is filled in, and your availability is current."
+                  : `Still to add: ${checks.filter((c) => !c.done).map((c) => c.label.toLowerCase()).join(", ")}.`}
+              </p>
+            </section>
+            <section className="card roomy">
+              <h2 className="serif-title" style={{ fontSize: 24, marginTop: 0 }}>Manage your account</h2>
+              <div className="control-stack">
+                <a className="btn secondary block" href="/dashboard/credentials">Credentials</a>
+                <a className="btn secondary block" href="/dashboard/availability">Availability</a>
+                <a className="btn secondary block" href="/dashboard/settings">Privacy and settings</a>
+              </div>
+            </section>
+          </aside>
+        </div>
+      </>
+    );
+  }
 
   return (
     <>
@@ -91,7 +180,12 @@ export function ProfileView({ sp, profile, lookups, selectedRows, licenceCount, 
         eyebrow="Your profile"
         title="What colleagues match against."
         lead="Every referral and cover suggestion is computed from these facts. No patient information lives here."
-        actions={<button type="submit" form="profile-form" className="btn">Save profile</button>}
+        actions={
+          <>
+            <a className="btn secondary" href="/dashboard/profile">Cancel</a>
+            <button type="submit" form="profile-form" className="btn">Save profile</button>
+          </>
+        }
       />
       <Banner
         error={sp.error || sp.avatar_error}

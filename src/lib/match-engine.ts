@@ -1,4 +1,3 @@
-import { viewerIsDemo } from "@/lib/demo";
 import { createClient } from "@/lib/supabase/server";
 
 // The shared matching engine (Product Spec v1, "The matching engine").
@@ -102,31 +101,21 @@ export async function findMatches(
   opts: { exclude?: string[]; limit?: number } = {}
 ): Promise<MatchResult> {
   const needState = need.state ? need.state.trim().toUpperCase() : null;
-  const demo = await viewerIsDemo(supabase);
   const needCity = need.city ? need.city.trim().toLowerCase() : null;
   const focusIds = (need.focusIds || []).filter((n) => Number.isFinite(n) && n > 0);
   const allowsTelehealth = need.setting === "virtual" || need.setting === "either" || !need.setting;
 
+  // The candidate pool comes pre-filtered from the database (state, focus,
+  // partition, reviewed licence, blocks): one call, whatever the network size.
   const [
-    { data: licenceRows },
-    { data: candidates },
+    { data: pool },
     { data: connectionRows },
     { data: savedRows },
     { data: workedRows },
     { data: ratingRows },
     { data: blockRows },
   ] = await Promise.all([
-    supabase.rpc("network_licence_states"),
-    supabase
-      .from("profiles")
-      .select(
-        "id, full_name, credential_prefix, qualification_level, primary_state, primary_practice_city, psypact_participating, referral_availability, coverage_availability, availability_confirmed_at, availability_paused_until, approx_spaces, last_active_at, open_to_give_supervision, avatar_path"
-      )
-      .eq("verification_status", "verified")
-      .eq("account_status", "active")
-      .eq("account_kind", "clinician")
-      .eq("is_demo", demo)
-      .neq("id", requesterId),
+    supabase.rpc("match_pool", { p_state: needState, p_focus: focusIds, p_telehealth: allowsTelehealth }),
     supabase
       .from("connections")
       .select("requester_id, addressee_id, tier")
@@ -137,9 +126,10 @@ export async function findMatches(
     supabase.from("collaboration_ratings").select("colleague_profile_id, would_work_again").eq("rater_profile_id", requesterId),
     supabase.from("do_not_work_with").select("blocked_profile_id").eq("profile_id", requesterId),
   ]);
+  const candidates = ((pool as any[]) || []).filter((p) => p.id !== requesterId);
 
   const licenceStates = new Map<string, Set<string>>();
-  for (const r of (licenceRows as any[]) || []) licenceStates.set(r.profile_id, new Set(r.states || []));
+  for (const p of candidates) licenceStates.set(p.id, new Set(p.states || []));
 
   const excluded = new Set<string>([...(opts.exclude || []), ...((blockRows || []).map((b: any) => b.blocked_profile_id))]);
 
@@ -160,7 +150,7 @@ export async function findMatches(
   // Stage 1: hard filters that need only the profile row.
   type Pre = { p: any; telehealthOnly: boolean; states: Set<string> };
   const pre: Pre[] = [];
-  for (const p of candidates || []) {
+  for (const p of candidates) {
     if (excluded.has(p.id)) continue;
     const states = licenceStates.get(p.id);
     if (!states || states.size === 0) continue; // no active licence on record
@@ -179,25 +169,18 @@ export async function findMatches(
 
   if (pre.length === 0) return { matches: [], widen: widenOptions(need) };
 
-  // Practice facts for the remaining candidates.
-  const ids = pre.map((x) => x.p.id);
-  const { data: lookupRows } = await supabase
-    .from("profile_lookup_values")
-    .select("profile_id, rank, lookup_value_id, lookup_values!inner(category, value)")
-    .in("profile_id", ids);
+  // Practice facts arrive with each candidate.
   const facts = new Map<string, { focus: Map<number, number | null>; values: Map<string, Set<string>>; languageIds: Set<number> }>();
-  for (const r of (lookupRows as any[]) || []) {
-    let f = facts.get(r.profile_id);
-    if (!f) {
-      f = { focus: new Map(), values: new Map(), languageIds: new Set() };
-      facts.set(r.profile_id, f);
+  for (const { p } of pre) {
+    const f = { focus: new Map<number, number | null>(), values: new Map<string, Set<string>>(), languageIds: new Set<number>() };
+    for (const r of (p.facts as any[]) || []) {
+      const cat = String(r.cat);
+      if (cat === "treatment_specialism") f.focus.set(Number(r.id), r.rank ?? null);
+      if (cat === "language") f.languageIds.add(Number(r.id));
+      if (!f.values.has(cat)) f.values.set(cat, new Set());
+      f.values.get(cat)!.add(String(r.val).toLowerCase());
     }
-    const cat = r.lookup_values?.category as string;
-    const val = r.lookup_values?.value as string;
-    if (cat === "treatment_specialism") f.focus.set(Number(r.lookup_value_id), r.rank ?? null);
-    if (cat === "language") f.languageIds.add(Number(r.lookup_value_id));
-    if (!f.values.has(cat)) f.values.set(cat, new Set());
-    f.values.get(cat)!.add(String(val).toLowerCase());
+    facts.set(p.id, f);
   }
 
   const focusNames = new Map<number, string>();
@@ -255,7 +238,7 @@ export async function findMatches(
     if (needState && !telehealthOnly) reasons.push(`${needState} licence on file`);
     if (need.setting === "in_person" && telehealthOnly) continue;
 
-    if (need.insurance && need.insurance.toLowerCase() !== "self-pay") {
+    if (need.insurance && !need.insurance.toLowerCase().startsWith("self-pay")) {
       if (f.values.get("insurance")?.has(need.insurance.toLowerCase())) {
         score += 6;
         reasons.push(`In network: ${need.insurance}`);
@@ -316,7 +299,7 @@ export async function findMatches(
     });
   }
 
-  const lastActive = new Map((candidates || []).map((p: any) => [p.id, p.last_active_at ? new Date(p.last_active_at).getTime() : 0]));
+  const lastActive = new Map(candidates.map((p: any) => [p.id, p.last_active_at ? new Date(p.last_active_at).getTime() : 0]));
   results.sort(
     (a, b) =>
       b.score - a.score ||

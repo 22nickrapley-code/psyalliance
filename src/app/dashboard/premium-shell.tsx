@@ -29,6 +29,8 @@ export default function PremiumShell({
   gateNotice,
   demoSite,
   resetSandboxAction,
+  homeHref = "/dashboard",
+  activeHref,
 }: {
   groups: NavGroup[];
   displayName: string;
@@ -40,19 +42,26 @@ export default function PremiumShell({
   children: React.ReactNode;
   demoView?: boolean;
   gateNotice?: string | null;
-  demoSite?: { label: string | null; expires: string | null } | null;
+  demoSite?: { label: string | null; expires: string | null; who?: string | null; role?: string | null } | null;
   resetSandboxAction?: () => Promise<void>;
+  homeHref?: string;
+  activeHref?: string;
 }) {
-  const pathname = usePathname() || "/dashboard";
+  const routePath = usePathname();
+  const pathname = activeHref || routePath || "/dashboard";
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   useEffect(() => setDrawerOpen(false), [pathname]);
 
   const allItems = groups.flatMap((g) => g.items);
-  const current = allItems.find((i) => isActive(pathname, i));
-  const mobileItems = MOBILE_PRIMARY.map((href) => allItems.find((i) => i.href === href)).filter(
-    (i): i is NavItem => !!i
-  );
+  // The most specific match names the page: /dashboard/admin/library is
+  // "Library governance", not "Overview".
+  const current = allItems
+    .filter((i) => isActive(pathname, i) || (i.href === "/dashboard/admin" && pathname === "/dashboard/admin"))
+    .sort((a, b) => b.href.length - a.href.length)[0];
+  const currentGroup = groups.find((g) => current && g.items.includes(current));
+  const primary = MOBILE_PRIMARY.map((href) => allItems.find((i) => i.href === href)).filter((i): i is NavItem => !!i);
+  const mobileItems = primary.length ? primary : allItems.slice(0, 5);
 
   return (
     <div className="pa">
@@ -60,7 +69,7 @@ export default function PremiumShell({
       <div className="shell">
         {drawerOpen && <div className="drawer-backdrop" onClick={() => setDrawerOpen(false)} />}
         <aside className={`sidebar${drawerOpen ? " open" : ""}`} aria-label="Workspace navigation">
-          <Link href="/dashboard" className="brand">
+          <Link href={homeHref} className="brand">
             <span className="brand-mark" aria-hidden="true">&psi;</span>
             psyalliance
           </Link>
@@ -73,8 +82,8 @@ export default function PremiumShell({
                     <Link
                       key={item.href}
                       href={item.href}
-                      className={`rail-link${isActive(pathname, item) ? " active" : ""}`}
-                      aria-current={isActive(pathname, item) ? "page" : undefined}
+                      className={`rail-link${item === current ? " active" : ""}`}
+                      aria-current={item === current ? "page" : undefined}
                     >
                       <span className="ico" aria-hidden="true">{item.glyph}</span>
                       {item.label}
@@ -105,6 +114,41 @@ export default function PremiumShell({
         </aside>
 
         <div className="workspace">
+          {demoSite && (
+            <div className="sandbox-band" role="region" aria-label="About this sandbox">
+              <div className="sandbox-band-inner">
+                <div className="who">
+                  {demoSite.who ? (
+                    avatarUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={avatarUrl} alt="" />
+                    ) : (
+                      <span className="avatar">{initials}</span>
+                    )
+                  ) : null}
+                  <div>
+                    <b>{demoSite.who ? `Welcome. You're ${demoSite.who}.` : "PsyAlliance demo"}</b>
+                    <span>
+                      {demoSite.role ? `${demoSite.role}. ` : ""}
+                      Everyone here is fictional and nothing is emailed.
+                      {demoSite.who ? " Anything you send gets a reply from a fictional colleague within a minute or two." : ""}
+                    </span>
+                  </div>
+                </div>
+                <div className="band-actions">
+                  <Link className="btn lg" href="/tour">Take the guided tour</Link>
+                  {resetSandboxAction && demoSite.label && (
+                    <form action={resetSandboxAction}>
+                      <button type="submit" className="btn lg outline">Start the story again</button>
+                    </form>
+                  )}
+                  {demoSite.label && demoSite.expires && (
+                    <span className="expiry">Sandbox for {demoSite.label}<br />Open until {demoSite.expires}</span>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
           <header className="workspace-top">
             <button
               type="button"
@@ -115,7 +159,7 @@ export default function PremiumShell({
               &#9776;
             </button>
             <div className="breadcrumbs">
-              <span>Workspace</span>
+              <span>{currentGroup?.label === "Admin" ? "Admin" : "Workspace"}</span>
               <span aria-hidden="true">&rsaquo;</span>
               <b>{current?.label || "PsyAlliance"}</b>
             </div>
@@ -136,19 +180,6 @@ export default function PremiumShell({
           {demoView && (
             <div className="demo-bar" role="status">
               Demo network: everyone you see here is fake. <Link href="/dashboard/settings#demo">Switch back to the real network</Link>
-            </div>
-          )}
-          {demoSite && (
-            <div className="demo-bar" role="status">
-              Demo site: everyone here is fictional and nothing is emailed.
-              {demoSite.label ? ` Sandbox for ${demoSite.label}` : ""}
-              {demoSite.expires ? `, open until ${new Date(demoSite.expires).toLocaleDateString("en-US", { month: "short", day: "numeric" })}.` : "."}
-              {resetSandboxAction && demoSite.label && (
-                <form action={resetSandboxAction} style={{ display: "inline" }}>
-                  <button type="submit" className="plain-button small" style={{ marginLeft: 8 }}>Start the story again</button>
-                </form>
-              )}
-              <Link href="/tour">Guided tour</Link>
             </div>
           )}
           {gateNotice && !demoView && (

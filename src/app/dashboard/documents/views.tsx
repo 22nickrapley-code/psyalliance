@@ -28,25 +28,23 @@ export function ResourceCard({ r }: { r: LibraryResource }) {
   return (
     <article className="card resource">
       <div className="code">
-        {r.code} / {SHORT_CATEGORY[r.category] || r.category}
+        <span>{r.code} / {SHORT_CATEGORY[r.category] || r.category}</span>
+        {wf && (
+          <a className="micro-note" style={{ textDecoration: "none", letterSpacing: 0, fontWeight: 600 }} href={wf.href}>
+            {wf.label} &rarr;
+          </a>
+        )}
       </div>
       <h3>
         <a href={libraryHref(r.code)}>{r.title}</a>
       </h3>
       <p>{r.summary}</p>
-      <p className="micro-note" style={{ marginTop: -8 }}>For {r.audience}</p>
-      <p className="micro-note" style={{ marginTop: -10 }}>
-        Version {r.version} &middot; {r.reviewed ? `Reviewed ${formatDate(r.reviewDate)}` : "Provisional, not yet independently reviewed"}
-      </p>
       <div className="foot">
-        {wf ? (
-          <a className="plain-button small" href={wf.href}>
-            {wf.label} &rarr;
-          </a>
-        ) : (
-          <span />
-        )}
-        <a className="btn secondary small-btn" href={libraryHref(r.code)}>Open</a>
+        <span className="micro-note">
+          <span className={`review-dot${r.reviewed ? " ok" : ""}`} aria-hidden="true" />
+          v{r.version} &middot; {r.reviewed ? `reviewed ${formatDate(r.reviewDate)}` : "provisional, review pending"}
+        </span>
+        <a className="text-arrow" href={libraryHref(r.code)}>Explore &#8599;</a>
       </div>
     </article>
   );
@@ -116,8 +114,8 @@ export function LibraryView({
           {resources.length === 0 ? (
             <Empty
               symbol={"▧"}
-              title={q || category ? "No resources match that search." : "No reviewed resources yet."}
-              body={q || category ? "Try a task name, a subject or a PA number." : "Resources appear here once they have a recorded review, version and date."}
+              title={q || category ? "No resources match that search." : "No resources yet."}
+              body={q || category ? "Try a task name, a subject or a PA number." : "Resources appear here once they are added to the Library."}
               action={q || category ? <a className="btn secondary small-btn" href="/dashboard/documents">Clear search</a> : undefined}
             />
           ) : (
@@ -131,7 +129,7 @@ export function LibraryView({
             <div className="eyebrow">Editorial standard</div>
             <h3>A library with context.</h3>
             <p className="small">
-              Every resource here has a recorded review, a version and a review date. Each one says who it applies to and links to the part of PsyAlliance where it helps.
+              Every resource shows its version and its review status. Provisional ones are usable templates still waiting for independent review by an appointed clinician, lawyer or privacy reviewer. Each one links to the part of PsyAlliance where it helps.
             </p>
             <p className="small" style={{ marginBottom: 0 }}>
               These are templates and guidance, not legal advice. Check your state&rsquo;s rules before you use one with patients.

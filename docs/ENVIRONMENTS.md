@@ -5,7 +5,7 @@ Two sites, two databases, never shared.
 | | Real site | Demo site |
 |---|---|---|
 | Worker | `psyalliance` | `psyalliance-demo` |
-| URL | https://psyalliance.org (workers.dev until the domain is attached) | `https://psyalliance-demo.<subdomain>.workers.dev` |
+| URL | https://psyalliance.22nickrapley.workers.dev (psyalliance.org once the domain is attached) | https://psyalliance-demo.22nickrapley.workers.dev |
 | Supabase project | `vvmulsyvyjsxhcpqfpyo` (psyalliance) | `xsfqeepxnmnvlhxwkfnw` (psyalliance-demo, us-east-1) |
 | Build | `npm run cf:deploy` (reads `.env.local`) | `npm run cf:deploy:demo` (reads `.env.demo`) |
 | `NEXT_PUBLIC_APP_ENV` | `production` | `demo` |
@@ -33,10 +33,11 @@ Done (25 Sept 2026), by Claude through the Supabase connector:
 - Only the lookup lists were copied. No people, activity, files or production data.
 - `app_config`: `app_env = demo`, `signup_mode = invite`, `site_url` (placeholder until the Worker URL is known). No `email_api_key`, ever.
 - Cron: `pa_demo_autorespond` (every minute), `pa_sandbox_cleanup` (hourly), `pa_email_dispatch`, `pa_cron_history_cleanup`. No reminder or digest jobs.
-- Seeded: `select private.seed_demo_network(null);` gives 120 fictional members in NY, MA and TX.
+- Seeded: `select private.seed_demo_network(null);` gives 1,200 fictional members, 200 in each of NY, NJ, MA, CT, RI and VT. Every specialty is a first or second focus in every state, and the demo dropdowns only offer states, specialties, insurers and languages that `network_coverage()` shows are well covered, so a demo search never comes back empty.
+- Library metadata (codes, summaries, audience, tags) restored for all 20 resources; `site_url` is the demo URL.
 - Release checks on the demo: sandbox (all ok), invitations (6/6).
 
-Nick, once:
+Nick, once (steps 1 to 4 and 6 done on 25 Sept):
 
 1. **Env file**: `.env.demo` (not committed; public values only) has the demo URL and publishable key. Set `NEXT_PUBLIC_SITE_URL` to `https://psyalliance-demo.<your-subdomain>.workers.dev` (same subdomain as the real Worker's workers.dev address).
 2. **Auth URLs** (demo dashboard → Authentication → URL Configuration): Site URL = the demo URL; Redirect URLs = `<demo URL>/**` and `http://localhost:3001/**`.
@@ -49,7 +50,7 @@ Nick, once:
 
 ## Prospect access (demo)
 
-Admin → Sandbox passes → name the prospect, pick 3 to 30 days → copy the link and send it yourself. Opening it creates a fresh fictional practice (Dr. Alex Rivers, Austin) among the 120 fictional colleagues and signs them in with a random one-off password nobody sees. No shared password exists.
+Admin → Sandbox passes → name the prospect, pick 3 to 30 days → copy the link and send it yourself. Opening it creates a fresh fictional practice (Alex Rivers, PsyD, Brooklyn, NY, licensed NY and NJ, six weeks of parental leave starting about five weeks out) among the 1,200 fictional colleagues. The guided tour tells the same story with the same cast and signs them in with a random one-off password nobody sees. No shared password exists.
 
 - Colleagues answer the prospect's cover requests, referrals, consult questions, invitations and messages within a minute or two.
 - Email invitations are blocked for demo accounts; no email is ever sent.
@@ -71,4 +72,10 @@ SQL in `supabase/tests`, each run in one transaction that always rolls back:
 - `release_check_invitations.sql`: invitation-only sign-up.
 - `release_check_sandbox.sql`: sandbox passes, auto-replies, reset, cleanup, refusal outside the demo.
 
-Parity between the two databases: `supabase/ops/schema_fingerprint.sql`. Any schema change goes to both projects; re-run it after.
+Parity between the two databases: `supabase/ops/schema_fingerprint.sql`. Any schema change goes to both projects; re-run it after. Migrations 0090 and 0091 (Northeast seed, server-side network search) are on both; the changed functions were checked identical by hash on 25 Sept.
+
+## Security advisor notes
+
+- `private.safe_deep_link` now has a fixed search path.
+- The callable security-definer functions are deliberate: token flows (`invitation_status`, `request_to_join`, `availability_check_*`, `claim_sandbox`) check the token themselves; `admin_*` functions check `is_admin`; `my_*`, `network_*`, `match_pool`, `member_track_record` return only what the caller may see (network eligibility, partition, blocks).
+- **Leaked-password protection**: Nick to switch on in both projects (Authentication → Policies / Password security).

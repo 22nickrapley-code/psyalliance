@@ -21,7 +21,7 @@ export default async function ProviderReferralsPage(
 
   const { data: referrals } = await supabase
     .from("provider_referrals")
-    .select("*, profiles:target_profile_id(full_name, credential_prefix)")
+    .select("*, profiles:target_profile_id(full_name, credential_prefix, qualification_level)")
     .eq("referring_provider_id", user.id)
     .order("created_at", { ascending: false });
 

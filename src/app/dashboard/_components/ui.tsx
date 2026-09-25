@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import type { Match } from "@/lib/match-engine";
 import type { NeedOptions } from "@/lib/need-options";
-import { professionFor, professionLabel } from "@/lib/profession";
+import { professionFor, professionLabel, clinicianName, roleLabel } from "@/lib/profession";
 
 // Presentational building blocks for the rebuilt member screens, all in
 // the premium concept's vocabulary (.pa design system). No data fetching
@@ -110,8 +110,8 @@ const TIER_REASON: Record<Match["tier"], string> = {
   none: "",
 };
 
-export function displayName(m: { fullName: string; credentialPrefix?: string | null }) {
-  return m.credentialPrefix ? `${m.credentialPrefix} ${m.fullName}` : m.fullName;
+export function displayName(m: { fullName: string; credentialPrefix?: string | null; qualification?: string | null }) {
+  return clinicianName(m.fullName, m.qualification, m.credentialPrefix);
 }
 
 // One ranked colleague with the reasons they're suggested.
@@ -141,7 +141,7 @@ export function MatchCard({
           <Status tone={m.tier === "none" ? "neutral" : ""}>{TIER_LABEL[m.tier]}</Status>
         </div>
         <p>
-          {professionLabel(professionFor(m.qualification))}
+          {roleLabel(m.qualification)}
           {where ? ` · ${where}` : ""}
         </p>
         <ul className="reasons" aria-label="Why they're suggested">
@@ -202,7 +202,7 @@ export function NeedFields({
   const stateSelect = (
     <label className="field">
       State
-      <select name="state" defaultValue={values.state || ""} required>
+      <select name="state" defaultValue={values.state || options.homeState || ""} required>
         <option value="">Choose a state</option>
         {options.states.map((s) => (
           <option key={s.code} value={s.code}>{s.name}</option>
@@ -225,7 +225,6 @@ export function NeedFields({
       Insurance
       <select name="insurance" defaultValue={values.insurance || ""}>
         <option value="">Any or not sure</option>
-        <option value="Self-pay">Self-pay</option>
         {options.insurance.map((o) => (
           <option key={o.id} value={o.value}>{o.value}</option>
         ))}
@@ -249,7 +248,7 @@ export function NeedFields({
       {stateSelect}
       <label className="field">
         City (optional)
-        <input name="city" defaultValue={values.city || ""} placeholder="e.g. Austin" autoComplete="off" />
+        <input name="city" defaultValue={values.city || ""} placeholder="e.g. Brooklyn" autoComplete="off" />
       </label>
       {insuranceSelect}
       <label className="field">

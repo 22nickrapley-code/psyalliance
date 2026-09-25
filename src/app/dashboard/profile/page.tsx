@@ -4,7 +4,7 @@ import { ProfileView } from "./view";
 import { PageHead } from "../_components/ui";
 
 export default async function ProfilePage(props: {
-  searchParams: Promise<{ saved?: string; avatar_saved?: string; avatar_error?: string; error?: string }>;
+  searchParams: Promise<{ saved?: string; avatar_saved?: string; avatar_error?: string; error?: string; edit?: string }>;
 }) {
   const sp = await props.searchParams;
   const supabase = await createClient();
@@ -19,6 +19,7 @@ export default async function ProfilePage(props: {
     supabase.from("profile_lookup_values").select("lookup_value_id, rank").eq("profile_id", me),
     supabase.from("licenses").select("id", { count: "exact", head: true }).eq("profile_id", me),
   ]);
+  const { data: licenceRows } = await supabase.from("licenses").select("state, status, reviewed_at, expiration_date").eq("profile_id", me);
 
   if (profile?.account_kind === "operator") {
     return (
@@ -33,5 +34,24 @@ export default async function ProfilePage(props: {
     );
   }
   const avatarUrl = await resolveAvatarUrl(supabase, profile?.avatar_path);
-  return <ProfileView sp={sp} profile={profile} lookups={lookups} selectedRows={selectedRows} licenceCount={licenceCount} avatarUrl={avatarUrl} me={me} />;
+  const today = new Date().toISOString().slice(0, 10);
+  const licences = (licenceRows || [])
+    .filter((l: any) => l.status === "active" && (!l.expiration_date || l.expiration_date >= today))
+    .map((l: any) => ({ state: String(l.state).toUpperCase(), reviewed: !!l.reviewed_at }));
+  const ranked = (selectedRows || []).filter((r: any) => typeof r.rank === "number").length;
+  const ready = !!(profile?.full_name && profile?.qualification_level && profile?.primary_state && ranked >= 3);
+  const editing = !!(sp.edit || sp.error || sp.avatar_error) || !ready;
+  return (
+    <ProfileView
+      sp={sp}
+      profile={profile}
+      lookups={lookups}
+      selectedRows={selectedRows}
+      licenceCount={licenceCount}
+      avatarUrl={avatarUrl}
+      me={me}
+      editing={editing}
+      licences={licences}
+    />
+  );
 }

@@ -26,10 +26,30 @@ export type NavGroup = {
 
 export function buildNavGroups(opts: {
   isAdmin: boolean;
+  isOperator?: boolean;
   unreadMessages: number;
   pendingCoverRequests: number;
   pendingReferrals: number;
 }): NavGroup[] {
+  const adminItems: NavItem[] = [
+    { href: "/dashboard/admin", label: "Overview", glyph: "▣" },
+    ...(IS_DEMO_SITE ? [{ href: "/dashboard/admin/sandbox", label: "Sandbox passes", glyph: "◈" }] : [{ href: "/dashboard/admin/invitations", label: "Invitations", glyph: "✉" }]),
+    { href: "/dashboard/admin/verifications", label: "Verification", glyph: "✓" },
+    { href: "/dashboard/admin/members", label: "Members", glyph: "☷" },
+    { href: "/dashboard/admin/library", label: "Library governance", glyph: "▤" },
+    { href: "/dashboard/admin/moderation", label: "Moderation", glyph: "⚑" },
+    { href: "/dashboard/admin/network-health", label: "Network health", glyph: "∿" },
+  ];
+
+  // An operator (admin-only) login has no practice, so it sees the admin
+  // console and its own account settings, nothing clinical.
+  if (opts.isOperator) {
+    return [
+      { label: "Admin", items: adminItems },
+      { label: "Account", items: [{ href: "/dashboard/settings", label: "Settings", glyph: "⚙" }] },
+    ];
+  }
+
   const groups: NavGroup[] = [
     {
       label: "Workspace",
@@ -54,20 +74,7 @@ export function buildNavGroups(opts: {
     },
   ];
 
-  if (opts.isAdmin) {
-    groups.push({
-      label: "Admin",
-      items: [
-        { href: "/dashboard/admin", label: "Admin overview", glyph: "▣" },
-        ...(IS_DEMO_SITE ? [{ href: "/dashboard/admin/sandbox", label: "Sandbox passes", glyph: "◈" }] : [{ href: "/dashboard/admin/invitations", label: "Invitations", glyph: "✉" }]),
-        { href: "/dashboard/admin/verifications", label: "Verification", glyph: "✓" },
-        { href: "/dashboard/admin/members", label: "Members", glyph: "☷" },
-        { href: "/dashboard/admin/library", label: "Library governance", glyph: "▤" },
-        { href: "/dashboard/admin/moderation", label: "Moderation", glyph: "⚑" },
-        { href: "/dashboard/admin/network-health", label: "Network health", glyph: "∿" },
-      ],
-    });
-  }
+  if (opts.isAdmin) groups.push({ label: "Admin", items: adminItems });
 
   return groups;
 }

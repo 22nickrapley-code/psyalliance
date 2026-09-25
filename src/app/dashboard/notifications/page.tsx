@@ -55,7 +55,7 @@ export default async function NotificationsPage() {
     supabase
       .from("notification_deliveries")
       .select(
-        "id, read_at, created_at, notification_events(summary, deep_link, event_type, created_at, actor:actor_profile_id(full_name, credential_prefix))"
+        "id, read_at, created_at, notification_events(summary, deep_link, event_type, created_at, actor:actor_profile_id(full_name, credential_prefix, qualification_level))"
       )
       .eq("recipient_profile_id", myself)
       .eq("channel", "in_app")

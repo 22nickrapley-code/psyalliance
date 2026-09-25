@@ -287,7 +287,30 @@ export type ReferralListItem = {
   interested: number;
   responses: number;
   audience: string;
+  audienceCount?: number | null;
 };
+
+// Precise status with the next action beside it. "Awaiting" only while the
+// member is genuinely waiting; once colleagues have answered, the decision
+// is theirs to make.
+export function referralStatus(r: { status: string; interested: number; responses: number; audienceCount?: number | null }): {
+  label: string;
+  tone: "" | "warn" | "neutral";
+  next: string;
+} {
+  const open = r.status === "sent" || r.status === "open";
+  if (open) {
+    const everyone = !!r.audienceCount && r.responses >= r.audienceCount;
+    if (r.interested > 0 && everyone) return { label: "Ready to choose", tone: "", next: "Choose a colleague" };
+    if (r.interested > 0) return { label: `${r.interested} interested`, tone: "", next: "Review replies" };
+    if (everyone) return { label: "No one available", tone: "warn", next: "Widen the search" };
+    if (r.responses > 0) return { label: "Replies coming in", tone: "warn", next: "View replies" };
+    return { label: "Awaiting replies", tone: "warn", next: "View" };
+  }
+  const s = STATUS_LABEL[r.status] || { label: r.status, tone: "neutral" as const };
+  const next = r.status === "connected" ? "Complete handoff" : r.status === "handoff" ? "Open handoff" : "View";
+  return { ...s, next };
+}
 
 const STATUS_LABEL: Record<string, { label: string; tone: "" | "warn" | "neutral" }> = {
   sent: { label: "Awaiting replies", tone: "warn" },
@@ -336,14 +359,21 @@ export function ReferIndexView({
             <QuietEmpty title="No referrals yet." body="When you can't take a patient, start here: describe the need and PsyAlliance shortlists the right colleagues." action={<a className="btn secondary small-btn" href="/dashboard/refer/new">Make a referral</a>} />
           ) : (
             mine.map((r) => {
-              const s = STATUS_LABEL[r.status] || { label: r.status, tone: "neutral" as const };
+              const s = referralStatus(r);
               return (
                 <a key={r.id} className="list-row" href={`/dashboard/refer/${r.id}`} style={{ textDecoration: "none", color: "inherit" }}>
                   <span>
                     <strong>{r.focus}</strong>
-                    <small>{r.where} &middot; {r.interested} interested of {r.responses} repl{r.responses === 1 ? "y" : "ies"} &middot; {new Date(r.createdAt).toLocaleDateString()}</small>
+                    <small>
+                      {r.where} &middot; {r.responses}
+                      {r.audienceCount ? ` of ${r.audienceCount}` : ""} repl{r.responses === 1 ? "y" : "ies"} &middot;{" "}
+                      {new Date(r.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                    </small>
                   </span>
-                  <Status tone={s.tone}>{s.label}</Status>
+                  <span className="status-next">
+                    <Status tone={s.tone}>{s.label}</Status>
+                    <span className="text-arrow">{s.next} &rarr;</span>
+                  </span>
                 </a>
               );
             })
@@ -358,9 +388,12 @@ export function ReferIndexView({
               <a key={r.id} className="list-row" href={`/dashboard/refer/${r.id}`} style={{ textDecoration: "none", color: "inherit" }}>
                 <span>
                   <strong>{r.focus}</strong>
-                  <small>From {r.from} &middot; {r.where} &middot; {new Date(r.createdAt).toLocaleDateString()}</small>
+                  <small>From {r.from} &middot; {r.where} &middot; {new Date(r.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</small>
                 </span>
-                {r.myResponse ? <Status tone="neutral">You replied</Status> : <Status tone="warn">Needs your reply</Status>}
+                <span className="status-next">
+                  {r.myResponse ? <Status tone="neutral">You replied</Status> : <Status tone="warn">Needs your reply</Status>}
+                  <span className="text-arrow">{r.myResponse ? "View" : "Reply"} &rarr;</span>
+                </span>
               </a>
             ))
           )}
@@ -393,6 +426,7 @@ export type ReferralDetail = {
   myResponse: { status: string; message: string | null } | null;
   chosen: { profileId: string; name: string } | null;
   rated: boolean;
+  audienceCount?: number | null;
 };
 
 const RESPONSE_LABEL: Record<string, { label: string; tone: "" | "warn" | "neutral" | "danger" }> = {
@@ -405,7 +439,12 @@ const RESPONSE_LABEL: Record<string, { label: string; tone: "" | "warn" | "neutr
 };
 
 export function ReferTrackView({ r, ok, error }: { r: ReferralDetail; ok?: string; error?: string }) {
-  const s = STATUS_LABEL[r.status] || { label: r.status, tone: "neutral" as const };
+  const s = referralStatus({
+    status: r.status,
+    interested: r.responses.filter((x) => x.status === "interested" || x.status === "question").length,
+    responses: r.responses.length,
+    audienceCount: r.audienceCount,
+  });
   const open = r.status === "sent" || r.status === "open";
   const threadTitle = `Referral · ${r.focus} · ${r.where}`;
   return (
@@ -413,7 +452,7 @@ export function ReferTrackView({ r, ok, error }: { r: ReferralDetail; ok?: strin
       <PageHead
         eyebrow={r.isMine ? "Refer / your referral" : `Refer / from ${r.requesterName}`}
         title={r.focus}
-        lead={`${r.where} · sent ${new Date(r.createdAt).toLocaleDateString()}`}
+        lead={`${r.where} · sent ${new Date(r.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`}
         actions={<a className="btn secondary" href="/dashboard/refer">All referrals</a>}
       />
       {r.isMine && <Progress steps={STEPS} current={3} />}

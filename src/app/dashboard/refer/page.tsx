@@ -1,3 +1,4 @@
+import { clinicianName } from "@/lib/profession";
 import { createClient } from "@/lib/supabase/server";
 import { loadNeedOptions } from "@/lib/need-options";
 import { ReferIndexView, type ReferralListItem } from "./views";
@@ -16,13 +17,13 @@ export default async function ReferPage(props: { searchParams: Promise<{ error?:
     loadNeedOptions(supabase),
     supabase
       .from("referral_requests")
-      .select("id, specialism_lookup_ids, specialism_lookup_id, state, city, status, created_at, audience_type, referral_responses(status)")
+      .select("id, specialism_lookup_ids, specialism_lookup_id, state, city, status, created_at, audience_type, audience_profile_ids, referral_responses(status)")
       .eq("requesting_profile_id", myself)
       .order("created_at", { ascending: false })
       .limit(30),
     supabase
       .from("referral_requests")
-      .select("id, requesting_profile_id, specialism_lookup_ids, specialism_lookup_id, state, city, status, created_at, audience_type, audience_profile_ids, requester:requesting_profile_id(full_name, credential_prefix)")
+      .select("id, requesting_profile_id, specialism_lookup_ids, specialism_lookup_id, state, city, status, created_at, audience_type, audience_profile_ids, requester:requesting_profile_id(full_name, credential_prefix, qualification_level)")
       .neq("requesting_profile_id", myself)
       .in("status", ["sent", "open"])
       .order("created_at", { ascending: false })
@@ -50,6 +51,7 @@ export default async function ReferPage(props: { searchParams: Promise<{ error?:
     responses: (r.referral_responses || []).length,
     interested: (r.referral_responses || []).filter((x: any) => x.status === "interested" || x.status === "accepted").length,
     audience: r.audience_type,
+    audienceCount: r.audience_type === "selected" ? (r.audience_profile_ids || []).length : null,
   }));
 
   // Relevance for referrals offered to me: selected/trusted always; the
@@ -81,7 +83,7 @@ export default async function ReferPage(props: { searchParams: Promise<{ error?:
     responses: 0,
     interested: 0,
     audience: r.audience_type,
-    from: r.requester ? `${r.requester.credential_prefix ? r.requester.credential_prefix + " " : ""}${r.requester.full_name}` : "A colleague",
+    from: r.requester ? clinicianName(r.requester?.full_name, r.requester?.qualification_level, r.requester?.credential_prefix) : "A colleague",
     myResponse: responded.get(r.id) || null,
   }));
 

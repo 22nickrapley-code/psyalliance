@@ -1,3 +1,4 @@
+import { JOIN_URL } from "@/lib/env";
 import "../../premium.css";
 import { notFound } from "next/navigation";
 import { TOUR_ENABLED } from "@/lib/env";
@@ -9,11 +10,11 @@ export const metadata = { title: "Tour complete", robots: { index: false, follow
 export default function TourDonePage() {
   if (!TOUR_ENABLED) notFound();
   const outcomes: [string, string][] = [
-    ["Cover", "Three cases described without identifiers. Two covered by a trusted colleague within a day; the prescribing case waiting on a psychiatrist, next in line automatically."],
-    ["Refer", "A new OCD enquiry shortlisted by fit, sent to three colleagues, two interested within hours. The client went to someone Alex has worked with before."],
-    ["Consult", "A practical question answered by the trusted circle, with the useful reply marked."],
-    ["Handover", "A joint call agreed in a message tied to the plan, with the clinical details kept outside PsyAlliance."],
-    ["Library", "The leave plan and handoff pack used where it was needed, clearly marked as not yet independently reviewed."],
+    ["Circle", "Seven trusted colleagues, three Alex has worked with and five saved, ranked first in every search."],
+    ["Refer", "A new OCD enquiry shortlisted by fit and sent to three colleagues. Everyone replied, and it went to Samuel, whom Alex has worked with before."],
+    ["Consult", "A practical question about the handover call, answered by the trusted circle, with the useful reply marked."],
+    ["Cover", "Six weeks of leave, three cases described without identifiers. Maya covers two; the prescribing case is with a psychiatrist, next in line automatically."],
+    ["Library", "The leave plan and handoff pack used where it was needed, with its review status shown."],
   ];
   return (
     <div className="pa">
@@ -40,7 +41,7 @@ export default function TourDonePage() {
               <div className="card">
                 <h3>Join the founding cohort</h3>
                 <p className="small">We&rsquo;re inviting verified psychologists and psychiatrists a few states at a time.</p>
-                <a className="btn small-btn" href={process.env.NEXT_PUBLIC_REAL_SITE_URL ? `${process.env.NEXT_PUBLIC_REAL_SITE_URL}/join` : "/join"}>Ask to join</a>
+                <a className="btn small-btn" href={JOIN_URL}>Ask to join</a>
               </div>
             </div>
             <p className="small" style={{ marginTop: 20 }}><a href="/tour">Start the tour again</a></p>

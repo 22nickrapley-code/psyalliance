@@ -21,3 +21,16 @@ export function professionFor(qualificationLevel: string | null | undefined): Pr
 export function professionLabel(profession: Profession): string {
   return profession === "psychiatrist" ? "Psychiatrist" : "Psychologist";
 }
+
+// How a clinician is named across the product: "Maya Chen, PsyD". The
+// degree says more than a "Dr." prefix and reads the same for everyone.
+export function clinicianName(fullName: string | null | undefined, qualification?: string | null, prefix?: string | null): string {
+  const name = String(fullName || "A colleague").replace(/^(dr\.?)\s+/i, "");
+  if (qualification) return `${name}, ${qualification}`;
+  return prefix ? `${prefix} ${name}` : name;
+}
+
+// "Clinical psychologist" / "Psychiatrist" for headings and cards.
+export function roleLabel(qualification: string | null | undefined): string {
+  return professionFor(qualification) === "psychiatrist" ? "Psychiatrist" : "Clinical psychologist";
+}

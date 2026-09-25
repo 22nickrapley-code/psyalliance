@@ -1,10 +1,11 @@
+import { clinicianName } from "@/lib/profession";
 import { viewerIsDemo } from "@/lib/demo";
 import { createClient } from "@/lib/supabase/server";
 import { findMatches } from "@/lib/match-engine";
 import { resolveAvatarUrls } from "@/lib/avatars";
 import { ConsultIndexView, audienceLabel, type ConsultTab, type PostItem } from "./views";
 
-const nameOf = (p: any) => (p ? `${p.credential_prefix ? p.credential_prefix + " " : ""}${p.full_name}` : "A colleague");
+const nameOf = (p: any) => (p ? clinicianName(p?.full_name, p?.qualification_level, p?.credential_prefix) : "A colleague");
 
 export default async function ConsultPage(props: { searchParams: Promise<{ tab?: string; tag?: string; error?: string }> }) {
   const sp = await props.searchParams;

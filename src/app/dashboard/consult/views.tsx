@@ -68,20 +68,27 @@ function timeAgo(iso: string) {
 }
 
 function PostCard({ p }: { p: PostItem }) {
-  const statusLabel = p.status === "resolved" ? "Resolved" : p.status === "draft" ? "Draft" : "Open";
+  const statusLabel = p.status === "resolved" ? "Resolved" : p.status === "draft" ? "Draft" : p.replies > 0 ? "Open · replies in" : "Open";
+  const kicker = [
+    p.kind === "supervision_request" ? "Supervision wanted" : p.kind === "supervision_offer" ? "Supervision offered" : "Practice question",
+    ...p.tags.slice(0, 2),
+  ].join(" · ");
   return (
-    <a href={`/dashboard/consult/${p.id}`} className="card post-card" style={{ display: "block", textDecoration: "none", color: "inherit" }}>
-      <div className="row between">
-        <div className="eyebrow">{[...(p.kind === "supervision_request" ? ["Supervision wanted"] : p.kind === "supervision_offer" ? ["Supervision offered"] : []), ...p.tags].join(" · ") || "Consult"} &middot; {p.audienceLabel}</div>
+    <article className="discussion">
+      <div className="kicker">
+        <span className="eyebrow">{kicker}</span>
         <Status tone={p.status === "resolved" ? "neutral" : p.status === "draft" ? "warn" : ""}>{statusLabel}</Status>
       </div>
-      <h3 className="post-title">{p.question}</h3>
-      {p.context && <p className="small">{p.context.length > 220 ? p.context.slice(0, 220) + "…" : p.context}</p>}
-      <div className="row between">
-        <span className="micro-note">{p.authorName} &middot; {timeAgo(p.createdAt)} &middot; {p.replies} repl{p.replies === 1 ? "y" : "ies"}{p.why ? ` · ${p.why}` : ""}</span>
-        <span className="plain-button small">Read discussion &rarr;</span>
+      <h3><a href={`/dashboard/consult/${p.id}`}>{p.question}</a></h3>
+      {p.context && <p className="ctx">{p.context.length > 240 ? p.context.slice(0, 240) + "…" : p.context}</p>}
+      <div className="foot">
+        <span>
+          {p.authorName} &middot; {timeAgo(p.createdAt)} &middot; {p.audienceLabel} &middot; {p.replies} repl{p.replies === 1 ? "y" : "ies"}
+          {p.why ? ` · ${p.why}` : ""}
+        </span>
+        <a className="text-arrow" href={`/dashboard/consult/${p.id}`}>Read discussion &#8599;</a>
       </div>
-    </a>
+    </article>
   );
 }
 
