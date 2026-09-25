@@ -6,7 +6,7 @@ Two sites, two databases, never shared.
 |---|---|---|
 | Worker | `psyalliance` | `psyalliance-demo` |
 | URL | https://psyalliance.org (workers.dev until the domain is attached) | `https://psyalliance-demo.<subdomain>.workers.dev` |
-| Supabase project | `vvmulsyvyjsxhcpqfpyo` (psyalliance) | its own project (to be created) |
+| Supabase project | `vvmulsyvyjsxhcpqfpyo` (psyalliance) | `xsfqeepxnmnvlhxwkfnw` (psyalliance-demo, us-east-1) |
 | Build | `npm run cf:deploy` (reads `.env.local`) | `npm run cf:deploy:demo` (reads `.env.demo`) |
 | `NEXT_PUBLIC_APP_ENV` | `production` | `demo` |
 | `app_config.app_env` | not set | `demo` |
@@ -25,23 +25,27 @@ Two sites, two databases, never shared.
 - **Supabase Auth settings** (dashboard → Authentication → URL configuration): Site URL = the real URL; redirect URLs = `<real URL>/auth/callback`.
 - **app_config**: `site_url` = real URL (used in email links), `email_from`, `email_provider`.
 
-## Demo site: one-time setup
+## Demo site: setup
 
-1. Create a new Supabase project (e.g. `psyalliance-demo`, us-east-1). The free plan allows two active projects; the org already has two, so either pause "The world would be better if" or upgrade.
-2. Apply every migration in `supabase/migrations` in order (Claude can do this through the Supabase connector once the project exists).
-3. Configure it (SQL editor):
-   ```sql
-   insert into app_config (key, value) values
-     ('app_env', 'demo'), ('signup_mode', 'invite'), ('site_url', 'https://psyalliance-demo.<subdomain>.workers.dev')
-   on conflict (key) do update set value = excluded.value;
-   select private.seed_demo_network(null);   -- the 120 fictional members
-   ```
-   Do not add an `email_api_key`.
-4. Auth settings: Site URL and redirect URL = the demo URL.
-5. Storage: create the `documents` and `avatars` buckets (same policies as production, via the migrations), then load the Library PDFs by running the site locally against the demo project and using Admin → Library → Seed starter library.
-6. Your admin login on the demo: `insert into cohort_invitations (email) values ('you@example.com') returning token;`, sign up at `/auth/sign-up?invite=<token>`, then
-   `update profiles set is_admin = true, account_kind = 'operator' where id = (select id from auth.users where email = 'you@example.com');`
-7. Copy `.env.demo.example` to `.env.demo`, fill in the demo project's URL and publishable key and the demo URL, then `npm run cf:deploy:demo`.
+Done (25 Sept 2026), by Claude through the Supabase connector:
+
+- Project `xsfqeepxnmnvlhxwkfnw` built from the real project's catalog, not by replaying migrations (early migrations seed people). Queries: `supabase/ops/demo_snapshot_generator.sql`. Same tables, keys, indexes, 82 functions, views, triggers (including invitation-only sign-up), RLS, 152 policies, grants and storage buckets. Check with `supabase/ops/schema_fingerprint.sql` on both projects; the two expected differences are listed in that file.
+- Only the lookup lists were copied. No people, activity, files or production data.
+- `app_config`: `app_env = demo`, `signup_mode = invite`, `site_url` (placeholder until the Worker URL is known). No `email_api_key`, ever.
+- Cron: `pa_demo_autorespond` (every minute), `pa_sandbox_cleanup` (hourly), `pa_email_dispatch`, `pa_cron_history_cleanup`. No reminder or digest jobs.
+- Seeded: `select private.seed_demo_network(null);` gives 120 fictional members in NY, MA and TX.
+- Release checks on the demo: sandbox (all ok), invitations (6/6).
+
+Nick, once:
+
+1. **Env file**: `.env.demo` (not committed; public values only) has the demo URL and publishable key. Set `NEXT_PUBLIC_SITE_URL` to `https://psyalliance-demo.<your-subdomain>.workers.dev` (same subdomain as the real Worker's workers.dev address).
+2. **Auth URLs** (demo dashboard → Authentication → URL Configuration): Site URL = the demo URL; Redirect URLs = `<demo URL>/**` and `http://localhost:3001/**`.
+3. **Deploy**: `npm run cf:deploy:demo`.
+4. **Your admin login on the demo**: open the invitation link Claude gave you (`/auth/sign-up?invite=...`, bound to your email, 30 days), sign up, then in the demo SQL editor:
+   `update profiles set is_admin = true, account_kind = 'operator' where id = (select id from auth.users where email = '<your email>');`
+   (or ask Claude to run it).
+5. **Library PDFs**: `npm run dev:demo`, sign in at http://localhost:3001 with that admin login, Admin → Library → Seed starter library. They load as Provisional, like the real site.
+6. **site_url**: tell Claude the demo URL, or run `update app_config set value = '<demo URL>' where key = 'site_url';` in the demo SQL editor.
 
 ## Prospect access (demo)
 
@@ -66,3 +70,5 @@ SQL in `supabase/tests`, each run in one transaction that always rolls back:
 - `release_check_library.sql`: reviewer appointments, independence, versioned re-review.
 - `release_check_invitations.sql`: invitation-only sign-up.
 - `release_check_sandbox.sql`: sandbox passes, auto-replies, reset, cleanup, refusal outside the demo.
+
+Parity between the two databases: `supabase/ops/schema_fingerprint.sql`. Any schema change goes to both projects; re-run it after.

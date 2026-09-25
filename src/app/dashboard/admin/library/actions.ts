@@ -273,7 +273,9 @@ export async function seedStarterLibraryAction() {
       applicability: `${audience} - ${category}`,
       customization_warning:
         "Template - review and adapt to your state's requirements, your practice's actual policies, and current law before use. Not a substitute for your own legal/compliance review.",
-      review_status: "needs_review",
+      // Visible to members, labelled "Provisional, not yet independently
+      // reviewed", until appointed reviewers sign it off (0081).
+      review_status: "provisional",
       required_reviewer_roles: requiredRoles,
     });
     if (insertError) {

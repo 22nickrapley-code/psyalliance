@@ -4,6 +4,8 @@
 //
 //   npm run cf:deploy:demo            build + deploy
 //   npm run cf:deploy:demo -- --build-only
+//   npm run dev:demo                  local dev server (port 3001) against the
+//                                     demo project, e.g. to load the Library PDFs
 //
 // Reads .env.demo (not committed; copy .env.demo.example). NEXT_PUBLIC_*
 // values are baked in at build time, which is why the demo is a separate
@@ -35,5 +37,11 @@ const run = (cmd, args) => {
   const r = spawnSync(cmd, args, { stdio: "inherit", env, shell: process.platform === "win32" });
   if (r.status !== 0) process.exit(r.status ?? 1);
 };
+if (process.argv.includes("--dev")) {
+  // Values already in the environment win over .env.local in Next.js, so
+  // this talks to the demo project even with .env.local present.
+  run("npx", ["next", "dev", "-p", "3001"]);
+  process.exit(0);
+}
 run("npx", ["opennextjs-cloudflare", "build"]);
 if (!process.argv.includes("--build-only")) run("npx", ["opennextjs-cloudflare", "deploy", "--env", "demo"]);
