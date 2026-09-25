@@ -1,7 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { requireAdminOrRedirectPath } from "@/lib/admin";
-import { PageHead, Status } from "../_components/ui";
+import { PageHead, Status, Banner } from "../_components/ui";
+import { removeOrphanedFilesAction } from "./storage-actions";
 
 // Admin overview. Counts come from admin_network_metrics(), which never
 // includes demo accounts, the demo view or operator (admin-only) logins,
@@ -23,7 +24,8 @@ function pct(n: number, d: number) {
   return d ? `${Math.round((n / d) * 100)}%` : "-";
 }
 
-export default async function AdminOverviewPage() {
+export default async function AdminOverviewPage(props: { searchParams: Promise<{ storage_removed?: string; storage_error?: string }> }) {
+  const sp = await props.searchParams;
   const supabase = await createClient();
   const redirectPath = await requireAdminOrRedirectPath(supabase);
   if (redirectPath) redirect(redirectPath);
@@ -35,6 +37,9 @@ export default async function AdminOverviewPage() {
     supabase.from("documents").select("id", { count: "exact", head: true }).eq("owner_scope", "world").in("review_status", ["in_review", "needs_review"]),
     supabase.from("join_requests").select("id", { count: "exact", head: true }).eq("status", "new"),
   ]);
+  const { data: orphanRows } = await supabase.rpc("admin_orphaned_files");
+  const orphans = (orphanRows as { size_bytes: number }[]) || [];
+  const orphanMb = orphans.reduce((a, f) => a + Number(f.size_bytes || 0), 0) / 1024 / 1024;
   const m: Metrics = (metricsRaw as Metrics) || {};
   const email = Array.isArray(emailRows) ? emailRows[0] : null;
   const n = (k: string) => Number(m[k] || 0);
@@ -52,6 +57,18 @@ export default async function AdminOverviewPage() {
   return (
     <>
       <PageHead eyebrow="Admin" title="Running the network" lead="Real members only. Demo accounts and admin-only logins are never counted." />
+      <Banner error={sp.storage_error} ok={sp.storage_removed ? `Removed ${sp.storage_removed} orphaned file${sp.storage_removed === "1" ? "" : "s"}.` : undefined} />
+      {orphans.length > 0 && (
+        <section className="card tint" style={{ marginBottom: 20 }}>
+          <div className="card-title"><h3>Storage clean-up</h3><Status tone="warn">{orphans.length} files</Status></div>
+          <p className="small">
+            {orphans.length} file{orphans.length === 1 ? "" : "s"} ({orphanMb.toFixed(1)} MB) belong to accounts that no longer exist: photos and uploads nobody can reach. Removing them deletes the files themselves.
+          </p>
+          <form action={removeOrphanedFilesAction}>
+            <button type="submit" className="btn secondary small-btn">Remove orphaned files</button>
+          </form>
+        </section>
+      )}
 
       <div className="split" style={{ marginBottom: 20 }}>
         <section className="card">
