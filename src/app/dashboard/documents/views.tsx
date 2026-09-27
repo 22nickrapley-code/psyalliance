@@ -228,7 +228,9 @@ export function ResourceDetailView({
           <section className="card">
             <div className="eyebrow">Not legal advice</div>
             <p className="small" style={{ marginBottom: 0 }}>
-              Templates reflect general US practice at the review date. State law, payer rules and your licensing board&rsquo;s requirements come first.
+              {r.reviewed
+                ? "Templates reflect general US practice at the date of their last review. State law, payer rules and your licensing board's requirements come first."
+                : "A working template, not yet independently reviewed. State law, payer rules and your licensing board's requirements come first; check it with your own advisers before relying on it."}
             </p>
           </section>
         </aside>

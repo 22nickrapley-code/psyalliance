@@ -34,10 +34,10 @@ export function TourFrame({ children, next }: { children: ReactNode; next?: stri
     };
   }, []);
   return (
-    <div ref={ref}>
+    <div ref={ref} className="tour-mode">
       {children}
       {note && (
-        <div className="toast" role="status">
+        <div className="toast tour-toast" role="status">
           {note}{" "}
           {next && (
             <a href={next} data-tour-nav style={{ color: "#e2c49c", marginLeft: 6 }}>

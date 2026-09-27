@@ -1,6 +1,8 @@
 import "../premium.css";
 import { PublicNav, PublicFooter } from "../_public/chrome";
 import { requestToJoinAction } from "../auth/actions";
+import { redirect } from "next/navigation";
+import { IS_DEMO_SITE, JOIN_URL } from "@/lib/env";
 
 export const metadata = { title: "Join the founding cohort" };
 
@@ -8,6 +10,8 @@ export const metadata = { title: "Join the founding cohort" };
 // verified clinicians who overlap by state and specialty, so we invite
 // people deliberately rather than opening sign-up.
 export default async function JoinPage(props: { searchParams: Promise<{ sent?: string; error?: string }> }) {
+  // Join requests always go to the real site's database.
+  if (IS_DEMO_SITE) redirect(JOIN_URL);
   const sp = await props.searchParams;
   return (
     <div className="pa">

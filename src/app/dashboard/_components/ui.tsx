@@ -63,19 +63,28 @@ export function Banner({ error, ok }: { error?: string | null; ok?: string | nul
   return null;
 }
 
-export function Progress({ steps, current }: { steps: string[]; current: number }) {
+// One progression: the steps as a continuous bar with labels on wide
+// screens, and "Step 3 of 5 · Candidates" on a phone. Completed steps can
+// link back when the flow allows revisiting them.
+export function Progress({ steps, current, hrefs }: { steps: string[]; current: number; hrefs?: (string | null)[] }) {
   return (
-    <div className="progress" aria-label="Steps">
-      {steps.map((s, i) => (
-        <span
-          key={s}
-          className={`progress-step${i === current ? " active" : i < current ? " done" : ""}`}
-          aria-current={i === current ? "step" : undefined}
-        >
-          {i + 1}. {s}
-        </span>
-      ))}
-    </div>
+    <nav className="progress" aria-label="Steps">
+      <div className="progress-compact" aria-hidden="true">
+        <b>Step {current + 1} of {steps.length}</b> &middot; {steps[current]}
+        <span className="progress-bar"><span style={{ width: `${((current + 1) / steps.length) * 100}%` }} /></span>
+      </div>
+      <ol className="progress-steps">
+        {steps.map((s, i) => {
+          const cls = `progress-step${i === current ? " active" : i < current ? " done" : ""}`;
+          const href = hrefs?.[i];
+          return (
+            <li key={s} className={cls} aria-current={i === current ? "step" : undefined}>
+              {href && i !== current ? <a href={href}>{i + 1}. {s}</a> : <span>{i + 1}. {s}</span>}
+            </li>
+          );
+        })}
+      </ol>
+    </nav>
   );
 }
 

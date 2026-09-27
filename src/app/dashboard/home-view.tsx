@@ -2,6 +2,7 @@ import type { NeedOptions } from "@/lib/need-options";
 import { Banner, NeedFields, QuietEmpty, Status } from "./_components/ui";
 import { reconfirmAvailability } from "./availability/actions";
 import { StepsPager, OpenDialogButton, CloseDialogButton } from "./home-client";
+import { NavIcon } from "./icons";
 
 // Home answers one question: "what needs me right now?". Next steps lead,
 // three at a time with the urgent ones first; availability sits beside
@@ -189,10 +190,10 @@ export function HomeView({ d }: { d: HomeData }) {
 
       <div className="section-heading"><h2>What would you like to do?</h2></div>
       <div className="tile-grid">
-        <a className="task-tile" href="/dashboard/cover/new"><span className="symbol">{"◇"}</span><b>Find cover</b><span>Plan an absence &#8599;</span></a>
-        <a className="task-tile" href="/dashboard/refer/new"><span className="symbol">{"↗"}</span><b>Refer a patient</b><span>Find the right colleague &#8599;</span></a>
-        <a className="task-tile" href="/dashboard/consult"><span className="symbol">{"✳"}</span><b>Ask colleagues</b><span>Start a consultation &#8599;</span></a>
-        <a className="task-tile" href="/dashboard/network"><span className="symbol">{"◎"}</span><b>Find a clinician</b><span>Search your network &#8599;</span></a>
+        <a className="task-tile" href="/dashboard/cover/new"><span className="symbol"><NavIcon name="cover" size={24} /></span><b>Find cover</b><span>Plan an absence &#8599;</span></a>
+        <a className="task-tile" href="/dashboard/refer/new"><span className="symbol"><NavIcon name="refer" size={24} /></span><b>Refer a patient</b><span>Find the right colleague &#8599;</span></a>
+        <a className="task-tile" href="/dashboard/consult"><span className="symbol"><NavIcon name="consult" size={24} /></span><b>Ask colleagues</b><span>Start a consultation &#8599;</span></a>
+        <a className="task-tile" href="/dashboard/network"><span className="symbol"><NavIcon name="network" size={24} /></span><b>Find a clinician</b><span>Search your network &#8599;</span></a>
       </div>
 
       <div className="section-heading">

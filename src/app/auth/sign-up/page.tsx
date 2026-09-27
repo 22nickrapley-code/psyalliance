@@ -1,5 +1,6 @@
 import { signUp } from "../actions";
 import { createClient } from "@/lib/supabase/server";
+import { JOIN_HREF } from "@/lib/env";
 
 const MARK = { display: "inline-grid", placeItems: "center", width: 30, height: 30, border: "1.5px solid currentColor", borderRadius: "50%", fontFamily: "Georgia, serif", transform: "rotate(-18deg)", marginRight: 10, fontSize: 20 } as const;
 
@@ -24,7 +25,7 @@ export default async function SignUpPage(props: { searchParams: Promise<{ error?
                 ? "The link has expired or has already been used. Ask us for a new one at hello@psyalliance.org."
                 : "We're opening to a founding group of verified psychologists and psychiatrists first. Ask to join and we'll send you a personal invitation."}
             </p>
-            <a className="btn" href="/join" style={{ display: "inline-block" }}>Ask to join</a>
+            <a className="btn" href={JOIN_HREF} style={{ display: "inline-block" }}>Ask to join</a>
           </div>
         ) : (
           <form action={signUp} className="card">

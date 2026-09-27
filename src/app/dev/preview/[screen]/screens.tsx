@@ -182,14 +182,14 @@ export const previewScreens: Record<string, () => ReactNode> = {
         <ConversationList
           activeId={1}
           items={[
-            { id: 1, title: "Dr. Maya Chen", context: "Cover \u00b7 October leave", preview: "I can review your coverage dates this week.", when: "9:14 AM", unread: true, avatarName: "Maya Chen", avatarUrl: null },
-            { id: 2, title: "Dr. Eli Ramirez", context: "Referral \u00b7 Anxiety \u00b7 New York", preview: "Thanks, I have two openings.", when: "Sep 21", unread: false, avatarName: "Eli Ramirez", avatarUrl: null },
+            { id: 1, title: "Dr. Maya Chen", context: "Cover · October leave", preview: "I can review your coverage dates this week.", when: "9:14 AM", unread: true, avatarName: "Maya Chen", avatarUrl: null },
+            { id: 2, title: "Dr. Eli Ramirez", context: "Referral · Anxiety · New York", preview: "Thanks, I have two openings.", when: "Sep 21", unread: false, avatarName: "Eli Ramirez", avatarUrl: null },
           ]}
         />
       }
     >
       <section className="card message-area">
-        <div className="context-head"><div><h3 style={{ margin: 0 }}>Dr. Maya Chen</h3><span className="micro-note">Cover \u00b7 October leave</span></div></div>
+        <div className="context-head"><div><h3 style={{ margin: 0 }}>Dr. Maya Chen</h3><span className="micro-note">Cover · October leave</span></div></div>
         <div className="message-scroll">
           <div className="bubble">I can review your coverage dates this week.<small>Sep 23, 9:14 AM</small></div>
           <div className="bubble me">Thank you. I will send the non-identifying plan details for your review.<small>Sep 23, 9:20 AM</small></div>

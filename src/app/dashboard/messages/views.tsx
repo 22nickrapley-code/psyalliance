@@ -29,7 +29,7 @@ export function ConversationList({ items, activeId, composing }: { items: Conver
   );
 }
 
-export function MessagesShell({ list, children }: { list: ReactNode; children: ReactNode }) {
+export function MessagesShell({ list, children, view = "thread" }: { list: ReactNode; children: ReactNode; view?: "index" | "thread" | "compose" }) {
   return (
     <>
       <div className="page-head">
@@ -39,9 +39,18 @@ export function MessagesShell({ list, children }: { list: ReactNode; children: R
           <p>Professional conversation, connected to the request or discussion that started it.</p>
         </div>
       </div>
-      <div className="conversation-layout">
+      {/* Desktop: list and thread side by side. Phone: the list, or one
+          thread with a way back to it. */}
+      <div className={`conversation-layout view-${view}`}>
         {list}
-        <div>{children}</div>
+        <div className="conversation-main">
+          {view !== "index" && (
+            <a className="text-arrow back-to-list" href="/dashboard/messages?list=1">
+              &larr; All messages
+            </a>
+          )}
+          {children}
+        </div>
       </div>
     </>
   );

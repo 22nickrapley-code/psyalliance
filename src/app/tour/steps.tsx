@@ -29,7 +29,7 @@ export type TourStep = {
   render: () => ReactNode;
 };
 
-export const PEOPLE: Record<Perspective, { name: string; initials: string; role: string; avatar: string }> = {
+export const PEOPLE: Record<Perspective, { name: string; initials: string; role: string; avatar: string | null }> = {
   alex: { name: "Alex Rivers, PsyD", initials: "AR", role: "Clinical psychologist, Brooklyn. Planning six weeks of parental leave.", avatar: AV.alex },
   maya: { name: "Maya Chen, PsyD", initials: "MC", role: "Clinical psychologist, Brooklyn. One of Alex's trusted colleagues.", avatar: AV.maya },
 };
@@ -85,7 +85,7 @@ const casesOpen: CaseItem[] = [
 const casesLater: CaseItem[] = [
   { ...casesOpen[0], status: "confirmed", invited: [{ name: "Maya Chen, PsyD", status: "accepted" }], assignedName: "Maya Chen, PsyD", assignedId: "maya" },
   { ...casesOpen[1], status: "confirmed", invited: [{ name: "Maya Chen, PsyD", status: "accepted" }], assignedName: "Maya Chen, PsyD", assignedId: "maya" },
-  { ...casesOpen[2], status: "awaiting_response", invited: [{ name: "Eli Ramirez, MD", status: "sent" }], queueCount: 1 },
+  { ...casesOpen[2], status: "confirmed", invited: [{ name: "Eli Ramirez, MD", status: "accepted" }], assignedName: "Eli Ramirez, MD", assignedId: "eli" },
 ];
 
 const referMatches: Match[] = [
@@ -208,8 +208,8 @@ export const STEPS: TourStep[] = [
               { id: "maya", name: "Maya Chen, PsyD", kind: "trusted", avatarUrl: AV.maya },
               { id: "sam", name: "Samuel Okafor, PhD", kind: "trusted", avatarUrl: AV.samuel },
               { id: "t3", name: "Aaron Garcia, DO", kind: "trusted", avatarUrl: null },
-              { id: "t4", name: "Aaron Howard, PhD", kind: "trusted", avatarUrl: "/demo-avatars/m28.svg" },
-              { id: "t5", name: "Adrian Dalton, PsyD", kind: "trusted", avatarUrl: "/demo-avatars/m34.svg" },
+              { id: "t4", name: "Aaron Howard, PhD", kind: "trusted", avatarUrl: null },
+              { id: "t5", name: "Adrian Dalton, PsyD", kind: "trusted", avatarUrl: null },
               { id: "t6", name: "Adrian Ramirez, PsyD", kind: "trusted", avatarUrl: null },
               { id: "t7", name: "Aaron Quinn, PsyD", kind: "trusted", avatarUrl: null },
               { id: "eli", name: "Eli Ramirez, MD", kind: "worked", avatarUrl: AV.eli },
@@ -241,7 +241,7 @@ export const STEPS: TourStep[] = [
         suggestedAvatars={{}}
         invitations={[
           { id: 1, name: "Imani Brooks, PhD", profileId: "imani", where: "Queens, NY", avatarUrl: AV.imani },
-          { id: 2, name: "Adrian Turner, PhD", profileId: "at", where: "Cherry Hill, NJ", avatarUrl: "/demo-avatars/m05.svg" },
+          { id: 2, name: "Adrian Turner, PhD", profileId: "at", where: "Cherry Hill, NJ", avatarUrl: null },
         ]}
         sentCount={1}
         filters={{ q: "", focus: "", state: "NY", available: false, profession: "" }}
@@ -461,9 +461,9 @@ export const STEPS: TourStep[] = [
     slug: "covered",
     chapter: "cover",
     perspective: "alex",
-    title: "Back with Alex: two cases covered",
-    what: "Maya accepted both. Each case shows who covers it; the third waits on Eli Ramirez, a psychiatrist, because it needs prescribing.",
-    render: () => <CoverTrackView plan={{ ...plan, counts: { total: 3, covered: 2, invited: 1, open: 0 } }} cases={casesLater} nextSuggestion={{}} toRate={[]} />,
+    title: "Back with Alex: every case covered",
+    what: "Maya accepted both of her cases, and Eli Ramirez, a psychiatrist, accepted the one that needs prescribing. A case only counts as covered once someone accepts, and now all three have.",
+    render: () => <CoverTrackView plan={{ ...plan, counts: { total: 3, covered: 3, invited: 0, open: 0 } }} cases={casesLater} nextSuggestion={{}} toRate={[]} />,
   },
 ];
 

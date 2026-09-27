@@ -32,13 +32,13 @@ export function buildNavGroups(opts: {
   pendingReferrals: number;
 }): NavGroup[] {
   const adminItems: NavItem[] = [
-    { href: "/dashboard/admin", label: "Overview", glyph: "▣" },
-    ...(IS_DEMO_SITE ? [{ href: "/dashboard/admin/sandbox", label: "Sandbox passes", glyph: "◈" }] : [{ href: "/dashboard/admin/invitations", label: "Invitations", glyph: "✉" }]),
-    { href: "/dashboard/admin/verifications", label: "Verification", glyph: "✓" },
-    { href: "/dashboard/admin/members", label: "Members", glyph: "☷" },
-    { href: "/dashboard/admin/library", label: "Library governance", glyph: "▤" },
-    { href: "/dashboard/admin/moderation", label: "Moderation", glyph: "⚑" },
-    { href: "/dashboard/admin/network-health", label: "Network health", glyph: "∿" },
+    { href: "/dashboard/admin", label: "Overview", glyph: "overview" },
+    ...(IS_DEMO_SITE ? [{ href: "/dashboard/admin/sandbox", label: "Sandbox passes", glyph: "pass" }] : [{ href: "/dashboard/admin/invitations", label: "Invitations", glyph: "pass" }]),
+    { href: "/dashboard/admin/verifications", label: "Verification", glyph: "check" },
+    { href: "/dashboard/admin/members", label: "Members", glyph: "members" },
+    { href: "/dashboard/admin/library", label: "Library governance", glyph: "library" },
+    { href: "/dashboard/admin/moderation", label: "Moderation", glyph: "flag" },
+    { href: "/dashboard/admin/network-health", label: "Network health", glyph: "pulse" },
   ];
 
   // An operator (admin-only) login has no practice, so it sees the admin
@@ -46,7 +46,7 @@ export function buildNavGroups(opts: {
   if (opts.isOperator) {
     return [
       { label: "Admin", items: adminItems },
-      { label: "Account", items: [{ href: "/dashboard/settings", label: "Settings", glyph: "⚙" }] },
+      { label: "Account", items: [{ href: "/dashboard/settings", label: "Settings", glyph: "settings" }] },
     ];
   }
 
@@ -54,22 +54,22 @@ export function buildNavGroups(opts: {
     {
       label: "Workspace",
       items: [
-        { href: "/dashboard", label: "Home", glyph: "⌂" },
-        { href: "/dashboard/cover", label: "Cover", glyph: "◇", badge: opts.pendingCoverRequests },
-        { href: "/dashboard/refer", label: "Refer", glyph: "↗", badge: opts.pendingReferrals },
-        { href: "/dashboard/network", label: "Network", glyph: "◎", matches: ["/dashboard/people"] },
-        { href: "/dashboard/consult", label: "Consult", glyph: "✳" },
-        { href: "/dashboard/messages", label: "Messages", glyph: "✉", badge: opts.unreadMessages },
+        { href: "/dashboard", label: "Home", glyph: "home" },
+        { href: "/dashboard/cover", label: "Cover", glyph: "cover", badge: opts.pendingCoverRequests },
+        { href: "/dashboard/refer", label: "Refer", glyph: "refer", badge: opts.pendingReferrals },
+        { href: "/dashboard/network", label: "Network", glyph: "network", matches: ["/dashboard/people"] },
+        { href: "/dashboard/consult", label: "Consult", glyph: "consult" },
+        { href: "/dashboard/messages", label: "Messages", glyph: "messages", badge: opts.unreadMessages },
       ],
     },
     {
       label: "Your practice",
       items: [
-        { href: "/dashboard/profile", label: "Profile", glyph: "○" },
-        { href: "/dashboard/availability", label: "Availability", glyph: "◷" },
-        { href: "/dashboard/credentials", label: "Credentials", glyph: "◈" },
-        { href: "/dashboard/documents", label: "Practice Library", glyph: "▤" },
-        { href: "/dashboard/settings", label: "Settings", glyph: "⚙" },
+        { href: "/dashboard/profile", label: "Profile", glyph: "profile" },
+        { href: "/dashboard/availability", label: "Availability", glyph: "availability" },
+        { href: "/dashboard/credentials", label: "Credentials", glyph: "credentials" },
+        { href: "/dashboard/documents", label: "Practice Library", glyph: "library" },
+        { href: "/dashboard/settings", label: "Settings", glyph: "settings" },
       ],
     },
   ];

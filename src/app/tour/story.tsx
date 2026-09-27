@@ -4,14 +4,15 @@
 // planning six weeks of parental leave that starts on the Monday after
 // the week four weeks from today.
 
-export const AV = {
-  alex: "/demo-avatars/f07.svg",
-  maya: "/demo-avatars/f04.svg",
-  eli: "/demo-avatars/m10.svg",
-  imani: "/demo-avatars/f05.svg",
-  samuel: "/demo-avatars/m11.svg",
-  lena: "/demo-avatars/f06.svg",
-  noah: "/demo-avatars/m21.svg",
+// Fictional people show initials, never illustrated portraits.
+export const AV: Record<"alex" | "maya" | "eli" | "imani" | "samuel" | "lena" | "noah", string | null> = {
+  alex: null,
+  maya: null,
+  eli: null,
+  imani: null,
+  samuel: null,
+  lena: null,
+  noah: null,
 };
 
 // Same rule as the seed: date_trunc('week', today + 28) + 7 days, for six weeks.
@@ -38,8 +39,7 @@ export function AlexCard({ compact }: { compact?: boolean }) {
   const leave = leaveDates();
   return (
     <div className={`story-alex${compact ? " compact" : ""}`}>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={AV.alex} alt="" />
+      <span className="story-initials" aria-hidden="true">AR</span>
       <div>
         <div className="eyebrow">You&rsquo;ll be</div>
         <h3>Alex Rivers, PsyD</h3>

@@ -55,8 +55,7 @@ export default async function TourStepPage({ params }: { params: Promise<{ step:
         <div className="story-bar" data-tour-nav>
           <div className="story-bar-inner">
             <div className="story-who">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={who.avatar} alt="" />
+              <span className={`story-initials ${s.perspective}`} aria-hidden="true">{who.initials}</span>
               <div>
                 <span className="story-mode">
                   Story mode &middot; Chapter {chapterIndex + 1} of {CHAPTERS.length}: {chapter.title}
@@ -98,6 +97,14 @@ export default async function TourStepPage({ params }: { params: Promise<{ step:
       >
         {s.render()}
       </PremiumShell>
+      <nav className="pa story-mobile-nav" aria-label="Tour steps" data-tour-nav>
+        <a className="btn secondary" href={prev}>&larr; Back</a>
+        <span>
+          <b>Step {i + 1} of {STEPS.length}</b>
+          <small>{chapter.title}</small>
+        </span>
+        <a className="btn" href={next}>{i === STEPS.length - 1 ? "Finish" : "Next"} &rarr;</a>
+      </nav>
     </TourFrame>
   );
 }

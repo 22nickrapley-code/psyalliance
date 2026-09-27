@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { NavGroup, NavItem } from "./nav-groups";
 import { MOBILE_PRIMARY } from "./nav-groups";
+import { NavIcon } from "./icons";
 
 // The member workspace shell from the premium concept: a quiet left rail,
 // a slim top bar with breadcrumbs and the notification bell, and a
@@ -85,7 +86,7 @@ export default function PremiumShell({
                       className={`rail-link${item === current ? " active" : ""}`}
                       aria-current={item === current ? "page" : undefined}
                     >
-                      <span className="ico" aria-hidden="true">{item.glyph}</span>
+                      <span className="ico" aria-hidden="true"><NavIcon name={item.glyph} size={18} /></span>
                       {item.label}
                       {!!item.badge && <span className="count">{item.badge}</span>}
                     </Link>
@@ -118,32 +119,31 @@ export default function PremiumShell({
             <div className="sandbox-band" role="region" aria-label="About this sandbox">
               <div className="sandbox-band-inner">
                 <div className="who">
-                  {demoSite.who ? (
-                    avatarUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={avatarUrl} alt="" />
-                    ) : (
-                      <span className="avatar">{initials}</span>
-                    )
-                  ) : null}
+                  {demoSite.who && <span className="band-initials" aria-hidden="true">{initials}</span>}
                   <div>
-                    <b>{demoSite.who ? `Welcome. You're ${demoSite.who}.` : "PsyAlliance demo"}</b>
+                    <b>{demoSite.who ? `You're ${demoSite.who}` : "PsyAlliance demo"}</b>
                     <span>
-                      {demoSite.role ? `${demoSite.role}. ` : ""}
-                      Everyone here is fictional and nothing is emailed.
-                      {demoSite.who ? " Anything you send gets a reply from a fictional colleague within a minute or two." : ""}
+                      {demoSite.role ? `${demoSite.role}. ` : ""}Everyone here is fictional and nothing is emailed.
                     </span>
                   </div>
                 </div>
                 <div className="band-actions">
-                  <Link className="btn lg" href="/tour">Take the guided tour</Link>
+                  <Link className="btn" href="/tour">Guided tour</Link>
                   {resetSandboxAction && demoSite.label && (
                     <form action={resetSandboxAction}>
-                      <button type="submit" className="btn lg outline">Start the story again</button>
+                      <button type="submit" className="btn outline" title="Clears everything you have done here and restores Alex's practice">
+                        Start the story again
+                      </button>
                     </form>
                   )}
-                  {demoSite.label && demoSite.expires && (
-                    <span className="expiry">Sandbox for {demoSite.label}<br />Open until {demoSite.expires}</span>
+                  {demoSite.label && (
+                    <details className="band-more">
+                      <summary>About</summary>
+                      <div className="band-pop">
+                        <p>Colleagues reply to what you send within a minute or two. <b>Start the story again</b> clears everything you&rsquo;ve done and restores Alex&rsquo;s practice.</p>
+                        {demoSite.expires && <p>Sandbox for {demoSite.label}, open until {demoSite.expires}.</p>}
+                      </div>
+                    </details>
                   )}
                 </div>
               </div>
@@ -194,7 +194,7 @@ export default function PremiumShell({
       <nav className="mobile-bottom" aria-label="Primary">
         {mobileItems.map((item) => (
           <Link key={item.href} href={item.href} className={isActive(pathname, item) ? "active" : ""}>
-            <span className="symbol" aria-hidden="true">{item.glyph}</span>
+            <span className="symbol" aria-hidden="true"><NavIcon name={item.glyph} size={22} /></span>
             {item.label}
           </Link>
         ))}

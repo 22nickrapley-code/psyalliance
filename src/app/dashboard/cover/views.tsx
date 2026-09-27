@@ -60,10 +60,10 @@ function fmt(d: string | null) {
 
 function PLAN_RESOURCE(type: string | null) {
   if (type === "reciprocal" || type === "short_planned")
-    return { code: "PA-01", title: "Reciprocal Coverage Agreement", purpose: "PA-01 sets out roles, response expectations and a per-case summary for the colleague covering." };
+    return { code: "PA-01", title: "Reciprocal Coverage Agreement", purpose: "Agree roles and response times with the colleague covering, with a per-case summary." };
   if (type === "closing_practice")
-    return { code: "PA-03", title: "Professional Will & Succession Plan", purpose: "PA-03 covers records custody, patient notice and handing over a practice." };
-  return { code: "PA-02", title: "Extended Leave & Handoff Pack", purpose: "PA-02 covers plan continuity, patient letters, responsibilities and the return." };
+    return { code: "PA-03", title: "Professional Will & Succession Plan", purpose: "Plan records custody, patient notice and the handover of your practice." };
+  return { code: "PA-02", title: "Extended Leave & Handoff Pack", purpose: "Keep continuity while you're away: patient letters, who does what, and a plan for your return." };
 }
 
 function PlanAside({ plan, extra }: { plan: PlanSummary; extra?: ReactNode }) {
@@ -106,19 +106,11 @@ function PlanHead({ plan, step, lead }: { plan: PlanSummary; step: number; lead:
         lead={lead}
         actions={<a className="btn secondary" href="/dashboard/cover">All plans</a>}
       />
-      <Progress steps={STEPS} current={step} />
-      <nav className="tabs" style={{ marginBottom: 18 }} aria-label="Plan steps">
-        {[
-          ["needs", "Needs"],
-          ["candidates", "Candidates"],
-          ["invite", "Invite"],
-          ["track", "Track"],
-        ].map(([k, l], i) => (
-          <a key={k} className={`tab${i + 1 === step ? " active" : ""}`} href={`/dashboard/cover/${plan.id}?step=${k}`}>
-            {l}
-          </a>
-        ))}
-      </nav>
+      <Progress
+        steps={STEPS}
+        current={step}
+        hrefs={[null, `/dashboard/cover/${plan.id}?step=needs`, `/dashboard/cover/${plan.id}?step=candidates`, `/dashboard/cover/${plan.id}?step=invite`, `/dashboard/cover/${plan.id}?step=track`]}
+      />
     </>
   );
 }

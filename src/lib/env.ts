@@ -21,3 +21,9 @@ export const JOIN_URL = `${REAL_SITE_URL}/join`;
 
 // The tour is available on the demo site, and locally while developing.
 export const TOUR_ENABLED = IS_DEMO_SITE || process.env.NODE_ENV !== "production";
+
+// Where "Join" buttons go: the real site's form. On the demo it's an
+// absolute link, so a prospect's request never lands in the demo database.
+export const JOIN_HREF = IS_DEMO_SITE ? JOIN_URL : "/join";
+// Public pages (how it works, verification, story) live on the real site.
+export const PUBLIC_BASE = IS_DEMO_SITE ? REAL_SITE_URL : "";

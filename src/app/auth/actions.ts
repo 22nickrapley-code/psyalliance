@@ -1,5 +1,7 @@
 "use server";
 
+import { IS_DEMO_SITE, JOIN_URL } from "@/lib/env";
+
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
@@ -47,6 +49,8 @@ export async function signUp(formData: FormData) {
 
 // Public: ask for an invitation (anon RPC request_to_join).
 export async function requestToJoinAction(formData: FormData) {
+  // Never capture a prospect's details in the demo database.
+  if (IS_DEMO_SITE) redirect(JOIN_URL);
   const supabase = await createClient();
   const fullName = String(formData.get("full_name") || "").trim();
   const email = String(formData.get("email") || "").trim();

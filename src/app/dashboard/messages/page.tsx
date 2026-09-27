@@ -11,7 +11,7 @@ import { Banner, Empty } from "../_components/ui";
 // conversation. Threads that started from a referral, cover request or
 // consult carry that context. Admin notices and physician-portal referrals
 // sit below the conversation list.
-export default async function MessagesPage(props: { searchParams: Promise<{ error?: string; compose?: string; to?: string }> }) {
+export default async function MessagesPage(props: { searchParams: Promise<{ error?: string; compose?: string; to?: string; list?: string }> }) {
   const sp = await props.searchParams;
   const supabase = await createClient();
   const {
@@ -53,10 +53,12 @@ export default async function MessagesPage(props: { searchParams: Promise<{ erro
   }
 
   return (
-    <MessagesShell list={<ConversationList items={items} activeId={openId ?? undefined} composing={composing} />}>
+    <MessagesShell list={<ConversationList items={items} activeId={openId ?? undefined} composing={composing} />} view={composing ? "compose" : "index"}>
       <Banner error={sp.error} />
       {openId ? (
-        <ThreadPanel id={openId} myself={myself} />
+        <div className="index-thread">
+          <ThreadPanel id={openId} myself={myself} />
+        </div>
       ) : items.length === 0 && contacts.size === 0 ? (
         <Empty
           symbol={"✉"}
