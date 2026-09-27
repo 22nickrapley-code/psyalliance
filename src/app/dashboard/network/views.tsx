@@ -85,7 +85,7 @@ function PersonCard({ p }: { p: Person }) {
           {p.relationship !== "none" && <> &middot; <span className="rel">{REL_LABEL[p.relationship]}</span></>}
         </p>
         <div className="actions">
-          <a className="text-arrow" href={`/dashboard/people/${p.id}`}>View profile &#8599;</a>
+          <a className="text-arrow" href={`/dashboard/people/${p.id}`}>View profile &rarr;</a>
           <form action={p.saved ? removeSavedClinicianAction : saveClinicianAction} className="inline">
             <input type="hidden" name="clinician_id" value={p.id} />
             <button type="submit" className="btn secondary small-btn">{p.saved ? "Saved ✓" : "Save clinician"}</button>
@@ -268,7 +268,7 @@ export function NetworkView({
                     avatarUrl={suggestedAvatars[m.profileId]}
                     actions={
                       <>
-                        <a className="text-arrow" href={`/dashboard/people/${m.profileId}`}>View profile &#8599;</a>
+                        <a className="text-arrow" href={`/dashboard/people/${m.profileId}`}>View profile &rarr;</a>
                         <form action={saveClinicianAction} className="inline">
                           <input type="hidden" name="clinician_id" value={m.profileId} />
                           <button type="submit" className="btn secondary small-btn">Save clinician</button>

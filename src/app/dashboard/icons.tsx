@@ -107,3 +107,26 @@ export function NavIcon({ name, size = 20 }: { name: string; size?: number }) {
     </svg>
   );
 }
+
+// Older screens pass a typographic symbol; draw the matching icon instead,
+// because phones render several of these characters as colour emoji.
+const SYMBOL_ICON: Record<string, string> = {
+  "✉": "messages",
+  "✳": "consult",
+  "◎": "network",
+  "✓": "check",
+  "▤": "library",
+  "⚑": "flag",
+  "↗": "pulse",
+  "◇": "cover",
+  "⌂": "home",
+  "◷": "availability",
+  "◈": "credentials",
+  "☷": "members",
+  "+": "overview",
+};
+
+export function Glyph({ symbol, size = 24 }: { symbol: string; size?: number }) {
+  const name = SYMBOL_ICON[symbol];
+  return name ? <NavIcon name={name} size={size} /> : <>{symbol}</>;
+}

@@ -44,7 +44,7 @@ export default async function SignInPage(props: { searchParams: Promise<{ error?
                 <>
                   <p className="small">Exploring PsyAlliance? The guided tour needs no account, and a personal sandbox link signs you in automatically.</p>
                   <a className="btn secondary block" href="/tour">Take the guided tour</a>
-                  <a className="text-arrow" href={JOIN_URL}>Ask to join the real network &#8599;</a>
+                  <a className="text-arrow" href={JOIN_URL}>Ask to join the real network &rarr;</a>
                 </>
               ) : (
                 <>

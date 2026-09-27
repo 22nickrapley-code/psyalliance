@@ -86,7 +86,7 @@ function PostCard({ p }: { p: PostItem }) {
           {p.authorName} &middot; {timeAgo(p.createdAt)} &middot; {p.audienceLabel} &middot; {p.replies} repl{p.replies === 1 ? "y" : "ies"}
           {p.why ? ` · ${p.why}` : ""}
         </span>
-        <a className="text-arrow" href={`/dashboard/consult/${p.id}`}>Read discussion &#8599;</a>
+        <a className="text-arrow" href={`/dashboard/consult/${p.id}`}>Read discussion &rarr;</a>
       </div>
     </article>
   );

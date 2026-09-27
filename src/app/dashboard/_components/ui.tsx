@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { Glyph } from "../icons";
 import type { Match } from "@/lib/match-engine";
 import type { NeedOptions } from "@/lib/need-options";
 import { professionFor, professionLabel, clinicianName, roleLabel } from "@/lib/profession";
@@ -91,7 +92,7 @@ export function Progress({ steps, current, hrefs }: { steps: string[]; current: 
 export function Empty({ symbol = "◎", title, body, action }: { symbol?: string; title: string; body: ReactNode; action?: ReactNode }) {
   return (
     <div className="empty">
-      <div className="symbol" aria-hidden="true">{symbol}</div>
+      <div className="symbol" aria-hidden="true"><Glyph symbol={symbol} size={30} /></div>
       <h3>{title}</h3>
       <p>{body}</p>
       {action}

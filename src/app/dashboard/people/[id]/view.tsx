@@ -88,8 +88,8 @@ export function ClinicianProfileView({ p, error }: { p: ClinicianProfile; error?
             </form>
           </div>
           <div className="hero-links">
-            <a href={`/dashboard/refer/new?state=${p.primaryState || ""}`}>Refer a patient &#8599;</a>
-            <a href="/dashboard/cover/new">Ask for cover &#8599;</a>
+            <a href={`/dashboard/refer/new?state=${p.primaryState || ""}`}>Refer a patient &rarr;</a>
+            <a href="/dashboard/cover/new">Ask for cover &rarr;</a>
           </div>
         </div>
       </section>

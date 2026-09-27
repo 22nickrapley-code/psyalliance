@@ -105,7 +105,7 @@ export function HomeView({ d }: { d: HomeData }) {
         </div>
         <div className="head-actions">
           <OpenDialogButton target="quick-referral" className="btn lg">
-            Quick referral search &#8599;
+            Quick referral search &rarr;
           </OpenDialogButton>
         </div>
       </div>
@@ -167,7 +167,7 @@ export function HomeView({ d }: { d: HomeData }) {
         <section className="card tint">
           <div className="card-title">
             <h3>Your availability</h3>
-            <a className="text-arrow" href="/dashboard/availability">Manage &#8599;</a>
+            <a className="text-arrow" href="/dashboard/availability">Manage &rarr;</a>
           </div>
           <ul className="summary-list">
             <li><span>Referrals</span><strong>{d.availability.referrals}</strong></li>
@@ -190,15 +190,15 @@ export function HomeView({ d }: { d: HomeData }) {
 
       <div className="section-heading"><h2>What would you like to do?</h2></div>
       <div className="tile-grid">
-        <a className="task-tile" href="/dashboard/cover/new"><span className="symbol"><NavIcon name="cover" size={24} /></span><b>Find cover</b><span>Plan an absence &#8599;</span></a>
-        <a className="task-tile" href="/dashboard/refer/new"><span className="symbol"><NavIcon name="refer" size={24} /></span><b>Refer a patient</b><span>Find the right colleague &#8599;</span></a>
-        <a className="task-tile" href="/dashboard/consult"><span className="symbol"><NavIcon name="consult" size={24} /></span><b>Ask colleagues</b><span>Start a consultation &#8599;</span></a>
-        <a className="task-tile" href="/dashboard/network"><span className="symbol"><NavIcon name="network" size={24} /></span><b>Find a clinician</b><span>Search your network &#8599;</span></a>
+        <a className="task-tile" href="/dashboard/cover/new"><span className="symbol"><NavIcon name="cover" size={24} /></span><b>Find cover</b><span>Plan an absence &rarr;</span></a>
+        <a className="task-tile" href="/dashboard/refer/new"><span className="symbol"><NavIcon name="refer" size={24} /></span><b>Refer a patient</b><span>Find the right colleague &rarr;</span></a>
+        <a className="task-tile" href="/dashboard/consult"><span className="symbol"><NavIcon name="consult" size={24} /></span><b>Ask colleagues</b><span>Start a consultation &rarr;</span></a>
+        <a className="task-tile" href="/dashboard/network"><span className="symbol"><NavIcon name="network" size={24} /></span><b>Find a clinician</b><span>Search your network &rarr;</span></a>
       </div>
 
       <div className="section-heading">
         <h2>From your circle</h2>
-        <a className="text-arrow" href="/dashboard/network">View network &#8599;</a>
+        <a className="text-arrow" href="/dashboard/network">View network &rarr;</a>
       </div>
       <div className="split equal">
         <section className="card">
@@ -220,7 +220,7 @@ export function HomeView({ d }: { d: HomeData }) {
                     {r.detail} &middot; <span style={{ color: "var(--forest)" }}>{r.why}</span>
                   </small>
                 </span>
-                <span className="text-arrow">Open &#8599;</span>
+                <span className="text-arrow">Open &rarr;</span>
               </a>
             ))
           )}
@@ -252,7 +252,7 @@ export function HomeView({ d }: { d: HomeData }) {
                     ? `${d.circle.recentlyAvailable.slice(0, 2).join(" and ")}${d.circle.recentlyAvailable.length > 2 ? ` and ${d.circle.recentlyAvailable.length - 2} more` : ""} confirmed this week they're taking referrals.`
                     : ""}
                 </p>
-                <a className="text-arrow" href="/dashboard/network?tab=trusted">See your circle &#8599;</a>
+                <a className="text-arrow" href="/dashboard/network?tab=trusted">See your circle &rarr;</a>
               </div>
             </div>
           )}
@@ -263,7 +263,7 @@ export function HomeView({ d }: { d: HomeData }) {
         <>
           <div className="section-heading">
             <h2>For this moment</h2>
-            <a className="text-arrow" href="/dashboard/documents">Practice Library &#8599;</a>
+            <a className="text-arrow" href="/dashboard/documents">Practice Library &rarr;</a>
           </div>
           <div className="split equal">
             {d.resources.map((r) => (

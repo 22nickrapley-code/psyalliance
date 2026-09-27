@@ -44,7 +44,7 @@ export function ResourceCard({ r }: { r: LibraryResource }) {
           <span className={`review-dot${r.reviewed ? " ok" : ""}`} aria-hidden="true" />
           v{r.version} &middot; {r.reviewed ? `reviewed ${formatDate(r.reviewDate)}` : "provisional, review pending"}
         </span>
-        <a className="text-arrow" href={libraryHref(r.code)}>Explore &#8599;</a>
+        <a className="text-arrow" href={libraryHref(r.code)}>Explore &rarr;</a>
       </div>
     </article>
   );

@@ -1,3 +1,4 @@
+import { Glyph } from "../icons";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { requireAdminOrRedirectPath } from "@/lib/admin";
@@ -151,7 +152,7 @@ export default async function AdminOverviewPage(props: { searchParams: Promise<{
         <div className="tile-grid">
           {AREAS.map(([href, symbol, title, body]) => (
             <a key={href} className="task-tile" href={href}>
-              <span className="symbol" aria-hidden="true">{symbol}</span>
+              <span className="symbol" aria-hidden="true"><Glyph symbol={symbol} /></span>
               <b>{title}</b>
               <span>{body}</span>
             </a>

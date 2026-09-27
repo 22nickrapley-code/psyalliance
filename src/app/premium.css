@@ -896,3 +896,8 @@
   .pa .row{flex-wrap:wrap}
 }
 .pa .message-compose{margin-top:16px;padding-top:14px;border-top:1px solid #e6ebe5}
+@media (max-width:560px){
+  .pa .tile-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .pa .task-tile{min-height:112px;padding:15px}
+  .pa .circle-legend{justify-items:start}
+}
