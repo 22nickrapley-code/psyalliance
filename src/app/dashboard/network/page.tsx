@@ -56,6 +56,11 @@ export default async function NetworkPage(props: {
   const saved = new Set((savedRows || []).map((s: any) => s.clinician_id as string));
   const worked = new Set((workedRows || []).map((w: any) => w.colleague_id as string));
   const excluded = (excludedRows || []).map((e: any) => e.blocked_profile_id as string);
+  // Lead with the member's own state: with no state chosen yet, the
+  // directory opens on colleagues where they practise ("All states" is an
+  // explicit choice and is kept).
+  const homeDefault = tab === "directory" && sp.state === undefined && !!myProfile?.primary_state;
+  if (homeDefault) filters.state = myProfile!.primary_state;
   const trusted = new Set<string>();
   const pendingOut = new Set<string>();
   const pendingIn = new Set<string>();
@@ -87,7 +92,7 @@ export default async function NetworkPage(props: {
       ...filters,
       exclude: excluded,
       ...(only ? { only } : {}),
-      first: [...trusted],
+      first: [...trusted, ...worked],
       limit: PAGE_SIZE,
       offset: (page - 1) * PAGE_SIZE,
       with_options: true,
@@ -170,6 +175,11 @@ export default async function NetworkPage(props: {
       states={states}
       counts={{ directory: Number(res.all) || 0, trusted: trusted.size, worked: worked.size, saved: saved.size, suggested: 0 }}
       networkSize={Number(res.all) || 0}
+      why={
+        tab === "directory"
+          ? `${homeDefault ? "Showing your state first. " : ""}Trusted colleagues and people you've worked with come first, then members who confirmed their availability in the last 30 days.`
+          : undefined
+      }
     />
   );
 }

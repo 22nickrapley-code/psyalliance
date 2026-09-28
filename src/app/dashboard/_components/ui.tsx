@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { Glyph } from "../icons";
+import { SearchableSelect } from "./searchable-select";
 import type { Match } from "@/lib/match-engine";
 import type { NeedOptions } from "@/lib/need-options";
 import { professionFor, professionLabel, clinicianName, roleLabel } from "@/lib/profession";
@@ -7,6 +8,10 @@ import { professionFor, professionLabel, clinicianName, roleLabel } from "@/lib/
 // Presentational building blocks for the rebuilt member screens, all in
 // the premium concept's vocabulary (.pa design system). No data fetching
 // here, so each screen can also be rendered from fixtures in /dev/preview.
+
+// The one rule about patient details, worded the same everywhere.
+export const HANDOFF_RULE =
+  "Patient-identifying details are never entered or shared on PsyAlliance. Once a colleague accepts, you arrange the handoff between you through your own secure channel.";
 
 export function initialsOf(name: string) {
   return (
@@ -198,20 +203,21 @@ export function NeedFields({
   showPrescribing?: boolean;
 }) {
   const f = values.focusIds || [];
-  const focusSelect = (idx: number, label: string, required?: boolean) => (
-    <label className="field">
-      {label}
-      <select name="focus" defaultValue={f[idx] ? String(f[idx]) : ""} required={required}>
-        <option value="">{required ? "Choose a focus" : "None"}</option>
-        {options.focus.map((o) => (
-          <option key={o.id} value={o.id}>{o.value}</option>
-        ))}
-      </select>
-    </label>
+  const focusOptions = options.focus.map((o) => ({ value: String(o.id), label: o.value }));
+  const mainFocus = (
+    <SearchableSelect
+      name="focus"
+      label="Main need"
+      options={focusOptions}
+      defaultValue={f[0] ? String(f[0]) : ""}
+      required
+      emptyLabel="Choose a treatment focus"
+      searchPlaceholder="Search, e.g. OCD, trauma, eating"
+    />
   );
   const stateSelect = (
     <label className="field">
-      State
+      State the patient is in
       <select name="state" defaultValue={values.state || options.homeState || ""} required>
         <option value="">Choose a state</option>
         {options.states.map((s) => (
@@ -244,48 +250,67 @@ export function NeedFields({
   if (compact) {
     return (
       <div className="fields four">
-        {focusSelect(0, "Treatment focus", true)}
+        {mainFocus}
         {stateSelect}
         {insuranceSelect}
         {settingSelect}
       </div>
     );
   }
+  const refined = !!(f[1] || values.city || values.ageBand || values.languageId || values.prescribing);
   return (
-    <div className="fields">
-      {focusSelect(0, "Treatment focus", true)}
-      {focusSelect(1, "Also (optional)")}
-      {stateSelect}
-      <label className="field">
-        City (optional)
-        <input name="city" defaultValue={values.city || ""} placeholder="e.g. Brooklyn" autoComplete="off" />
-      </label>
-      {insuranceSelect}
-      <label className="field">
-        Age band
-        <select name="age" defaultValue={values.ageBand || ""}>
-          <option value="">Any</option>
-          {options.ageBands.map((a) => (
-            <option key={a} value={a}>{a}</option>
-          ))}
-        </select>
-      </label>
-      {settingSelect}
-      <label className="field">
-        Language
-        <select name="language" defaultValue={values.languageId ? String(values.languageId) : ""}>
-          <option value="">Any</option>
-          {options.language.map((o) => (
-            <option key={o.id} value={o.id}>{o.value}</option>
-          ))}
-        </select>
-      </label>
-      {showPrescribing && (
-        <label className="checkline full">
-          <input type="checkbox" name="prescribing" value="1" defaultChecked={values.prescribing} />
-          Prescribing needed (suggests psychiatrists only)
-        </label>
-      )}
+    <div className="need-fields">
+      <div className="fields">
+        {mainFocus}
+        {stateSelect}
+        {settingSelect}
+        {insuranceSelect}
+      </div>
+      <details className="refine-fit" open={refined}>
+        <summary>
+          <span>Refine fit</span>
+          <small>Second focus, city, age band, language{showPrescribing ? ", prescribing" : ""}. Optional.</small>
+        </summary>
+        <div className="fields">
+          <label className="field">
+            Also (optional)
+            <select name="focus" defaultValue={f[1] ? String(f[1]) : ""}>
+              <option value="">None</option>
+              {options.focus.map((o) => (
+                <option key={o.id} value={o.id}>{o.value}</option>
+              ))}
+            </select>
+          </label>
+          <label className="field">
+            City (optional)
+            <input name="city" defaultValue={values.city || ""} placeholder="e.g. Brooklyn" autoComplete="off" />
+          </label>
+          <label className="field">
+            Age band
+            <select name="age" defaultValue={values.ageBand || ""}>
+              <option value="">Any</option>
+              {options.ageBands.map((a) => (
+                <option key={a} value={a}>{a}</option>
+              ))}
+            </select>
+          </label>
+          <label className="field">
+            Language
+            <select name="language" defaultValue={values.languageId ? String(values.languageId) : ""}>
+              <option value="">Any</option>
+              {options.language.map((o) => (
+                <option key={o.id} value={o.id}>{o.value}</option>
+              ))}
+            </select>
+          </label>
+          {showPrescribing && (
+            <label className="checkline full">
+              <input type="checkbox" name="prescribing" value="1" defaultChecked={values.prescribing} />
+              Prescribing needed (suggests psychiatrists only)
+            </label>
+          )}
+        </div>
+      </details>
     </div>
   );
 }

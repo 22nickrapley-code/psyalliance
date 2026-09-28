@@ -95,6 +95,9 @@ export async function startConversation(formData: FormData) {
   const participantIds = formData.getAll("participant_ids").map((v) => String(v)).filter(Boolean);
   const title = String(formData.get("title") || "").trim() || null;
   const body = String(formData.get("body") || "").trim();
+  // A suggested opening line, placed in the reply box (never sent for you).
+  const draft = String(formData.get("draft") || "").trim().slice(0, 600);
+  const withDraft = (cid: number) => `/dashboard/messages/${cid}${draft && !body ? `?draft=${encodeURIComponent(draft)}` : ""}`;
 
   // A plain `throw` here used to take down the whole page with the generic
   // "Something went wrong / Server Components render" crash screen, because
@@ -156,7 +159,7 @@ export async function startConversation(formData: FormData) {
             await postInitialMessage(supabase, existingId, user.id, body, participantIds);
           }
           revalidatePath("/dashboard/messages");
-          redirect(`/dashboard/messages/${existingId}`);
+          redirect(withDraft(existingId));
         }
       }
     }
@@ -179,7 +182,7 @@ export async function startConversation(formData: FormData) {
   }
 
   revalidatePath("/dashboard/messages");
-  redirect(`/dashboard/messages/${conversation.id}`);
+  redirect(withDraft(conversation.id));
 }
 
 export async function sendMessage(formData: FormData) {

@@ -3,6 +3,9 @@ import { PublicNav, PublicFooter } from "../_public/chrome";
 import { requestToJoinAction } from "../auth/actions";
 import { redirect } from "next/navigation";
 import { IS_DEMO_SITE, JOIN_URL } from "@/lib/env";
+import { US_STATES } from "@/lib/us-states";
+
+const LAUNCH = ["NY", "NJ", "MA", "CT", "RI", "VT"];
 
 export const metadata = { title: "Join the founding cohort" };
 
@@ -28,9 +31,11 @@ export default async function JoinPage(props: { searchParams: Promise<{ sent?: s
               </p>
             </div>
             {sp.sent ? (
-              <div className="card tint">
-                <h3>Thank you. We&rsquo;ve got your request.</h3>
-                <p className="small" style={{ marginBottom: 0 }}>We&rsquo;ll email you an invitation link when we open your state. Nothing else is sent to you until then.</p>
+              <div className="card tint roomy">
+                <div className="eyebrow">Request received</div>
+                <h3>You&rsquo;re on the list for an invitation.</h3>
+                <p className="small">This is a request, not membership yet. When we open your state we&rsquo;ll email you a personal invitation link. After you sign up, you add your licence and a person checks it against the state board before you can use the network.</p>
+                <p className="small" style={{ marginBottom: 0 }}>Nothing else is sent to you until then.</p>
               </div>
             ) : (
               <form action={requestToJoinAction} className="card fields">
@@ -54,15 +59,32 @@ export default async function JoinPage(props: { searchParams: Promise<{ sent?: s
                     <option>DO</option>
                   </select>
                 </label>
+                <fieldset className="field state-pick">
+                  <legend>States where you&rsquo;re licensed <span className="micro-note">(at least one)</span></legend>
+                  <div className="check-grid">
+                    {US_STATES.filter((s) => LAUNCH.includes(s.code)).map((s) => (
+                      <label key={s.code}>
+                        <input type="checkbox" name="state" value={s.code} /> {s.name}
+                      </label>
+                    ))}
+                  </div>
+                  <details style={{ marginTop: 8 }}>
+                    <summary className="small" style={{ cursor: "pointer" }}>Licensed somewhere else?</summary>
+                    <div className="check-grid" style={{ marginTop: 8 }}>
+                      {US_STATES.filter((s) => !LAUNCH.includes(s.code)).map((s) => (
+                        <label key={s.code}>
+                          <input type="checkbox" name="state" value={s.code} /> {s.name}
+                        </label>
+                      ))}
+                    </div>
+                  </details>
+                  <small>We&rsquo;re opening New York, New Jersey, Massachusetts, Connecticut, Rhode Island and Vermont first.</small>
+                </fieldset>
                 <label className="field">
-                  States where you&rsquo;re licensed
-                  <input name="states" placeholder="e.g. NY, MA" maxLength={120} />
-                </label>
-                <label className="field">
-                  Your practice, briefly <span className="micro-note">(optional)</span>
+                  <span>Your practice, briefly <span className="micro-note">(optional)</span></span>
                   <textarea name="note" rows={3} maxLength={600} placeholder="Specialties, who you see, what you'd use PsyAlliance for." />
                 </label>
-                <button type="submit" className="btn" style={{ alignSelf: "flex-start" }}>Ask to join</button>
+                <button type="submit" className="btn" style={{ alignSelf: "flex-start" }}>Request an invitation</button>
                 <p className="micro-note" style={{ margin: 0 }}>We use this only to decide when to invite you. See <a href="/privacy">Privacy</a>.</p>
               </form>
             )}

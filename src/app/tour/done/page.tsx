@@ -1,8 +1,8 @@
-import { JOIN_URL } from "@/lib/env";
 import "../../premium.css";
 import { notFound } from "next/navigation";
 import { TOUR_ENABLED } from "@/lib/env";
 import { PublicNav, PublicFooter } from "../../_public/chrome";
+import { NextMoves } from "../next-moves";
 
 export const metadata = { title: "Tour complete", robots: { index: false, follow: false } };
 
@@ -35,18 +35,7 @@ export default function TourDonePage() {
                 </li>
               ))}
             </ol>
-            <div className="split equal" style={{ marginTop: 24 }}>
-              <div className="card">
-                <h3>Try it yourself</h3>
-                <p className="small">Ask us for a personal sandbox: your own copy of the fictional practice for a week, where colleagues reply to what you send.</p>
-                <a className="btn secondary small-btn" href="mailto:hello@psyalliance.org?subject=PsyAlliance%20sandbox">Ask for a sandbox</a>
-              </div>
-              <div className="card">
-                <h3>Join the founding cohort</h3>
-                <p className="small">We&rsquo;re inviting verified psychologists and psychiatrists a few states at a time.</p>
-                <a className="btn small-btn" href={JOIN_URL}>Ask to join</a>
-              </div>
-            </div>
+            <NextMoves />
             <p className="small" style={{ marginTop: 20 }}><a className="text-arrow" href="/tour">&larr; Start the tour again</a></p>
           </div>
         </section>

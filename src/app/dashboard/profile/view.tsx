@@ -126,7 +126,7 @@ export function ProfileView({
         <PageHead
           eyebrow="Your account"
           title="A clear professional profile."
-          lead="The information colleagues use to understand your practice, and every match is computed from."
+          lead="What colleagues see about your practice. PsyAlliance also uses it to suggest you for the right referrals and cover."
           actions={<a className="btn lg" href="/dashboard/profile?edit=1">Edit profile</a>}
         />
         <Banner ok={sp.saved ? "Profile saved." : sp.avatar_saved ? "Photo updated." : null} />

@@ -901,3 +901,92 @@
   .pa .task-tile{min-height:112px;padding:15px}
   .pa .circle-legend{justify-items:start}
 }
+.pa fieldset.state-pick{border:0;padding:0;margin:0;min-width:0}
+.pa fieldset.state-pick legend{font-weight:650;font-size:13px;margin-bottom:8px;padding:0}
+
+/* ---- Refinement round, 28 Sept ---- */
+/* Tour: an annotated preview. One action highlighted, the rest subdued. */
+.tour-mode{position:relative}
+.pa .story-fiction{display:flex;flex-wrap:wrap;justify-content:center;gap:4px 16px}
+.pa .story-fiction a{color:#e2c49c;font-weight:600;text-decoration:none}
+.pa .story-fiction a:hover{text-decoration:underline}
+.tour-mode.has-focus [data-tour-screen] :is(a.btn,button.btn,.plain-button,a.text-arrow,.hero-links a,button.btn-link):not(.tour-focus){opacity:.42;filter:saturate(.6)}
+.tour-mode.has-focus [data-tour-screen] :is(input,select,textarea){opacity:.8}
+.tour-mode .tour-focus{position:relative;opacity:1!important;outline:3px solid #d9a95f;outline-offset:3px;box-shadow:0 0 0 7px rgba(217,169,95,.22);animation:tourGlow 2.4s ease-in-out infinite;z-index:2}
+.tour-mode .tour-focus.tour-pulse{animation:tourPulse .9s ease-out 2}
+@keyframes tourGlow{0%,100%{box-shadow:0 0 0 5px rgba(217,169,95,.18)}50%{box-shadow:0 0 0 10px rgba(217,169,95,.32)}}
+@keyframes tourPulse{0%{box-shadow:0 0 0 0 rgba(217,169,95,.7)}100%{box-shadow:0 0 0 18px rgba(217,169,95,0)}}
+@media (prefers-reduced-motion:reduce){.tour-mode .tour-focus,.tour-mode .tour-focus.tour-pulse{animation:none}}
+.tour-callout{position:absolute;z-index:40;width:280px;transform:translateY(-100%);background:#173b31;color:#f1f5f0;border-radius:8px;padding:10px 13px;font:12.5px/1.45 Inter,Arial,sans-serif;box-shadow:0 14px 40px rgba(15,45,37,.28);pointer-events:none}
+.tour-callout.below{transform:none}
+.tour-callout.right{transform:translateY(-50%)}
+.tour-callout.right:after{left:-6px;bottom:auto;top:calc(50% - 6px)}
+.tour-callout b{display:block;color:#e2c49c;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;margin-bottom:2px}
+.tour-callout:after{content:"";position:absolute;left:22px;bottom:-6px;width:12px;height:12px;background:#173b31;transform:rotate(45deg)}
+.tour-callout.below:after{bottom:auto;top:-6px}
+.tour-toast-actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin-top:9px}
+.tour-toast-btn{background:#e2c49c;color:#173b31;border:0;border-radius:6px;padding:7px 12px;font:600 12.5px Inter,Arial,sans-serif;cursor:pointer;text-decoration:none}
+.tour-toast-link{color:#e2c49c;font-weight:600;text-decoration:none}
+.tour-toast-close{background:none;border:0;color:#cfe0d4;font:12.5px Inter,Arial,sans-serif;cursor:pointer;margin-left:auto;padding:4px}
+.pa .next-moves{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;margin-top:26px}
+.pa .next-moves .card{margin:0;display:flex;flex-direction:column;align-items:flex-start}
+.pa .next-moves .card .btn{margin-top:auto}
+.pa .next-moves h3{margin:4px 0 6px}
+.pa .more-chapters{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.pa .chapter-link{margin:0;display:flex;flex-direction:column;gap:6px;text-decoration:none;color:inherit;transition:border-color .15s}
+.pa .chapter-link:hover{border-color:#9fbcaa}
+.pa .chapter-link b{font-size:15.5px;color:var(--ink)}
+.pa .chapter-link .text-arrow{margin-top:auto}
+@media (max-width:760px){.pa .next-moves,.pa .more-chapters{grid-template-columns:1fr}}
+@media (max-width:760px){.tour-callout{width:min(280px,calc(100vw - 40px))}}
+
+/* Home: one obvious first move. */
+.pa .start-here{display:flex;align-items:center;justify-content:space-between;gap:24px;flex-wrap:wrap;margin:0 0 24px;padding:24px 28px;border-radius:10px;background:linear-gradient(110deg,#123a30,#1d4a3d);color:#f4f7f2;box-shadow:0 18px 50px rgba(20,49,41,.16)}
+.pa .start-here.urgent{border-left:5px solid #d9a95f}
+.pa .start-here > div{flex:1;min-width:260px}
+.pa .start-here .eyebrow{color:#e2c49c}
+.pa .start-here h2{color:#fff;font-family:var(--display);font-size:clamp(22px,2.4vw,28px);line-height:1.2;margin:6px 0 8px;font-weight:500}
+.pa .start-here p{color:#cfe0d4;margin:0;max-width:640px;font-size:14px}
+@media (max-width:560px){.pa .start-here{padding:20px 18px}.pa .start-here .btn{width:100%;justify-content:center}}
+
+/* Forms: essentials first, the rest folded away. */
+.pa .need-fields{display:grid;gap:14px}
+.pa details.refine-fit{border:1px solid var(--line);border-radius:8px;background:#fafbf8;margin-top:16px}
+.pa details.refine-fit > summary{list-style:none;cursor:pointer;padding:12px 15px;display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px}
+.pa details.refine-fit > summary::-webkit-details-marker{display:none}
+.pa details.refine-fit > summary span{font-weight:650;color:var(--forest);font-size:13.5px}
+.pa details.refine-fit > summary span:before{content:"+";display:inline-block;width:14px}
+.pa details.refine-fit[open] > summary span:before{content:"\2212"}
+.pa details.refine-fit > summary small{color:var(--muted);font-size:12px}
+.pa details.refine-fit > .fields{padding:4px 15px 16px}
+.pa .field.searchable{display:grid;gap:6px}
+.pa .field.searchable label{font-size:12px;font-weight:650;color:var(--ink)}
+.pa .field.searchable .searchable-q{font-weight:400}
+.pa details.audience-pick{margin-top:18px;border-top:1px solid var(--line);padding-top:14px}
+.pa details.audience-pick > summary{list-style:none;cursor:pointer;display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 12px;margin-bottom:10px}
+.pa details.audience-pick > summary::-webkit-details-marker{display:none}
+.pa details.audience-pick .aud{display:none;font-size:16px;color:var(--ink)}
+.pa details.audience-pick:has(input[value="one"]:checked) .aud-one,
+.pa details.audience-pick:has(input[value="selected"]:checked) .aud-selected,
+.pa details.audience-pick:has(input[value^="group:"]:checked) .aud-group,
+.pa details.audience-pick:has(input[value="trusted"]:checked) .aud-trusted,
+.pa details.audience-pick:has(input[value="wider_network"]:checked) .aud-wider{display:inline}
+.pa details.audience-pick[open] > summary .text-arrow{visibility:hidden}
+.pa .field-pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px}
+@media (max-width:560px){.pa .field-pair{grid-template-columns:1fr}}
+.pa .why-line{font-size:12.5px;color:var(--muted);margin:-4px 0 12px}
+
+/* Status chips on a cover plan: interest never reads as cover. */
+.pa .chip.invite-warn{background:#fbf1e3;border-color:#ecd7b6;color:#865b2b}
+.pa .chip.invite-ok{background:#e6efe8;border-color:#bcd3c3;color:#285143}
+
+/* Admin: sandbox passes. */
+.pa .issued-pass{margin-bottom:20px}
+.pa .copy-link{display:flex;gap:8px;align-items:center;margin-top:8px}
+.pa .copy-link input{flex:1;min-width:0;font-family:ui-monospace,Menlo,monospace;font-size:12.5px}
+.pa details.pass-link > summary{cursor:pointer;color:var(--forest);font-weight:600}
+/* Key facts read at a glance: status, dates, jurisdiction, availability, reasons. */
+.pa .status{font-size:12px;padding:5px 10px}
+.pa .reasons li{font-size:12.5px}
+.pa .incoming-glance strong{font-size:15px}
+.pa .case-facts dd{font-size:14px}

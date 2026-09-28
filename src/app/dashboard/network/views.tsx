@@ -116,6 +116,8 @@ function pageHref(filters: Record<string, string | boolean | undefined>, tab: Ne
     if (v === true) q.set(k, "1");
     else if (typeof v === "string" && v) q.set(k, v);
   }
+  // "All states" is a choice, not an absence: keep it across pages.
+  if (!filters.state) q.set("state", "");
   if (page > 1) q.set("page", String(page));
   return `/dashboard/network?${q.toString()}`;
 }
@@ -136,6 +138,7 @@ export function NetworkView({
   states,
   counts,
   networkSize = 1,
+  why,
 }: {
   tab: NetworkTab;
   people: Person[];
@@ -152,6 +155,7 @@ export function NetworkView({
   states: { code: string; name: string }[];
   counts: Record<NetworkTab, number>;
   networkSize?: number;
+  why?: string;
 }) {
   const pages = Math.max(1, Math.ceil(total / pageSize));
   const from = total === 0 ? 0 : (page - 1) * pageSize + 1;
@@ -255,6 +259,7 @@ export function NetworkView({
               {pages > 1 && <span>Showing {from}&ndash;{to}</span>}
             </div>
           )}
+          {tab !== "suggested" && total > 0 && why && <p className="why-line">{why}</p>}
 
           {tab === "suggested" ? (
             suggested.length === 0 ? (

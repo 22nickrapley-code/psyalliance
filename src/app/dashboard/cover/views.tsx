@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import type { Match } from "@/lib/match-engine";
 import type { NeedOptions } from "@/lib/need-options";
-import { QuietEmpty, PageHead, Banner, Progress, Empty, Status, MatchCard, SummaryList, PersonAvatar } from "../_components/ui";
+import { QuietEmpty, PageHead, Banner, Progress, Empty, Status, MatchCard, SummaryList, PersonAvatar, HANDOFF_RULE } from "../_components/ui";
 import {
   createPlanAction,
   addCaseAction,
@@ -47,11 +47,22 @@ export type PlanSummary = {
   counts: { total: number; covered: number; invited: number; open: number };
 };
 
+// One vocabulary for cover, used on every screen: asked, awaiting reply,
+// interested (never shown as cover), accepted, covered, closed.
 const CASE_STATUS: Record<CaseItem["status"], { label: string; tone: "" | "warn" | "danger" | "neutral" }> = {
-  needs_cover: { label: "Needs a colleague", tone: "danger" },
-  awaiting_response: { label: "Invited", tone: "warn" },
+  needs_cover: { label: "Not asked yet", tone: "warn" },
+  awaiting_response: { label: "Asked, awaiting reply", tone: "warn" },
   confirmed: { label: "Covered", tone: "" },
   declined_all: { label: "No one left to ask", tone: "danger" },
+};
+
+const INVITE_STATUS: Record<string, { label: string; tone: "" | "warn" | "neutral" }> = {
+  sent: { label: "asked, awaiting reply", tone: "warn" },
+  discussing: { label: "interested, not yet accepted", tone: "warn" },
+  accepted: { label: "accepted", tone: "" },
+  declined: { label: "declined", tone: "neutral" },
+  expired: { label: "closed", tone: "neutral" },
+  cancelled: { label: "closed", tone: "neutral" },
 };
 
 function fmt(d: string | null) {
@@ -78,7 +89,7 @@ function PlanAside({ plan, extra }: { plan: PlanSummary; extra?: ReactNode }) {
             ["Dates", `${fmt(plan.starts)} – ${fmt(plan.ends)}`],
             ["Jurisdiction", plan.state || "Not set"],
             ["Cases", plan.counts.total],
-            ["Invited, awaiting reply", plan.counts.invited],
+            ["Asked, awaiting reply", plan.counts.invited],
             ["Covered", plan.counts.covered],
             ["Still unresolved", plan.counts.open],
           ]}
@@ -162,11 +173,15 @@ function IncomingCard({ r }: { r: IncomingPlan }) {
       </ul>
       {r.note && <blockquote className="request-note">&ldquo;{r.note}&rdquo;</blockquote>}
       <div className="incoming-cases">
-        {r.cases.map((c, i) => (
+        {r.cases.map((c, i) => {
+          const label = c.reference && !/^case\s*\d+$/i.test(c.reference.trim()) ? c.reference : `Case ${i + 1}`;
+          const ownerFirst = r.ownerName.replace(/^(dr\.?)\s+/i, "").split(/[\s,]+/)[0];
+          const draft = `Hi ${ownerFirst}, I may be able to cover ${label} (${c.focus}) for ${r.dates}. Before I accept, could we talk through the schedule and how you'd like the handoff to work?`;
+          return (
           <div key={c.requestId} className="incoming-case">
             <div className="row between wrap" style={{ gap: 8 }}>
               <strong>
-                {c.reference && !/^case\s*\d+$/i.test(c.reference.trim()) ? c.reference : `Case ${i + 1}`} &middot; {c.focus}
+                {label} &middot; {c.focus}
               </strong>
             </div>
             <dl className="case-facts">
@@ -177,15 +192,17 @@ function IncomingCard({ r }: { r: IncomingPlan }) {
             <form action={respondCoverAction} className="row wrap" style={{ marginTop: 12, gap: 8 }}>
               <input type="hidden" name="coverage_request_id" value={c.requestId} />
               <input type="hidden" name="owner_id" value={r.ownerId} />
-              <input type="hidden" name="thread_title" value={`Cover · ${r.planTitle}`} />
-              <button type="submit" name="response" value="accepted" className="btn small-btn">Accept this case</button>
+              <input type="hidden" name="thread_title" value={`Cover · ${r.planTitle} · ${label} · ${c.focus}`} />
+              <input type="hidden" name="draft" value={draft} />
+              <button type="submit" name="response" value="accepted" className="btn small-btn">Accept {label}</button>
               <button type="submit" name="response" value="discussing" className="btn secondary small-btn">Discuss first</button>
               <button type="submit" name="response" value="declined" className="btn ghost small-btn">Decline</button>
             </form>
           </div>
-        ))}
+          );
+        })}
       </div>
-      <p className="micro-note" style={{ margin: "12px 0 0" }}>No patient-identifying details are shared until you accept and agree a handoff.</p>
+      <p className="micro-note" style={{ margin: "12px 0 0" }}>{HANDOFF_RULE}</p>
     </section>
   );
 }
@@ -253,7 +270,7 @@ export function CoverIndexView({
               {past.map((p) => (
                 <a key={p.id} href={`/dashboard/cover/${p.id}?step=track`} className="list-row" style={{ textDecoration: "none", color: "inherit" }}>
                   <span><strong>{p.title}</strong><small>{fmt(p.starts)} &ndash; {fmt(p.ends)}</small></span>
-                  <Status tone="neutral">{p.status === "completed" ? "Completed" : "Cancelled"}</Status>
+                  <Status tone="neutral">{p.status === "completed" ? "Closed, completed" : "Closed, cancelled"}</Status>
                 </a>
               ))}
             </details>
@@ -272,7 +289,15 @@ export function CoverIndexView({
 }
 
 // ---------- Step 1: Plan ----------
-export function CoverPlanStepView({ options, error }: { options: NeedOptions; error?: string }) {
+export function CoverPlanStepView({
+  options,
+  error,
+  preset,
+}: {
+  options: NeedOptions;
+  error?: string;
+  preset?: { absenceType: string; title: string; starts: string; ends: string };
+}) {
   return (
     <>
       <PageHead eyebrow="Cover / new plan" title="Start with the time away." lead="Choose the kind of cover and the dates. Add non-identifying case needs next." actions={<a className="btn secondary" href="/dashboard/cover">Cancel</a>} />
@@ -285,7 +310,7 @@ export function CoverPlanStepView({ options, error }: { options: NeedOptions; er
           <div className="choose-grid">
             {Object.entries(ABSENCE).map(([k, v]) => (
               <label key={k} className="radio-card">
-                <input type="radio" name="absence_type" value={k} required />
+                <input type="radio" name="absence_type" value={k} required defaultChecked={preset?.absenceType === k} />
                 <b>{v.label}</b>
                 <span>{v.blurb}</span>
               </label>
@@ -294,11 +319,11 @@ export function CoverPlanStepView({ options, error }: { options: NeedOptions; er
           <div className="fields">
             <label className="field full">
               Plan name
-              <input name="title" required maxLength={80} placeholder="e.g. October leave" />
+              <input name="title" required maxLength={80} placeholder="e.g. October leave" defaultValue={preset?.title} />
               <small>For your own reference. Never a patient name.</small>
             </label>
-            <label className="field">First day<input type="date" name="starts_on" /></label>
-            <label className="field">Return date<input type="date" name="ends_on" /></label>
+            <label className="field">First day<input type="date" name="starts_on" defaultValue={preset?.starts} /></label>
+            <label className="field">Return date<input type="date" name="ends_on" defaultValue={preset?.ends} /></label>
             <label className="field full">
               Jurisdiction
               <select name="state" required defaultValue={options.homeState || ""}>
@@ -608,7 +633,7 @@ export function CoverTrackView({
               <span className="metric">{plan.counts.total ? Math.round((plan.counts.covered / plan.counts.total) * 100) : 0}%</span>
             </div>
             <p className="small">
-              {plan.counts.invited} awaiting reply &middot; {plan.counts.open} need{plan.counts.open === 1 ? "s" : ""} a colleague
+              {plan.counts.invited} asked, awaiting reply &middot; {plan.counts.open} not covered yet
             </p>
             {(exceptions.length ? exceptions : cases).map((c) => {
               const s = CASE_STATUS[c.status];
@@ -622,7 +647,7 @@ export function CoverTrackView({
                   {c.invited.length > 0 && (
                     <div className="kv">
                       {c.invited.map((i) => (
-                        <span key={i.name} className="chip">{i.name}: {i.status === "sent" ? "asked" : i.status}</span>
+                        <span key={i.name} className={`chip invite-${INVITE_STATUS[i.status] ? INVITE_STATUS[i.status].tone || "ok" : "neutral"}`}>{i.name}: {INVITE_STATUS[i.status]?.label || i.status}</span>
                       ))}
                     </div>
                   )}

@@ -21,6 +21,7 @@ export type NextStep = {
 export type CircleNode = { id: string; name: string; kind: "trusted" | "worked" | "saved"; avatarUrl: string | null };
 
 export type HomeData = {
+  startHere?: { title: string; body: string; href: string; action: string; urgent?: boolean };
   firstName: string;
   today?: string;
   greeting?: string;
@@ -104,12 +105,22 @@ export function HomeView({ d }: { d: HomeData }) {
           <p>A clear view of what needs your attention, and who can help.</p>
         </div>
         <div className="head-actions">
-          <OpenDialogButton target="quick-referral" className="btn lg">
+          <OpenDialogButton target="quick-referral" className={d.startHere ? "btn secondary" : "btn lg"}>
             Quick referral search &rarr;
           </OpenDialogButton>
         </div>
       </div>
       <Banner ok={d.notice} />
+      {d.startHere && (
+        <section className={`start-here${d.startHere.urgent ? " urgent" : ""}`} aria-labelledby="start-here-title">
+          <div>
+            <div className="eyebrow">Start here</div>
+            <h2 id="start-here-title">{d.startHere.title}</h2>
+            <p>{d.startHere.body}</p>
+          </div>
+          <a className="btn lg on-dark" href={d.startHere.href}>{d.startHere.action} &rarr;</a>
+        </section>
+      )}
 
       <dialog id="quick-referral" className="quick-dialog" aria-labelledby="quick-referral-title">
         <form className="quick-search" method="get" action="/dashboard/refer/new">

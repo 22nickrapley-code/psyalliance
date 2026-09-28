@@ -234,7 +234,7 @@ export function ConsultComposeView({
   const title = kind === "supervision_request" ? "Request supervision." : kind === "supervision_offer" ? "Offer supervision." : "Ask colleagues a question.";
   return (
     <>
-      <PageHead eyebrow="Consult / new" title={title} lead="Question first, then context, then who sees it. You'll review before anything is shared." actions={<a className="btn secondary" href="/dashboard/consult">Cancel</a>} />
+      <PageHead eyebrow="Consult / new" title={title} lead="Your question and a little context. It goes to your trusted colleagues unless you change it, and you review it before anything is shared." actions={<a className="btn secondary" href="/dashboard/consult">Cancel</a>} />
       <Banner error={error} />
       <form className="split" action={draftConsultAction}>
         <input type="hidden" name="kind" value={kind} />
@@ -254,72 +254,88 @@ export function ConsultComposeView({
               }
             />
           </label>
-          <div className="fields" style={{ marginTop: 14 }}>
-            {kind === "question" && (
+          <label className="field" style={{ marginTop: 14 }}>
+            <span>Context <span className="micro-note">(optional)</span></span>
+            <textarea name="context" rows={4} maxLength={2000} placeholder="Broad, de-identified context: what you've tried, where you're stuck, what would help." />
+          </label>
+
+          <details className="audience-pick" open={!!preselect || !!preselectGroup}>
+            <summary>
+              <span className="eyebrow" style={{ margin: 0 }}>Who sees this</span>
+              <b className="aud aud-one">One colleague</b>
+              <b className="aud aud-selected">Selected colleagues</b>
+              <b className="aud aud-group">Your consultation group</b>
+              <b className="aud aud-trusted">Your trusted colleagues</b>
+              <b className="aud aud-wider">The verified network</b>
+              <span className="text-arrow">Change</span>
+            </summary>
+            <label className="radio-card">
+              <input type="radio" name="audience" value="trusted" defaultChecked={!preselect && !preselectGroup} />
+              <span><b>My trusted colleagues</b><span>Your circle. The default, and usually the right place to start.</span></span>
+            </label>
+            <label className="radio-card">
+              <input type="radio" name="audience" value="one" defaultChecked={!!preselect} />
+              <span><b>One colleague</b><span>A private question, like knocking on a colleague&rsquo;s door.</span></span>
+            </label>
+            <label className="radio-card">
+              <input type="radio" name="audience" value="selected" />
+              <span><b>Selected colleagues</b><span>Choose a few people below.</span></span>
+            </label>
+            {groups.map((g) => (
+              <label key={g.id} className="radio-card">
+                <input type="radio" name="audience" value={`group:${g.id}`} defaultChecked={preselectGroup === g.id} />
+                <span><b>{g.name}</b><span>Your consultation group. Members only.</span></span>
+              </label>
+            ))}
+            <label className="radio-card">
+              <input type="radio" name="audience" value="wider_network" />
+              <span><b>Verified network</b><span>Every verified member can see and reply. Shown to those following your tags.</span></span>
+            </label>
+            {colleagues.length > 0 && (
+              <details open={!!preselect} style={{ marginTop: 8 }}>
+                <summary className="small">Choose colleagues (for One colleague or Selected)</summary>
+                <div className="stack" style={{ gap: 6, marginTop: 10, maxHeight: 280, overflow: "auto" }}>
+                  {colleagues.map((c) => (
+                    <label key={c.id} className="checkline">
+                      <input type="checkbox" name="recipients" value={c.id} defaultChecked={preselect === c.id} />
+                      {c.name} <span className="micro-note">{c.relation}</span>
+                    </label>
+                  ))}
+                </div>
+              </details>
+            )}
+          </details>
+
+          <details className="refine-fit">
+            <summary>
+              <span>Type and tags</span>
+              <small>Optional. Tags help colleagues who follow a topic find your question.</small>
+            </summary>
+            <div className="fields">
+              {kind === "question" && (
+                <label className="field">
+                  Type
+                  <select name="consultation_type" defaultValue="practice_question">
+                    {CONSULT_TYPES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+                  </select>
+                </label>
+              )}
               <label className="field">
-                Type
-                <select name="consultation_type" defaultValue="practice_question">
-                  {CONSULT_TYPES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+                Treatment area tag
+                <select name="tag_area" defaultValue="">
+                  <option value="">None</option>
+                  {areas.map((a) => <option key={a}>{a}</option>)}
                 </select>
               </label>
-            )}
-            <label className="field">
-              Treatment area tag
-              <select name="tag_area" defaultValue="">
-                <option value="">None</option>
-                {areas.map((a) => <option key={a}>{a}</option>)}
-              </select>
-            </label>
-            <label className="field">
-              Practice topic tag
-              <select name="tag_topic" defaultValue={kind === "question" ? "" : "Supervision"}>
-                <option value="">None</option>
-                {PRACTICE_TOPICS.map((t) => <option key={t}>{t}</option>)}
-              </select>
-            </label>
-            <label className="field full">
-              Context (optional)
-              <textarea name="context" maxLength={2000} placeholder="Broad, de-identified context: what you've tried, where you're stuck, what would help." />
-            </label>
-          </div>
-
-          <h3 style={{ marginTop: 20 }}>Who should see this?</h3>
-          <label className="radio-card">
-            <input type="radio" name="audience" value="one" defaultChecked={!!preselect} />
-            <span><b>One colleague</b><span>A private question, like knocking on a colleague&rsquo;s door.</span></span>
-          </label>
-          <label className="radio-card">
-            <input type="radio" name="audience" value="selected" />
-            <span><b>Selected colleagues</b><span>Choose a few people below.</span></span>
-          </label>
-          {groups.map((g) => (
-            <label key={g.id} className="radio-card">
-              <input type="radio" name="audience" value={`group:${g.id}`} defaultChecked={preselectGroup === g.id} />
-              <span><b>{g.name}</b><span>Your consultation group. Members only.</span></span>
-            </label>
-          ))}
-          <label className="radio-card">
-            <input type="radio" name="audience" value="trusted" defaultChecked={!preselect && !preselectGroup} />
-            <span><b>My trusted colleagues</b><span>Your circle. The default.</span></span>
-          </label>
-          <label className="radio-card">
-            <input type="radio" name="audience" value="wider_network" />
-            <span><b>Verified network</b><span>Every verified member can see and reply. Shown to those following your tags.</span></span>
-          </label>
-
-          {colleagues.length > 0 && (
-            <details open={!!preselect} style={{ marginTop: 8 }}>
-              <summary className="small">Choose colleagues (for One colleague or Selected)</summary>
-              <div className="stack" style={{ gap: 6, marginTop: 10, maxHeight: 280, overflow: "auto" }}>
-                {colleagues.map((c) => (
-                  <label key={c.id} className="checkline">
-                    <input type="checkbox" name="recipients" value={c.id} defaultChecked={preselect === c.id} />
-                    {c.name} <span className="micro-note">{c.relation}</span>
-                  </label>
-                ))}
-              </div>
-            </details>
-          )}
+              <label className="field">
+                Practice topic tag
+                <select name="tag_topic" defaultValue={kind === "question" ? "" : "Supervision"}>
+                  <option value="">None</option>
+                  {PRACTICE_TOPICS.map((t) => <option key={t}>{t}</option>)}
+                </select>
+              </label>
+            </div>
+          </details>
 
           <label className="checkline" style={{ marginTop: 16 }}>
             <input type="checkbox" name="deidentified" required />

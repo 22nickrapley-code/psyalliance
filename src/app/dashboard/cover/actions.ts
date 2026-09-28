@@ -178,6 +178,7 @@ export async function respondCoverAction(formData: FormData) {
       fd.append("participant_ids", ownerId);
       fd.append("title", title);
       fd.append("body", "");
+      fd.append("draft", String(formData.get("draft") || ""));
       await startConversation(fd);
     }
   }

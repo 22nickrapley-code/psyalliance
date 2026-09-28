@@ -2,7 +2,7 @@ import "../premium.css";
 import { notFound } from "next/navigation";
 import { TOUR_ENABLED } from "@/lib/env";
 import { PublicNav, PublicFooter } from "../_public/chrome";
-import { STEPS } from "./steps";
+import { STEPS, QUICK_STEPS } from "./steps";
 import { AlexCard, CHAPTERS } from "./story";
 
 export const metadata = { title: "Guided tour", robots: { index: false, follow: false } };
@@ -18,11 +18,11 @@ export default function TourIntroPage() {
         <section className="public-section">
           <div className="section-inner" style={{ maxWidth: 1080 }}>
             <div className="section-intro">
-              <div className="eyebrow">Guided tour &middot; {STEPS.length} short steps, about five minutes</div>
-              <h2>Follow one practice through a busy month.</h2>
+              <div className="eyebrow">Guided tour &middot; read-only &middot; fictional people</div>
+              <h2>See six weeks of leave covered, in two minutes.</h2>
               <p>
-                Alex is about to take six weeks of parental leave. Start with the simple screens, then refer a new enquiry, ask colleagues a question and
-                plan cover case by case. You&rsquo;ll see one request from both sides.
+                Alex, a psychologist in Brooklyn, needs six weeks away. Watch three cases described without identifiers, colleagues asked, and every
+                case accepted. Then, if you like, the rest of the practice.
               </p>
             </div>
             <div className="story-intro">
@@ -30,19 +30,22 @@ export default function TourIntroPage() {
                 <AlexCard />
                 <div className="two-ways">
                   <div className="way primary">
-                    <h3>Guided tour</h3>
-                    <p>Read-only. Step through the story at your own pace.</p>
-                    <a className="btn lg" href={`/tour/${STEPS[0].slug}`}>Start the story &rarr;</a>
+                    <h3>The two-minute tour</h3>
+                    <p>{QUICK_STEPS.length} screens: from &ldquo;I need six weeks away&rdquo; to every case covered.</p>
+                    <a className="btn lg" href={`/tour/quick/${QUICK_STEPS[0].slug}`}>Start the two-minute tour &rarr;</a>
                   </div>
                   <div className="way">
-                    <h3>Your own sandbox</h3>
-                    <p>A personal copy of Alex&rsquo;s practice for a week. Colleagues reply to what you send.</p>
-                    <a className="btn secondary" href="mailto:hello@psyalliance.org?subject=PsyAlliance%20sandbox">Ask for a sandbox</a>
+                    <h3>The full tour</h3>
+                    <p>{STEPS.length} short steps, about five minutes: the practice, a referral, a consultation, then cover.</p>
+                    <a className="btn secondary" href={`/tour/${STEPS[0].slug}`}>Take the full tour</a>
                   </div>
                 </div>
+                <p className="small" style={{ marginTop: 14 }}>
+                  Want to click everything yourself? <a href="/sandbox/request">Ask for a personal sandbox</a>.
+                </p>
               </div>
               <div>
-                <div className="eyebrow" style={{ marginBottom: 10 }}>What you&rsquo;ll do</div>
+                <div className="eyebrow" style={{ marginBottom: 10 }}>The full tour, chapter by chapter</div>
                 <div className="chapter-list">
                   {CHAPTERS.map((c, n) => (
                     <div key={c.key} className="chapter">

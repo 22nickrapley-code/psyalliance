@@ -29,5 +29,5 @@ export function findIdentifiers(text: string | null | undefined): string[] {
 export function identifierError(text: string | null | undefined): string | null {
   const found = findIdentifiers(text);
   if (found.length === 0) return null;
-  return `Please remove ${found.join(" and ")}. PsyAlliance isn't built to hold patient-identifying details; share them through your own secure channel once a colleague agrees.`;
+  return `Please remove ${found.join(" and ")}. Patient-identifying details are never entered on PsyAlliance; once a colleague accepts, you arrange the handoff through your own secure channel.`;
 }

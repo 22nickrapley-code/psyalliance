@@ -1,6 +1,7 @@
 "use server";
 
 import { IS_DEMO_SITE, JOIN_URL } from "@/lib/env";
+import { US_STATES } from "@/lib/us-states";
 
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
@@ -55,11 +56,13 @@ export async function requestToJoinAction(formData: FormData) {
   const fullName = String(formData.get("full_name") || "").trim();
   const email = String(formData.get("email") || "").trim();
   const qualification = String(formData.get("qualification") || "");
-  const states = String(formData.get("states") || "").trim().slice(0, 120);
+  const valid = new Set(US_STATES.map((s) => s.code));
+  const states = Array.from(new Set(formData.getAll("state").map((v) => String(v).toUpperCase()).filter((c) => valid.has(c)))).join(", ");
   const note = String(formData.get("note") || "").trim().slice(0, 600);
   if (fullName.length < 2 || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
     redirect(`/join?error=${encodeURIComponent("Add your name and a valid email address.")}`);
   }
+  if (!states) redirect(`/join?error=${encodeURIComponent("Choose at least one state where you're licensed.")}`);
   const { error } = await supabase.rpc("request_to_join", { p_full_name: fullName, p_email: email, p_qualification: qualification, p_states: states, p_note: note });
   if (error) redirect(`/join?error=${encodeURIComponent(error.message)}`);
   redirect("/join?sent=1");

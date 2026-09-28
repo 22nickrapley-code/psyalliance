@@ -13,6 +13,7 @@ import {
   NeedFields,
   SummaryList,
   PersonAvatar,
+  HANDOFF_RULE,
 } from "../_components/ui";
 import {
   sendReferralAction,
@@ -75,10 +76,10 @@ export function ReferNeedView({ options, need, error }: { options: NeedOptions; 
           <input type="hidden" name="step" value="shortlist" />
           <div className="eyebrow">Step 1 &middot; Define the need</div>
           <h2>Who could be a good fit?</h2>
-          <p>Use broad, non-identifying details. The clinical handoff happens through your own secure channel after a colleague agrees.</p>
+          <p>Start with the main need and where the patient is. Everything else is optional.</p>
           <NeedFields options={options} values={need} />
           <div className="tone-panel" style={{ marginTop: 18 }}>
-            Do not enter names, dates of birth, contact details or other patient-identifying information.
+            {HANDOFF_RULE}
           </div>
           <div className="step-actions">
             <a className="btn ghost" href="/dashboard/refer">Cancel</a>
@@ -302,7 +303,7 @@ export function referralStatus(r: { status: string; interested: number; response
   if (open) {
     const everyone = !!r.audienceCount && r.responses >= r.audienceCount;
     if (r.interested > 0 && everyone) return { label: "Ready to choose", tone: "", next: "Choose a colleague" };
-    if (r.interested > 0) return { label: `${r.interested} interested`, tone: "", next: "Review replies" };
+    if (r.interested > 0) return { label: `${r.interested} interested`, tone: "warn", next: "Review replies" };
     if (everyone) return { label: "No one available", tone: "warn", next: "Widen the search" };
     if (r.responses > 0) return { label: "Replies coming in", tone: "warn", next: "View replies" };
     return { label: "Awaiting replies", tone: "warn", next: "View" };
@@ -315,7 +316,7 @@ export function referralStatus(r: { status: string; interested: number; response
 const STATUS_LABEL: Record<string, { label: string; tone: "" | "warn" | "neutral" }> = {
   sent: { label: "Awaiting replies", tone: "warn" },
   open: { label: "Awaiting replies", tone: "warn" },
-  connected: { label: "Colleague chosen", tone: "" },
+  connected: { label: "Accepted", tone: "" },
   handoff: { label: "Handoff under way", tone: "" },
   closed: { label: "Closed", tone: "neutral" },
   matched: { label: "Placed", tone: "" },
@@ -430,8 +431,8 @@ export type ReferralDetail = {
 };
 
 const RESPONSE_LABEL: Record<string, { label: string; tone: "" | "warn" | "neutral" | "danger" }> = {
-  interested: { label: "Interested", tone: "" },
-  accepted: { label: "Chosen", tone: "" },
+  interested: { label: "Interested", tone: "warn" },
+  accepted: { label: "Accepted", tone: "" },
   question: { label: "Has a question", tone: "warn" },
   unavailable: { label: "Not available", tone: "neutral" },
   offered: { label: "Offered to help", tone: "" },
@@ -528,7 +529,7 @@ export function ReferTrackView({ r, ok, error }: { r: ReferralDetail; ok?: strin
             <section className="card tint">
               <div className="eyebrow">Handoff</div>
               <h3>You chose {r.chosen.name}.</h3>
-              <p className="small">Share clinical details and patient identity through your own secure channel, not in PsyAlliance. Close the referral once the patient is placed.</p>
+              <p className="small">{HANDOFF_RULE} Close the referral once the patient is placed.</p>
               <div className="row wrap">
                 <form action={chooseReferralColleagueAction} className="inline">
                   <input type="hidden" name="referral_request_id" value={r.id} />

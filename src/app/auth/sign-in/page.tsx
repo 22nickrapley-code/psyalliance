@@ -42,8 +42,9 @@ export default async function SignInPage(props: { searchParams: Promise<{ error?
             <div className="auth-alt">
               {IS_DEMO_SITE ? (
                 <>
-                  <p className="small">Exploring PsyAlliance? The guided tour needs no account, and a personal sandbox link signs you in automatically.</p>
-                  <a className="btn secondary block" href="/tour">Take the guided tour</a>
+                  <p className="small">Exploring PsyAlliance? The guided tour needs no account. A personal sandbox link signs you in by itself; you don&rsquo;t need a password.</p>
+                  <a className="btn secondary block" href="/tour">Take the two-minute tour</a>
+                  <a className="text-arrow" href="/sandbox/request">Ask for a personal sandbox &rarr;</a>
                   <a className="text-arrow" href={JOIN_URL}>Ask to join the real network &rarr;</a>
                 </>
               ) : (

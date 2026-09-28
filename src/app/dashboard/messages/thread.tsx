@@ -3,6 +3,7 @@ import { clinicianName } from "@/lib/profession";
 import { sendMessage, removeMessageAction } from "./actions";
 import { ReportContent } from "../_components/report-content";
 import { splitContext } from "./data";
+import { HANDOFF_RULE } from "../_components/ui";
 
 type Supabase = Awaited<ReturnType<typeof createClient>>;
 
@@ -30,7 +31,8 @@ async function contextHref(supabase: Supabase, myself: string, other: string | n
     return "/dashboard/refer";
   }
   if (context === "Cover") {
-    const { data: plan } = await supabase.from("coverage_plans").select("id").eq("profile_id", myself).eq("title", detail || "").limit(1);
+    const planTitle = (detail || "").split(" · ")[0];
+    const { data: plan } = await supabase.from("coverage_plans").select("id").eq("profile_id", myself).eq("title", planTitle).limit(1);
     if (plan?.[0]) return `/dashboard/cover/${plan[0].id}?step=track`;
     return "/dashboard/cover";
   }
@@ -40,7 +42,7 @@ async function contextHref(supabase: Supabase, myself: string, other: string | n
 
 // One conversation: who it's with, what it's about, the thread and the
 // reply box. Used by the thread page and as the default Messages view.
-export async function ThreadPanel({ id, myself, error }: { id: number; myself: string; error?: string }) {
+export async function ThreadPanel({ id, myself, error, draft }: { id: number; myself: string; error?: string; draft?: string }) {
   const supabase = await createClient();
   const [{ data: conversation }, { data: participants }, { data: messages }] = await Promise.all([
     supabase.from("conversations").select("id, title").eq("id", id).maybeSingle(),
@@ -109,10 +111,11 @@ export async function ThreadPanel({ id, myself, error }: { id: number; myself: s
       </div>
       <form action={sendMessage} className="message-compose">
         <input type="hidden" name="conversation_id" value={id} />
-        <textarea name="body" required placeholder="Write a professional message..." aria-label="Message" />
+        <textarea name="body" required placeholder="Write a professional message..." aria-label="Message" defaultValue={(messages || []).length === 0 ? draft || "" : ""} />
         <button type="submit" className="btn lg">Send</button>
       </form>
-      <p className="micro-note" style={{ marginTop: 8 }}>No patient-identifying details. Clinical handoffs happen through your own secure channel.</p>
+      {draft && (messages || []).length === 0 && <p className="micro-note" style={{ marginTop: 8 }}>A suggested opening. Edit it before you send; nothing is sent until you do.</p>}
+      <p className="micro-note" style={{ marginTop: 8 }}>{HANDOFF_RULE}</p>
     </section>
   );
 }

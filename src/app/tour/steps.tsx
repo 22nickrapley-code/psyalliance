@@ -3,7 +3,7 @@ import type { Match } from "@/lib/match-engine";
 import type { NeedOptions } from "@/lib/need-options";
 import type { LibraryResource } from "@/lib/library";
 import { US_STATES } from "@/lib/us-states";
-import { CoverIndexView, CoverCandidatesView, CoverTrackView, CoverPlanStepView, CoverInviteView, type CaseItem, type PlanSummary } from "../dashboard/cover/views";
+import { CoverIndexView, CoverCandidatesView, CoverTrackView, CoverPlanStepView, CoverNeedsView, CoverInviteView, type CaseItem, type PlanSummary } from "../dashboard/cover/views";
 import { ReferShortlistView, ReferTrackView } from "../dashboard/refer/views";
 import { ConsultDetailView } from "../dashboard/consult/views";
 import { ConversationList, MessagesShell } from "../dashboard/messages/views";
@@ -12,6 +12,7 @@ import { HomeView } from "../dashboard/home-view";
 import { NetworkView, type Person } from "../dashboard/network/views";
 import { ClinicianProfileView } from "../dashboard/people/[id]/view";
 import { AV, leaveDates, type ChapterKey } from "./story";
+import { HANDOFF_RULE } from "../dashboard/_components/ui";
 
 // The guided tour: one fictional story, told on the real screens. It
 // starts with the simple things (Alex's profile, home, circle, messages,
@@ -26,6 +27,11 @@ export type TourStep = {
   perspective: Perspective;
   title: string;
   what: string;
+  // The one action this screen is about: matched against the start of a
+  // button or link's text on the screen (the nth match, if several).
+  focus?: string;
+  focusIndex?: number;
+  focusNote?: string;
   render: () => ReactNode;
 };
 
@@ -123,6 +129,8 @@ export const STEPS: TourStep[] = [
   // ---- Chapter 1: meet the practice ----
   {
     slug: "profile",
+    focus: "Refer a patient",
+    focusNote: "From any colleague's profile, a referral starts in one click.",
     chapter: "meet",
     perspective: "alex",
     title: "This is Alex",
@@ -173,18 +181,26 @@ export const STEPS: TourStep[] = [
   },
   {
     slug: "home",
+    focus: "Review Aaron's request",
+    focusNote: "Start here: the one thing that needs Alex first.",
     chapter: "meet",
     perspective: "alex",
     title: "Alex's morning",
-    what: "Home answers one question: what needs me now? An urgent cover request leads, then a referral that's ready to choose. Three at a time, the rest on the next page.",
+    what: "Home answers one question: what needs me now? One clear place to start, Aaron's urgent cover request, then everything else in order, three at a time.",
     render: () => (
       <HomeView
         d={{
           firstName: "Alex",
           today: new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", timeZone: "America/New_York" }),
           greeting: "Good morning",
+          startHere: {
+            title: "Aaron needs cover for two cases. Review the request.",
+            body: "Accept, decline or discuss each case on its own. Accepting marks that case covered on Aaron's plan; you then arrange the handoff between you, outside PsyAlliance.",
+            href: "#",
+            action: "Review Aaron's request",
+            urgent: true,
+          },
           steps: [
-            { key: "c", title: "Aaron Garcia, DO asked you to cover 2 patients", detail: "Anxiety/Panic Disorders and Trauma/PTSD · Unexpected absence · NY · this week", href: "#", action: "Review request", urgent: true },
             { key: "r", title: "Your Obsessive/Compulsive Disorder referral is ready to choose", detail: "Everyone you asked has replied. 2 interested", href: "#", action: "Choose a colleague" },
             { key: "o", title: "3 referrals are waiting for your reply", detail: "Trauma/PTSD from Maya Chen · Anxiety/Panic Disorders from Eli Ramirez · Anxiety/Panic Disorders from Aaron Quinn", href: "#", action: "Review referrals" },
             { key: "i", title: "2 colleagues invited you to their trusted circle", detail: "Imani Brooks, Adrian Turner", href: "#", action: "Review" },
@@ -193,7 +209,7 @@ export const STEPS: TourStep[] = [
           gettingStarted: null,
           availability: { referrals: "Selected referrals", cover: "Cover: ask me", consult: "Open to consult", confirmedLabel: "Last confirmed 3 days ago", stale: false, canReconfirm: true },
           relevant: [
-            { key: "1", title: "Cover request: Anxiety/Panic Disorders", detail: "From Aaron Garcia, DO", why: "Sent to you", href: "#" },
+            { key: "1", title: "Cover request: 2 patients", detail: "From Aaron Garcia, DO", why: "Sent to you", href: "#" },
             { key: "2", title: "Referral: Trauma/PTSD + Stress", detail: "From Maya Chen, PsyD · NY", why: "From your trusted circle", href: "#" },
             { key: "3", title: "Referral: Anxiety/Panic Disorders + Life Transitions", detail: "From Eli Ramirez, MD · NY", why: "Sent to you", href: "#" },
           ],
@@ -228,6 +244,8 @@ export const STEPS: TourStep[] = [
   },
   {
     slug: "network",
+    focus: "Maya Chen",
+    focusNote: "Trusted colleagues first, each with licence, focus and availability.",
     chapter: "meet",
     perspective: "alex",
     title: "Alex's circle",
@@ -254,6 +272,8 @@ export const STEPS: TourStep[] = [
   },
   {
     slug: "messages",
+    focus: "View context",
+    focusNote: "Opens the cover plan this conversation is about.",
     chapter: "meet",
     perspective: "alex",
     title: "Messages with context",
@@ -288,13 +308,15 @@ export const STEPS: TourStep[] = [
             <textarea placeholder="Write a professional message..." aria-label="Message" />
             <button className="btn lg" type="button">Send</button>
           </div>
-          <p className="micro-note" style={{ marginTop: 8 }}>No patient-identifying details. Clinical handoffs happen through your own secure channel.</p>
+          <p className="micro-note" style={{ marginTop: 8 }}>{HANDOFF_RULE}</p>
         </section>
       </MessagesShell>
     ),
   },
   {
     slug: "library",
+    focus: "Save a working copy",
+    focusNote: "Keep your own copy of the template alongside your records.",
     chapter: "meet",
     perspective: "alex",
     title: "The Practice Library",
@@ -305,6 +327,8 @@ export const STEPS: TourStep[] = [
   // ---- Chapter 2: refer and consult ----
   {
     slug: "refer",
+    focus: "Review before sending",
+    focusNote: "Nothing is sent until Alex checks exactly who receives it.",
     chapter: "refer",
     perspective: "alex",
     title: "A new enquiry Alex can't take",
@@ -321,6 +345,9 @@ export const STEPS: TourStep[] = [
   },
   {
     slug: "referral-replies",
+    focus: "Choose and start handoff",
+    focusIndex: 1,
+    focusNote: "Alex chooses Samuel, whom Alex has worked with before.",
     chapter: "refer",
     perspective: "alex",
     title: "Everyone replied: ready to choose",
@@ -361,6 +388,8 @@ export const STEPS: TourStep[] = [
   },
   {
     slug: "consult",
+    focus: "Mark useful",
+    focusNote: "Alex marks the replies that helped.",
     chapter: "refer",
     perspective: "alex",
     title: "Alex asks the circle a question",
@@ -392,14 +421,18 @@ export const STEPS: TourStep[] = [
   // ---- Chapter 3: six weeks away, covered ----
   {
     slug: "plan",
+    focus: "Define the needs",
+    focusNote: "Next, each case is described by need, never by name.",
     chapter: "cover",
     perspective: "alex",
     title: "Alex plans six weeks away",
     what: `A cover plan starts with the kind of absence, the dates (${leave.range}) and the state. Nothing about a client goes in; each case is described by need.`,
-    render: () => <CoverPlanStepView options={options} />,
+    render: () => <CoverPlanStepView options={options} preset={{ absenceType: "extended_leave", title: PLAN_TITLE, starts: leave.start, ends: leave.end }} />,
   },
   {
     slug: "matches",
+    focus: "Review invitations",
+    focusNote: "Alex checks who will be asked, per case, before sending.",
     chapter: "cover",
     perspective: "alex",
     title: "Explained matches for each case",
@@ -408,6 +441,8 @@ export const STEPS: TourStep[] = [
   },
   {
     slug: "invite",
+    focus: "Send cover requests",
+    focusNote: "One click sends each request, in the order Alex chose.",
     chapter: "cover",
     perspective: "alex",
     title: "Alex chooses who is asked, in order",
@@ -425,6 +460,8 @@ export const STEPS: TourStep[] = [
   },
   {
     slug: "respond",
+    focus: "Accept Case 1",
+    focusNote: "Maya answers case by case: accept, discuss first or decline.",
     chapter: "cover",
     perspective: "maya",
     title: "Maya receives the request",
@@ -459,11 +496,51 @@ export const STEPS: TourStep[] = [
   },
   {
     slug: "covered",
+    focus: "Complete plan",
+    focusNote: "When Alex is back, completing the plan records who covered.",
     chapter: "cover",
     perspective: "alex",
     title: "Back with Alex: every case covered",
     what: "Maya accepted both of her cases, and Eli Ramirez, a psychiatrist, accepted the one that needs prescribing. A case only counts as covered once someone accepts, and now all three have.",
     render: () => <CoverTrackView plan={{ ...plan, counts: { total: 3, covered: 3, invited: 0, open: 0 } }} cases={casesLater} nextSuggestion={{}} toRate={[]} />,
+  },
+];
+
+// The two-minute version: the payoff first. Alex needs six weeks away,
+// describes three needs without identifiers, chooses who is asked, Maya
+// answers, and every case is covered. The full tour and the Refer and
+// Consult chapters are offered at the end.
+const byslug = (slug: string) => STEPS.find((x) => x.slug === slug)!;
+export const QUICK_STEPS: TourStep[] = [
+  {
+    ...byslug("plan"),
+    title: "Alex needs six weeks away",
+    what: `Alex, a psychologist in Brooklyn, starts parental leave on ${leave.startLong}. A cover plan starts with the kind of absence, the dates and the state.`,
+  },
+  {
+    slug: "needs",
+    chapter: "cover",
+    perspective: "alex",
+    title: "Three needs, no identifiers",
+    what: "Each client becomes a case described by need: focus, age band, setting, frequency. No names, initials or dates ever enter PsyAlliance.",
+    focus: "Find colleagues",
+    focusNote: "PsyAlliance now suggests colleagues for each case, with reasons.",
+    render: () => <CoverNeedsView plan={{ ...plan, status: "draft" }} cases={casesOpen} options={options} />,
+  },
+  {
+    ...byslug("invite"),
+    title: "Colleagues chosen and asked",
+    what: "For each case Alex picks colleagues who fit, trusted colleagues first, and sees exactly who is asked, in order, before anything is sent.",
+  },
+  {
+    ...byslug("respond"),
+    title: "Maya replies, case by case",
+    what: "Maya sees how many patients, where and when, and everything Alex described, with no client details. She accepts both of hers.",
+  },
+  {
+    ...byslug("covered"),
+    title: "All three cases covered",
+    what: "Maya accepted two cases and Eli Ramirez, a psychiatrist, the one that needs prescribing. A case only counts as covered once someone accepts.",
   },
 ];
 

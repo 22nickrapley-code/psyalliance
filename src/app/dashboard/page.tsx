@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { loadNeedOptions } from "@/lib/need-options";
 import { resolveAvatarUrls } from "@/lib/avatars";
 import { clinicianName } from "@/lib/profession";
+import { IS_DEMO_SITE } from "@/lib/env";
 import { HomeView, type HomeData, type NextStep, type CircleNode } from "./home-view";
 
 // Home (Product Spec v1). Everything here is derived from real activity:
@@ -59,7 +60,7 @@ export default async function HomePage(props: { searchParams: Promise<{ reconfir
     loadNeedOptions(supabase),
     supabase
       .from("coverage_requests")
-      .select("id, coverage_plan_cases(specialism_lookup_ids, coverage_plans(title, absence_type, starts_on, ends_on, jurisdiction_state, owner:profile_id(full_name, credential_prefix, qualification_level)))")
+      .select("id, coverage_plan_cases(specialism_lookup_ids, coverage_plans(id, title, absence_type, starts_on, ends_on, jurisdiction_state, owner:profile_id(full_name, credential_prefix, qualification_level)))")
       .eq("requested_profile_id", myself)
       .eq("status", "sent"),
     supabase.from("coverage_plans").select("id, title, status, coverage_plan_cases(status)").eq("profile_id", myself).in("status", ["draft", "active"]),
@@ -106,12 +107,32 @@ export default async function HomePage(props: { searchParams: Promise<{ reconfir
 
   // ---- Next steps ----
   const steps: NextStep[] = [];
+  // One step per colleague's plan, however many of its cases they asked
+  // you about: the per-case decisions live on Cover.
+  const coverGroups = new Map<string, { plan: any; focus: string[]; count: number }>();
   for (const r of coverToMe || []) {
-    const p = (r as any).coverage_plan_cases?.coverage_plans;
+    const pc = (r as any).coverage_plan_cases;
+    const p = pc?.coverage_plans;
+    const key = String(p?.id ?? `r${r.id}`);
+    const g = coverGroups.get(key) || { plan: p, focus: [], count: 0 };
+    g.count += 1;
+    const f = focusName(pc?.specialism_lookup_ids);
+    if (!g.focus.includes(f)) g.focus.push(f);
+    coverGroups.set(key, g);
+  }
+  const ABSENCE_LABEL: Record<string, string> = {
+    short_planned: "Short planned absence",
+    extended_leave: "Extended leave",
+    unexpected: "Unexpected absence",
+    closing_practice: "Closing practice",
+    reciprocal: "Reciprocal cover",
+  };
+  for (const [key, g] of coverGroups) {
+    const p = g.plan;
     steps.push({
-      key: `cover-${r.id}`,
-      title: `${nameOf(p?.owner)} asked you to cover a case`,
-      detail: [focusName((r as any).coverage_plan_cases?.specialism_lookup_ids), p?.title || "Cover plan", p?.jurisdiction_state, shortRange(p?.starts_on, p?.ends_on)].filter(Boolean).join(" · "),
+      key: `cover-${key}`,
+      title: `${nameOf(p?.owner)} asked you to cover ${g.count === 1 ? "a patient" : `${g.count} patients`}`,
+      detail: [g.focus.join(" and "), ABSENCE_LABEL[p?.absence_type] || p?.title, p?.jurisdiction_state, shortRange(p?.starts_on, p?.ends_on)].filter(Boolean).join(" · "),
       href: "/dashboard/cover",
       action: "Review request",
       urgent: p?.absence_type === "unexpected",
@@ -203,6 +224,40 @@ export default async function HomePage(props: { searchParams: Promise<{ reconfir
   }
   steps.sort((a, b) => Number(!!b.urgent) - Number(!!a.urgent) || (a.rank ?? 9) - (b.rank ?? 9));
 
+  // ---- Start here (demo sandbox) ----
+  // One obvious first move above the fold, taken out of the step list so
+  // it isn't shown twice.
+  let startHere: HomeData["startHere"];
+  if (IS_DEMO_SITE) {
+    const firstCover = [...coverGroups.entries()].sort((a, b) => Number(b[1].plan?.absence_type === "unexpected") - Number(a[1].plan?.absence_type === "unexpected"))[0];
+    const firstPlan = (myPlans || [])[0] as any;
+    if (firstCover) {
+      const [key, g] = firstCover;
+      const who = String(g.plan?.owner?.full_name || "A colleague").replace(/^(dr\.?)\s+/i, "").split(/\s+/)[0];
+      const n = g.count === 1 ? "one case" : g.count === 2 ? "two cases" : `${g.count} cases`;
+      startHere = {
+        title: `${who} needs cover for ${n}. Review the request.`,
+        body: `Accept, decline or discuss each case on its own. Accepting marks that case covered on ${who}'s plan; you then arrange the handoff between you, outside PsyAlliance.`,
+        href: "/dashboard/cover",
+        action: `Review ${who}'s request`,
+        urgent: g.plan?.absence_type === "unexpected",
+      };
+      const i = steps.findIndex((x) => x.key === `cover-${key}`);
+      if (i >= 0) steps.splice(i, 1);
+    } else if (firstPlan) {
+      const cases = firstPlan.coverage_plan_cases || [];
+      const open = cases.filter((c: any) => c.status !== "confirmed").length;
+      startHere = {
+        title: open > 0 ? `${firstPlan.title}: find cover for ${open === 1 ? "one case" : `${open} cases`}.` : `${firstPlan.title}: every case is covered.`,
+        body: "Each case is described by need, never by name. Choose who is asked, in order, and watch the replies come in. Nothing is sent until you review it.",
+        href: `/dashboard/cover/${firstPlan.id}?step=${firstPlan.status === "draft" ? "needs" : "track"}`,
+        action: open > 0 ? "Continue the plan" : "See the plan",
+      };
+      const i = steps.findIndex((x) => x.key === `plan-${firstPlan.id}`);
+      if (i >= 0) steps.splice(i, 1);
+    }
+  }
+
   // ---- Circle ----
   const trustedIds: string[] = [];
   let newThisMonth = 0;
@@ -272,6 +327,7 @@ export default async function HomePage(props: { searchParams: Promise<{ reconfir
     .slice(0, 2) as HomeData["resources"];
 
   const d: HomeData = {
+    startHere,
     firstName: String(profile.full_name || "there").replace(/^(dr\.?)\s+/i, "").split(/[\s,]+/)[0],
     steps,
     today: new Date().toLocaleDateString("en-US", { timeZone: "America/New_York", weekday: "long", month: "long", day: "numeric" }),
@@ -287,10 +343,10 @@ export default async function HomePage(props: { searchParams: Promise<{ reconfir
       canReconfirm: !!(profile.referral_availability && profile.coverage_availability && profile.consultation_availability),
     },
     relevant: [
-      ...(coverToMe || []).slice(0, 2).map((r: any) => ({
-        key: `c${r.id}`,
-        title: `Cover request: ${focusName(r.coverage_plan_cases?.specialism_lookup_ids)}`,
-        detail: `From ${nameOf(r.coverage_plan_cases?.coverage_plans?.owner)}`,
+      ...[...coverGroups.entries()].slice(0, 2).map(([key, g]) => ({
+        key: `c${key}`,
+        title: `Cover request: ${g.count === 1 ? g.focus[0] : `${g.count} patients`}`,
+        detail: `From ${nameOf(g.plan?.owner)}`,
         why: "Sent to you",
         href: "/dashboard/cover",
       })),

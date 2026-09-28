@@ -50,7 +50,11 @@ Nick, once (steps 1 to 4 and 6 done on 25 Sept):
 
 ## Prospect access (demo)
 
-Admin → Sandbox passes → name the prospect, pick 3 to 30 days → copy the link and send it yourself. Opening it creates a fresh fictional practice (Alex Rivers, PsyD, Brooklyn, NY, licensed NY and NJ, six weeks of parental leave starting about five weeks out) among the 1,200 fictional colleagues. The guided tour tells the same story with the same cast and signs them in with a random one-off password nobody sees. No shared password exists.
+Prospects ask for a sandbox at `/sandbox/request` (linked from the tour intro, every tour step and the end of each tour): name, email, role, state. Requests land in Admin → Sandbox passes → Requests. **Issue 7-day pass** creates that person's own link and shows it with a Copy button and a "Draft the email" link; you send it yourself. **Decline** closes the request. You can still issue a pass directly (3 to 30 days) for someone who asked in person, copy any live pass's link again, or revoke it. Never reuse one person's link for someone else. `request_sandbox` refuses outside the demo, rate-limits to 30 an hour and ignores a repeat while one is open.
+
+The tour has two routes: a two-minute tour (`/tour/quick/...`, five screens from "I need six weeks away" to every case covered) and the full 13-step tour. Both are annotated previews: the one action each step is about is highlighted with a note; clicking it moves the story on, and any other link or submit explains itself and offers the sandbox.
+
+Opening a pass link creates a fresh fictional practice (Alex Rivers, PsyD, Brooklyn, NY, licensed NY and NJ, six weeks of parental leave starting about five weeks out) among the 1,200 fictional colleagues. The guided tour tells the same story with the same cast and signs them in with a random one-off password nobody sees. No shared password exists.
 
 - Colleagues answer the prospect's cover requests, referrals, consult questions, invitations and messages within a minute or two.
 - Email invitations are blocked for demo accounts; no email is ever sent.
@@ -77,5 +81,5 @@ Parity between the two databases: `supabase/ops/schema_fingerprint.sql`. Any sch
 ## Security advisor notes
 
 - `private.safe_deep_link` now has a fixed search path.
-- The callable security-definer functions are deliberate: token flows (`invitation_status`, `request_to_join`, `availability_check_*`, `claim_sandbox`) check the token themselves; `admin_*` functions check `is_admin`; `my_*`, `network_*`, `match_pool`, `member_track_record` return only what the caller may see (network eligibility, partition, blocks).
+- The callable security-definer functions are deliberate: token flows (`invitation_status`, `request_to_join` (requires name, email, degree and at least one licensed state), `request_sandbox` (demo only), `availability_check_*`, `claim_sandbox`) check the token themselves; `admin_*` functions check `is_admin`; `my_*`, `network_*`, `match_pool`, `member_track_record` return only what the caller may see (network eligibility, partition, blocks).
 - **Leaked-password protection**: Nick to switch on in both projects (Authentication → Policies / Password security).

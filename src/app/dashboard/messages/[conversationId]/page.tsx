@@ -4,9 +4,9 @@ import { loadConversations } from "../data";
 import { ConversationList, MessagesShell } from "../views";
 import { ThreadPanel } from "../thread";
 
-export default async function ConversationPage(props: { params: Promise<{ conversationId: string }>; searchParams: Promise<{ error?: string }> }) {
+export default async function ConversationPage(props: { params: Promise<{ conversationId: string }>; searchParams: Promise<{ error?: string; draft?: string }> }) {
   const { conversationId } = await props.params;
-  const { error } = await props.searchParams;
+  const { error, draft } = await props.searchParams;
   const id = Number(conversationId);
   const supabase = await createClient();
   const {
@@ -23,7 +23,7 @@ export default async function ConversationPage(props: { params: Promise<{ conver
 
   return (
     <MessagesShell list={<ConversationList items={items} activeId={id} />}>
-      <ThreadPanel id={id} myself={myself} error={error} />
+      <ThreadPanel id={id} myself={myself} error={error} draft={draft} />
     </MessagesShell>
   );
 }
