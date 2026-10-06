@@ -7,6 +7,12 @@ type Supabase = Awaited<ReturnType<typeof createClient>>;
 
 // Shared loaders for the Cover screens.
 
+// Clients are labelled "Client 1", "Client 2"; plans made before the
+// wording changed stored "Case 1", shown the same way.
+export function clientRef(ref: string | null): string {
+  return (ref || "").replace(/^case\s*(\d+)$/i, "Client $1");
+}
+
 export function caseDetails(c: any): string[] {
   const out: string[] = [];
   if (c.age_band) out.push(c.age_band);
@@ -53,7 +59,7 @@ export async function loadPlan(supabase: Supabase, userId: string, planId: numbe
     .order("id");
   const cases: CaseItem[] = (caseRows || []).map((c: any) => ({
     id: c.id,
-    reference: c.case_reference,
+    reference: clientRef(c.case_reference),
     focus: focusLabel(c.specialism_lookup_ids, options),
     details: caseDetails(c),
     status: c.status,

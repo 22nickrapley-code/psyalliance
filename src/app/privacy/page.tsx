@@ -29,7 +29,7 @@ export default function PrivacyPage() {
 
             <h3 style={{ marginTop: 28 }}>Patient information</h3>
             <p>
-              PsyAlliance is designed for de-identified cases. Cover plans, referrals and consults describe needs, not people. Before anything is sent, we flag dates,
+              PsyAlliance is designed so client identities never enter it. Cover plans, referrals and consults describe needs, not people. Before anything is sent, we flag dates,
               phone numbers, email and street addresses and record numbers. We can&rsquo;t reliably recognise names, so please leave names and unusual combinations of details
               out. The clinical handoff happens outside PsyAlliance, through your own secure channel, once a colleague agrees. Email notifications never include what you wrote.
             </p>

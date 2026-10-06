@@ -105,7 +105,7 @@ export default async function ConsultationGroupPage(props: { params: Promise<{ i
             {!group.charter_body ? (
               <div className="tone-panel">This group needs a charter before anyone can post. {isCreator ? "Write it on the right." : "The organiser is writing it."}</div>
             ) : (threads || []).length === 0 ? (
-              <Empty symbol={"✳"} title="Nothing posted yet." body="Bring a de-identified case question to the group." action={isMember ? <a className="btn secondary small-btn" href={`/dashboard/consult/new?group=${group.id}`}>Ask this group</a> : undefined} />
+              <Empty symbol={"✳"} title="Nothing posted yet." body="Bring a de-identified client question to the group." action={isMember ? <a className="btn secondary small-btn" href={`/dashboard/consult/new?group=${group.id}`}>Ask this group</a> : undefined} />
             ) : (
               (threads || []).map((t: any) => (
                 <a key={t.id} href={`/dashboard/consult/${t.id}`} className="list-row" style={{ textDecoration: "none", color: "inherit" }}>
@@ -195,7 +195,7 @@ export default async function ConsultationGroupPage(props: { params: Promise<{ i
                   <input type="hidden" name="group_id" value={group.id} />
                   <label className="field">
                     <span className="sr-only">Charter</span>
-                    <textarea name="charter_body" rows={6} defaultValue={group.charter_body || ""} placeholder="Confidentiality, de-identification, consultation not supervision, no recording, how cases are presented." />
+                    <textarea name="charter_body" rows={6} defaultValue={group.charter_body || ""} placeholder="Confidentiality, de-identification, consultation not supervision, no recording, how clients are presented." />
                   </label>
                   <button type="submit" className="btn secondary small-btn" style={{ marginTop: 8 }}>Save as version {group.charter_version + 1}</button>
                 </form>

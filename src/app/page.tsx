@@ -1,6 +1,7 @@
 import "./premium.css";
 import { redirect } from "next/navigation";
 import { IS_DEMO_SITE, DEMO_URL, SITE_URL } from "@/lib/env";
+import { PublicNav, PublicFooter } from "./_public/chrome";
 
 // Public landing (Product Spec v1, built from the premium concept Nick
 // chose). Sections: hero with an illustrative cover plan, the three
@@ -15,7 +16,7 @@ const FAQ: [string, string][] = [
   ],
   [
     "How is this different from Psychology Today?",
-    "A directory helps patients find you. PsyAlliance helps clinicians find each other: someone to cover you while you're away, the right colleague for a referral, and peers to think a case through with.",
+    "A directory helps patients find you. PsyAlliance helps clinicians find each other: someone to cover you while you're away, the right colleague for a referral, and peers to think a difficult decision through with.",
   ],
   [
     "What does verified mean?",
@@ -23,11 +24,11 @@ const FAQ: [string, string][] = [
   ],
   [
     "Do patient details go into PsyAlliance?",
-    "They shouldn't. Cover plans and referrals describe needs, not people (\"Case 3: adult, anxiety, telehealth, Aetna\"). Before anything is sent, PsyAlliance flags dates, phone numbers, email and street addresses and record numbers. It can't reliably recognise names, so leaving those out is up to you. If something identifying is shared by mistake, report it and an admin removes it. The clinical handoff happens outside PsyAlliance once a colleague agrees.",
+    "They shouldn't. Cover plans and referrals describe needs, not people (\"Client 3: adult, anxiety, telehealth, Aetna\"). Before anything is sent, PsyAlliance flags dates, phone numbers, email and street addresses and record numbers. It can't reliably recognise names, so leaving those out is up to you. If something identifying is shared by mistake, report it and an admin removes it. The clinical handoff happens outside PsyAlliance once a colleague agrees.",
   ],
   [
     "How do I get cover while I'm on leave?",
-    "Start a cover plan: add each case that needs cover without identifiers, and PsyAlliance suggests colleagues with the right licence, specialty and recently confirmed availability, trusted colleagues first. You choose who is asked and in what order.",
+    "Start a cover plan: add each client who needs cover, described without identifiers, and PsyAlliance suggests colleagues with the right licence, specialty and recently confirmed availability, trusted colleagues first. Each suggestion says why it fits, and you choose who is asked and in what order.",
   ],
   [
     "Will I get a flood of notifications?",
@@ -41,7 +42,7 @@ const structuredData = {
   name: "PsyAlliance",
   url: SITE_URL,
   description:
-    "A closed, credential-reviewed professional network for doctoral-level psychologists and psychiatrists in independent practice: cover for time away, considered referrals and peer consultation.",
+    "A private, credential-reviewed network for doctoral-level psychologists and psychiatrists in independent practice: cover for time away, referrals to the right colleague and peer consultation.",
   audience: { "@type": "Audience", audienceType: "Doctoral-level psychologists (PhD, PsyD, EdD) and psychiatrists (MD, DO)" },
   areaServed: "US",
 };
@@ -52,50 +53,76 @@ const faqData = {
   mainEntity: FAQ.map(([q, a]) => ({ "@type": "Question", name: q, acceptedAnswer: { "@type": "Answer", text: a } })),
 };
 
+const DEMO = (path = "") => (DEMO_URL ? `${DEMO_URL}/tour${path}` : `/tour${path}`);
+const SANDBOX = DEMO_URL ? `${DEMO_URL}/sandbox/request` : "/sandbox/request";
+
+const PROBLEMS: [string, string, string][] = [
+  ["When you're away", "Leave, illness or an emergency.", "Cover gets arranged through phone calls, group chats and favours, and it's hard to tell who is licensed in the right state, suited to each client and actually free."],
+  ["When you're full", "An enquiry you can't take.", "Directories are built for patients searching for a therapist, not for a clinician looking for the right colleague. So referrals go to whoever you happen to remember."],
+  ["When you're unsure", "A decision between consultations.", "Asking a listserv means asking strangers in public. Waiting for your next consultation group means deciding alone in the meantime."],
+];
+
+const DOES: { n: string; title: string; body: string; demo: string; demoLabel: string }[] = [
+  {
+    n: "01 / Cover",
+    title: "Get your clients covered",
+    body: "A week off, parental leave, an emergency or closing a practice. Describe each client by need, never by name. PsyAlliance suggests colleagues who fit and says why; you choose who's asked and track every client until someone accepts.",
+    demo: "/cover",
+    demoLabel: "Watch the cover demo",
+  },
+  {
+    n: "02 / Refer",
+    title: "Refer to the right colleague",
+    body: "Describe what the client needs. Get a shortlist ranked by your relationships, licence, focus, insurance and current availability, with the reasons shown. Send it to the people you choose, then pick from their replies.",
+    demo: "/refer",
+    demoLabel: "Watch the referral demo",
+  },
+  {
+    n: "03 / Consult",
+    title: "Think it through with peers",
+    body: "Ask one focused question of a colleague, your trusted circle or the wider verified network, and keep the answers that helped. Or run a closed consultation group with a written charter.",
+    demo: "/consult",
+    demoLabel: "Watch the consultation demo",
+  },
+];
+
+const COMPARE: [string, string, string, string][] = [
+  ["Who's in it", "Listed therapists of every kind, for patients to browse", "Whoever joined, usually unverified", "Doctoral psychologists and psychiatrists only, every licence checked by a person"],
+  ["Finding the right colleague", "Keyword search built for patients", "Post and hope someone answers", "Matched by licence, focus, setting and confirmed availability, with the reasons shown"],
+  ["Client privacy", "Not designed for handoffs between clinicians", "Easy to over-share in a thread", "Needs described without identifiers; handoffs agreed privately, outside PsyAlliance"],
+  ["Follow-through", "None", "Lost in the scroll", "Every request tracked until each client is covered or placed"],
+  ["Who you rely on", "Strangers", "Whoever is online", "Your trusted colleagues first, then the verified network"],
+];
+
 export default function HomePage() {
-  // The demo site opens on the guided tour.
+  // The demo site opens on the demo library.
   if (IS_DEMO_SITE) redirect("/tour");
   return (
     <div className="pa">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqData) }} />
-
-      <nav className="public-nav" aria-label="Public">
-        <a className="brand" href="/">
-          <span className="brand-mark" aria-hidden="true">ψ</span>psyalliance
-        </a>
-        <div className="links">
-          <a className="text-link" href="#how">How it works</a>
-          <a className="text-link" href="#verification">Verification</a>
-          <a className="text-link" href="#story">Our story</a>
-          <a className="btn secondary small-btn" href="/auth/sign-in">Sign in</a>
-          <a className="btn small-btn" href="/join">Join the network</a>
-        </div>
-      </nav>
+      <PublicNav home />
 
       <main>
-        <section className="public-hero">
+        <section className="public-hero home-hero">
           <div>
-            <div className="eyebrow">For psychologists and psychiatrists</div>
+            <div className="eyebrow">For psychologists and psychiatrists in independent practice</div>
             <h1>
-              Independent practice. <em>Stronger together.</em>
+              Cover, referrals and advice from colleagues <em>you trust.</em>
             </h1>
             <p className="lead">
-              Find trusted cover, exchange referrals and consult with verified colleagues. A professional circle built around the work you actually do.
+              PsyAlliance is a private network of verified psychologists and psychiatrists. Find someone to cover your clients when you&rsquo;re away,
+              refer a client to the right colleague, and think a decision through with peers, without client identities ever entering the system.
             </p>
             <div className="hero-actions">
-              <a className="btn" href="#how">See how it works &rarr;</a>
-              {DEMO_URL ? (
-                <a className="btn secondary" href={`${DEMO_URL}/tour`}>Take the guided tour</a>
-              ) : (
-                <a className="btn secondary" href="#story">Our story</a>
-              )}
+              <a className="btn lg" href={DEMO("/cover")}>Watch a 2-minute demo &rarr;</a>
+              <a className="btn secondary lg" href="/join">Request an invitation</a>
             </div>
             <div className="hero-proof">
               <span className="seal" aria-hidden="true">ψ</span>
               <span>
-                <b>Credentials reviewed before anyone joins the network</b>
-                Identity, doctoral degree and state licence, checked by a person.
+                <b>Every member&rsquo;s licence is checked by a person</b>
+                Doctoral psychologists (PhD, PsyD, EdD) and psychiatrists (MD, DO) only.
               </span>
             </div>
           </div>
@@ -105,74 +132,153 @@ export default function HomePage() {
               <span>Illustrative</span>
             </div>
             <div className="visual-card">
-              <div className="eyebrow">Cover plan</div>
-              <h3>A cover plan, without the scramble.</h3>
-              <p>Extended leave &middot; New York &middot; October &middot; 2 cases</p>
-              <div className="divider" style={{ margin: "16px 0 8px" }} />
-              <div className="line">
-                <span className="round-number">1</span>
-                <span><b>Outline the need</b><br />Dates, jurisdiction and what each case needs</span>
+              <div className="eyebrow">Cover plan &middot; Parental leave, six weeks</div>
+              <h3>Three clients, covered one by one.</h3>
+              <p>Extended leave &middot; New York &middot; 3 clients described by need</p>
+            </div>
+            <div className="visual-card visual-match">
+              <div className="row between wrap" style={{ gap: 8 }}>
+                <b>Client 1 &middot; Trauma/PTSD</b>
+                <span className="status">Covered</span>
               </div>
-              <div className="line">
-                <span className="round-number">2</span>
-                <span><b>Review colleagues</b><br />Licence on file, specialty and fresh availability</span>
+              <div className="visual-person">
+                <span className="avatar" aria-hidden="true">MC</span>
+                <span><b>Maya Chen, PsyD</b><small>Trusted colleague &middot; Brooklyn</small></span>
               </div>
-              <div className="line">
-                <span className="round-number">3</span>
-                <span><b>Confirm the plan</b><br />Track every reply until each case is covered</span>
-              </div>
+              <ul className="reasons">
+                <li>Trauma/PTSD is her top specialty</li>
+                <li>NY licence reviewed</li>
+                <li>Open to cover, confirmed 3 days ago</li>
+              </ul>
             </div>
             <div className="visual-card row between">
               <div>
-                <b style={{ fontSize: 13 }}>Case 1 covered</b>
-                <div className="micro-note">Case 2 invited, awaiting a reply</div>
+                <b style={{ fontSize: 13.5 }}>Client 2 covered &middot; Client 3 awaiting reply</b>
+                <div className="micro-note">Eli Ramirez, MD was asked first for the client who needs prescribing</div>
               </div>
               <span className="status warn">1 open</span>
             </div>
             <p className="micro-note" style={{ color: "#c6dbd2", margin: 0 }}>
-              Example only. Cases are described by need, never by name.
+              Example only. Clients are described by need, never by name.
             </p>
           </div>
         </section>
 
-        <div className="trust-row">
-          <span>Credential review</span>
-          <span>Clinician-to-clinician relationships</span>
-          <span>Built for de-identified cases</span>
-          <span>Never sold, never advertised to</span>
-        </div>
-
-        <section className="public-section tint" id="how">
+        <section className="public-section tint" id="why">
           <div className="section-inner">
             <div className="section-intro">
-              <div className="eyebrow">The network behind your practice</div>
-              <h2>One place for the three requests that matter.</h2>
-              <p>Make a clear request, choose who sees it and keep the next step visible.</p>
+              <div className="eyebrow">Why PsyAlliance</div>
+              <h2>Independent practice works, until you need a colleague.</h2>
+              <p>Three moments every clinician in private practice knows, and how they&rsquo;re handled today.</p>
+            </div>
+            <div className="three-grid problems">
+              {PROBLEMS.map(([k, t, b]) => (
+                <article key={k} className="editorial-card">
+                  <div className="n">{k}</div>
+                  <h3>{t}</h3>
+                  <p>{b}</p>
+                </article>
+              ))}
+            </div>
+            <div className="founder" id="story" style={{ marginTop: 56 }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/team/rena-pazienza.jpg" alt="Rena Pazienza, PhD" />
+              <div>
+                <div className="eyebrow">Why we built it</div>
+                <p className="quote" style={{ margin: "10px 0 18px" }}>&ldquo;Independent clinicians deserve a dependable professional circle.&rdquo;</p>
+                <p>
+                  PsyAlliance began with a problem Rena Pazienza, PhD, a licensed psychologist, couldn&rsquo;t solve: going on maternity leave, she needed her
+                  clients covered by someone qualified, and there was no good way to find them.
+                </p>
+                <p style={{ marginBottom: 0 }}>
+                  So she set out to build the professional circle she wished she&rsquo;d had, shaped with feedback from her peers, and co-founded it with Nick Rapley.
+                  <b style={{ color: "var(--ink)" }}> A directory helps patients find you. PsyAlliance helps clinicians find each other.</b>
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="public-section" id="how">
+          <div className="section-inner">
+            <div className="section-intro">
+              <div className="eyebrow">What it does</div>
+              <h2>Three things, done properly.</h2>
+              <p>Each one starts with a clear request, shows you who will see it before anything is sent, and stays open until it&rsquo;s resolved.</p>
             </div>
             <div className="three-grid">
-              <article className="editorial-card">
-                <div className="n">01 / Cover</div>
-                <h3>Plan for time away</h3>
-                <p>A week off, parental leave, an unexpected absence or closing a practice. Describe each case without identifiers, invite colleagues deliberately and follow every open case to confirmation.</p>
-              </article>
-              <article className="editorial-card">
-                <div className="n">02 / Refer</div>
-                <h3>Make a considered referral</h3>
-                <p>Search by specialty, state licence, insurance and current availability. Share a structured, non-identifying need with the colleagues you choose, then close the loop.</p>
-              </article>
-              <article className="editorial-card">
-                <div className="n">03 / Consult</div>
-                <h3>Think with peers</h3>
-                <p>Ask one focused question of a colleague, your trusted circle or the wider network. Or run a closed consultation group with a written charter. Supervision lives here too.</p>
-              </article>
+              {DOES.map((d) => (
+                <article key={d.n} className="editorial-card does-card">
+                  <div className="n">{d.n}</div>
+                  <h3>{d.title}</h3>
+                  <p>{d.body}</p>
+                  <a className="text-arrow" href={DEMO(d.demo)}>{d.demoLabel} &middot; 2 min &rarr;</a>
+                </article>
+              ))}
             </div>
-            <p style={{ marginTop: 26, maxWidth: 720 }}>
-              Behind all three is your <b style={{ color: "var(--ink)" }}>circle</b>: trusted colleagues you choose, people you&rsquo;ve worked with before, and a versioned Practice Library of templates for cover, referrals and consultation, with the review status shown on each one.
+            <p style={{ marginTop: 26, maxWidth: 760 }}>
+              Behind all three is your <b style={{ color: "var(--ink)" }}>circle</b>: trusted colleagues you choose, people you&rsquo;ve worked with before, and a
+              Practice Library of templates for cover, referrals and consultation, with each one&rsquo;s review status shown.
             </p>
           </div>
         </section>
 
-        <section className="public-section" id="verification">
+        <section className="public-section tint" id="different">
+          <div className="section-inner">
+            <div className="section-intro">
+              <div className="eyebrow">How it&rsquo;s different</div>
+              <h2>Built for clinicians finding each other.</h2>
+              <p>Not a directory for patients, and not another group chat.</p>
+            </div>
+            <div className="compare" role="table" aria-label="How PsyAlliance compares">
+              <div className="compare-row compare-head" role="row">
+                <span role="columnheader" />
+                <span role="columnheader">Patient directories</span>
+                <span role="columnheader">Listservs and group chats</span>
+                <span role="columnheader" className="us">PsyAlliance</span>
+              </div>
+              {COMPARE.map(([k, a, b, c]) => (
+                <div key={k} className="compare-row" role="row">
+                  <span role="rowheader">{k}</span>
+                  <span role="cell" data-label="Patient directories">{a}</span>
+                  <span role="cell" data-label="Listservs and group chats">{b}</span>
+                  <span role="cell" data-label="PsyAlliance" className="us">{c}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="public-section" id="start">
+          <div className="section-inner">
+            <div className="section-intro">
+              <div className="eyebrow">Getting started</div>
+              <h2>See it, try it, then join.</h2>
+            </div>
+            <div className="journey">
+              <a className="journey-step" href={DEMO()}>
+                <span className="k">1</span>
+                <b>Watch the demos</b>
+                <span>Five short demos, one for each thing PsyAlliance does. A minute or two each, no sign-up.</span>
+                <span className="text-arrow">See the demos &rarr;</span>
+              </a>
+              <a className="journey-step" href={SANDBOX}>
+                <span className="k">2</span>
+                <b>Try your own sandbox</b>
+                <span>A private fictional practice for a week. Send requests and invented colleagues reply.</span>
+                <span className="text-arrow">Ask for a sandbox &rarr;</span>
+              </a>
+              <a className="journey-step" href="/join">
+                <span className="k">3</span>
+                <b>Request an invitation</b>
+                <span>We open a few states at a time. A person checks your licence before you&rsquo;re listed.</span>
+                <span className="text-arrow">Request an invitation &rarr;</span>
+              </a>
+            </div>
+          </div>
+        </section>
+
+        <section className="public-section tint" id="verification">
           <div className="section-inner">
             <div className="section-intro">
               <div className="eyebrow">Verification</div>
@@ -199,26 +305,6 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section className="public-section tint" id="story">
-          <div className="section-inner founder">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/team/rena-pazienza.jpg" alt="Rena Pazienza, PhD" />
-            <div>
-              <div className="eyebrow">A note from the founder</div>
-              <p className="quote" style={{ margin: "10px 0 18px" }}>&ldquo;Independent clinicians deserve a dependable professional circle.&rdquo;</p>
-              <p>
-                PsyAlliance began with a problem Rena Pazienza, PhD, a licensed psychologist, couldn&rsquo;t solve: going on maternity leave, she needed her caseload covered by someone qualified, and there was no good way to find them.
-              </p>
-              <p>
-                Directories are built for patients to find a therapist, not for one clinician to find another. So she built the professional circle she wished she&rsquo;d had, shaped with feedback from her peers, and co-founded it with Nick Rapley.
-              </p>
-              <p style={{ marginBottom: 0 }}>
-                <b style={{ color: "var(--ink)" }}>A directory helps patients find you. PsyAlliance helps clinicians find each other.</b>
-              </p>
-            </div>
-          </div>
-        </section>
-
         <section className="public-section" id="approach">
           <div className="section-inner">
             <div className="section-intro">
@@ -226,9 +312,9 @@ export default function HomePage() {
               <h2>Rules we don&rsquo;t bend.</h2>
             </div>
             <ul className="rules">
-              <li><b>Needs, not patients</b>Cases are described by need. We flag dates, contact details and record numbers before anything is sent, and remove anything identifying that&rsquo;s reported.</li>
+              <li><b>Needs, not people</b>Clients are described by need. We flag dates, contact details and record numbers before anything is sent, and remove anything identifying that&rsquo;s reported.</li>
               <li><b>Verified means reviewed</b>Listing and requests require a reviewed identity, degree and in-date licence.</li>
-              <li><b>Facts, not judgements</b>Profiles show facts on file with dates. Whether a colleague suits a patient is your professional call.</li>
+              <li><b>Facts, not judgements</b>Profiles show facts on file with dates. Whether a colleague suits a client is your professional call.</li>
               <li><b>Nothing sends without review</b>Every request and post shows exactly who will see it before you confirm.</li>
               <li><b>Private by default</b>Who you save, exclude or block is never visible to them.</li>
               <li><b>Never sold, never advertised to</b>Your data isn&rsquo;t sold or used for advertising.</li>
@@ -258,27 +344,16 @@ export default function HomePage() {
             <div>
               <div className="eyebrow" style={{ color: "#e2c49c" }}>Founding members</div>
               <h2>Join the first cohort.</h2>
-              <p>We&rsquo;re opening PsyAlliance to a founding group of psychologists and psychiatrists first.</p>
+              <p>We&rsquo;re opening PsyAlliance state by state, starting in the Northeast.</p>
             </div>
-            <a className="btn" href="/join">Ask to join &rarr;</a>
+            <div className="row wrap" style={{ gap: 10 }}>
+              <a className="btn" href="/join">Request an invitation &rarr;</a>
+              <a className="btn ghost-on-dark" href={DEMO()}>Watch the demos</a>
+            </div>
           </div>
         </section>
       </main>
-
-      <footer className="public-footer">
-        <div>
-          <div className="brand"><span className="brand-mark" aria-hidden="true">ψ</span>psyalliance</div>
-          <p>A professional network for independent psychologists and psychiatrists.</p>
-        </div>
-        <div className="foot-links">
-          <a href="#how">How it works</a>
-          <a href="#verification">Verification</a>
-          <a href="/privacy">Privacy</a>
-          <a href="/terms">Terms</a>
-          <a href="mailto:hello@psyalliance.org">Contact</a>
-          <a href="/auth/sign-in">Sign in</a>
-        </div>
-      </footer>
+      <PublicFooter home />
     </div>
   );
 }

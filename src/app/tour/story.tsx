@@ -28,22 +28,16 @@ export function leaveDates(today = new Date()) {
   return { start: iso(monday), end: iso(end), range: `${short(monday)} to ${short(end)}`, startLong: long(monday) };
 }
 
-export const CHAPTERS = [
-  { key: "meet", title: "Meet Alex's practice", blurb: "The profile, home screen, circle, messages and Library. A minute or two." },
-  { key: "refer", title: "Refer and consult", blurb: "Find the right colleague for a new enquiry and ask the circle a question." },
-  { key: "cover", title: "Six weeks away, covered", blurb: "Plan parental leave case by case, from both sides of the request." },
-] as const;
-export type ChapterKey = (typeof CHAPTERS)[number]["key"];
-
 export function AlexCard({ compact }: { compact?: boolean }) {
   const leave = leaveDates();
   return (
     <div className={`story-alex${compact ? " compact" : ""}`}>
       <span className="story-initials" aria-hidden="true">AR</span>
       <div>
-        <div className="eyebrow">You&rsquo;ll be</div>
+        <div className="eyebrow">In every demo you&rsquo;re</div>
         <h3>Alex Rivers, PsyD</h3>
         <p>Clinical psychologist in Brooklyn, New York</p>
+        {compact && <p className="story-alex-line">Six weeks of parental leave from {leave.startLong}. Licensed in New York and New Jersey.</p>}
         {!compact && (
           <ul className="story-facts">
             <li>Licensed in New York and New Jersey, PSYPACT telehealth</li>

@@ -23,7 +23,7 @@ export default async function SandboxRequestPage(props: { searchParams: Promise<
               <div className="eyebrow">Personal sandbox</div>
               <h2>Try PsyAlliance with your own fictional practice.</h2>
               <p>
-                A sandbox is a private copy of the tour&rsquo;s story that you can use freely for a week: ask for cover, send a referral, post a
+                A sandbox is a private copy of the demos&rsquo; fictional practice that you can use freely for a week: ask for cover, send a referral, post a
                 consultation, and invented colleagues reply. Everyone in it is fictional, and nothing you do reaches the real network.
               </p>
             </div>
@@ -36,7 +36,7 @@ export default async function SandboxRequestPage(props: { searchParams: Promise<
                   please don&rsquo;t pass it on. &ldquo;Start the story again&rdquo; inside the sandbox clears your fictional activity whenever you like.
                 </p>
                 <div className="row wrap" style={{ gap: 10, marginTop: 12 }}>
-                  <a className="btn secondary small-btn" href="/tour">Back to the tour</a>
+                  <a className="btn secondary small-btn" href="/tour">Back to the demos</a>
                   <a className="text-arrow" href={JOIN_URL}>Ask to join the real cohort &rarr;</a>
                 </div>
               </div>

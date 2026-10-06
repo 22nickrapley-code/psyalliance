@@ -241,7 +241,7 @@ export default async function NetworkHealthPage() {
         <div className="stat-grid">
           <div className="stat">
             <div className="value">{totalCoverageCases}</div>
-            <div className="label">Total cases</div>
+            <div className="label">Clients in cover plans</div>
           </div>
           <div className="stat">
             <div className="value">{totalCoverageRequests}</div>
@@ -253,7 +253,7 @@ export default async function NetworkHealthPage() {
           </div>
           <div className="stat">
             <div className="value">{coverageZeroMatchRate}</div>
-            <div className="label">Cases never sent to anyone</div>
+            <div className="label">Clients never offered to anyone</div>
           </div>
           <div className="stat">
             <div className="value">{coverageAvgResponseTime}</div>
@@ -265,7 +265,7 @@ export default async function NetworkHealthPage() {
       <div className="card">
         <h2>High-demand specialties &amp; supply gaps</h2>
         <p className="muted" style={{ fontSize: "0.85rem" }}>
-          Demand = referral requests + coverage cases naming this specialty. Supply = verified members
+          Demand = referral requests + clients in cover plans naming this specialty. Supply = verified members
           with this specialty who haven&apos;t turned off referral and coverage availability entirely.
           A gap (demand higher than supply) is where the network is thin.
         </p>

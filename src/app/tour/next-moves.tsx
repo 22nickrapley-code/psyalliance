@@ -9,7 +9,7 @@ export function NextMoves() {
         <div className="eyebrow">Try it yourself</div>
         <h3>Explore a sandbox</h3>
         <p className="small">
-          Your own private copy of Alex&rsquo;s fictional practice for 7 days. Send requests and invented colleagues reply. Ask, and we email you a
+          Your own private copy of Alex&rsquo;s fictional practice for 7 days, where you can try everything. Send requests and invented colleagues reply. Ask, and we email you a
           personal link; resetting it clears your fictional activity.
         </p>
         <a className="btn secondary" href="/sandbox/request">Ask for a sandbox</a>

@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { loadNeedOptions } from "@/lib/need-options";
 import { CoverIndexView } from "./views";
-import { summarise, focusLabel, caseDetails } from "./data";
+import { summarise, focusLabel, caseDetails, clientRef } from "./data";
 import { ABSENCE, type IncomingPlan } from "./views";
 import { clinicianName, roleLabel } from "@/lib/profession";
 import { resolveAvatarUrls } from "@/lib/avatars";
@@ -71,7 +71,7 @@ export default async function CoverPage(props: { searchParams: Promise<{ ok?: st
     }
     byPlan.get(p.id)!.cases.push({
       requestId: r.id,
-      reference: c.case_reference,
+      reference: clientRef(c.case_reference),
       focus: focusLabel(c.specialism_lookup_ids, options),
       details: [
         ["Age band", c.age_band || "Not stated"],

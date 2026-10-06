@@ -14,14 +14,34 @@ export function TourFrame({
   focus,
   focusIndex = 0,
   focusNote,
+  intro,
 }: {
   children: ReactNode;
   next?: string;
   focus?: string;
   focusIndex?: number;
   focusNote?: string;
+  intro?: {
+    demo: string;
+    step: string;
+    title: string;
+    what: string;
+    who: string;
+    whoRole: string;
+    initials: string;
+    colleague: boolean;
+    lookFor?: string;
+    last: boolean;
+  };
 }) {
   const ref = useRef<HTMLDivElement>(null);
+  // Each step opens on a short card; the screen is shown once it's read.
+  const [revealed, setRevealed] = useState(!intro);
+  const [hasFocus, setHasFocus] = useState(false);
+  const revealBtn = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (!revealed) revealBtn.current?.focus();
+  }, [revealed]);
   const target = useRef<HTMLElement | null>(null);
   const [note, setNote] = useState<string | null>(null);
   const [callout, setCallout] = useState<{ top: number; left: number; side: "above" | "below" | "right" } | null>(null);
@@ -42,6 +62,10 @@ export function TourFrame({
     const left = Math.max(12, Math.min(r.left - base.left, base.width - 292));
     setCallout({ top: below ? r.bottom - base.top + 10 : r.top - base.top - 10, left, side: below ? "below" : "above" });
   }, []);
+
+  useEffect(() => {
+    if (revealed) place();
+  }, [revealed, place]);
 
   const showMe = useCallback(() => {
     const el = target.current;
@@ -65,7 +89,7 @@ export function TourFrame({
     if (!el) return;
     el.classList.add("tour-focus");
     el.setAttribute("aria-describedby", "tour-callout");
-    root.classList.add("has-focus");
+    setHasFocus(true);
     place();
     const onResize = () => place();
     window.addEventListener("resize", onResize);
@@ -74,7 +98,7 @@ export function TourFrame({
       window.removeEventListener("resize", onResize);
       window.clearTimeout(t);
       el.classList.remove("tour-focus", "tour-pulse");
-      root.classList.remove("has-focus");
+      setHasFocus(false);
     };
   }, [focus, focusIndex, place]);
 
@@ -100,7 +124,7 @@ export function TourFrame({
     };
     const onClick = (e: MouseEvent) => {
       const t = e.target as HTMLElement;
-      if (t.closest("[data-tour-nav]") || t.closest(".tour-toast") || t.closest(".tour-callout")) return;
+      if (t.closest("[data-tour-nav]") || t.closest(".tour-toast") || t.closest(".tour-callout") || t.closest(".tour-intro")) return;
       if (target.current && (t === target.current || target.current.contains(t))) {
         e.preventDefault();
         e.stopPropagation();
@@ -132,9 +156,39 @@ export function TourFrame({
   }, [next]);
 
   return (
-    <div ref={ref} className="tour-mode">
+    <div ref={ref} className={`tour-mode${revealed ? "" : " intro-open"}${hasFocus ? " has-focus" : ""}`}>
       {children}
-      {callout && focusNote && (
+      {!revealed && intro && (
+        <div className={`tour-intro${intro.colleague ? " colleague" : ""}`} role="dialog" aria-modal="true" aria-labelledby="tour-intro-title">
+          <div className="tour-intro-card">
+            <div className="tour-intro-top">
+              <span>{intro.demo}</span>
+              <span>{intro.step}</span>
+            </div>
+            <div className="tour-intro-who">
+              <span className={`story-initials${intro.colleague ? " colleague" : ""}`} aria-hidden="true">{intro.initials}</span>
+              <span>
+                {intro.colleague ? <b className="switch">Now in {intro.who.split(",")[0]}&rsquo;s account</b> : <b>{intro.who}</b>}
+                <small>{intro.whoRole}</small>
+              </span>
+            </div>
+            <h2 id="tour-intro-title">{intro.title}</h2>
+            <p>{intro.what}</p>
+            {intro.lookFor && (
+              <p className="look-for">
+                <b>Look for</b> the highlighted action. {intro.lookFor}
+              </p>
+            )}
+            <div className="tour-intro-actions">
+              <button ref={revealBtn} type="button" className="btn lg" onClick={() => setRevealed(true)}>
+                Show me the screen &rarr;
+              </button>
+              <a className="tour-intro-skip" href="/tour" data-tour-nav>All demos</a>
+            </div>
+          </div>
+        </div>
+      )}
+      {revealed && callout && focusNote && (
         <div id="tour-callout" className={`tour-callout ${callout.side}`} style={{ top: callout.top, left: callout.left }} role="note">
           <b>Next in the story</b>
           {focusNote}

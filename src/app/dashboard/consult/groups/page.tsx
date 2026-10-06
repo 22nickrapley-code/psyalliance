@@ -35,7 +35,7 @@ export default async function ConsultationGroupsPage(props: { searchParams: Prom
       </div>
       <PageHead
         eyebrow="Consultation groups"
-        title="A standing case conference."
+        title="A standing consultation group."
         lead="A few colleagues, a written charter, and threads only members see. Different from a one-off question to your circle."
       />
       <Banner error={error} />
@@ -115,7 +115,7 @@ export default async function ConsultationGroupsPage(props: { searchParams: Prom
                 </label>
                 <label className="field full">
                   Charter
-                  <textarea name="charter_body" rows={4} placeholder="Confidentiality, de-identification, consultation not supervision, no recording, how cases are presented." />
+                  <textarea name="charter_body" rows={4} placeholder="Confidentiality, de-identification, consultation not supervision, no recording, how clients are presented." />
                   <small>You can write it after creating the group, but nobody can be invited or post until it exists.</small>
                 </label>
               </div>
@@ -134,7 +134,7 @@ export default async function ConsultationGroupsPage(props: { searchParams: Prom
             <div className="eyebrow">Ground rules</div>
             <ul className="note-list" style={{ paddingLeft: 16, margin: 0 }}>
               <li>Members only. Nothing leaves the group.</li>
-              <li>De-identified cases, always.</li>
+              <li>Client details de-identified, always.</li>
               <li>Consultation, not supervision: the treating clinician decides.</li>
               <li>No automatic recording or transcription.</li>
             </ul>

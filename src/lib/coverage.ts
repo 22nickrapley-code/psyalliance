@@ -168,7 +168,7 @@ export async function respondToCoverageRequest(
       recipientProfileIds: [planOwnerId],
       actorProfileId: requestedProfileId,
       actorType: "member_web",
-      summary: response === "accepted" ? "confirmed they can cover your case" : `responded "${response}" to your coverage request`,
+      summary: response === "accepted" ? "confirmed they can cover your client" : `responded "${response}" to your coverage request`,
       deepLink: "/dashboard/cover",
       dedupKey: `coverage_response:${coverageRequestId}`,
       metadata: { coverageRequestId, response },

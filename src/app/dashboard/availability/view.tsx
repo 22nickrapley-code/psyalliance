@@ -123,7 +123,7 @@ export function AvailabilityView({ p, sp }: { p: AvailabilityData; sp: { confirm
           <Signal
             name="consultation_availability"
             title="Consult"
-            help="Answering colleagues' case questions and joining consultations."
+            help="Answering colleagues' client questions and joining consultations."
             options={CONSULT}
             value={p?.consultation_availability}
             preselect={preselect}

@@ -131,7 +131,7 @@ export default async function HomePage(props: { searchParams: Promise<{ reconfir
     const p = g.plan;
     steps.push({
       key: `cover-${key}`,
-      title: `${nameOf(p?.owner)} asked you to cover ${g.count === 1 ? "a patient" : `${g.count} patients`}`,
+      title: `${nameOf(p?.owner)} asked you to cover ${g.count === 1 ? "a client" : `${g.count} clients`}`,
       detail: [g.focus.join(" and "), ABSENCE_LABEL[p?.absence_type] || p?.title, p?.jurisdiction_state, shortRange(p?.starts_on, p?.ends_on)].filter(Boolean).join(" · "),
       href: "/dashboard/cover",
       action: "Review request",
@@ -143,9 +143,9 @@ export default async function HomePage(props: { searchParams: Promise<{ reconfir
     const cases = (p as any).coverage_plan_cases || [];
     const open = cases.filter((c: any) => c.status === "needs_cover" || c.status === "declined_all").length;
     if (p.status === "draft") {
-      steps.push({ key: `plan-${p.id}`, title: `Finish your cover plan: ${p.title}`, detail: `${cases.length} case${cases.length === 1 ? "" : "s"} added, nothing sent yet`, href: `/dashboard/cover/${p.id}?step=needs`, action: "Continue", rank: 1 });
+      steps.push({ key: `plan-${p.id}`, title: `Finish your cover plan: ${p.title}`, detail: `${cases.length} client${cases.length === 1 ? "" : "s"} added, nothing sent yet`, href: `/dashboard/cover/${p.id}?step=needs`, action: "Continue", rank: 1 });
     } else if (open > 0) {
-      steps.push({ key: `plan-${p.id}`, title: `${p.title}: ${open} case${open === 1 ? "" : "s"} still need${open === 1 ? "s" : ""} a colleague`, detail: `${cases.filter((c: any) => c.status === "confirmed").length} of ${cases.length} covered`, href: `/dashboard/cover/${p.id}?step=track`, action: "Review plan", rank: 1 });
+      steps.push({ key: `plan-${p.id}`, title: `${p.title}: ${open} client${open === 1 ? "" : "s"} still need${open === 1 ? "s" : ""} a colleague`, detail: `${cases.filter((c: any) => c.status === "confirmed").length} of ${cases.length} covered`, href: `/dashboard/cover/${p.id}?step=track`, action: "Review plan", rank: 1 });
     }
   }
   for (const r of myReferrals || []) {
@@ -234,10 +234,10 @@ export default async function HomePage(props: { searchParams: Promise<{ reconfir
     if (firstCover) {
       const [key, g] = firstCover;
       const who = String(g.plan?.owner?.full_name || "A colleague").replace(/^(dr\.?)\s+/i, "").split(/\s+/)[0];
-      const n = g.count === 1 ? "one case" : g.count === 2 ? "two cases" : `${g.count} cases`;
+      const n = g.count === 1 ? "one client" : g.count === 2 ? "two clients" : `${g.count} clients`;
       startHere = {
         title: `${who} needs cover for ${n}. Review the request.`,
-        body: `Accept, decline or discuss each case on its own. Accepting marks that case covered on ${who}'s plan; you then arrange the handoff between you, outside PsyAlliance.`,
+        body: `Accept, decline or discuss each client on their own. Accepting marks that client covered on ${who}'s plan; you then arrange the handoff between you, outside PsyAlliance.`,
         href: "/dashboard/cover",
         action: `Review ${who}'s request`,
         urgent: g.plan?.absence_type === "unexpected",
@@ -248,8 +248,8 @@ export default async function HomePage(props: { searchParams: Promise<{ reconfir
       const cases = firstPlan.coverage_plan_cases || [];
       const open = cases.filter((c: any) => c.status !== "confirmed").length;
       startHere = {
-        title: open > 0 ? `${firstPlan.title}: find cover for ${open === 1 ? "one case" : `${open} cases`}.` : `${firstPlan.title}: every case is covered.`,
-        body: "Each case is described by need, never by name. Choose who is asked, in order, and watch the replies come in. Nothing is sent until you review it.",
+        title: open > 0 ? `${firstPlan.title}: find cover for ${open === 1 ? "one client" : `${open} clients`}.` : `${firstPlan.title}: every client is covered.`,
+        body: "Each client is described by need, never by name. Choose who is asked, in order, and watch the replies come in. Nothing is sent until you review it.",
         href: `/dashboard/cover/${firstPlan.id}?step=${firstPlan.status === "draft" ? "needs" : "track"}`,
         action: open > 0 ? "Continue the plan" : "See the plan",
       };
@@ -321,7 +321,7 @@ export default async function HomePage(props: { searchParams: Promise<{ reconfir
     (myPlans || []).length ? pick("PA-02", "Guidance and a handoff pack for your cover plan.") : null,
     expiring.length ? pick("PA-19", "Keep renewals and compliance dates visible.") : null,
     (myReferrals || []).length ? pick("PA-07", "Referral outcomes and handoff responsibilities.") : null,
-    pick("PA-05", "Shape a focused, de-identified case question."),
+    pick("PA-05", "Shape a focused, de-identified client question."),
   ]
     .filter(Boolean)
     .slice(0, 2) as HomeData["resources"];
@@ -345,7 +345,7 @@ export default async function HomePage(props: { searchParams: Promise<{ reconfir
     relevant: [
       ...[...coverGroups.entries()].slice(0, 2).map(([key, g]) => ({
         key: `c${key}`,
-        title: `Cover request: ${g.count === 1 ? g.focus[0] : `${g.count} patients`}`,
+        title: `Cover request: ${g.count === 1 ? g.focus[0] : `${g.count} clients`}`,
         detail: `From ${nameOf(g.plan?.owner)}`,
         why: "Sent to you",
         href: "/dashboard/cover",

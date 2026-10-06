@@ -217,7 +217,7 @@ export function NeedFields({
   );
   const stateSelect = (
     <label className="field">
-      State the patient is in
+      State the client is in
       <select name="state" defaultValue={values.state || options.homeState || ""} required>
         <option value="">Choose a state</option>
         {options.states.map((s) => (

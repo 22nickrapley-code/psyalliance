@@ -152,7 +152,7 @@ export function ConsultIndexView({
           {tab === "groups" ? (
             <>
               {groups.length === 0 ? (
-                <Empty symbol={"✳"} title="No consultation groups yet." body="A closed group is your virtual case conference: a few trusted colleagues, a written charter, and threads only members can see." action={<a className="btn secondary small-btn" href="/dashboard/consult/groups">Create a group</a>} />
+                <Empty symbol={"✳"} title="No consultation groups yet." body="A closed group is your standing consultation meeting: a few trusted colleagues, a written charter, and threads only members can see." action={<a className="btn secondary small-btn" href="/dashboard/consult/groups">Create a group</a>} />
               ) : (
                 groups.map((g) => (
                   <a key={g.id} href={`/dashboard/consult/groups/${g.id}`} className="card" style={{ display: "block", textDecoration: "none", color: "inherit" }}>
@@ -222,6 +222,7 @@ export function ConsultComposeView({
   preselect,
   preselectGroup,
   error,
+  preset,
 }: {
   kind: "question" | "supervision_request" | "supervision_offer";
   areas: string[];
@@ -230,6 +231,7 @@ export function ConsultComposeView({
   preselect?: string;
   preselectGroup?: number;
   error?: string;
+  preset?: { question: string; context: string };
 }) {
   const title = kind === "supervision_request" ? "Request supervision." : kind === "supervision_offer" ? "Offer supervision." : "Ask colleagues a question.";
   return (
@@ -245,6 +247,7 @@ export function ConsultComposeView({
               name="question"
               required
               maxLength={280}
+              defaultValue={preset?.question}
               placeholder={
                 kind === "supervision_request"
                   ? "e.g. Seeking weekly supervision towards NY licensure, trauma focus"
@@ -256,7 +259,7 @@ export function ConsultComposeView({
           </label>
           <label className="field" style={{ marginTop: 14 }}>
             <span>Context <span className="micro-note">(optional)</span></span>
-            <textarea name="context" rows={4} maxLength={2000} placeholder="Broad, de-identified context: what you've tried, where you're stuck, what would help." />
+            <textarea name="context" rows={4} maxLength={2000} defaultValue={preset?.context} placeholder="Broad, de-identified context: what you've tried, where you're stuck, what would help." />
           </label>
 
           <details className="audience-pick" open={!!preselect || !!preselectGroup}>
@@ -349,7 +352,7 @@ export function ConsultComposeView({
         <aside className="stack">
           <section className="card tint">
             <div className="eyebrow">Practice Library</div>
-            <h3>PA-05 &middot; Case Consultation</h3>
+            <h3>PA-05 &middot; Consultation template</h3>
             <p className="small">A structure for a concise question and a clear record of the advice you received.</p>
             <a className="btn secondary small-btn" href="/dashboard/documents/PA-05">View PA-05</a>
           </section>
@@ -477,7 +480,7 @@ export function ConsultDetailView({ c, ok, error, extra }: { c: ConsultDetail; o
           {extra}
           <section className="card tint">
             <div className="eyebrow">Practice Library</div>
-            <h3>PA-05 &middot; Case Consultation</h3>
+            <h3>PA-05 &middot; Consultation template</h3>
             <p className="small">Record the advice you received and your decision.</p>
             <a className="btn secondary small-btn" href="/dashboard/documents/PA-05">View PA-05</a>
           </section>

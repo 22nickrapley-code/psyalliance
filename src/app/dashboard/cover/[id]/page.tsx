@@ -57,15 +57,33 @@ export default async function CoverPlanPage(props: { params: Promise<{ id: strin
   if (step === "invite") {
     const pickIds = Array.from(new Set(cases.flatMap((c) => all(`pick_${c.id}`))));
     const { data: people } = pickIds.length
-      ? await supabase.from("profiles").select("id, full_name, credential_prefix").in("id", pickIds)
+      ? await supabase.from("profiles").select("id, full_name, credential_prefix, qualification_level").in("id", pickIds)
       : { data: [] as any[] };
     const nameOf = (pid: string) => {
       const p = (people || []).find((x: any) => x.id === pid);
       return p ? clinicianName(p?.full_name, p?.qualification_level, p?.credential_prefix) : "Colleague";
     };
-    const rows = cases
-      .filter((c) => c.status === "needs_cover" || c.status === "declined_all")
-      .map((c) => ({ caseId: c.id, reference: c.reference, focus: c.focus, picks: all(`pick_${c.id}`).map((pid) => ({ id: pid, name: nameOf(pid) })) }));
+    // Why each chosen colleague fits this client, so the reasons stay in
+    // view when deciding who is asked.
+    const open = cases.filter((c) => c.status === "needs_cover" || c.status === "declined_all");
+    const reasons = new Map<string, string[]>();
+    await Promise.all(
+      open.map(async (c) => {
+        const picks = all(`pick_${c.id}`);
+        if (!picks.length) return;
+        const rawCase = raw.find((r: any) => r.id === c.id);
+        if (!rawCase) return;
+        const exclude = await excludedFor(supabase, c.id);
+        const { matches } = await findMatches(supabase, myself, caseNeed(rawCase, plan), { exclude, limit: 40 });
+        for (const m of matches) if (picks.includes(m.profileId)) reasons.set(`${c.id}:${m.profileId}`, m.reasons);
+      })
+    );
+    const rows = open.map((c) => ({
+      caseId: c.id,
+      reference: c.reference,
+      focus: c.focus,
+      picks: all(`pick_${c.id}`).map((pid) => ({ id: pid, name: nameOf(pid), why: reasons.get(`${c.id}:${pid}`) || [] })),
+    }));
     return <CoverInviteView plan={summary} rows={rows} error={one("error")} />;
   }
 

@@ -2,8 +2,10 @@ import "../premium.css";
 import { PublicNav, PublicFooter } from "../_public/chrome";
 import { requestToJoinAction } from "../auth/actions";
 import { redirect } from "next/navigation";
-import { IS_DEMO_SITE, JOIN_URL } from "@/lib/env";
+import { IS_DEMO_SITE, JOIN_URL, DEMO_URL } from "@/lib/env";
 import { US_STATES } from "@/lib/us-states";
+
+const DEMO_TOUR = DEMO_URL ? `${DEMO_URL}/tour` : "/tour";
 
 const LAUNCH = ["NY", "NJ", "MA", "CT", "RI", "VT"];
 
@@ -20,25 +22,33 @@ export default async function JoinPage(props: { searchParams: Promise<{ sent?: s
     <div className="pa">
       <PublicNav />
       <main>
-        <section className="public-section">
-          <div className="section-inner" style={{ maxWidth: 640 }}>
-            <div className="section-intro">
+        <section className="public-section join-page">
+          <div className="section-inner join-layout">
+            <div className="join-intro">
               <div className="eyebrow">Founding members</div>
-              <h2>Ask to join the first cohort.</h2>
-              <p>
-                We&rsquo;re inviting doctoral-level psychologists and psychiatrists in a few states at a time, so members can actually cover, refer and consult with
-                each other from day one. Tell us where you practise and we&rsquo;ll send you a personal invitation when your area opens.
+              <h1>Request an invitation.</h1>
+              <p className="lead">
+                PsyAlliance opens a few states at a time, so members can cover, refer and consult with each other from day one. Tell us where you&rsquo;re
+                licensed and we&rsquo;ll invite you when your state opens.
+              </p>
+              <ol className="join-steps">
+                <li><b>Request an invitation</b><span>Two minutes. This isn&rsquo;t membership yet.</span></li>
+                <li><b>We invite you when your state opens</b><span>A personal link by email. Nothing else in between.</span></li>
+                <li><b>A person checks your licence</b><span>Identity, doctoral degree and licence, against the state board, before you&rsquo;re listed.</span></li>
+              </ol>
+              <p className="small">
+                Not ready yet? <a href={DEMO_TOUR}>Watch the short demos</a> first.
               </p>
             </div>
             {sp.sent ? (
-              <div className="card tint roomy">
+              <div className="card tint roomy join-card">
                 <div className="eyebrow">Request received</div>
-                <h3>You&rsquo;re on the list for an invitation.</h3>
-                <p className="small">This is a request, not membership yet. When we open your state we&rsquo;ll email you a personal invitation link. After you sign up, you add your licence and a person checks it against the state board before you can use the network.</p>
-                <p className="small" style={{ marginBottom: 0 }}>Nothing else is sent to you until then.</p>
+                <h2 className="serif-title" style={{ fontSize: 30, margin: "6px 0 10px" }}>You&rsquo;re on the list.</h2>
+                <p>This is a request for an invitation, not membership. When we open your state we&rsquo;ll email you a personal invitation link. After you sign up, you add your licence and a person checks it against the state board before you can use the network.</p>
+                <p style={{ marginBottom: 0 }}>Nothing else is sent to you until then.</p>
               </div>
             ) : (
-              <form action={requestToJoinAction} className="card fields">
+              <form action={requestToJoinAction} className="card join-card join-form">
                 {sp.error && <div className="banner error" role="alert">{sp.error}</div>}
                 <label className="field">
                   Full name
@@ -59,21 +69,21 @@ export default async function JoinPage(props: { searchParams: Promise<{ sent?: s
                     <option>DO</option>
                   </select>
                 </label>
-                <fieldset className="field state-pick">
+                <fieldset className="state-pick">
                   <legend>States where you&rsquo;re licensed <span className="micro-note">(at least one)</span></legend>
                   <div className="check-grid">
                     {US_STATES.filter((s) => LAUNCH.includes(s.code)).map((s) => (
-                      <label key={s.code}>
-                        <input type="checkbox" name="state" value={s.code} /> {s.name}
+                      <label key={s.code} className="check-pill">
+                        <input type="checkbox" name="state" value={s.code} /> <span>{s.name}</span>
                       </label>
                     ))}
                   </div>
-                  <details style={{ marginTop: 8 }}>
-                    <summary className="small" style={{ cursor: "pointer" }}>Licensed somewhere else?</summary>
-                    <div className="check-grid" style={{ marginTop: 8 }}>
+                  <details className="more-states">
+                    <summary>Licensed somewhere else?</summary>
+                    <div className="check-grid">
                       {US_STATES.filter((s) => !LAUNCH.includes(s.code)).map((s) => (
-                        <label key={s.code}>
-                          <input type="checkbox" name="state" value={s.code} /> {s.name}
+                        <label key={s.code} className="check-pill">
+                          <input type="checkbox" name="state" value={s.code} /> <span>{s.name}</span>
                         </label>
                       ))}
                     </div>
@@ -84,8 +94,8 @@ export default async function JoinPage(props: { searchParams: Promise<{ sent?: s
                   <span>Your practice, briefly <span className="micro-note">(optional)</span></span>
                   <textarea name="note" rows={3} maxLength={600} placeholder="Specialties, who you see, what you'd use PsyAlliance for." />
                 </label>
-                <button type="submit" className="btn" style={{ alignSelf: "flex-start" }}>Request an invitation</button>
-                <p className="micro-note" style={{ margin: 0 }}>We use this only to decide when to invite you. See <a href="/privacy">Privacy</a>.</p>
+                <button type="submit" className="btn lg block">Request an invitation</button>
+                <p className="micro-note" style={{ margin: 0, textAlign: "center" }}>We use this only to decide when to invite you. See <a href="/privacy">Privacy</a>.</p>
               </form>
             )}
           </div>

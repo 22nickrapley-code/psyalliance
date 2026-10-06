@@ -2,70 +2,40 @@ import "../premium.css";
 import { notFound } from "next/navigation";
 import { TOUR_ENABLED } from "@/lib/env";
 import { PublicNav, PublicFooter } from "../_public/chrome";
-import { STEPS, QUICK_STEPS } from "./steps";
-import { AlexCard, CHAPTERS } from "./story";
+import { DEMOS } from "./demos";
+import { AlexCard } from "./story";
+import { DemoGrid } from "./demo-progress";
+import { NextMoves } from "./next-moves";
 
-export const metadata = { title: "Guided tour", robots: { index: false, follow: false } };
+export const metadata = { title: "Demos", robots: { index: false, follow: false } };
 
-// Start of the guided tour. No sign-in: one fictional story, told on the
-// real screens, from the simplest screen to the biggest job.
-export default function TourIntroPage() {
+// The demo library: one short demo per job PsyAlliance does, in any order.
+// Step two of a visitor's journey: home page, then demos, then a sandbox
+// or a request to join.
+export default function DemoLibraryPage() {
   if (!TOUR_ENABLED) notFound();
   return (
     <div className="pa">
       <PublicNav />
       <main>
-        <section className="public-section">
-          <div className="section-inner" style={{ maxWidth: 1080 }}>
-            <div className="section-intro">
-              <div className="eyebrow">Guided tour &middot; read-only &middot; fictional people</div>
-              <h2>See six weeks of leave covered, in two minutes.</h2>
-              <p>
-                Alex, a psychologist in Brooklyn, needs six weeks away. Watch three cases described without identifiers, colleagues asked, and every
-                case accepted. Then, if you like, the rest of the practice.
-              </p>
-            </div>
-            <div className="story-intro">
+        <section className="public-section demo-hub">
+          <div className="section-inner" style={{ maxWidth: 1120 }}>
+            <div className="demo-hub-head">
               <div>
-                <AlexCard />
-                <div className="two-ways">
-                  <div className="way primary">
-                    <h3>The two-minute tour</h3>
-                    <p>{QUICK_STEPS.length} screens: from &ldquo;I need six weeks away&rdquo; to every case covered.</p>
-                    <a className="btn lg" href={`/tour/quick/${QUICK_STEPS[0].slug}`}>Start the two-minute tour &rarr;</a>
-                  </div>
-                  <div className="way">
-                    <h3>The full tour</h3>
-                    <p>{STEPS.length} short steps, about five minutes: the practice, a referral, a consultation, then cover.</p>
-                    <a className="btn secondary" href={`/tour/${STEPS[0].slug}`}>Take the full tour</a>
-                  </div>
-                </div>
-                <p className="small" style={{ marginTop: 14 }}>
-                  Want to click everything yourself? <a href="/sandbox/request">Ask for a personal sandbox</a>.
+                <div className="eyebrow">Demos &middot; read-only &middot; fictional people</div>
+                <h1>See PsyAlliance in action.</h1>
+                <p className="lead">
+                  Five short demos, one for each thing PsyAlliance does. Each takes a minute or two on the real screens, with a fictional practice.
+                  Watch them in any order; we suggest starting with cover.
                 </p>
               </div>
-              <div>
-                <div className="eyebrow" style={{ marginBottom: 10 }}>The full tour, chapter by chapter</div>
-                <div className="chapter-list">
-                  {CHAPTERS.map((c, n) => (
-                    <div key={c.key} className="chapter">
-                      <div className="chapter-head">
-                        <span className="n">{n + 1}</span>
-                        <h3>{c.title}</h3>
-                      </div>
-                      <p>{c.blurb}</p>
-                      <ol start={STEPS.findIndex((s) => s.chapter === c.key) + 1}>
-                        {STEPS.filter((s) => s.chapter === c.key).map((s) => (
-                          <li key={s.slug}><a href={`/tour/${s.slug}`}>{s.title}</a></li>
-                        ))}
-                      </ol>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              <AlexCard compact />
             </div>
+            <DemoGrid demos={DEMOS.map(({ key, title, blurb, minutes, steps }) => ({ key, title, blurb, minutes, screens: steps.length }))} />
+            <h2 className="serif-title demo-next-title">When you&rsquo;re ready</h2>
+            <NextMoves />
             <p className="micro-note" style={{ marginTop: 22 }}>
-              Everyone and everything in this tour is invented. No real clinicians, clients or outcomes are shown.
+              Everyone and everything in these demos is invented. No real clinicians, clients or outcomes are shown.
             </p>
           </div>
         </section>

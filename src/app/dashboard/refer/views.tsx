@@ -76,7 +76,7 @@ export function ReferNeedView({ options, need, error }: { options: NeedOptions; 
           <input type="hidden" name="step" value="shortlist" />
           <div className="eyebrow">Step 1 &middot; Define the need</div>
           <h2>Who could be a good fit?</h2>
-          <p>Start with the main need and where the patient is. Everything else is optional.</p>
+          <p>Start with the main need and where the client is. Everything else is optional.</p>
           <NeedFields options={options} values={need} />
           <div className="tone-panel" style={{ marginTop: 18 }}>
             {HANDOFF_RULE}

@@ -17,7 +17,7 @@ export default async function SignInPage(props: { searchParams: Promise<{ error?
           <div>
             <div className="eyebrow">{IS_DEMO_SITE ? "Demo site" : "Members"}</div>
             <h1>Professional backup for independent clinicians.</h1>
-            <p>Cover when you&rsquo;re away, the right colleague for a referral, and peers to think a case through with. Verified psychologists and psychiatrists only.</p>
+            <p>Cover when you&rsquo;re away, the right colleague for a referral, and peers to think a decision through with. Verified psychologists and psychiatrists only.</p>
           </div>
           <p className="auth-foot">Invitation only while the founding cohort forms.</p>
         </section>
@@ -42,8 +42,8 @@ export default async function SignInPage(props: { searchParams: Promise<{ error?
             <div className="auth-alt">
               {IS_DEMO_SITE ? (
                 <>
-                  <p className="small">Exploring PsyAlliance? The guided tour needs no account. A personal sandbox link signs you in by itself; you don&rsquo;t need a password.</p>
-                  <a className="btn secondary block" href="/tour">Take the two-minute tour</a>
+                  <p className="small">Exploring PsyAlliance? The demos need no account. A personal sandbox link signs you in by itself; you don&rsquo;t need a password.</p>
+                  <a className="btn secondary block" href="/tour">See the demos</a>
                   <a className="text-arrow" href="/sandbox/request">Ask for a personal sandbox &rarr;</a>
                   <a className="text-arrow" href={JOIN_URL}>Ask to join the real network &rarr;</a>
                 </>

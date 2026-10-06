@@ -18,9 +18,9 @@ const STEPS = ["Plan", "Needs", "Candidates", "Invite", "Track"];
 
 export const ABSENCE: Record<string, { label: string; blurb: string }> = {
   short_planned: { label: "Short planned absence", blurb: "A holiday or conference. One backup colleague is often enough." },
-  extended_leave: { label: "Extended leave", blurb: "Maternity, illness or sabbatical. A staged handoff per case." },
+  extended_leave: { label: "Extended leave", blurb: "Maternity, illness or sabbatical. A staged handoff per client." },
   unexpected: { label: "Unexpected absence", blurb: "Illness or emergency. Trusted colleagues are asked first." },
-  closing_practice: { label: "Closing or reducing practice", blurb: "Retirement or relocation. Each case is placed permanently." },
+  closing_practice: { label: "Closing or reducing practice", blurb: "Retirement or relocation. Each client is placed with a colleague permanently." },
   reciprocal: { label: "Reciprocal arrangement", blurb: "A standing cover agreement with a colleague." },
 };
 
@@ -71,7 +71,7 @@ function fmt(d: string | null) {
 
 function PLAN_RESOURCE(type: string | null) {
   if (type === "reciprocal" || type === "short_planned")
-    return { code: "PA-01", title: "Reciprocal Coverage Agreement", purpose: "Agree roles and response times with the colleague covering, with a per-case summary." };
+    return { code: "PA-01", title: "Reciprocal Coverage Agreement", purpose: "Agree roles and response times with the colleague covering, with a per-client summary." };
   if (type === "closing_practice")
     return { code: "PA-03", title: "Professional Will & Succession Plan", purpose: "Plan records custody, patient notice and the handover of your practice." };
   return { code: "PA-02", title: "Extended Leave & Handoff Pack", purpose: "Keep continuity while you're away: patient letters, who does what, and a plan for your return." };
@@ -88,7 +88,7 @@ function PlanAside({ plan, extra }: { plan: PlanSummary; extra?: ReactNode }) {
             ["Type", ABSENCE[plan.absenceType || ""]?.label || "Cover"],
             ["Dates", `${fmt(plan.starts)} – ${fmt(plan.ends)}`],
             ["Jurisdiction", plan.state || "Not set"],
-            ["Cases", plan.counts.total],
+            ["Clients", plan.counts.total],
             ["Asked, awaiting reply", plan.counts.invited],
             ["Covered", plan.counts.covered],
             ["Still unresolved", plan.counts.open],
@@ -154,7 +154,7 @@ function IncomingCard({ r }: { r: IncomingPlan }) {
         <div style={{ flex: 1, minWidth: 0 }}>
           <div className="row between wrap" style={{ gap: 8 }}>
             <h3 style={{ margin: 0 }}>
-              <a href={`/dashboard/people/${r.ownerId}`}>{r.ownerName}</a> asked you to cover {n === 1 ? "one patient" : `${n} patients`}
+              <a href={`/dashboard/people/${r.ownerId}`}>{r.ownerName}</a> asked you to cover {n === 1 ? "one client" : `${n} clients`}
             </h3>
             <span className="row" style={{ gap: 6 }}>
               {r.urgent && <Status tone="danger">Urgent</Status>}
@@ -165,8 +165,8 @@ function IncomingCard({ r }: { r: IncomingPlan }) {
         </div>
       </div>
       <ul className="glance incoming-glance">
-        <li><span>Patients</span><strong>{n}</strong></li>
-        <li><span>Patient location</span><strong>{r.location}</strong></li>
+        <li><span>Clients</span><strong>{n}</strong></li>
+        <li><span>Client location</span><strong>{r.location}</strong></li>
         <li><span>Absence</span><strong>{r.absence}</strong></li>
         <li><span>Dates</span><strong>{r.dates}{r.length ? ` · ${r.length}` : ""}</strong></li>
         <li><span>How colleagues are asked</span><strong>{r.outreach}</strong></li>
@@ -174,7 +174,7 @@ function IncomingCard({ r }: { r: IncomingPlan }) {
       {r.note && <blockquote className="request-note">&ldquo;{r.note}&rdquo;</blockquote>}
       <div className="incoming-cases">
         {r.cases.map((c, i) => {
-          const label = c.reference && !/^case\s*\d+$/i.test(c.reference.trim()) ? c.reference : `Case ${i + 1}`;
+          const label = c.reference && !/^(case|client)\s*\d+$/i.test(c.reference.trim()) ? c.reference : `Client ${i + 1}`;
           const ownerFirst = r.ownerName.replace(/^(dr\.?)\s+/i, "").split(/[\s,]+/)[0];
           const draft = `Hi ${ownerFirst}, I may be able to cover ${label} (${c.focus}) for ${r.dates}. Before I accept, could we talk through the schedule and how you'd like the handoff to work?`;
           return (
@@ -225,7 +225,7 @@ export function CoverIndexView({
       <PageHead
         eyebrow="Cover"
         title="Time away, thoughtfully covered."
-        lead="Plan cover for one case or your whole caseload, and answer colleagues who need cover."
+        lead="Plan cover for one client or your whole caseload, and answer colleagues who need cover."
         actions={<a className="btn" href="/dashboard/cover/new">Plan cover</a>}
       />
       <Banner ok={ok} error={error} />
@@ -246,7 +246,7 @@ export function CoverIndexView({
           {active.length === 0 ? (
             <QuietEmpty
               title="No cover planned."
-              body="Going away, closing a practice, or just want a backup? A plan tracks every case from need to a confirmed colleague."
+              body="Going away, closing a practice, or just want a backup? A plan tracks every client from need to a confirmed colleague."
               action={<a className="btn secondary small-btn" href="/dashboard/cover/new">Plan cover</a>}
             />
           ) : (
@@ -280,7 +280,7 @@ export function CoverIndexView({
           <section className="card dark">
             <div className="eyebrow" style={{ color: "#e2c49c" }}>How it works</div>
             <h3>Plan, invite, confirm.</h3>
-            <p className="small">Describe each case without identifiers. PsyAlliance suggests colleagues with the right licence, focus and fresh availability. You choose who&rsquo;s asked, and in what order. A case only counts as covered when someone accepts.</p>
+            <p className="small">Describe each client by need, without identifiers. PsyAlliance suggests colleagues with the right licence, focus and fresh availability. You choose who&rsquo;s asked, and in what order. A case only counts as covered when someone accepts.</p>
           </section>
         </aside>
       </div>
@@ -300,7 +300,7 @@ export function CoverPlanStepView({
 }) {
   return (
     <>
-      <PageHead eyebrow="Cover / new plan" title="Start with the time away." lead="Choose the kind of cover and the dates. Add non-identifying case needs next." actions={<a className="btn secondary" href="/dashboard/cover">Cancel</a>} />
+      <PageHead eyebrow="Cover / new plan" title="Start with the time away." lead="Choose the kind of cover and the dates. Describe each client&rsquo;s needs next, without identifiers." actions={<a className="btn secondary" href="/dashboard/cover">Cancel</a>} />
       <Progress steps={STEPS} current={0} />
       <Banner error={error} />
       <form className="split" action={createPlanAction}>
@@ -344,7 +344,7 @@ export function CoverPlanStepView({
           <section className="card tint">
             <div className="eyebrow">What happens next</div>
             <h3>Needs, then colleagues.</h3>
-            <p className="small">Add each case that needs cover. PsyAlliance suggests colleagues per case; you review and choose who&rsquo;s asked before anything is sent.</p>
+            <p className="small">Add each client who needs cover. PsyAlliance suggests colleagues for each client; you review and choose who&rsquo;s asked before anything is sent.</p>
           </section>
         </aside>
       </form>
@@ -356,13 +356,13 @@ export function CoverPlanStepView({
 export function CoverNeedsView({ plan, cases, options, error }: { plan: PlanSummary; cases: CaseItem[]; options: NeedOptions; error?: string }) {
   return (
     <>
-      <PlanHead plan={plan} step={1} lead="Describe the cover required, one row per case. Non-identifying details only." />
+      <PlanHead plan={plan} step={1} lead="Describe each client who needs cover, by need. No names, initials or dates." />
       <Banner error={error} />
       <div className="split">
         <div className="stack">
           <section className="card">
-            <div className="card-title"><h3>Cases needing cover ({cases.length})</h3></div>
-            {cases.length === 0 && <p className="small">Add the first case below. One case is fine.</p>}
+            <div className="card-title"><h3>Clients needing cover ({cases.length})</h3></div>
+            {cases.length === 0 && <p className="small">Add the first client below. One is fine.</p>}
             {cases.map((c) => (
               <div key={c.id} className="pa-case">
                 <div className="row between">
@@ -383,8 +383,8 @@ export function CoverNeedsView({ plan, cases, options, error }: { plan: PlanSumm
           </section>
           <form className="card" action={addCaseAction}>
             <input type="hidden" name="plan_id" value={plan.id} />
-            <div className="eyebrow">Add a case</div>
-            <h3>Case {cases.length + 1}</h3>
+            <div className="eyebrow">Add a client</div>
+            <h3>Client {cases.length + 1}</h3>
             <div className="fields three">
               <label className="field">
                 Treatment focus
@@ -437,8 +437,8 @@ export function CoverNeedsView({ plan, cases, options, error }: { plan: PlanSumm
               </label>
             </div>
             <div className="step-actions">
-              <span className="micro-note">Saved as &ldquo;Case {cases.length + 1}&rdquo;. No names, initials or dates.</span>
-              <button type="submit" className="btn secondary">Add case</button>
+              <span className="micro-note">Saved as &ldquo;Client {cases.length + 1}&rdquo;. No names, initials or dates.</span>
+              <button type="submit" className="btn secondary">Add client</button>
             </div>
           </form>
           <div className="step-actions" style={{ borderTop: 0, marginTop: 0 }}>
@@ -471,13 +471,13 @@ export function CoverCandidatesView({
   const openCases = cases.filter((c) => c.status === "needs_cover" || c.status === "declined_all");
   return (
     <>
-      <PlanHead plan={plan} step={2} lead="Review the facts on file, then tick who could be asked for each case, in order of preference." />
+      <PlanHead plan={plan} step={2} lead="Review the facts on file, then tick who could be asked for each client, in order of preference." />
       <form method="get" action={`/dashboard/cover/${plan.id}`} className="split">
         <input type="hidden" name="step" value="invite" />
         <input type="hidden" name="plan_id" value={plan.id} />
         <div className="stack">
           {openCases.length === 0 && (
-            <Empty title="Every case already has someone asked or confirmed." body="Track replies on the Track step." action={<a className="btn secondary small-btn" href={`/dashboard/cover/${plan.id}?step=track`}>Track replies</a>} />
+            <Empty title="Every client already has someone asked or confirmed." body="Track replies on the Track step." action={<a className="btn secondary small-btn" href={`/dashboard/cover/${plan.id}?step=track`}>Track replies</a>} />
           )}
           {openCases.map((c) => {
             const list = suggestions[c.id] || [];
@@ -491,7 +491,7 @@ export function CoverCandidatesView({
                   <div className="kv">{c.details.slice(0, 3).map((d) => <span key={d} className="chip">{d}</span>)}</div>
                 </div>
                 {list.length === 0 ? (
-                  <Empty title="No colleague matches this case yet." body="Nobody with an active licence in this state, the right focus and current availability is left to ask. Try widening the case, or invite a colleague you trust to join." />
+                  <Empty title="No colleague matches this client yet." body="Nobody with an active licence in this state, the right focus and current availability is left to ask. Try widening the case, or invite a colleague you trust to join." />
                 ) : (
                   list.map((m, i) => (
                     <MatchCard
@@ -510,7 +510,7 @@ export function CoverCandidatesView({
                           className="plain-button small"
                           style={{ color: "var(--danger)" }}
                         >
-                          Not a fit for this case
+                          Not a fit for this client
                         </button>
                       }
                     />
@@ -537,7 +537,7 @@ export function CoverInviteView({
   error,
 }: {
   plan: PlanSummary;
-  rows: { caseId: number; reference: string; focus: string; picks: { id: string; name: string }[] }[];
+  rows: { caseId: number; reference: string; focus: string; picks: { id: string; name: string; why?: string[] }[] }[];
   error?: string;
 }) {
   const total = rows.reduce((n, r) => n + r.picks.length, 0);
@@ -550,18 +550,27 @@ export function CoverInviteView({
         <div className="stack">
           <section className="card">
             <div className="eyebrow">Step 4 &middot; Recipients</div>
-            <h3>{total === 0 ? "No one selected yet" : `${total} colleague${total === 1 ? "" : "s"} across ${rows.filter((r) => r.picks.length).length} case${rows.filter((r) => r.picks.length).length === 1 ? "" : "s"}`}</h3>
-            {rows.length === 0 && <p className="small">Go back to Candidates and tick at least one colleague for a case.</p>}
+            <h3>{total === 0 ? "No one selected yet" : `${total} colleague${total === 1 ? "" : "s"} across ${rows.filter((r) => r.picks.length).length} client${rows.filter((r) => r.picks.length).length === 1 ? "" : "s"}`}</h3>
+            {rows.length === 0 && <p className="small">Go back to Candidates and tick at least one colleague for a client.</p>}
             {rows.map((r) => (
               <div key={r.caseId} className="pa-case">
                 <strong>{r.reference} &middot; {r.focus}</strong>
                 {r.picks.length === 0 ? (
-                  <p className="small" style={{ margin: "6px 0 0" }}>Nobody selected. This case won&rsquo;t be sent yet.</p>
+                  <p className="small" style={{ margin: "6px 0 0" }}>Nobody selected. Nothing will be sent for this client yet.</p>
                 ) : (
-                  <ol className="small" style={{ margin: "8px 0 0", paddingLeft: 18 }}>
-                    {r.picks.map((p) => (
+                  <ol className="invite-picks">
+                    {r.picks.map((p, n) => (
                       <li key={p.id}>
-                        {p.name}
+                        <span className="pick-order">{n + 1}</span>
+                        <div>
+                          <b>{p.name}</b>
+                          {n === 0 ? <small> &middot; asked first</small> : <small> &middot; asked if the colleague before declines</small>}
+                          {p.why && p.why.length > 0 && (
+                            <ul className="reasons" aria-label={`Why ${p.name} fits`}>
+                              {p.why.map((w) => <li key={w}>{w}</li>)}
+                            </ul>
+                          )}
+                        </div>
                         <input type="hidden" name={`pick_${r.caseId}`} value={p.id} />
                       </li>
                     ))}
@@ -578,7 +587,7 @@ export function CoverInviteView({
             </label>
             <label className="radio-card">
               <input type="radio" name="outreach_mode" value="parallel" defaultChecked={plan.absenceType === "unexpected"} />
-              <span><b>Everyone at once</b><span>Fastest. The first to accept covers the case; tell the others you&rsquo;re sorted.</span></span>
+              <span><b>Everyone at once</b><span>Fastest. The first to accept covers the client; tell the others you&rsquo;re sorted.</span></span>
             </label>
             <label className="field" style={{ marginTop: 10 }}>
               Short message (optional)
@@ -620,7 +629,7 @@ export function CoverTrackView({
   const exceptions = cases.filter((c) => c.status !== "confirmed");
   return (
     <>
-      <PlanHead plan={plan} step={4} lead="A request is not a confirmed plan. Each case stays open until a colleague accepts." />
+      <PlanHead plan={plan} step={4} lead="A request is not a confirmed plan. Each client stays open until a colleague accepts." />
       <Banner ok={ok} error={error} />
       <div className="split">
         <div className="stack">
@@ -670,7 +679,7 @@ export function CoverTrackView({
                 </div>
               );
             })}
-            {exceptions.length === 0 && cases.length > 0 && <p className="small" style={{ marginTop: 10 }}>Every case is covered.</p>}
+            {exceptions.length === 0 && cases.length > 0 && <p className="small" style={{ marginTop: 10 }}>Every client is covered.</p>}
           </section>
 
           {plan.status === "completed" && toRate.length > 0 && (
@@ -700,7 +709,7 @@ export function CoverTrackView({
             !done ? (
               <section className="card">
                 <h3>When you&rsquo;re back</h3>
-                <p className="small">Complete the plan to hand cases back and record who covered for you.</p>
+                <p className="small">Complete the plan to hand clients back and record who covered for you.</p>
                 <div className="row wrap">
                   <form action={completePlanAction} className="inline">
                     <input type="hidden" name="plan_id" value={plan.id} />

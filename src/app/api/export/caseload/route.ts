@@ -35,7 +35,7 @@ export async function GET() {
   ]);
 
   const header = [
-    "Case number",
+    "Client number",
     "Private client label",
     "Organization",
     "Active",
@@ -57,7 +57,7 @@ export async function GET() {
     const gross = caseMonthlyGross(c);
     const net = caseMonthlyNet(c, books || []);
     return [
-      `Case #${c.id}`,
+      `Client #${c.id}`,
       c.private_label || "",
       c.books_of_business?.name || "",
       c.is_active ? "Yes" : "No",

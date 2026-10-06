@@ -55,7 +55,7 @@ export async function createConsultation(
 ) {
   const hasCaseDetail = opts.caseDetail && Object.keys(opts.caseDetail).length > 0;
   if (hasCaseDetail && !opts.deidentificationConfirmed) {
-    return { consultationId: null, error: "Confirm the question is de-identified before posting a case detail." };
+    return { consultationId: null, error: "Confirm the question is de-identified before posting." };
   }
 
   const { data, error } = await supabase

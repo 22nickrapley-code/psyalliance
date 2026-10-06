@@ -67,12 +67,12 @@ export async function addCaseAction(formData: FormData) {
   if (!plan) back("/dashboard/cover", "Plan not found.");
   const path = `/dashboard/cover/${planId}?step=needs`;
   const focus = formData.getAll("focus").map(Number).filter((n) => n > 0);
-  if (focus.length === 0) back(path, "Choose a treatment focus for this case.");
+  if (focus.length === 0) back(path, "Choose a treatment focus for this client.");
   const { count } = await supabase.from("coverage_plan_cases").select("id", { count: "exact", head: true }).eq("coverage_plan_id", planId);
   const setting = String(formData.get("setting") || "either");
   const { error } = await supabase.from("coverage_plan_cases").insert({
     coverage_plan_id: planId,
-    case_reference: `Case ${(count || 0) + 1}`,
+    case_reference: `Client ${(count || 0) + 1}`,
     specialism_lookup_ids: Array.from(new Set(focus)).slice(0, 3),
     age_band: String(formData.get("age") || "") || null,
     modality: ["virtual", "in_person", "either"].includes(setting) ? setting : "either",
@@ -144,7 +144,7 @@ export async function sendInvitesAction(formData: FormData) {
       .update({ outreach_queue: mode === "sequential" ? picks.slice(1) : [] })
       .eq("id", c.id);
   }
-  if (sent === 0) back(invitePath, "Choose at least one colleague for a case before sending.");
+  if (sent === 0) back(invitePath, "Choose at least one colleague for a client before sending.");
   await supabase.from("coverage_plans").update({ status: "active", outreach_mode: mode }).eq("id", planId);
   revalidatePath("/dashboard/cover");
   redirect(`/dashboard/cover/${planId}?step=track&sent=${sent}`);

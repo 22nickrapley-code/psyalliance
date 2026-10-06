@@ -13,7 +13,7 @@ Two sites, two databases, never shared.
 | Sign-up | invitation only (`signup_mode` = `invite`) | invitation only; prospects use sandbox passes |
 | Email | Resend/Postmark once `email_api_key` is in Vault | never: no key, and every account is a demo account |
 | Robots | indexed | `Disallow: /`, `noindex` |
-| Home page | landing | guided tour (`/tour`) |
+| Home page | landing (what, why, how it differs, then demos, sandbox, join) | demo library (`/tour`) |
 
 `NEXT_PUBLIC_*` values are baked in at build time, which is why the demo is a separate build. The deploy script refuses to build the demo against the production project.
 
@@ -50,11 +50,11 @@ Nick, once (steps 1 to 4 and 6 done on 25 Sept):
 
 ## Prospect access (demo)
 
-Prospects ask for a sandbox at `/sandbox/request` (linked from the tour intro, every tour step and the end of each tour): name, email, role, state. Requests land in Admin → Sandbox passes → Requests. **Issue 7-day pass** creates that person's own link and shows it with a Copy button and a "Draft the email" link; you send it yourself. **Decline** closes the request. You can still issue a pass directly (3 to 30 days) for someone who asked in person, copy any live pass's link again, or revoke it. Never reuse one person's link for someone else. `request_sandbox` refuses outside the demo, rate-limits to 30 an hour and ignores a repeat while one is open.
+Prospects ask for a sandbox at `/sandbox/request` (linked from the demo library, every demo step, the end of each demo and the real home page): name, email, role, state. Requests land in Admin → Sandbox passes → Requests. **Issue 7-day pass** creates that person's own link and shows it with a Copy button and a "Draft the email" link; you send it yourself. **Decline** closes the request. You can still issue a pass directly (3 to 30 days) for someone who asked in person, copy any live pass's link again, or revoke it. Never reuse one person's link for someone else. `request_sandbox` refuses outside the demo, rate-limits to 30 an hour and ignores a repeat while one is open.
 
-The tour has two routes: a two-minute tour (`/tour/quick/...`, five screens from "I need six weeks away" to every case covered) and the full 13-step tour. Both are annotated previews: the one action each step is about is highlighted with a note; clicking it moves the story on, and any other link or submit explains itself and offers the sandbox.
+The demo site opens on a library of five short demos (`src/app/tour/demos.tsx`): cover your time away (6 screens), refer a client (5), ask colleagues a question (3), your day and your circle (4), join and get verified (3). Each step opens on a card (whose account, what is happening, what to look for) and the screen is revealed when the visitor clicks "Show me the screen". The one action each step is about is highlighted; clicking it moves on, and any other link or submit explains itself and offers the sandbox. A colleague's view (Maya, Samuel) is drawn in blue throughout. The end of each demo asks what to see next, unwatched demos first (remembered in the visitor's browser only). Old tour links redirect to the matching demo.
 
-Opening a pass link creates a fresh fictional practice (Alex Rivers, PsyD, Brooklyn, NY, licensed NY and NJ, six weeks of parental leave starting about five weeks out) among the 1,200 fictional colleagues. The guided tour tells the same story with the same cast and signs them in with a random one-off password nobody sees. No shared password exists.
+Opening a pass link creates a fresh fictional practice (Alex Rivers, PsyD, Brooklyn, NY, licensed NY and NJ, six weeks of parental leave starting about five weeks out) among the 1,200 fictional colleagues. The demos tell the same story with the same cast and signs them in with a random one-off password nobody sees. No shared password exists.
 
 - Colleagues answer the prospect's cover requests, referrals, consult questions, invitations and messages within a minute or two.
 - Email invitations are blocked for demo accounts; no email is ever sent.

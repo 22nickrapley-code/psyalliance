@@ -128,7 +128,7 @@ export default function PremiumShell({
                   </div>
                 </div>
                 <div className="band-actions">
-                  <Link className="btn" href="/tour">Guided tour</Link>
+                  <Link className="btn" href="/tour">Demos</Link>
                   {resetSandboxAction && demoSite.label && (
                     <form action={resetSandboxAction}>
                       <button type="submit" className="btn outline" title="Clears everything you have done here and restores Alex's practice">
