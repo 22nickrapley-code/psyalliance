@@ -47,7 +47,7 @@ export async function sendReferralAction(formData: FormData) {
   const reviewPath = `/dashboard/refer/new?${needToQuery(need, { step: "review" })}${picks.map((p) => `&pick=${p}`).join("")}`;
 
   if (need.focusIds.length === 0 || !need.state) back(reviewPath, "Choose a treatment focus and a state.");
-  if (formData.get("deidentified") !== "on") back(reviewPath, "Confirm the referral contains no patient-identifying details.");
+  if (formData.get("deidentified") !== "on") back(reviewPath, "Confirm the referral contains no client-identifying details.");
   const idErr = identifierError(notes);
   if (idErr) back(reviewPath, idErr);
   if (audience === "selected" && picks.length === 0) back(reviewPath, "Choose at least one colleague, or pick a wider audience.");

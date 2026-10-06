@@ -33,7 +33,7 @@ export async function draftConsultAction(formData: FormData) {
   if (!question) back(composePath, "Write your question in one sentence.");
   const idErr = identifierError(`${question}\n${context || ""}`);
   if (idErr) back(composePath, idErr);
-  if (formData.get("deidentified") !== "on") back(composePath, "Confirm the question contains no patient-identifying details.");
+  if (formData.get("deidentified") !== "on") back(composePath, "Confirm the question contains no client-identifying details.");
 
   const audience = String(formData.get("audience") || "trusted");
   let audienceType: "trusted" | "selected" | "wider_network" = "trusted";

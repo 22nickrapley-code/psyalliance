@@ -119,7 +119,7 @@ export function ConsultIndexView({
       <PageHead
         eyebrow="Consult / professional dialogue"
         title="Better questions, better thinking."
-        lead="Discuss practice questions with a chosen audience. Keep patient information out of the conversation."
+        lead="Discuss practice questions with a chosen audience. Keep client information out of the conversation."
         actions={<a className="btn" href={newHref}>{tab === "supervision" ? "Request supervision" : "Ask a question"}</a>}
       />
       <Banner error={error} />
@@ -195,7 +195,7 @@ export function ConsultIndexView({
           <section className="card tint">
             <div className="eyebrow">Before you post</div>
             <h3>Keep it focused and de-identified.</h3>
-            <p className="small">Use a short question, relevant context and an intentional audience. Do not include patient names, dates, contact details or an unusual combination of details that could identify someone.</p>
+            <p className="small">Use a short question, relevant context and an intentional audience. Do not include client names, dates, contact details or an unusual combination of details that could identify someone.</p>
             <a className="btn secondary small-btn" href="/dashboard/documents/PA-05">Use the question guide (PA-05)</a>
           </section>
           <section className="card">
@@ -342,7 +342,7 @@ export function ConsultComposeView({
 
           <label className="checkline" style={{ marginTop: 16 }}>
             <input type="checkbox" name="deidentified" required />
-            This contains no patient names, dates, contact details or identifying combinations of details.
+            This contains no client names, dates, contact details or identifying combinations of details.
           </label>
           <div className="step-actions">
             <a className="btn ghost" href="/dashboard/consult">Cancel</a>
@@ -397,7 +397,7 @@ export function ConsultDetailView({ c, ok, error, extra }: { c: ConsultDetail; o
               <div className="eyebrow" style={{ color: "#e2c49c" }}>Review</div>
               <h3>Exactly who will see this</h3>
               <p className="small">{c.audienceLabel}{c.recipients.length ? `: ${c.recipients.join(", ")}` : ""}.</p>
-              <p className="small">Check once more: no names, dates of birth, contact details or unusual combinations of details that could identify a patient.</p>
+              <p className="small">Check once more: no names, dates of birth, contact details or unusual combinations of details that could identify a client.</p>
               <div className="row wrap">
                 <form action={publishConsultAction} className="inline">
                   <input type="hidden" name="consultation_id" value={c.id} />
@@ -419,7 +419,7 @@ export function ConsultDetailView({ c, ok, error, extra }: { c: ConsultDetail; o
             <div className="chip-row">{c.tags.map((t) => <a key={t} className="chip" href={`/dashboard/consult?tag=${encodeURIComponent(t)}`}>{t}</a>)}</div>
             {!isDraft && (
               <div style={{ marginTop: 10 }}>
-                <ReportContent targetType="consultation" targetId={c.id} returnTo={`/dashboard/consult/${c.id}`} label={c.mine ? "Report patient information in this post" : "Report"} />
+                <ReportContent targetType="consultation" targetId={c.id} returnTo={`/dashboard/consult/${c.id}`} label={c.mine ? "Report client information in this post" : "Report"} />
               </div>
             )}
           </section>
@@ -455,7 +455,7 @@ export function ConsultDetailView({ c, ok, error, extra }: { c: ConsultDetail; o
                   <input type="hidden" name="consultation_id" value={c.id} />
                   <label className="field">
                     {c.mine ? "Add to the discussion" : "Your reply"}
-                    <textarea name="body" required maxLength={3000} placeholder="Share your thinking. No patient-identifying details." />
+                    <textarea name="body" required maxLength={3000} placeholder="Share your thinking. No client-identifying details." />
                   </label>
                   <div className="row between" style={{ marginTop: 10 }}>
                     <label className="checkline"><input type="checkbox" name="response_type" value="clarifying_question" /> This is a clarifying question</label>

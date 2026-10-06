@@ -11,7 +11,7 @@ import { professionFor, professionLabel, clinicianName, roleLabel } from "@/lib/
 
 // The one rule about patient details, worded the same everywhere.
 export const HANDOFF_RULE =
-  "Patient-identifying details are never entered or shared on PsyAlliance. Once a colleague accepts, you arrange the handoff between you through your own secure channel.";
+  "Don't enter details that identify a client on PsyAlliance. Once a colleague accepts, you arrange the handoff between you through your own secure channel.";
 
 export function initialsOf(name: string) {
   return (

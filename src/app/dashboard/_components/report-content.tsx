@@ -14,13 +14,13 @@ export function ReportContent({ targetType, targetId, returnTo, label = "Report"
         <label className="field">
           What&rsquo;s wrong
           <select name="category" defaultValue="patient_information">
-            <option value="patient_information">It identifies a patient</option>
+            <option value="patient_information">It identifies a client</option>
             <option value="conduct">Unprofessional or inappropriate</option>
             <option value="other">Something else</option>
           </select>
         </label>
         <label className="field">
-          Anything admins should know <span className="micro-note">(optional for patient information)</span>
+          Anything admins should know <span className="micro-note">(optional for client information)</span>
           <textarea name="reason" rows={2} placeholder="Don't repeat the identifying details here." />
         </label>
         <button type="submit" className="btn secondary small-btn" style={{ alignSelf: "flex-start" }}>Send to admins</button>

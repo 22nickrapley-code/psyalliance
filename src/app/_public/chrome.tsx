@@ -17,7 +17,11 @@ export function PublicNav({ home = false }: { home?: boolean }) {
         <a className="text-link" href={`${base}#how`}>How it works</a>
         <a className="text-link" href={`${base}#why`}>Why PsyAlliance</a>
         <a className="text-link keep" href={DEMOS_HREF}>Demos</a>
-        <a className="btn secondary small-btn" href="/auth/sign-in">Sign in</a>
+        {IS_DEMO_SITE ? (
+          <a className="btn secondary small-btn" href="/sandbox/request">Get a sandbox</a>
+        ) : (
+          <a className="btn secondary small-btn" href="/auth/sign-in">Sign in</a>
+        )}
         <a className="btn small-btn" href={JOIN_HREF}><span className="label-full">Request an invitation</span><span className="label-short">Join</span></a>
       </div>
     </nav>
@@ -40,7 +44,7 @@ export function PublicFooter({ home = false }: { home?: boolean }) {
         <a href={`${PUBLIC_BASE}/privacy`}>Privacy</a>
         <a href={`${PUBLIC_BASE}/terms`}>Terms</a>
         <a href="mailto:hello@psyalliance.org">Contact</a>
-        <a href="/auth/sign-in">Sign in</a>
+        {IS_DEMO_SITE ? <a href="/auth/sign-in" className="admin-link">Admin sign in</a> : <a href="/auth/sign-in">Sign in</a>}
       </div>
     </footer>
   );

@@ -32,7 +32,7 @@ export default async function SandboxRequestPage(props: { searchParams: Promise<
                 <div className="eyebrow">Request received</div>
                 <h3>We&rsquo;ll email you a personal link.</h3>
                 <p className="small">
-                  A member of the PsyAlliance team reads each request, usually within a working day. Your link is yours alone and works for 7 days;
+                  A member of the PsyAlliance team reads each request and emails you a link. It is yours alone and works for 7 days;
                   please don&rsquo;t pass it on. &ldquo;Start the story again&rdquo; inside the sandbox clears your fictional activity whenever you like.
                 </p>
                 <div className="row wrap" style={{ gap: 10, marginTop: 12 }}>
@@ -53,7 +53,7 @@ export default async function SandboxRequestPage(props: { searchParams: Promise<
                 </label>
                 <div className="field-pair">
                   <label className="field">
-                    Role
+                    <span>Role <span className="micro-note">(optional)</span></span>
                     <select name="role" defaultValue="">
                       <option value="">Choose one</option>
                       <option>Psychologist</option>
@@ -63,7 +63,7 @@ export default async function SandboxRequestPage(props: { searchParams: Promise<
                     </select>
                   </label>
                   <label className="field">
-                    State
+                    <span>State <span className="micro-note">(optional)</span></span>
                     <select name="state" defaultValue="">
                       <option value="">Choose one</option>
                       {US_STATES.map((s) => (

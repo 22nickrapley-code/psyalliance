@@ -32,9 +32,10 @@ export default async function JoinPage(props: { searchParams: Promise<{ sent?: s
                 licensed and we&rsquo;ll invite you when your state opens.
               </p>
               <ol className="join-steps">
-                <li><b>Request an invitation</b><span>Two minutes. This isn&rsquo;t membership yet.</span></li>
-                <li><b>We invite you when your state opens</b><span>A personal link by email. Nothing else in between.</span></li>
-                <li><b>A person checks your licence</b><span>Identity, doctoral degree and licence, against the state board, before you&rsquo;re listed.</span></li>
+                <li><b>Request an invitation</b><span>You&rsquo;ll see a confirmation straight away. This is a request, not membership.</span></li>
+                <li><b>We invite you when your state opens</b><span>A personal invitation link by email, once your state is open and you&rsquo;re eligible.</span></li>
+                <li><b>Set up your account</b><span>Add your practice details and each licence you hold.</span></li>
+                <li><b>A person reviews your licence</b><span>Identity, doctoral degree and licence, checked against the state board, before you&rsquo;re listed or matched.</span></li>
               </ol>
               <p className="small">
                 Not ready yet? <a href={DEMO_TOUR}>Watch the short demos</a> first.
@@ -55,7 +56,7 @@ export default async function JoinPage(props: { searchParams: Promise<{ sent?: s
                   <input name="full_name" required autoComplete="name" />
                 </label>
                 <label className="field">
-                  Work email
+                  Email you&rsquo;ll use for PsyAlliance
                   <input name="email" type="email" required autoComplete="email" />
                 </label>
                 <label className="field">

@@ -45,7 +45,7 @@ export async function createPlanAction(formData: FormData) {
   if (!title) back("/dashboard/cover/new", "Give the plan a short name, like \"October leave\".");
   const idErr = identifierError(title);
   if (idErr) back("/dashboard/cover/new", idErr);
-  if (!state) back("/dashboard/cover/new", "Choose the state your patients are in.");
+  if (!state) back("/dashboard/cover/new", "Choose the state your clients are in.");
   if (startsOn && endsOn && endsOn < startsOn) back("/dashboard/cover/new", "The return date is before the first day.");
 
   const { planId, error } = await createCoveragePlan(supabase, userId, {

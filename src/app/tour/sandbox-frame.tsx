@@ -32,11 +32,12 @@ export function TourFrame({
     colleague: boolean;
     lookFor?: string;
     last: boolean;
+    show?: boolean;
   };
 }) {
   const ref = useRef<HTMLDivElement>(null);
   // Each step opens on a short card; the screen is shown once it's read.
-  const [revealed, setRevealed] = useState(!intro);
+  const [revealed, setRevealed] = useState(!intro || intro.show === false);
   const [hasFocus, setHasFocus] = useState(false);
   const [inView, setInView] = useState(true);
   const revealBtn = useRef<HTMLButtonElement>(null);
@@ -96,11 +97,20 @@ export function TourFrame({
     place();
     const io = new IntersectionObserver(([e]) => setInView(e.isIntersecting && e.intersectionRatio > 0.6), { threshold: [0, 0.6, 1] });
     io.observe(el);
-    const onResize = () => place();
+    let raf = 0;
+    const onResize = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(place);
+    };
     window.addEventListener("resize", onResize);
+    // Sticky parts of the screen (the sidebar) move against the page as it
+    // scrolls, so the note is re-placed to stay beside its action.
+    window.addEventListener("scroll", onResize, { passive: true });
     const t = window.setTimeout(place, 400);
     return () => {
       window.removeEventListener("resize", onResize);
+      window.removeEventListener("scroll", onResize);
+      cancelAnimationFrame(raf);
       window.clearTimeout(t);
       io.disconnect();
       el.classList.remove("tour-focus", "tour-pulse");
@@ -128,8 +138,42 @@ export function TourFrame({
       if (submitter && target.current && (submitter === target.current || target.current.contains(submitter))) go();
       else explain();
     };
+    const demoOnly = () => setNote("Not available in the demo. Choosing and changing options works in your own sandbox and in PsyAlliance itself.");
+    const isField = (t: HTMLElement) => {
+      if (target.current && (t === target.current || target.current.contains(t))) return false;
+      if (!t.closest("[data-tour-screen]")) return false;
+      if (t.closest("summary")) return false;
+      const f = t.closest("input, select, textarea, label");
+      if (!f) return false;
+      // A label that wraps a link (a colleague's name) behaves like the link.
+      if (f.tagName === "LABEL" && t.closest("a")) return false;
+      return true;
+    };
+    const onPointer = (e: Event) => {
+      const t = e.target as HTMLElement;
+      if (isField(t)) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (e.type !== "mousedown") demoOnly();
+        (document.activeElement as HTMLElement | null)?.blur?.();
+      }
+    };
+    const onKey = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement;
+      if (["Tab", "Shift", "Escape"].includes(e.key)) return;
+      if (isField(t)) {
+        e.preventDefault();
+        demoOnly();
+      }
+    };
     const onClick = (e: MouseEvent) => {
       const t = e.target as HTMLElement;
+      if (isField(t)) {
+        e.preventDefault();
+        e.stopPropagation();
+        demoOnly();
+        return;
+      }
       if (t.closest("[data-tour-nav]") || t.closest(".tour-toast") || t.closest(".tour-callout") || t.closest(".tour-intro")) return;
       if (target.current && (t === target.current || target.current.contains(t))) {
         e.preventDefault();
@@ -155,7 +199,11 @@ export function TourFrame({
     };
     el.addEventListener("submit", onSubmit, true);
     el.addEventListener("click", onClick, true);
+    el.addEventListener("mousedown", onPointer, true);
+    el.addEventListener("keydown", onKey, true);
     return () => {
+      el.removeEventListener("mousedown", onPointer, true);
+      el.removeEventListener("keydown", onKey, true);
       el.removeEventListener("submit", onSubmit, true);
       el.removeEventListener("click", onClick, true);
     };
@@ -198,15 +246,15 @@ export function TourFrame({
         <div id="tour-callout" className={`tour-callout ${callout.side}`} style={{ top: callout.top, left: callout.left }} role="note">
           <b>{intro?.last ? "Last step" : "Next in the story"}</b>
           {focusNote}
-          <span className="tour-callout-hint">Click the highlighted {target.current?.closest(".sidebar") ? "link" : "button"} to {intro?.last ? "finish" : "continue"}.</span>
+          <span className="tour-callout-hint">{intro?.last ? "Then finish the demo below." : `Click the highlighted ${target.current?.closest(".sidebar") ? "link" : "button"} to continue.`}</span>
         </div>
       )}
-      {revealed && (!hasFocus || !inView) && (
+      {revealed && (!hasFocus || !inView || intro?.last) && (
         <div className={`tour-dock${intro?.colleague ? " colleague" : ""}`} role="region" aria-label="Next step" data-tour-nav>
           <span className="tour-dock-text">
             <b>{intro?.last ? "Last step" : "Next"}</b> {focusNote || "Continue the demo."}
           </span>
-          {hasFocus && (
+          {hasFocus && !inView && (
             <button type="button" className="tour-dock-show" onClick={showMe}>Show me &darr;</button>
           )}
           {next && <a className="tour-dock-go" href={next}>{intro?.last ? "Finish the demo" : "Continue"} &rarr;</a>}

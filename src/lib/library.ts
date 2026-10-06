@@ -26,8 +26,8 @@ export const WORKFLOW: Record<string, { label: string; href: string }> = {
   "PA-04": { label: "Consultation groups", href: "/dashboard/consult/groups" },
   "PA-05": { label: "Ask a question", href: "/dashboard/consult/new" },
   "PA-06": { label: "Supervision", href: "/dashboard/consult?tab=supervision" },
-  "PA-07": { label: "Refer a patient", href: "/dashboard/refer/new" },
-  "PA-08": { label: "Refer a patient", href: "/dashboard/refer/new" },
+  "PA-07": { label: "Refer a client", href: "/dashboard/refer/new" },
+  "PA-08": { label: "Refer a client", href: "/dashboard/refer/new" },
   "PA-19": { label: "Your credentials", href: "/dashboard/credentials" },
 };
 

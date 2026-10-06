@@ -107,7 +107,7 @@ export function AvailabilityView({ p, sp }: { p: AvailabilityData; sp: { confirm
           <Signal
             name="referral_availability"
             title="Referrals"
-            help="New patients referred to you by colleagues."
+            help="New clients referred to you by colleagues."
             options={REFERRAL}
             value={p?.referral_availability}
             preselect={preselect}
@@ -115,7 +115,7 @@ export function AvailabilityView({ p, sp }: { p: AvailabilityData; sp: { confirm
           <Signal
             name="coverage_availability"
             title="Cover"
-            help="Seeing a colleague's patients while they're away, for days or months."
+            help="Seeing a colleague's clients while they're away, for days or months."
             options={COVER}
             value={p?.coverage_availability}
             preselect={preselect}
@@ -131,7 +131,7 @@ export function AvailabilityView({ p, sp }: { p: AvailabilityData; sp: { confirm
           <div className="signal">
             <div className="fields">
               <label className="field">
-                Approximate spaces for new patients
+                Approximate spaces for new clients
                 <input type="number" name="approx_spaces" min={0} max={99} defaultValue={p?.approx_spaces ?? ""} placeholder="Optional" />
                 <small>A rough number helps colleagues pick. Leave blank if you&rsquo;d rather not say.</small>
               </label>

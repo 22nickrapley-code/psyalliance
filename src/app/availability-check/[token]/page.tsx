@@ -83,7 +83,7 @@ export default async function AvailabilityCheckPage(props: {
       </header>
       <main style={{ maxWidth: 560, margin: "0 auto", padding: "48px 20px 80px" }}>
         <section className="card">{body}</section>
-        <p className="micro-note" style={{ marginTop: 14 }}>No patient information is involved. You can change what we email you in Settings.</p>
+        <p className="micro-note" style={{ marginTop: 14 }}>No client information is involved. You can change what we email you in Settings.</p>
       </main>
     </div>
   );

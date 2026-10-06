@@ -4,6 +4,7 @@ import { IS_DEMO_SITE } from "@/lib/env";
 import { PublicNav } from "../../_public/chrome";
 import { enterSandboxAction } from "./actions";
 import { AlexCard } from "../../tour/story";
+import { createClient } from "@/lib/supabase/server";
 
 export const metadata = { title: "Your sandbox", robots: { index: false, follow: false } };
 
@@ -14,6 +15,14 @@ export default async function SandboxPage(props: { params: Promise<{ token: stri
   if (!IS_DEMO_SITE) notFound();
   const { token } = await props.params;
   const { error } = await props.searchParams;
+  // Say on arrival whether the link still works, rather than after a click.
+  const supabase = await createClient();
+  const { data: status } = await supabase.rpc("sandbox_pass_status", { p_token: token }).maybeSingle<{ state: string; expires_at: string | null }>();
+  const state = status?.state || "unknown";
+  const usable = state === "ok";
+  const until = status?.expires_at
+    ? new Date(status.expires_at).toLocaleDateString("en-US", { month: "long", day: "numeric", timeZone: "America/New_York" })
+    : null;
   return (
     <div className="pa">
       <PublicNav />
@@ -32,13 +41,24 @@ export default async function SandboxPage(props: { params: Promise<{ token: stri
             {error && <div className="banner error" role="alert">{error}</div>}
             <div className="story-intro">
               <div>
-                <AlexCard />
+                <AlexCard eyebrow="In your sandbox you’re" />
+{usable ? (
                 <form action={enterSandboxAction} className="way primary" style={{ marginTop: 16 }}>
                   <input type="hidden" name="token" value={token} />
                   <h3>Ready when you are</h3>
-                  <p>Your link is personal and expires. Opening it again starts the story from the beginning.</p>
+                  <p>Your link is personal{until ? ` and works until ${until}` : ""}. Opening it again starts the story from the beginning.</p>
                   <button type="submit" className="btn lg">Enter the sandbox &rarr;</button>
                 </form>
+                ) : (
+                  <div className="way" style={{ marginTop: 16 }}>
+                    <h3>{state === "expired" ? "This sandbox link has expired." : state === "revoked" ? "This sandbox link has been closed." : "We don't recognise this sandbox link."}</h3>
+                    <p>Sandbox links are personal and last 7 days. Ask for a new one and we&rsquo;ll email it to you.</p>
+                    <div className="row wrap" style={{ gap: 10 }}>
+                      <a className="btn lg" href="/sandbox/request">Ask for a new sandbox &rarr;</a>
+                      <a className="btn secondary" href="/tour">Watch the demos</a>
+                    </div>
+                  </div>
+                )}
               </div>
               <div>
                 <div className="eyebrow" style={{ marginBottom: 10 }}>A good order to explore</div>

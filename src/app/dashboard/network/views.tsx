@@ -325,7 +325,7 @@ export function NetworkView({
                 </nav>
               )}
               <p className="micro-note" style={{ marginTop: 16 }}>
-                Listed members are verified, with an active licence reviewed against the state board. Availability is set by each member; fit for a particular patient is always your clinical judgement.
+                Listed members are verified, with an active licence reviewed against the state board. Availability is set by each member; fit for a particular client is always your clinical judgement.
               </p>
             </>
           )}

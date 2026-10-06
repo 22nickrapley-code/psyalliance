@@ -124,7 +124,7 @@ const referralRows: [string, string][] = [
   ["Insurance", "Aetna"],
   ["Age band", "Adults"],
   ["Timeframe", "Within a month"],
-  ["Patient details shared", "None"],
+  ["Client details shared", "None"],
 ];
 
 // ---- Home and circle fixtures ----
@@ -185,9 +185,9 @@ const alexProfile: ClinicianProfile = {
   role: "Clinical psychologist",
   where: "Brooklyn, NY",
   avatarUrl: AV.alex,
-  licenceStates: ["New York", "New Jersey"],
+  licenceStates: ["New York"],
   psypact: true,
-  bio: "I work with adults and adolescents living with anxiety, trauma and OCD, mostly CBT, ERP and EMDR. In person in Brooklyn and by telehealth across New York and New Jersey.",
+  bio: "I work with adults and adolescents living with anxiety, trauma and OCD, mostly CBT, ERP and EMDR. In person in Brooklyn and by telehealth across New York.",
   availabilityChip: "Selected referrals",
   glance: [
     ["Primary service", "Psychotherapy and assessment"],
@@ -311,7 +311,7 @@ export const DEMOS: Demo[] = [
         title: "Back with Alex: every client covered",
         what: "Maya accepted her two clients and Eli Ramirez, a psychiatrist, accepted the one who needs prescribing. The handoffs now happen between the clinicians, outside PsyAlliance.",
         focus: "Complete plan",
-        focusNote: "When Alex is back, completing the plan records who covered. Finish the demo here.",
+        focusNote: "When Alex is back, completing the plan records who covered.",
         render: () => <CoverTrackView plan={{ ...plan, counts: { total: 3, covered: 3, invited: 0, open: 0 } }} cases={clientsCovered} nextSuggestion={{}} toRate={[]} />,
       },
     ],
@@ -321,12 +321,13 @@ export const DEMOS: Demo[] = [
     title: "Refer a client",
     blurb: "An enquiry Alex can't take. Describe the need, see who fits and why, and choose from the replies.",
     minutes: "2 minutes",
-    outcome: "The right colleague found, from people Alex trusts.",
+    outcome: "The right colleague found, and the handoff under way.",
     learned: [
       "You describe the need, never the person.",
       "The shortlist explains why each colleague fits, trusted colleagues first.",
       "You see exactly who receives the referral before it's sent.",
       "Colleagues reply Interested, Not available or with a question; you choose.",
+      "The handoff itself happens between you, outside PsyAlliance; then you close the referral.",
     ],
     steps: [
       {
@@ -402,10 +403,10 @@ export const DEMOS: Demo[] = [
         slug: "choose",
         perspective: "alex",
         title: "Everyone replied: Alex chooses",
-        what: "Two colleagues are interested and one is full. Interest isn't acceptance: Alex chooses Samuel, they agree the handoff between them, and the referral closes.",
+        what: "Two colleagues are interested and one is full. Interest isn't acceptance: Alex decides, and chooses Samuel, whom Alex has worked with before.",
         focus: "Choose and start handoff",
         focusIndex: 1,
-        focusNote: "Alex chooses Samuel. Finish the demo here.",
+        focusNote: "Alex chooses Samuel. Next, the handoff.",
         render: () => (
           <ReferTrackView
             r={{
@@ -420,7 +421,7 @@ export const DEMOS: Demo[] = [
               notes: "Adult, ERP experience needed, evenings preferred.",
               createdAt: daysAgo(3),
               requesterName: "You",
-              rows: [...referralRows.slice(0, 5), ["Audience", "Selected colleagues (3)"], ["Patient details shared", "None"]],
+              rows: [...referralRows.slice(0, 5), ["Audience", "Selected colleagues (3)"], ["Client details shared", "None"]],
               responses: [
                 { profileId: "maya", name: "Maya Chen, PsyD", status: "interested", message: "I have a Tuesday evening opening from next week.", avatarUrl: AV.maya },
                 { profileId: "sam", name: "Samuel Okafor, PhD", status: "interested", message: "Happy to. I run ERP weekly and can start in two weeks.", avatarUrl: AV.samuel },
@@ -428,6 +429,40 @@ export const DEMOS: Demo[] = [
               ],
               myResponse: null,
               chosen: null,
+              rated: false,
+            }}
+          />
+        ),
+      },
+      {
+        slug: "handoff",
+        perspective: "alex",
+        title: "Samuel chosen, handoff under way",
+        what: "The referral now shows Samuel as accepted. They arrange the clinical handoff between them through their own secure channel; once the client is placed, Alex closes the referral.",
+        focus: "Mark placed and close",
+        focusNote: "Once the client is placed, Alex closes the referral.",
+        render: () => (
+          <ReferTrackView
+            r={{
+              id: 5,
+              isMine: true,
+              focus: "Obsessive/Compulsive Disorder",
+              where: "Brooklyn, New York",
+              status: "connected",
+              audience: "selected",
+              audienceCount: 3,
+              timeframe: "within_month",
+              notes: "Adult, ERP experience needed, evenings preferred.",
+              createdAt: daysAgo(3),
+              requesterName: "You",
+              rows: [...referralRows.slice(0, 5), ["Audience", "Selected colleagues (3)"], ["Client details shared", "None"]],
+              responses: [
+                { profileId: "maya", name: "Maya Chen, PsyD", status: "interested", message: "I have a Tuesday evening opening from next week.", avatarUrl: AV.maya },
+                { profileId: "sam", name: "Samuel Okafor, PhD", status: "accepted", message: "Happy to. I run ERP weekly and can start in two weeks.", avatarUrl: AV.samuel },
+                { profileId: "lena", name: "Lena Park, PsyD", status: "unavailable", message: "Full until January, sorry.", avatarUrl: AV.lena },
+              ],
+              myResponse: null,
+              chosen: { profileId: "sam", name: "Samuel Okafor, PhD" },
               rated: false,
             }}
           />
@@ -444,14 +479,15 @@ export const DEMOS: Demo[] = [
     learned: [
       "Question and context first; it goes to your trusted colleagues unless you change it.",
       "You confirm it identifies no one, and review it before it's shared.",
-      "Replies come from named, verified colleagues; you mark what helped.",
+      "Replies come from named, verified colleagues; your useful marks are private to you.",
+      "For a standing group with a charter, use a consultation group instead.",
     ],
     steps: [
       {
         slug: "ask",
         perspective: "alex",
         title: "Alex asks the circle",
-        what: "How do colleagues run the handover call when someone covers mid-treatment? Alex writes the question and a little context. It goes to trusted colleagues unless Alex changes it.",
+        what: "How do colleagues run the handover call when someone covers mid-treatment? A quick question like this goes to the people Alex trusts and gets answers in a day. (Standing consultation groups, with a charter and regular meetings, are separate.)",
         focus: "Review before posting",
         focusNote: "Next, a last look before it's shared.",
         render: () => (
@@ -481,7 +517,7 @@ export const DEMOS: Demo[] = [
               kind: "question",
               question: "How do you structure the handover call when a colleague covers mid-treatment?",
               context: "Six weeks of parental leave coming up. I want the transition to feel steady for clients without over-sharing.",
-              typeLabel: "Termination and transfer",
+              typeLabel: "Practice question",
               tags: ["Private practice"],
               status: "draft",
               mine: true,
@@ -498,9 +534,9 @@ export const DEMOS: Demo[] = [
         slug: "replies",
         perspective: "alex",
         title: "Answers from people Alex trusts",
-        what: "Two replies by the next day. Alex marks the one that helped most, so the next colleague with the same question finds it first.",
-        focus: "Mark useful",
-        focusNote: "Alex marks Eli's practical tip too. Finish the demo here.",
+        what: "Two replies by the next day. Alex has marked Maya's reply as useful; only Alex sees those marks. With an answer in hand, Alex marks the question resolved.",
+        focus: "Mark resolved",
+        focusNote: "Alex marks the question resolved.",
         render: () => (
           <ConsultDetailView
             c={{
@@ -508,7 +544,7 @@ export const DEMOS: Demo[] = [
               kind: "question",
               question: "How do you structure the handover call when a colleague covers mid-treatment?",
               context: "Six weeks of parental leave coming up. I want the transition to feel steady for clients without over-sharing.",
-              typeLabel: "Termination and transfer",
+              typeLabel: "Practice question",
               tags: ["Private practice"],
               status: "responses_received",
               mine: true,
@@ -642,9 +678,8 @@ export const DEMOS: Demo[] = [
         slug: "messages",
         perspective: "alex",
         title: "Messages with context",
-        what: "Every thread shows what it's about, and View context opens the plan or referral behind it. The Practice Library's templates sit where they're needed.",
-        focus: "View context",
-        focusNote: "View context opens the plan this conversation is about. Finish the demo here.",
+        what: "Every conversation shows what it's about: this one is Alex's cover plan with Maya, so the thread and the plan stay together.",
+        focusNote: "That's a day in Alex's practice.",
         render: () => (
           <MessagesShell
             list={
@@ -734,9 +769,9 @@ export const DEMOS: Demo[] = [
         slug: "profile",
         perspective: "alex",
         title: "What colleagues see",
-        what: "Alex's profile as a colleague sees it: licences on file, focus, who Alex sees and current availability. Facts with dates, not testimonials or ratings.",
+        what: "Alex's profile as a colleague sees it: focus, who Alex sees and current availability, with dates. Only reviewed licences appear, so New Jersey shows here, and Alex is matched there, once a reviewer has checked it.",
         focus: "Send message",
-        focusNote: "Colleagues message or refer to Alex from here. Finish the demo here.",
+        focusNote: "Colleagues message or refer to Alex from here.",
         render: () => <ClinicianProfileView p={alexProfile} />,
       },
     ],

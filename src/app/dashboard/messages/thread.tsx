@@ -85,7 +85,7 @@ export async function ThreadPanel({ id, myself, error, draft }: { id: number; my
           return (
             <div key={m.id} className={`bubble${mine ? " me" : ""}`}>
               {m.deleted_at ? (
-                <em>{m.body && m.body.startsWith("[Removed by PsyAlliance") ? "Removed by PsyAlliance: it contained patient information" : "Message removed"}</em>
+                <em>{m.body && m.body.startsWith("[Removed by PsyAlliance") ? "Removed by PsyAlliance: it contained client information" : "Message removed"}</em>
               ) : (
                 <span style={{ whiteSpace: "pre-wrap" }}>{m.body}</span>
               )}

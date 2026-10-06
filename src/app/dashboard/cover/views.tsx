@@ -73,8 +73,8 @@ function PLAN_RESOURCE(type: string | null) {
   if (type === "reciprocal" || type === "short_planned")
     return { code: "PA-01", title: "Reciprocal Coverage Agreement", purpose: "Agree roles and response times with the colleague covering, with a per-client summary." };
   if (type === "closing_practice")
-    return { code: "PA-03", title: "Professional Will & Succession Plan", purpose: "Plan records custody, patient notice and the handover of your practice." };
-  return { code: "PA-02", title: "Extended Leave & Handoff Pack", purpose: "Keep continuity while you're away: patient letters, who does what, and a plan for your return." };
+    return { code: "PA-03", title: "Professional Will & Succession Plan", purpose: "Plan records custody, client notice and the handover of your practice." };
+  return { code: "PA-02", title: "Extended Leave & Handoff Pack", purpose: "Keep continuity while you're away: client letters, who does what, and a plan for your return." };
 }
 
 function PlanAside({ plan, extra }: { plan: PlanSummary; extra?: ReactNode }) {
@@ -320,20 +320,20 @@ export function CoverPlanStepView({
             <label className="field full">
               Plan name
               <input name="title" required maxLength={80} placeholder="e.g. October leave" defaultValue={preset?.title} />
-              <small>For your own reference. Never a patient name.</small>
+              <small>For your own reference. Never a client name.</small>
             </label>
             <label className="field">First day<input type="date" name="starts_on" defaultValue={preset?.starts} /></label>
             <label className="field">Return date<input type="date" name="ends_on" defaultValue={preset?.ends} /></label>
             <label className="field full">
               Jurisdiction
               <select name="state" required defaultValue={options.homeState || ""}>
-                <option value="">State your patients are in</option>
+                <option value="">State your clients are in</option>
                 {options.states.map((s) => <option key={s.code} value={s.code}>{s.name}</option>)}
               </select>
             </label>
           </div>
           <div className="tone-panel" style={{ marginTop: 16 }}>
-            <b>Private by design.</b> Leave out patient names, dates of birth and clinical details. Coordinate protected information through an appropriate clinical channel.
+            <b>Private by design.</b> Leave out client names, dates of birth and clinical details. Coordinate protected information through an appropriate clinical channel.
           </div>
           <div className="step-actions">
             <a className="btn ghost" href="/dashboard/cover">Cancel</a>
@@ -594,7 +594,7 @@ export function CoverInviteView({
             <label className="field" style={{ marginTop: 10 }}>
               Short message (optional)
               <textarea name="message" maxLength={400} placeholder="e.g. Weekly sessions, mostly Tuesday evenings. Happy to talk it through." />
-              <small>No patient-identifying details.</small>
+              <small>No client-identifying details.</small>
             </label>
             <label className="checkline" style={{ marginTop: 12 }}>
               <input type="checkbox" name="reviewed" required /> I&rsquo;ve reviewed who receives each request.

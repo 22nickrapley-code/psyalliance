@@ -23,7 +23,7 @@ const FAQ: [string, string][] = [
     "An admin has reviewed your professional identity, your doctoral degree and at least one in-date licence, checked against the state board. You're listed and matched only in states where a reviewed licence is on file.",
   ],
   [
-    "Do patient details go into PsyAlliance?",
+    "Do client details go into PsyAlliance?",
     "They shouldn't. Cover plans and referrals describe needs, not people (\"Client 3: adult, anxiety, telehealth, Aetna\"). Before anything is sent, PsyAlliance flags dates, phone numbers, email and street addresses and record numbers. It can't reliably recognise names, so leaving those out is up to you. If something identifying is shared by mistake, report it and an admin removes it. The clinical handoff happens outside PsyAlliance once a colleague agrees.",
   ],
   [
@@ -68,30 +68,30 @@ const DOES: { n: string; title: string; body: string; demo: string; demoLabel: s
     title: "Get your clients covered",
     body: "A week off, parental leave, an emergency or closing a practice. Describe each client by need, never by name. PsyAlliance suggests colleagues who fit and says why; you choose who's asked and track every client until someone accepts.",
     demo: "/cover",
-    demoLabel: "Watch the cover demo",
+    demoLabel: "Watch the cover demo · 2 min",
   },
   {
     n: "02 / Refer",
     title: "Refer to the right colleague",
     body: "Describe what the client needs. Get a shortlist ranked by your relationships, licence, focus, insurance and current availability, with the reasons shown. Send it to the people you choose, then pick from their replies.",
     demo: "/refer",
-    demoLabel: "Watch the referral demo",
+    demoLabel: "Watch the referral demo · 2 min",
   },
   {
     n: "03 / Consult",
     title: "Think it through with peers",
     body: "Ask one focused question of a colleague, your trusted circle or the wider verified network, and keep the answers that helped. Or run a closed consultation group with a written charter.",
     demo: "/consult",
-    demoLabel: "Watch the consultation demo",
+    demoLabel: "Watch the consultation demo · 1 min",
   },
 ];
 
 const COMPARE: [string, string, string, string][] = [
-  ["Who's in it", "Listed therapists of every kind, for patients to browse", "Whoever joined, usually unverified", "Doctoral psychologists and psychiatrists only, every licence checked by a person"],
-  ["Finding the right colleague", "Keyword search built for patients", "Post and hope someone answers", "Matched by licence, focus, setting and confirmed availability, with the reasons shown"],
-  ["Client privacy", "Not designed for handoffs between clinicians", "Easy to over-share in a thread", "Needs described without identifiers; handoffs agreed privately, outside PsyAlliance"],
-  ["Follow-through", "None", "Lost in the scroll", "Every request tracked until each client is covered or placed"],
-  ["Who you rely on", "Strangers", "Whoever is online", "Your trusted colleagues first, then the verified network"],
+  ["Who's in it", "Built for the public to find a therapist", "Membership varies by group", "Doctoral psychologists and psychiatrists, each licence reviewed by a person"],
+  ["Finding the right colleague", "Search designed for patients", "Depends on who sees the post", "Matched by licence, focus, setting and confirmed availability, with the reasons shown"],
+  ["Client privacy", "Not designed for handoffs between clinicians", "Free text in a shared thread", "Requests built around needs, with checks for obvious identifiers"],
+  ["Follow-through", "Outside what a directory does", "Replies can be hard to keep track of", "Each request shows who was asked, who replied and what's covered"],
+  ["Who you rely on", "Whoever is listed", "Whoever responds", "Your trusted colleagues first, then the verified network"],
 ];
 
 export default function HomePage() {
@@ -112,10 +112,10 @@ export default function HomePage() {
             </h1>
             <p className="lead">
               PsyAlliance is a private network of verified psychologists and psychiatrists. Find someone to cover your clients when you&rsquo;re away,
-              refer a client to the right colleague, and think a decision through with peers, without client identities ever entering the system.
+              refer a client to the right colleague, and think a decision through with peers. Requests describe needs, not people; PsyAlliance checks for obvious identifiers, and the clinical handoff happens through your own secure channel.
             </p>
             <div className="hero-actions">
-              <a className="btn lg" href={DEMO("/cover")}>Watch a 2-minute demo &rarr;</a>
+              <a className="btn lg" href={DEMO("/cover")}>Watch the 2-minute cover demo &rarr;</a>
               <a className="btn secondary lg" href="/join">Request an invitation</a>
             </div>
             <div className="hero-proof">
@@ -212,7 +212,7 @@ export default function HomePage() {
                   <div className="n">{d.n}</div>
                   <h3>{d.title}</h3>
                   <p>{d.body}</p>
-                  <a className="text-arrow" href={DEMO(d.demo)}>{d.demoLabel} &middot; 2 min &rarr;</a>
+                  <a className="text-arrow" href={DEMO(d.demo)}>{d.demoLabel} &rarr;</a>
                 </article>
               ))}
             </div>
@@ -259,7 +259,7 @@ export default function HomePage() {
               <a className="journey-step" href={DEMO()}>
                 <span className="k">1</span>
                 <b>Watch the demos</b>
-                <span>Five short demos, one for each thing PsyAlliance does. A minute or two each, no sign-up.</span>
+                <span>Five short demos: the three workflows, your network, and how joining works. A minute or two each, no sign-up.</span>
                 <span className="text-arrow">See the demos &rarr;</span>
               </a>
               <a className="journey-step" href={SANDBOX}>

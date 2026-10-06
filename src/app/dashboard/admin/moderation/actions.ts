@@ -50,7 +50,7 @@ export async function redactContentAction(formData: FormData) {
   const { error } = await supabase.rpc("admin_redact", {
     p_target_type: String(formData.get("target_type") || ""),
     p_target_id: String(formData.get("target_id") || ""),
-    p_reason: String(formData.get("reason") || "Patient information"),
+    p_reason: String(formData.get("reason") || "Client information"),
   });
   if (error) moderationError(error.message);
   revalidatePath("/dashboard/admin/moderation");

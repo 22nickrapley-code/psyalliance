@@ -86,7 +86,7 @@ export default async function ReferralDetailPage(props: {
       ...(r.age_band ? [["Age band", r.age_band] as [string, string]] : []),
       ["Timeframe", timeframeLabel],
       ...(isMine ? [["Audience", audienceLabel] as [string, string]] : []),
-      ["Patient details shared", "None"],
+      ["Client details shared", "None"],
     ],
     responses: (responses || []).map((x: any) => ({
       profileId: x.responding_profile_id,

@@ -91,7 +91,7 @@ export function CredentialsView({ sp, profile, licences, ce, panels, npiChecks }
       />
       <div className="split">
         <div className="stack">
-          <section className="card">
+          <section className="card verification-card">
             <div className="card-title">
               <h3>Verification</h3>
               {badge ? <Status>Verified</Status> : <Status tone="warn">Not yet listed</Status>}
@@ -291,7 +291,7 @@ export function CredentialsView({ sp, profile, licences, ce, panels, npiChecks }
             <div className="eyebrow">What your badge means</div>
             <h3>Reviewed, at a point in time.</h3>
             <p className="small" style={{ marginBottom: 0 }}>
-              Verified means an admin has reviewed your identity, doctoral degree and at least one in-date licence. It doesn&rsquo;t certify fitness for a particular patient, referral or state. Colleagues see the facts on file, with dates.
+              Verified means an admin has reviewed your identity, doctoral degree and at least one in-date licence. It doesn&rsquo;t certify fitness for a particular client, referral or state. Colleagues see the facts on file, with dates.
             </p>
           </section>
           <section className="card">

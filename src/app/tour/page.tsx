@@ -25,8 +25,8 @@ export default function DemoLibraryPage() {
                 <div className="eyebrow">Demos &middot; read-only &middot; fictional people</div>
                 <h1>See PsyAlliance in action.</h1>
                 <p className="lead">
-                  Five short demos, one for each thing PsyAlliance does. Each takes a minute or two on the real screens, with a fictional practice.
-                  Watch them in any order; we suggest starting with cover.
+                  Five short demos: the three workflows (cover, referrals and consultation), your day and your network, and how joining and verification
+                  work. Each takes a minute or two on the real screens, with a fictional practice. Watch them in any order; we suggest starting with cover.
                 </p>
               </div>
               <AlexCard compact />

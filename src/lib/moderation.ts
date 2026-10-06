@@ -28,7 +28,7 @@ export async function fileReport(
   opts: { targetType: ReportTargetType; targetId: string; reason: string; category?: ReportCategory }
 ) {
   const category: ReportCategory = opts.category || "other";
-  const reason = opts.reason.trim() || (category === "patient_information" ? "Contains patient information" : "");
+  const reason = opts.reason.trim() || (category === "patient_information" ? "Contains client information" : "");
   if (!reason) return { error: "Say what's wrong so an admin has something to act on" };
 
   const { error } = await supabase.from("reports").insert({

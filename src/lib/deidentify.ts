@@ -15,7 +15,7 @@ const PATTERNS: { re: RegExp; label: string }[] = [
   { re: /\b(19|20)\d{2}-\d{2}-\d{2}\b/, label: "a full date" },
   { re: /\b(d\.?o\.?b\.?|date of birth|born on)\b/i, label: "a date of birth" },
   { re: /\b\d{3}-\d{2}-\d{4}\b/, label: "a social security number" },
-  { re: /\b(mrn|medical record|chart (no|number)|patient id)\b/i, label: "a record number" },
+  { re: /\b(mrn|medical record|chart (no|number)|client id)\b/i, label: "a record number" },
   { re: /\b\d{1,5}\s+[A-Z][a-z]+\s+(street|st|avenue|ave|road|rd|lane|ln|drive|dr|boulevard|blvd)\b/i, label: "a street address" },
 ];
 
@@ -29,5 +29,5 @@ export function findIdentifiers(text: string | null | undefined): string[] {
 export function identifierError(text: string | null | undefined): string | null {
   const found = findIdentifiers(text);
   if (found.length === 0) return null;
-  return `Please remove ${found.join(" and ")}. Patient-identifying details are never entered on PsyAlliance; once a colleague accepts, you arrange the handoff through your own secure channel.`;
+  return `Please remove ${found.join(" and ")}. Details that identify a client don't belong on PsyAlliance; once a colleague accepts, you arrange the handoff through your own secure channel.`;
 }

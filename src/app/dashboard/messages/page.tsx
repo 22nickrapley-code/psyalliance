@@ -83,7 +83,7 @@ export default async function MessagesPage(props: { searchParams: Promise<{ erro
             </label>
             <label className="field grow">
               Message
-              <textarea name="body" required maxLength={4000} placeholder="Write a professional message. No patient-identifying details." />
+              <textarea name="body" required maxLength={4000} placeholder="Write a professional message. No client-identifying details." />
             </label>
             <div className="row between">
               <span className="micro-note">For a client question with several colleagues, use <a href="/dashboard/consult">Consult</a>.</span>

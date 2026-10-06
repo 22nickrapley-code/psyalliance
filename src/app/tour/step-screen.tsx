@@ -52,6 +52,9 @@ export function DemoStepScreen({ demo, index: i }: { demo: Demo; index: number }
         colleague,
         lookFor: s.focusNote,
         last,
+        // The card opens a demo, and again whenever the view switches
+        // between Alex and a colleague; other steps go straight to the screen.
+        show: i === 0 || PEOPLE[demo.steps[i - 1].perspective].colleague !== colleague,
       }}
     >
       <div className={`pa tour-top${colleague ? " as-colleague" : ""}`}>
@@ -71,8 +74,8 @@ export function DemoStepScreen({ demo, index: i }: { demo: Demo; index: number }
               {s.what}
             </p>
             <nav className="story-nav" aria-label="Demo">
-              <a className="btn ghost-on-dark" href={prev}>&larr; Back</a>
-              <a className="btn on-dark lg" href={next}>{last ? "Finish" : "Next"} &rarr;</a>
+              <a className="btn ghost-on-dark small-btn" href={prev}>&larr; Back</a>
+              <a className="btn ghost-on-dark small-btn" href={next}>{last ? "Finish" : "Skip"} &rarr;</a>
             </nav>
           </div>
           <div className="story-progress" aria-label={`Step ${i + 1} of ${demo.steps.length}`}>
@@ -107,7 +110,7 @@ export function DemoStepScreen({ demo, index: i }: { demo: Demo; index: number }
           activeHref={active}
           homeHref="/tour"
         >
-          <div data-tour-screen>{s.render()}</div>
+          <div data-tour-screen data-step={`${demo.key}-${s.slug}`}>{s.render()}</div>
         </PremiumShell>
       </div>
       <nav className={`pa story-mobile-nav${colleague ? " colleague" : ""}`} aria-label="Demo steps" data-tour-nav>

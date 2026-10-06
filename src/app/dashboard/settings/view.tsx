@@ -157,7 +157,7 @@ export function SettingsView({ sp, email, me, prefs, profile, emergency, exclude
 
           <section className="card" id="cover-contact">
             <h3>Emergency cover contact</h3>
-            <p className="small">The colleague to loop in if you&rsquo;re suddenly unavailable. A designation only: nothing about your patients is shared.</p>
+            <p className="small">The colleague to loop in if you&rsquo;re suddenly unavailable. A designation only: nothing about your clients is shared.</p>
             {emergency ? (
               <div className="row between">
                 <span className="small"><strong>{nameOf(emergency.contact)}</strong>{emergency.notes ? ` · ${emergency.notes}` : ""}</span>

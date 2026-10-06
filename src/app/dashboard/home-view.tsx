@@ -135,7 +135,7 @@ export function HomeView({ d }: { d: HomeData }) {
           <NeedFields options={d.options} compact />
           <div className="row wrap" style={{ marginTop: 14 }}>
             <button type="submit" className="btn on-dark">Find colleagues</button>
-            <span className="small" style={{ color: "#cfe0d4" }}>No patient details. Nothing is sent until you review.</span>
+            <span className="small" style={{ color: "#cfe0d4" }}>No client details. Nothing is sent until you review.</span>
           </div>
         </form>
       </dialog>
@@ -202,7 +202,7 @@ export function HomeView({ d }: { d: HomeData }) {
       <div className="section-heading"><h2>What would you like to do?</h2></div>
       <div className="tile-grid">
         <a className="task-tile" href="/dashboard/cover/new"><span className="symbol"><NavIcon name="cover" size={24} /></span><b>Find cover</b><span>Plan an absence &rarr;</span></a>
-        <a className="task-tile" href="/dashboard/refer/new"><span className="symbol"><NavIcon name="refer" size={24} /></span><b>Refer a patient</b><span>Find the right colleague &rarr;</span></a>
+        <a className="task-tile" href="/dashboard/refer/new"><span className="symbol"><NavIcon name="refer" size={24} /></span><b>Refer a client</b><span>Find the right colleague &rarr;</span></a>
         <a className="task-tile" href="/dashboard/consult"><span className="symbol"><NavIcon name="consult" size={24} /></span><b>Ask colleagues</b><span>Start a consultation &rarr;</span></a>
         <a className="task-tile" href="/dashboard/network"><span className="symbol"><NavIcon name="network" size={24} /></span><b>Find a clinician</b><span>Search your network &rarr;</span></a>
       </div>

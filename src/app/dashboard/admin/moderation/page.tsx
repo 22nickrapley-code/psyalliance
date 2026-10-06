@@ -19,7 +19,7 @@ const TARGET_LABELS: Record<string, string> = {
 };
 
 const CATEGORY: Record<string, [string, "" | "warn" | "danger" | "neutral"]> = {
-  patient_information: ["Patient information", "danger"],
+  patient_information: ["Client information", "danger"],
   conduct: ["Conduct", "warn"],
   other: ["Other", "neutral"],
 };
@@ -62,7 +62,7 @@ export default async function ModerationQueuePage(props: { searchParams: Promise
       <PageHead
         eyebrow="Admin"
         title="Moderation"
-        lead="Patient information comes first. Redacting replaces the text everywhere in PsyAlliance and keeps a log without the removed words."
+        lead="Client information comes first. Redacting replaces the text everywhere in PsyAlliance and keeps a log without the removed words."
       />
       <Banner error={error} ok={redacted ? "Redacted. The related reports are closed." : undefined} />
 
@@ -94,7 +94,7 @@ export default async function ModerationQueuePage(props: { searchParams: Promise
                   <form action={redactContentAction} className="inline">
                     <input type="hidden" name="target_type" value={r.target_type} />
                     <input type="hidden" name="target_id" value={r.target_id} />
-                    <input type="hidden" name="reason" value={r.category === "patient_information" ? "Patient information" : r.reason || "Moderation"} />
+                    <input type="hidden" name="reason" value={r.category === "patient_information" ? "Client information" : r.reason || "Moderation"} />
                     <button type="submit" className="btn small-btn">Redact</button>
                   </form>
                 )}

@@ -28,13 +28,13 @@ export function leaveDates(today = new Date()) {
   return { start: iso(monday), end: iso(end), range: `${short(monday)} to ${short(end)}`, startLong: long(monday) };
 }
 
-export function AlexCard({ compact }: { compact?: boolean }) {
+export function AlexCard({ compact, eyebrow = "In every demo you’re" }: { compact?: boolean; eyebrow?: string }) {
   const leave = leaveDates();
   return (
     <div className={`story-alex${compact ? " compact" : ""}`}>
       <span className="story-initials" aria-hidden="true">AR</span>
       <div>
-        <div className="eyebrow">In every demo you&rsquo;re</div>
+        <div className="eyebrow">{eyebrow}</div>
         <h3>Alex Rivers, PsyD</h3>
         <p>Clinical psychologist in Brooklyn, New York</p>
         {compact && <p className="story-alex-line">Six weeks of parental leave from {leave.startLong}. Licensed in New York and New Jersey.</p>}

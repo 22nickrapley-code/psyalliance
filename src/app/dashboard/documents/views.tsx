@@ -132,7 +132,7 @@ export function LibraryView({
               Every resource shows its version and its review status. Provisional ones are usable templates still waiting for independent review by an appointed clinician, lawyer or privacy reviewer. Each one links to the part of PsyAlliance where it helps.
             </p>
             <p className="small" style={{ marginBottom: 0 }}>
-              These are templates and guidance, not legal advice. Check your state&rsquo;s rules before you use one with patients.
+              These are templates and guidance, not legal advice. Check your state&rsquo;s rules before you use one with clients.
             </p>
           </section>
           <section className="card">
@@ -213,7 +213,7 @@ export function ResourceDetailView({
             </div>
           )}
           <p className="small" style={{ marginTop: 16, marginBottom: 0 }}>
-            A working copy goes to My Library, where only you can see it. Complete it outside PsyAlliance if it will hold patient details. Never upload a completed form that identifies a patient.
+            A working copy goes to My Library, where only you can see it. Complete it outside PsyAlliance if it will hold client details. Never upload a completed form that identifies a client.
           </p>
         </section>
         <aside className="stack">
@@ -343,7 +343,7 @@ export function MyLibraryView({
                   </select>
                 </label>
               )}
-              <p className="micro-note" style={{ margin: 0 }}>Practice documents only. Don&rsquo;t upload anything that identifies a patient.</p>
+              <p className="micro-note" style={{ margin: 0 }}>Practice documents only. Don&rsquo;t upload anything that identifies a client.</p>
               <button type="submit" className="btn">Upload</button>
             </form>
           </section>

@@ -88,7 +88,7 @@ export function ClinicianProfileView({ p, error }: { p: ClinicianProfile; error?
             </form>
           </div>
           <div className="hero-links">
-            <a href={`/dashboard/refer/new?state=${p.primaryState || ""}`}>Refer a patient &rarr;</a>
+            <a href={`/dashboard/refer/new?state=${p.primaryState || ""}`}>Refer a client &rarr;</a>
             <a href="/dashboard/cover/new">Ask for cover &rarr;</a>
           </div>
         </div>
@@ -177,7 +177,7 @@ export function ClinicianProfileView({ p, error }: { p: ClinicianProfile; error?
               {p.boardCertified && <li><span>Board certification</span><strong>Self-reported</strong></li>}
               <li><span>Availability</span><strong>{p.confirmed}</strong></li>
             </ul>
-            <p className="micro-note" style={{ marginTop: 14 }}>Specific work, jurisdictional authority and fit for a patient remain your own professional judgement.</p>
+            <p className="micro-note" style={{ marginTop: 14 }}>Specific work, jurisdictional authority and fit for a client remain your own professional judgement.</p>
           </section>
 
           <section className="card roomy">

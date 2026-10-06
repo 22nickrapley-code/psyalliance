@@ -179,7 +179,7 @@ export function ProfileView({
       <PageHead
         eyebrow="Your profile"
         title="What colleagues match against."
-        lead="Every referral and cover suggestion is computed from these facts. No patient information lives here."
+        lead="Every referral and cover suggestion is computed from these facts. No client information lives here."
         actions={
           <>
             <a className="btn secondary" href="/dashboard/profile">Cancel</a>
@@ -239,7 +239,7 @@ export function ProfileView({
                       <option key={s.code} value={s.code}>{s.name}</option>
                     ))}
                   </select>
-                  <small>Where you see patients in person. Add each licensed state in Credentials.</small>
+                  <small>Where you see clients in person. Add each licensed state in Credentials.</small>
                 </label>
                 <label className="field">
                   Practice website
@@ -361,7 +361,7 @@ export function ProfileView({
               <summary style={{ cursor: "pointer" }}>
                 <strong>About you</strong> <span className="small">(optional self-disclosure, never used for matching)</span>
               </summary>
-              <p className="small" style={{ marginTop: 10 }}>Some patients look for a clinician who shares part of their background. Leave any of this blank.</p>
+              <p className="small" style={{ marginTop: 10 }}>Some clients look for a clinician who shares part of their background. Leave any of this blank.</p>
               <label className="field" style={{ maxWidth: 240 }}>
                 Pronouns
                 <input id="pronoun" name="pronoun" placeholder="e.g. she/her" defaultValue={profile?.pronoun || ""} />

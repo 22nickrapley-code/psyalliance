@@ -42,7 +42,7 @@ function needRows(need: Need, options: Pick<NeedOptions, "focus" | "language" | 
   if (need.insurance) rows.push(["Insurance", need.insurance]);
   if (need.ageBand) rows.push(["Age band", need.ageBand]);
   if (need.languageId) rows.push(["Language", options.language.find((l) => l.id === need.languageId)?.value || "Selected"]);
-  rows.push(["Patient details shared", "None"]);
+  rows.push(["Client details shared", "None"]);
   return rows;
 }
 
@@ -258,7 +258,7 @@ export function ReferReviewView({
           </div>
           <label className="checkline" style={{ marginTop: 14 }}>
             <input type="checkbox" name="deidentified" required />
-            This referral contains no patient-identifying information.
+            This referral contains no client-identifying information.
           </label>
           <div className="step-actions">
             <a className="btn ghost" href={`/dashboard/refer/new?${needToQuery(need, { step: "shortlist" })}`}>&larr; Back to shortlist</a>
@@ -340,7 +340,7 @@ export function ReferIndexView({
       <PageHead
         eyebrow="Refer"
         title="A thoughtful route to the right colleague."
-        lead="Hand a patient to someone you trust, and see referrals that fit your practice."
+        lead="Hand a client to someone you trust, and see referrals that fit your practice."
         actions={<a className="btn" href="/dashboard/refer/new">New referral</a>}
       />
       <Banner ok={ok} error={error} />
@@ -350,14 +350,14 @@ export function ReferIndexView({
         <NeedFields options={options} compact />
         <div className="row" style={{ marginTop: 14 }}>
           <button type="submit" className="btn">Search colleagues</button>
-          <span className="small" style={{ color: "#cfe0d4" }}>No patient details. Nothing is sent until you review.</span>
+          <span className="small" style={{ color: "#cfe0d4" }}>No client details. Nothing is sent until you review.</span>
         </div>
       </form>
       <div className="split equal" style={{ marginTop: 20 }}>
         <section className="card">
           <div className="card-title"><h3>Your referrals</h3><span className="micro-note">{mine.length} total</span></div>
           {mine.length === 0 ? (
-            <QuietEmpty title="No referrals yet." body="When you can't take a patient, start here: describe the need and PsyAlliance shortlists the right colleagues." action={<a className="btn secondary small-btn" href="/dashboard/refer/new">Make a referral</a>} />
+            <QuietEmpty title="No referrals yet." body="When you can't take a client, start here: describe the need and PsyAlliance shortlists the right colleagues." action={<a className="btn secondary small-btn" href="/dashboard/refer/new">Make a referral</a>} />
           ) : (
             mine.map((r) => {
               const s = referralStatus(r);
@@ -515,7 +515,7 @@ export function ReferTrackView({ r, ok, error }: { r: ReferralDetail; ok?: strin
                   <label className="field" style={{ marginTop: 10 }}>
                     Message (optional)
                     <textarea name="message" maxLength={500} placeholder="e.g. I have two openings on Tuesday evenings." />
-                    <small>No patient-identifying details.</small>
+                    <small>No client-identifying details.</small>
                   </label>
                   <div className="step-actions"><span /><button type="submit" className="btn">Send reply</button></div>
                 </form>
@@ -529,7 +529,7 @@ export function ReferTrackView({ r, ok, error }: { r: ReferralDetail; ok?: strin
             <section className="card tint">
               <div className="eyebrow">Handoff</div>
               <h3>You chose {r.chosen.name}.</h3>
-              <p className="small">{HANDOFF_RULE} Close the referral once the patient is placed.</p>
+              <p className="small">{HANDOFF_RULE} Close the referral once the client is placed.</p>
               <div className="row wrap">
                 <form action={chooseReferralColleagueAction} className="inline">
                   <input type="hidden" name="referral_request_id" value={r.id} />
@@ -572,7 +572,7 @@ export function ReferTrackView({ r, ok, error }: { r: ReferralDetail; ok?: strin
           {r.isMine && open && (
             <section className="card">
               <h3>Close without placing</h3>
-              <p className="small">If the patient no longer needs a referral, close it so colleagues stop seeing it.</p>
+              <p className="small">If the client no longer needs a referral, close it so colleagues stop seeing it.</p>
               <form action={closeReferralAction}>
                 <input type="hidden" name="referral_request_id" value={r.id} />
                 <input type="hidden" name="outcome" value="closed" />

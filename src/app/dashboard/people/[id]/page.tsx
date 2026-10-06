@@ -134,7 +134,7 @@ export default async function PersonPage(props: { params: Promise<{ id: string }
       ["Cover", effectiveCover(p.coverage_availability, p.availability_confirmed_at, extra?.availability_paused_until).label],
       ["Consultation", AVAIL.consult[p.consultation_availability] || "Not set"],
       ["Supervision", p.open_to_give_supervision ? "Open to supervise" : p.open_to_receive_supervision ? "Seeking supervision" : "Not listed"],
-      ...(typeof extra?.approx_spaces === "number" ? ([["Spaces for new patients", `About ${extra.approx_spaces}`]] as [string, string][]) : []),
+      ...(typeof extra?.approx_spaces === "number" ? ([["Spaces for new clients", `About ${extra.approx_spaces}`]] as [string, string][]) : []),
       ...(extra?.availability_paused_until && extra.availability_paused_until >= today
         ? ([["Paused until", new Date(extra.availability_paused_until + "T12:00:00Z").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" })]] as [string, string][])
         : []),

@@ -1162,3 +1162,23 @@
 .pa .not-fit-btn{color:#8a978f}
 .pa .not-fit-btn:hover{color:var(--danger)}
 .pa .mini-person.selectable:has(input:checked) .not-fit-btn{display:none}
+/* Demo: verification screen keeps attention on the verification card. */
+[data-step="verified-credentials"] section.card:not(.verification-card){opacity:.38;filter:saturate(.5)}
+/* Room under the content so the bottom guide never covers it. */
+.tour-mode .pa .page{padding-bottom:130px}
+.tour-mode .pa .story-nav .btn{min-height:36px}
+/* Readability floor: calmer, larger text in dense areas. */
+.pa{font-size:15.5px}
+.pa .small{font-size:14px;line-height:1.6}
+.pa .micro-note{font-size:13px;color:#5b6a60}
+.pa .chip{font-size:12.5px}
+.pa .editorial-card p{font-size:15px;line-height:1.6}
+.pa .rules li,.pa .rules li b{font-size:15px}
+.pa .step p{font-size:15px}
+.pa .faq summary{font-size:16px}
+.pa .faq p{font-size:15px}
+.pa .compare-row > span{font-size:14.5px}
+.pa .field{font-size:13px}
+.pa .field input,.pa .field select,.pa .field textarea{font-size:14px}
+.pa .eyebrow{font-size:11.5px}
+.pa .public-footer .admin-link{opacity:.6;font-size:12px}
