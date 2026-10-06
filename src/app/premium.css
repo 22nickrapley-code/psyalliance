@@ -1068,6 +1068,30 @@
 .pa .journey-step > span:not(.k):not(.text-arrow){color:var(--muted);font-size:14.5px}
 .pa .journey-step .text-arrow{margin-top:auto;padding-top:8px}
 @media (max-width:820px){.pa .journey{grid-template-columns:1fr}}
+/* Home page, simplified (Oct 2026). */
+.pa .home-hero .hero-visual{min-height:0}
+.pa .public-section[id]{scroll-margin-top:72px}
+.pa .hero-free{margin:16px 0 0;font-size:15px;font-weight:650;color:var(--forest)}
+.pa .hero-trust{list-style:none;margin:36px 0 0;padding:20px 0 0;border-top:1px solid var(--line);display:flex;flex-wrap:wrap;gap:8px 24px;font-size:13px;color:var(--muted);max-width:560px}
+.pa .hero-trust li:before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--brass);margin-right:8px;vertical-align:middle}
+.pa .visual-list{padding-top:8px;padding-bottom:8px}
+.pa .visual-list .line{font-size:13px}
+.pa .visual-list .line .who{margin-left:auto;color:var(--muted)}
+.pa .section-more{margin:28px 0 0;display:flex;flex-wrap:wrap;gap:12px 32px}
+.pa .section-more .text-arrow{font-size:14px}
+.pa .section-inner.founder{align-items:center}
+.pa .founder-line{font-size:clamp(26px,2.5vw,34px);margin:10px 0 16px;max-width:660px}
+.pa .verify-intro{max-width:680px}
+@media (max-width:760px){
+  .pa .section-inner.founder{gap:22px}
+  .pa .section-inner.founder img{width:128px;height:150px}
+}
+@media (max-width:560px){
+  .pa .visual-list .line{flex-wrap:wrap;gap:4px 10px}
+  .pa .visual-list .line b{flex-basis:100%}
+  .pa .visual-list .line .who{margin-left:0}
+  .pa .visual-list .line .status{margin-left:auto}
+}
 
 /* Demo library. */
 .pa .demo-hub-head{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:40px;align-items:end;margin-bottom:34px}
