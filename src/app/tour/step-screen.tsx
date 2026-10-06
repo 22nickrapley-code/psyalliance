@@ -52,9 +52,8 @@ export function DemoStepScreen({ demo, index: i }: { demo: Demo; index: number }
         colleague,
         lookFor: s.focusNote,
         last,
-        // The card opens a demo, and again whenever the view switches
-        // between Alex and a colleague; other steps go straight to the screen.
-        show: i === 0 || PEOPLE[demo.steps[i - 1].perspective].colleague !== colleague,
+        // Every step opens on the card, so the story is read before the screen.
+        show: true,
       }}
     >
       <div className={`pa tour-top${colleague ? " as-colleague" : ""}`}>
