@@ -38,6 +38,7 @@ export function TourFrame({
   // Each step opens on a short card; the screen is shown once it's read.
   const [revealed, setRevealed] = useState(!intro);
   const [hasFocus, setHasFocus] = useState(false);
+  const [inView, setInView] = useState(true);
   const revealBtn = useRef<HTMLButtonElement>(null);
   useEffect(() => {
     if (!revealed) revealBtn.current?.focus();
@@ -80,10 +81,12 @@ export function TourFrame({
   // Find and mark the step's action.
   useEffect(() => {
     const root = ref.current;
-    const screen = root?.querySelector<HTMLElement>("[data-tour-screen]");
-    if (!root || !screen || !focus) return;
-    const want = clean(focus).toLowerCase();
-    const hits = Array.from(screen.querySelectorAll<HTMLElement>("a, button, summary")).filter((n) => clean(n.textContent).toLowerCase().startsWith(want));
+    // "nav:Availability" points at the sidebar; anything else at the screen.
+    const inNav = !!focus && focus.startsWith("nav:");
+    const scope = inNav ? root?.querySelector<HTMLElement>(".sidebar") : root?.querySelector<HTMLElement>("[data-tour-screen]");
+    if (!root || !scope || !focus) return;
+    const want = clean(inNav ? focus.slice(4) : focus).toLowerCase();
+    const hits = Array.from(scope.querySelectorAll<HTMLElement>("a, button, summary")).filter((n) => clean(n.textContent).toLowerCase().startsWith(want));
     const el = hits[Math.min(focusIndex, hits.length - 1)] || null;
     target.current = el;
     if (!el) return;
@@ -91,12 +94,15 @@ export function TourFrame({
     el.setAttribute("aria-describedby", "tour-callout");
     setHasFocus(true);
     place();
+    const io = new IntersectionObserver(([e]) => setInView(e.isIntersecting && e.intersectionRatio > 0.6), { threshold: [0, 0.6, 1] });
+    io.observe(el);
     const onResize = () => place();
     window.addEventListener("resize", onResize);
     const t = window.setTimeout(place, 400);
     return () => {
       window.removeEventListener("resize", onResize);
       window.clearTimeout(t);
+      io.disconnect();
       el.classList.remove("tour-focus", "tour-pulse");
       setHasFocus(false);
     };
@@ -113,7 +119,7 @@ export function TourFrame({
       setNote(
         target.current
           ? "This is a preview, so only the highlighted action works here. It continues the story."
-          : "This is a preview: nothing is sent. Use Next to continue the story."
+          : "This is a preview: nothing is sent. Use Continue at the bottom of the screen."
       );
     const onSubmit = (e: Event) => {
       e.preventDefault();
@@ -190,8 +196,20 @@ export function TourFrame({
       )}
       {revealed && callout && focusNote && (
         <div id="tour-callout" className={`tour-callout ${callout.side}`} style={{ top: callout.top, left: callout.left }} role="note">
-          <b>Next in the story</b>
+          <b>{intro?.last ? "Last step" : "Next in the story"}</b>
           {focusNote}
+          <span className="tour-callout-hint">Click the highlighted {target.current?.closest(".sidebar") ? "link" : "button"} to {intro?.last ? "finish" : "continue"}.</span>
+        </div>
+      )}
+      {revealed && (!hasFocus || !inView) && (
+        <div className={`tour-dock${intro?.colleague ? " colleague" : ""}`} role="region" aria-label="Next step" data-tour-nav>
+          <span className="tour-dock-text">
+            <b>{intro?.last ? "Last step" : "Next"}</b> {focusNote || "Continue the demo."}
+          </span>
+          {hasFocus && (
+            <button type="button" className="tour-dock-show" onClick={showMe}>Show me &darr;</button>
+          )}
+          {next && <a className="tour-dock-go" href={next}>{intro?.last ? "Finish the demo" : "Continue"} &rarr;</a>}
         </div>
       )}
       {note && (

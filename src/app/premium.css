@@ -1144,3 +1144,21 @@
 .pa .public-nav .label-short{display:none}
 @media (max-width:760px){.pa .public-nav .links .text-link.keep{display:inline-flex;font-size:13px;padding:8px 6px}}
 @media (max-width:420px){.pa .public-nav .label-full{display:none}.pa .public-nav .label-short{display:inline}.pa .public-nav{gap:10px;padding:0 16px}}
+
+/* Demos: there is always a visible way forward. */
+.tour-callout-hint{display:block;margin-top:6px;color:#e2c49c;font-size:12px;font-weight:600}
+.tour-mode .pa .sidebar a.tour-focus{pointer-events:auto;cursor:pointer;background:#fff8ec}
+.tour-dock{position:fixed;left:50%;transform:translateX(-50%);bottom:22px;z-index:96;display:flex;align-items:center;gap:14px;max-width:min(760px,calc(100vw - 32px));padding:12px 14px 12px 18px;background:#173b31;color:#e9f1ec;border-radius:12px;box-shadow:0 18px 50px rgba(15,45,37,.32);font:14px/1.4 Inter,Arial,sans-serif}
+.tour-dock.colleague{background:#2c3a78}
+.tour-dock-text{flex:1;min-width:0}
+.tour-dock-text b{color:#e2c49c;margin-right:6px}
+.tour-dock.colleague .tour-dock-text b{color:#c7cff7}
+.tour-dock-show{background:transparent;border:1px solid rgba(255,255,255,.35);color:#fff;border-radius:8px;padding:9px 12px;font:600 13px Inter,Arial,sans-serif;cursor:pointer;white-space:nowrap}
+.tour-dock-go{background:#e2c49c;color:#173b31;border-radius:8px;padding:10px 16px;font:700 14px Inter,Arial,sans-serif;text-decoration:none;white-space:nowrap}
+.tour-dock.colleague .tour-dock-go{background:#c7cff7;color:#1e2752}
+@media (max-width:760px){.tour-dock{bottom:calc(84px + env(safe-area-inset-bottom));left:12px;right:12px;transform:none;max-width:none;flex-wrap:wrap}.tour-dock-go{display:none}}
+
+/* Cover candidates: removing someone only makes sense if they're not ticked. */
+.pa .not-fit-btn{color:#8a978f}
+.pa .not-fit-btn:hover{color:var(--danger)}
+.pa .mini-person.selectable:has(input:checked) .not-fit-btn{display:none}

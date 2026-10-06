@@ -462,11 +462,13 @@ export function CoverCandidatesView({
   cases,
   suggestions,
   avatarUrls,
+  preselected,
 }: {
   plan: PlanSummary;
   cases: CaseItem[];
   suggestions: Record<number, Match[]>;
   avatarUrls: Record<string, string | null>;
+  preselected?: Record<number, string[]>;
 }) {
   const openCases = cases.filter((c) => c.status === "needs_cover" || c.status === "declined_all");
   return (
@@ -499,7 +501,7 @@ export function CoverCandidatesView({
                       m={m}
                       rank={i + 1}
                       avatarUrl={avatarUrls[m.profileId]}
-                      select={{ name: `pick_${c.id}`, checked: i === 0 }}
+                      select={{ name: `pick_${c.id}`, checked: preselected ? (preselected[c.id] || []).includes(m.profileId) : i === 0 }}
                       actions={
                         <button
                           type="submit"
@@ -507,10 +509,10 @@ export function CoverCandidatesView({
                           formMethod="post"
                           name="not_fit"
                           value={`${c.id}:${m.profileId}`}
-                          className="plain-button small"
-                          style={{ color: "var(--danger)" }}
+                          className="plain-button small not-fit-btn"
+                          title="Not a fit for this client: remove them from these suggestions"
                         >
-                          Not a fit for this client
+                          Remove from suggestions
                         </button>
                       }
                     />

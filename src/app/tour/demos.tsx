@@ -249,8 +249,8 @@ export const DEMOS: Demo[] = [
         title: "Matched colleagues, with the reasons",
         what: "For each client, colleagues with a reviewed New York licence, the right focus and recently confirmed availability, trusted colleagues first. Each match says why it fits.",
         focus: "Review invitations",
-        focusNote: "Alex has ticked who to ask. Next, a final check.",
-        render: () => <CoverCandidatesView plan={plan} cases={clientsOpen} suggestions={coverSuggestions} avatarUrls={avatars} />,
+        focusNote: "Alex has ticked who to ask for each client. Next, a final check.",
+        render: () => <CoverCandidatesView plan={plan} cases={clientsOpen} suggestions={coverSuggestions} avatarUrls={avatars} preselected={{ 1: ["maya", "imani"], 2: ["maya"], 3: ["eli"] }} />,
       },
       {
         slug: "invite",
@@ -310,6 +310,8 @@ export const DEMOS: Demo[] = [
         perspective: "alex",
         title: "Back with Alex: every client covered",
         what: "Maya accepted her two clients and Eli Ramirez, a psychiatrist, accepted the one who needs prescribing. The handoffs now happen between the clinicians, outside PsyAlliance.",
+        focus: "Complete plan",
+        focusNote: "When Alex is back, completing the plan records who covered. Finish the demo here.",
         render: () => <CoverTrackView plan={{ ...plan, counts: { total: 3, covered: 3, invited: 0, open: 0 } }} cases={clientsCovered} nextSuggestion={{}} toRate={[]} />,
       },
     ],
@@ -403,7 +405,7 @@ export const DEMOS: Demo[] = [
         what: "Two colleagues are interested and one is full. Interest isn't acceptance: Alex chooses Samuel, they agree the handoff between them, and the referral closes.",
         focus: "Choose and start handoff",
         focusIndex: 1,
-        focusNote: "Alex chooses Samuel.",
+        focusNote: "Alex chooses Samuel. Finish the demo here.",
         render: () => (
           <ReferTrackView
             r={{
@@ -498,7 +500,7 @@ export const DEMOS: Demo[] = [
         title: "Answers from people Alex trusts",
         what: "Two replies by the next day. Alex marks the one that helped most, so the next colleague with the same question finds it first.",
         focus: "Mark useful",
-        focusNote: "Alex marks Eli's practical tip too.",
+        focusNote: "Alex marks Eli's practical tip too. Finish the demo here.",
         render: () => (
           <ConsultDetailView
             c={{
@@ -641,6 +643,8 @@ export const DEMOS: Demo[] = [
         perspective: "alex",
         title: "Messages with context",
         what: "Every thread shows what it's about, and View context opens the plan or referral behind it. The Practice Library's templates sit where they're needed.",
+        focus: "View context",
+        focusNote: "View context opens the plan this conversation is about. Finish the demo here.",
         render: () => (
           <MessagesShell
             list={
@@ -696,6 +700,8 @@ export const DEMOS: Demo[] = [
         perspective: "alex",
         title: "A person checks every licence",
         what: "Alex adds each licence; a PsyAlliance reviewer checks it against the state board. New York is reviewed, New Jersey is waiting. Alex is matched only where a reviewed licence is on file.",
+        focus: "nav:Availability",
+        focusNote: "Next, Alex sets availability.",
         render: () => (
           <CredentialsView
             sp={{}}
@@ -715,6 +721,8 @@ export const DEMOS: Demo[] = [
         perspective: "alex",
         title: "Availability you control",
         what: "Whether Alex is taking referrals, open to cover or to consult. Colleagues see when it was last confirmed, so stale availability never looks current. Pausing for leave is one click.",
+        focus: "Save and confirm",
+        focusNote: "Save. Next, the profile colleagues see.",
         render: () => (
           <AvailabilityView
             p={{ referral_availability: "limited", coverage_availability: "ask_me", consultation_availability: "yes", availability_confirmed_at: daysAgo(3), approx_spaces: 2, availability_paused_until: null }}
@@ -727,6 +735,8 @@ export const DEMOS: Demo[] = [
         perspective: "alex",
         title: "What colleagues see",
         what: "Alex's profile as a colleague sees it: licences on file, focus, who Alex sees and current availability. Facts with dates, not testimonials or ratings.",
+        focus: "Send message",
+        focusNote: "Colleagues message or refer to Alex from here. Finish the demo here.",
         render: () => <ClinicianProfileView p={alexProfile} />,
       },
     ],
