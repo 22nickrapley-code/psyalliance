@@ -57,12 +57,26 @@ export function TourFrame({
     const r = el.getBoundingClientRect();
     if (r.width === 0 && r.height === 0) return setCallout(null);
     const base = root.getBoundingClientRect();
-    if (base.right - r.right > 310) {
-      return setCallout({ top: r.top - base.top + r.height / 2, left: r.right - base.left + 16, side: "right" });
-    }
-    const below = r.top - base.top < 90;
+    // A note shouldn't sit on top of another button or link on the screen.
+    const others = Array.from(root.querySelectorAll<HTMLElement>("[data-tour-screen] a, [data-tour-screen] button")).filter((n) => n !== el && !el.contains(n));
+    const clear = (x1: number, y1: number, x2: number, y2: number) =>
+      !others.some((n) => {
+        const o = n.getBoundingClientRect();
+        return o.width > 0 && o.left < x2 && o.right > x1 && o.top < y2 && o.bottom > y1;
+      });
     const left = Math.max(12, Math.min(r.left - base.left, base.width - 292));
-    setCallout({ top: below ? r.bottom - base.top + 10 : r.top - base.top - 10, left, side: below ? "below" : "above" });
+    const right = base.right - r.right > 310 ? { top: r.top - base.top + r.height / 2, left: r.right - base.left + 16, side: "right" as const } : null;
+    const above = r.top - base.top >= 90 ? { top: r.top - base.top - 10, left, side: "above" as const } : null;
+    const below = { top: r.bottom - base.top + 10, left, side: "below" as const };
+    const fits = (c: { top: number; left: number; side: "above" | "below" | "right" }) => {
+      const x1 = base.left + c.left;
+      const x2 = x1 + 280;
+      if (c.side === "right") return clear(x1, r.top + r.height / 2 - 50, x2, r.top + r.height / 2 + 50);
+      if (c.side === "above") return clear(x1, r.top - 110, x2, r.top - 10);
+      return clear(x1, r.bottom + 10, x2, r.bottom + 110);
+    };
+    const options = [right, above, below].filter(Boolean) as NonNullable<typeof right | typeof above | typeof below>[];
+    setCallout(options.find(fits) || options[0]);
   }, []);
 
   useEffect(() => {

@@ -1,5 +1,6 @@
 import type { Match } from "@/lib/match-engine";
 import { PageHead, Empty, Status, PersonAvatar, MatchCard } from "../_components/ui";
+import { Orbit, type CircleNode } from "../_components/orbit";
 import { respondToConnection, sendConnectionRequest, saveClinicianAction, removeSavedClinicianAction } from "./actions";
 import { roleLabel } from "@/lib/profession";
 import { US_STATES } from "@/lib/us-states";
@@ -139,6 +140,7 @@ export function NetworkView({
   counts,
   networkSize = 1,
   why,
+  circle,
 }: {
   tab: NetworkTab;
   people: Person[];
@@ -156,6 +158,7 @@ export function NetworkView({
   counts: Record<NetworkTab, number>;
   networkSize?: number;
   why?: string;
+  circle?: { nodes: CircleNode[]; me: { initials: string; avatarUrl: string | null } };
 }) {
   const pages = Math.max(1, Math.ceil(total / pageSize));
   const from = total === 0 ? 0 : (page - 1) * pageSize + 1;
@@ -363,20 +366,21 @@ export function NetworkView({
               ))
             )}
           </section>
-          <section className="card">
-            <div className="eyebrow">How relationships work</div>
-            <h3 className="serif-title" style={{ fontSize: 24 }}>A circle you control.</h3>
-            <p className="small" style={{ marginBottom: 0 }}>
-              <b style={{ color: "var(--ink)" }}>Trusted</b> is a reciprocal relationship and ranks first in every match. <b style={{ color: "var(--ink)" }}>Saved</b> is a private bookmark. <b style={{ color: "var(--ink)" }}>Worked with before</b> builds itself from completed referrals, cover and consults. Exclude or block anyone from their profile; they are never told.
-            </p>
-          </section>
-          <section className="card">
+          <section className="card circle-card-net">
             <div className="eyebrow">Your circle</div>
-            <ul className="count-list" style={{ marginTop: 10 }}>
-              <li><a href="/dashboard/network?tab=trusted">Trusted</a><b>{counts.trusted}</b></li>
-              <li><a href="/dashboard/network?tab=saved">Saved</a><b>{counts.saved}</b></li>
-              <li><a href="/dashboard/network?tab=worked">Worked with before</a><b>{counts.worked}</b></li>
+            {circle && circle.nodes.length > 0 && (
+              <div className="orbit-wrap">
+                <Orbit nodes={circle.nodes} me={circle.me} />
+              </div>
+            )}
+            <ul className="count-list circle-legend-net">
+              <li><i className="dot trusted" /><a href="/dashboard/network?tab=trusted">Trusted colleagues</a><b>{counts.trusted}</b></li>
+              <li><i className="dot worked" /><a href="/dashboard/network?tab=worked">Worked with before</a><b>{counts.worked}</b></li>
+              <li><i className="dot saved" /><a href="/dashboard/network?tab=saved">Saved</a><b>{counts.saved}</b></li>
             </ul>
+            <p className="small" style={{ margin: "12px 0 0" }}>
+              <b style={{ color: "var(--ink)" }}>Trusted</b> is mutual and ranks first in every match. <b style={{ color: "var(--ink)" }}>Worked with before</b> builds itself from completed referrals, cover and consults. <b style={{ color: "var(--ink)" }}>Saved</b> is a private bookmark.
+            </p>
           </section>
         </aside>
       </div>

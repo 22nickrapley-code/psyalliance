@@ -2,83 +2,62 @@
 
 import { useState } from "react";
 import type { NextStep } from "./home-view";
+import { NavIcon } from "./icons";
 
-const PER_PAGE = 3;
+const JOBS: { href: string; icon: string; title: string; sub: string }[] = [
+  { href: "/dashboard/cover/new", icon: "cover", title: "Find cover", sub: "Plan time away" },
+  { href: "/dashboard/refer/new", icon: "refer", title: "Refer a client", sub: "Find the right colleague" },
+  { href: "/dashboard/consult/new", icon: "consult", title: "Ask colleagues", sub: "Get a second opinion" },
+  { href: "/dashboard/network", icon: "network", title: "Find a clinician", sub: "Search your network" },
+];
 
-// Three next steps at a time, most urgent first, with pages for the rest.
-export function StepsPager({ steps }: { steps: NextStep[] }) {
-  const [page, setPage] = useState(0);
-  const pages = Math.max(1, Math.ceil(steps.length / PER_PAGE));
-  const shown = steps.slice(page * PER_PAGE, page * PER_PAGE + PER_PAGE);
+// The four jobs, and a fifth tile for anything waiting. Actions opens its
+// list in place, most urgent first.
+export function HomeTiles({ steps }: { steps: NextStep[] }) {
+  const [open, setOpen] = useState(false);
+  const n = steps.length;
+  const urgent = steps.some((s) => s.urgent);
   return (
     <>
-      {shown.map((s, i) => (
-        <div key={s.key} className={`step-item${s.urgent ? " urgent" : ""}`}>
-          <span className="row" style={{ alignItems: "flex-start", gap: 14 }}>
-            <span className="round-number">{page * PER_PAGE + i + 1}</span>
-            <span>
-              <strong>
-                {s.title}
-                {s.urgent && <span className="status warn" style={{ marginLeft: 8, verticalAlign: 1 }}>Urgent</span>}
-              </strong>
-              <p>{s.detail}</p>
-            </span>
-          </span>
-          <a className={`btn ${s.urgent || (page === 0 && i === 0) ? "" : "secondary "}small-btn`} href={s.href}>
-            {s.action}
+      <div className="home-tiles">
+        {JOBS.map((j) => (
+          <a key={j.href} className="home-tile" href={j.href}>
+            <span className="symbol"><NavIcon name={j.icon} size={26} /></span>
+            <b>{j.title}</b>
+            <span>{j.sub}</span>
           </a>
-        </div>
-      ))}
-      {pages > 1 && (
-        <div className="steps-pager">
-          <span className="micro-note">
-            Showing {page * PER_PAGE + 1}&ndash;{Math.min(steps.length, (page + 1) * PER_PAGE)} of {steps.length}
+        ))}
+        <button
+          type="button"
+          className={`home-tile actions-tile${n > 0 ? " has-actions" : ""}${urgent ? " urgent" : ""}${open ? " open" : ""}`}
+          aria-expanded={open}
+          aria-controls="home-actions"
+          onClick={() => setOpen(!open)}
+          disabled={n === 0}
+        >
+          <span className="symbol">
+            <span className="actions-count">{n}</span>
           </span>
-          <div className="dots" role="group" aria-label="Pages of next steps">
-            {Array.from({ length: pages }, (_, n) => (
-              <button
-                key={n}
-                type="button"
-                className={n === page ? "on" : ""}
-                aria-current={n === page ? "page" : undefined}
-                aria-label={`Page ${n + 1}`}
-                onClick={() => setPage(n)}
-              >
-                {n + 1}
-              </button>
-            ))}
-          </div>
-          <div className="nav">
-            <button type="button" className="plain-button small" disabled={page === 0} onClick={() => setPage(page - 1)}>
-              &larr; Previous
-            </button>
-            <button type="button" className="plain-button small" disabled={page >= pages - 1} onClick={() => setPage(page + 1)}>
-              Next &rarr;
-            </button>
-          </div>
-        </div>
+          <b>{n === 0 ? "No actions" : `Action${n === 1 ? "" : "s"} waiting`}</b>
+          <span>{n === 0 ? "You're up to date" : open ? "Hide the list" : steps[0].title}</span>
+        </button>
+      </div>
+      {open && n > 0 && (
+        <section id="home-actions" className="card home-actions">
+          {steps.map((s) => (
+            <div key={s.key} className={`action-row${s.urgent ? " urgent" : ""}`}>
+              <span className="action-text">
+                <strong>
+                  {s.title}
+                  {s.urgent && <span className="status warn" style={{ marginLeft: 8, verticalAlign: 1 }}>Urgent</span>}
+                </strong>
+                <small>{s.detail}</small>
+              </span>
+              <a className={`btn ${s.urgent ? "" : "secondary "}small-btn`} href={s.href}>{s.action}</a>
+            </div>
+          ))}
+        </section>
       )}
     </>
-  );
-}
-
-// Opens the quick referral search dialog rendered on the server.
-export function OpenDialogButton({ target, className, children }: { target: string; className?: string; children: React.ReactNode }) {
-  return (
-    <button
-      type="button"
-      className={className}
-      onClick={() => (document.getElementById(target) as HTMLDialogElement | null)?.showModal()}
-    >
-      {children}
-    </button>
-  );
-}
-
-export function CloseDialogButton({ target }: { target: string }) {
-  return (
-    <button type="button" aria-label="Close" onClick={() => (document.getElementById(target) as HTMLDialogElement | null)?.close()}>
-      &times;
-    </button>
   );
 }

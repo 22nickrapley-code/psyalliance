@@ -128,6 +128,21 @@ const referralRows: [string, string][] = [
 ];
 
 // ---- Home and circle fixtures ----
+const ALEX_CIRCLE = {
+  me: { initials: "AR", avatarUrl: AV.alex as string | null },
+  nodes: [
+    { id: "maya", name: "Maya Chen, PsyD", kind: "trusted", avatarUrl: AV.maya },
+    { id: "sam", name: "Samuel Okafor, PhD", kind: "trusted", avatarUrl: AV.samuel },
+    { id: "t3", name: "Aaron Garcia, DO", kind: "trusted", avatarUrl: null },
+    { id: "t4", name: "Aaron Howard, PhD", kind: "trusted", avatarUrl: null },
+    { id: "t5", name: "Adrian Dalton, PsyD", kind: "trusted", avatarUrl: null },
+    { id: "t6", name: "Adrian Ramirez, PsyD", kind: "trusted", avatarUrl: null },
+    { id: "t7", name: "Aaron Quinn, PsyD", kind: "trusted", avatarUrl: null },
+    { id: "eli", name: "Eli Ramirez, MD", kind: "worked", avatarUrl: AV.eli },
+    { id: "lena", name: "Lena Park, PsyD", kind: "saved", avatarUrl: AV.lena },
+    { id: "noah", name: "Noah Patel, PsyD", kind: "saved", avatarUrl: AV.noah },
+  ] as { id: string; name: string; kind: "trusted" | "worked" | "saved"; avatarUrl: string | null }[],
+};
 const people: Person[] = [
   { id: "maya", name: "Maya Chen, PsyD", qualification: "PsyD", city: "Brooklyn", state: "NY", licenceStates: ["NY"], topFocus: ["Trauma/PTSD", "Anxiety/Panic Disorders"], modalities: ["EMDR"], availability: "Accepting referrals", fresh: true, confirmedDaysAgo: 3, psypact: false, avatarUrl: AV.maya, relationship: "trusted", saved: false },
   { id: "sam", name: "Samuel Okafor, PhD", qualification: "PhD", city: "Brooklyn", state: "NY", licenceStates: ["NY"], topFocus: ["Obsessive/Compulsive Disorder", "Anxiety/Panic Disorders"], modalities: ["Exposure and Response Prevention"], availability: "Accepting referrals", fresh: true, confirmedDaysAgo: 8, psypact: false, avatarUrl: AV.samuel, relationship: "trusted", saved: false },
@@ -569,7 +584,7 @@ export const DEMOS: Demo[] = [
     minutes: "2 minutes",
     outcome: "A clear morning, and colleagues you can reach.",
     learned: [
-      "Home puts one thing first, then everything else in order.",
+      "Home is four jobs and one Actions tile, nothing else.",
       "Search the network by need; trusted colleagues come first, with reasons.",
       "Profiles show facts on file with dates, not testimonials.",
       "Every conversation shows what it's about.",
@@ -579,7 +594,7 @@ export const DEMOS: Demo[] = [
         slug: "home",
         perspective: "alex",
         title: "Alex's morning",
-        what: "Home answers one question: what needs me now? One clear place to start, then everything else in order, three at a time, with Alex's availability beside it.",
+        what: "Home asks one question: what would you like to do? Four jobs, and a fifth tile that counts what's waiting for Alex and opens the list in place. Availability sits underneath as one line.",
         focus: "Find a clinician",
         focusNote: "Next, find a colleague in the network.",
         render: () => (
@@ -588,14 +603,8 @@ export const DEMOS: Demo[] = [
               firstName: "Alex",
               today: new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", timeZone: "America/New_York" }),
               greeting: "Good morning",
-              startHere: {
-                title: "Aaron needs cover for two clients. Review the request.",
-                body: "Accept, decline or discuss each client on their own. Accepting marks that client covered on Aaron's plan; you then arrange the handoff between you, outside PsyAlliance.",
-                href: "#",
-                action: "Review Aaron's request",
-                urgent: true,
-              },
               steps: [
+                { key: "c", title: "Aaron needs cover for two clients", detail: "An unexpected absence this week. Accept, discuss or decline each client.", href: "#", action: "Review the request", urgent: true },
                 { key: "r", title: "Your Obsessive/Compulsive Disorder referral is ready to choose", detail: "Everyone you asked has replied. 2 interested", href: "#", action: "Choose a colleague" },
                 { key: "o", title: "3 referrals are waiting for your reply", detail: "Trauma/PTSD from Maya Chen · Anxiety/Panic Disorders from Eli Ramirez · Anxiety/Panic Disorders from Aaron Quinn", href: "#", action: "Review referrals" },
                 { key: "i", title: "2 colleagues invited you to their trusted circle", detail: "Imani Brooks, Adrian Turner", href: "#", action: "Review" },
@@ -603,35 +612,6 @@ export const DEMOS: Demo[] = [
               ],
               gettingStarted: null,
               availability: { referrals: "Selected referrals", cover: "Cover: ask me", consult: "Open to consult", confirmedLabel: "Last confirmed 3 days ago", stale: false, canReconfirm: true },
-              relevant: [
-                { key: "1", title: "Cover request: 2 clients", detail: "From Aaron Garcia, DO", why: "Sent to you", href: "#" },
-                { key: "2", title: "Referral: Trauma/PTSD + Stress", detail: "From Maya Chen, PsyD · NY", why: "From your trusted circle", href: "#" },
-                { key: "3", title: "Referral: Anxiety/Panic Disorders + Life Transitions", detail: "From Eli Ramirez, MD · NY", why: "Sent to you", href: "#" },
-              ],
-              circle: {
-                trusted: 7,
-                saved: 5,
-                workedWith: 3,
-                newThisMonth: 1,
-                recentlyAvailable: ["Maya Chen", "Samuel Okafor"],
-                me: { initials: "AR", avatarUrl: AV.alex },
-                nodes: [
-                  { id: "maya", name: "Maya Chen, PsyD", kind: "trusted", avatarUrl: AV.maya },
-                  { id: "sam", name: "Samuel Okafor, PhD", kind: "trusted", avatarUrl: AV.samuel },
-                  { id: "t3", name: "Aaron Garcia, DO", kind: "trusted", avatarUrl: null },
-                  { id: "t4", name: "Aaron Howard, PhD", kind: "trusted", avatarUrl: null },
-                  { id: "t5", name: "Adrian Dalton, PsyD", kind: "trusted", avatarUrl: null },
-                  { id: "t6", name: "Adrian Ramirez, PsyD", kind: "trusted", avatarUrl: null },
-                  { id: "t7", name: "Aaron Quinn, PsyD", kind: "trusted", avatarUrl: null },
-                  { id: "eli", name: "Eli Ramirez, MD", kind: "worked", avatarUrl: AV.eli },
-                  { id: "lena", name: "Lena Park, PsyD", kind: "saved", avatarUrl: AV.lena },
-                  { id: "noah", name: "Noah Patel, PsyD", kind: "saved", avatarUrl: AV.noah },
-                ],
-              },
-              resources: [
-                { code: "PA-02", title: "Extended Leave Coverage Plan & Clinical Handoff Pack", purpose: "Guidance and a handoff pack for your cover plan.", href: "#", provisional: true },
-                { code: "PA-07", title: "Referral Outcome & Handoff Responsibilities", purpose: "Referral outcomes and handoff responsibilities.", href: "#", provisional: true },
-              ],
               options,
             }}
           />
@@ -646,6 +626,7 @@ export const DEMOS: Demo[] = [
         focusNote: "Open a colleague's profile.",
         render: () => (
           <NetworkView
+            circle={ALEX_CIRCLE}
             tab="directory"
             people={people}
             total={people.length}

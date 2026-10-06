@@ -7,6 +7,7 @@ import { clinicianName } from "@/lib/profession";
 import { IS_DEMO_SITE } from "@/lib/env";
 import { loadNeedOptions } from "@/lib/need-options";
 import { NetworkView, type NetworkTab, type Person, type Invitation } from "./views";
+import type { CircleNode } from "../_components/orbit";
 
 const PAGE_SIZE = 20;
 
@@ -44,7 +45,7 @@ export default async function NetworkPage(props: {
       supabase.from("saved_clinicians").select("clinician_id").eq("profile_id", myself),
       supabase.from("worked_with_before").select("colleague_id").eq("profile_id", myself),
       supabase.from("do_not_work_with").select("blocked_profile_id").eq("profile_id", myself),
-      supabase.rpc("my_profile").select("primary_state").maybeSingle<any>(),
+      supabase.rpc("my_profile").select("primary_state, full_name, avatar_path").maybeSingle<any>(),
       supabase
         .from("profile_lookup_values")
         .select("lookup_value_id, rank, lookup_values!inner(category)")
@@ -100,7 +101,31 @@ export default async function NetworkPage(props: {
   });
   const res = (result as any) || { total: 0, all: 0, people: [], options: {} };
   const rows: any[] = res.people || [];
-  const urls = await resolveAvatarUrls(supabase, [...rows.map((p) => p.avatar_path), ...invites.map((i) => i.avatarPath)]);
+  // The member's circle, drawn as rings: trusted closest, then worked with
+  // before and saved.
+  const kindOf = (pid: string): CircleNode["kind"] => (trusted.has(pid) ? "trusted" : worked.has(pid) ? "worked" : "saved");
+  const circleIds = [...trusted, ...[...worked].filter((x) => !trusted.has(x)), ...[...saved].filter((x) => !trusted.has(x) && !worked.has(x))].slice(0, 18);
+  const { data: circlePeople } = circleIds.length
+    ? await supabase.from("profiles").select("id, full_name, credential_prefix, qualification_level, avatar_path").in("id", circleIds)
+    : { data: [] as any[] };
+  const urls = await resolveAvatarUrls(supabase, [
+    ...rows.map((p) => p.avatar_path),
+    ...invites.map((i) => i.avatarPath),
+    ...(circlePeople || []).map((p: any) => p.avatar_path),
+    myProfile?.avatar_path,
+  ]);
+  const circleNodes: CircleNode[] = (circlePeople || []).map((p: any) => ({
+    id: p.id,
+    name: clinicianName(p.full_name, p.qualification_level, p.credential_prefix),
+    kind: kindOf(p.id),
+    avatarUrl: urls.get(p.avatar_path || "") || null,
+  }));
+  const myInitials = String(myProfile?.full_name || "")
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w: string) => w[0]?.toUpperCase())
+    .join("");
 
   const people: Person[] = rows.map((p) => {
     const age = p.confirmed_at ? Math.floor((Date.now() - new Date(p.confirmed_at).getTime()) / 86_400_000) : null;
@@ -175,6 +200,7 @@ export default async function NetworkPage(props: {
       states={states}
       counts={{ directory: Number(res.all) || 0, trusted: trusted.size, worked: worked.size, saved: saved.size, suggested: 0 }}
       networkSize={Number(res.all) || 0}
+      circle={{ nodes: circleNodes, me: { initials: myInitials || "You", avatarUrl: urls.get(myProfile?.avatar_path || "") || null } }}
       why={
         tab === "directory"
           ? `${homeDefault ? "Showing your state first. " : ""}Trusted colleagues and people you've worked with come first, then members who confirmed their availability in the last 30 days.`

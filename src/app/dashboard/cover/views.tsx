@@ -142,7 +142,7 @@ export type IncomingPlan = {
   note: string | null;
   urgent: boolean;
   sentAt: string | null;
-  cases: { requestId: number; reference: string | null; focus: string; details: [string, string][] }[];
+  cases: { requestId: number; status?: string; reference: string | null; focus: string; details: [string, string][] }[];
 };
 
 function IncomingCard({ r }: { r: IncomingPlan }) {
@@ -158,7 +158,11 @@ function IncomingCard({ r }: { r: IncomingPlan }) {
             </h3>
             <span className="row" style={{ gap: 6 }}>
               {r.urgent && <Status tone="danger">Urgent</Status>}
-              <Status tone="warn">Needs your reply</Status>
+              {r.cases.every((c) => c.status === "discussing") ? (
+                <Status tone="neutral">In discussion</Status>
+              ) : (
+                <Status tone="warn">Needs your reply</Status>
+              )}
             </span>
           </div>
           <p className="small" style={{ margin: "3px 0 0" }}>{r.ownerRole}</p>
@@ -178,11 +182,12 @@ function IncomingCard({ r }: { r: IncomingPlan }) {
           const ownerFirst = r.ownerName.replace(/^(dr\.?)\s+/i, "").split(/[\s,]+/)[0];
           const draft = `Hi ${ownerFirst}, I may be able to cover ${label} (${c.focus}) for ${r.dates}. Before I accept, could we talk through the schedule and how you'd like the handoff to work?`;
           return (
-          <div key={c.requestId} className="incoming-case">
+          <div key={c.requestId} className={`incoming-case${c.status === "discussing" ? " is-discussing" : ""}`}>
             <div className="row between wrap" style={{ gap: 8 }}>
               <strong>
                 {label} &middot; {c.focus}
               </strong>
+              {c.status === "discussing" && <span className="status warn">You&rsquo;re discussing this one</span>}
             </div>
             <dl className="case-facts">
               {c.details.map(([k, v]) => (
@@ -194,9 +199,11 @@ function IncomingCard({ r }: { r: IncomingPlan }) {
               <input type="hidden" name="owner_id" value={r.ownerId} />
               <input type="hidden" name="thread_title" value={`Cover · ${r.planTitle} · ${label} · ${c.focus}`} />
               <input type="hidden" name="draft" value={draft} />
-              <button type="submit" name="response" value="accepted" className="btn small-btn">Accept {label}</button>
-              <button type="submit" name="response" value="discussing" className="btn secondary small-btn">Discuss first</button>
-              <button type="submit" name="response" value="declined" className="btn ghost small-btn">Decline</button>
+              <button type="submit" name="response" value="accepted" className="btn small-btn resp-accept">Accept {label}</button>
+              {c.status !== "discussing" && (
+                <button type="submit" name="response" value="discussing" className="btn small-btn resp-discuss">Discuss first</button>
+              )}
+              <button type="submit" name="response" value="declined" className="btn small-btn resp-decline">Decline</button>
             </form>
           </div>
           );
@@ -233,7 +240,7 @@ export function CoverIndexView({
         <>
           <div className="section-heading" style={{ marginTop: 0 }}>
             <h2>Cover requests for you</h2>
-            <Status tone="warn">{incoming.reduce((n, r) => n + r.cases.length, 0)} waiting</Status>
+            <Status tone="warn">{incoming.reduce((n, r) => n + r.cases.filter((c) => c.status !== "discussing").length, 0)} waiting</Status>
           </div>
           <div className="stack" style={{ marginBottom: 26 }}>
             {incoming.map((r) => <IncomingCard key={r.planId} r={r} />)}

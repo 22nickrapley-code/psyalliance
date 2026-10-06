@@ -1,12 +1,15 @@
 import type { NeedOptions } from "@/lib/need-options";
-import { Banner, NeedFields, QuietEmpty, Status } from "./_components/ui";
+import { Banner, Status } from "./_components/ui";
 import { reconfirmAvailability } from "./availability/actions";
-import { StepsPager, OpenDialogButton, CloseDialogButton } from "./home-client";
-import { NavIcon } from "./icons";
+import { HomeTiles } from "./home-client";
+import type { CircleNode } from "./_components/orbit";
 
-// Home answers one question: "what needs me right now?". Next steps lead,
-// three at a time with the urgent ones first; availability sits beside
-// them; the member's circle is drawn as the people around them.
+export type { CircleNode };
+
+// Home answers two questions and nothing else: what would you like to do,
+// and does anything need you? Five tiles carry both. The four jobs lead;
+// the fifth, Actions, shows how many things are waiting and opens the
+// list in place. Availability sits underneath as one line.
 
 export type NextStep = {
   key: string;
@@ -18,10 +21,7 @@ export type NextStep = {
   rank?: number;
 };
 
-export type CircleNode = { id: string; name: string; kind: "trusted" | "worked" | "saved"; avatarUrl: string | null };
-
 export type HomeData = {
-  startHere?: { title: string; body: string; href: string; action: string; urgent?: boolean };
   firstName: string;
   today?: string;
   greeting?: string;
@@ -35,264 +35,82 @@ export type HomeData = {
     stale: boolean;
     canReconfirm: boolean;
   };
-  relevant: { key: string; title: string; detail: string; why: string; href: string }[];
-  circle: {
-    trusted: number;
-    saved: number;
-    workedWith: number;
-    newThisMonth: number;
-    recentlyAvailable: string[];
-    nodes?: CircleNode[];
-    me?: { initials: string; avatarUrl: string | null };
-  };
-  resources: { code: string; title: string; purpose: string; href: string; provisional?: boolean }[];
-  options: NeedOptions;
+  options?: NeedOptions;
   notice?: string;
+  sandbox?: boolean;
+  // Older fields some previews still pass; Home no longer shows them.
+  startHere?: unknown;
+  relevant?: unknown;
+  circle?: unknown;
+  resources?: unknown;
 };
 
-const initials = (name: string) =>
-  name
-    .replace(/,.*$/, "")
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((p) => p[0]?.toUpperCase())
-    .join("");
-
-// Trusted colleagues on the outer ring, people you've worked with and
-// saved on the inner ring.
-function Orbit({ nodes, me }: { nodes: CircleNode[]; me?: { initials: string; avatarUrl: string | null } }) {
-  const outer = nodes.filter((n) => n.kind === "trusted").slice(0, 9);
-  const inner = nodes.filter((n) => n.kind !== "trusted").slice(0, 6);
-  const place = (list: CircleNode[], r: number, offset: number) =>
-    list.map((n, i) => {
-      const a = offset + (i / Math.max(list.length, 1)) * Math.PI * 2;
-      return { n, left: Math.round(100 + r * Math.cos(a)), top: Math.round(100 + r * Math.sin(a)) };
-    });
-  return (
-    <div className="orbit" aria-hidden="true">
-      <span className="me">
-        {me?.avatarUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={me.avatarUrl} alt="" />
-        ) : (
-          me?.initials || "You"
-        )}
-      </span>
-      {[...place(outer, 88, -Math.PI / 2), ...place(inner, 58, -Math.PI / 3)].map(({ n, left, top }) => (
-        <a key={n.id} className={`node ${n.kind}`} style={{ left, top }} href={`/dashboard/people/${n.id}`} title={n.name} tabIndex={-1}>
-          {n.avatarUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={n.avatarUrl} alt="" />
-          ) : (
-            initials(n.name)
-          )}
-        </a>
-      ))}
-    </div>
-  );
-}
-
 export function HomeView({ d }: { d: HomeData }) {
-  const nodes = d.circle.nodes || [];
-  const circleSize = d.circle.trusted + d.circle.workedWith + d.circle.saved;
+  const n = d.steps.length;
+  const urgent = d.steps.filter((s) => s.urgent).length;
+  const summary = d.gettingStarted
+    ? "A few steps and you're in the network."
+    : n === 0
+      ? d.sandbox
+        ? "Nothing needs you yet. Try one of the four below; colleagues will start getting in touch as you look around."
+        : "Nothing needs you right now."
+      : urgent > 0
+        ? `${n} thing${n === 1 ? "" : "s"} to look at, ${urgent} urgent.`
+        : `${n} thing${n === 1 ? "" : "s"} to look at when you're ready.`;
+
   return (
-    <>
+    <div className="home-simple">
       <div className="page-head">
         <div>
           <div className="eyebrow">{d.today || "Your practice"}</div>
           <h1>{d.greeting || "Welcome back"}, {d.firstName}.</h1>
-          <p>A clear view of what needs your attention, and who can help.</p>
-        </div>
-        <div className="head-actions">
-          <OpenDialogButton target="quick-referral" className={d.startHere ? "btn secondary" : "btn lg"}>
-            Quick referral search &rarr;
-          </OpenDialogButton>
+          <p>{summary}</p>
         </div>
       </div>
       <Banner ok={d.notice} />
-      {d.startHere && (
-        <section className={`start-here${d.startHere.urgent ? " urgent" : ""}`} aria-labelledby="start-here-title">
-          <div>
-            <div className="eyebrow">Start here</div>
-            <h2 id="start-here-title">{d.startHere.title}</h2>
-            <p>{d.startHere.body}</p>
-          </div>
-          <a className="btn lg on-dark" href={d.startHere.href}>{d.startHere.action} &rarr;</a>
-        </section>
-      )}
 
-      <dialog id="quick-referral" className="quick-dialog" aria-labelledby="quick-referral-title">
-        <form className="quick-search" method="get" action="/dashboard/refer/new">
-          <input type="hidden" name="step" value="shortlist" />
-          <div className="dialog-head">
-            <div>
-              <div className="eyebrow" style={{ color: "#e2c49c" }}>Refer</div>
-              <h3 id="quick-referral-title">Quick referral search</h3>
-            </div>
-            <CloseDialogButton target="quick-referral" />
-          </div>
-          <NeedFields options={d.options} compact />
-          <div className="row wrap" style={{ marginTop: 14 }}>
-            <button type="submit" className="btn on-dark">Find colleagues</button>
-            <span className="small" style={{ color: "#cfe0d4" }}>No client details. Nothing is sent until you review.</span>
-          </div>
-        </form>
-      </dialog>
-
-      <div className="split">
-        <section className="card">
-          <div className="card-title">
-            <h3>{d.gettingStarted ? "Getting started" : "Your next steps"}</h3>
-            {!d.gettingStarted && d.steps.length > 0 && <span className="micro-note">{d.steps.length} to review</span>}
-          </div>
-          {d.gettingStarted ? (
-            <>
-              <p className="small">
-                {d.gettingStarted.length === 4
-                  ? "Referrals, cover, consults and messages open once your credentials are verified. Here's what gets you there."
-                  : "Three steps make the network useful to you from day one."}
-              </p>
-              {d.gettingStarted.map((g, i) => (
-                <div key={g.label} className="step-item">
-                  <span className="row" style={{ gap: 14 }}>
-                    <span className="round-number">{g.done ? "✓" : i + 1}</span>
-                    <strong style={{ textDecoration: g.done ? "line-through" : undefined }}>{g.label}</strong>
-                  </span>
-                  {!g.done && i < 3 && <a className="btn secondary small-btn" href={g.href}>Start</a>}
-                  {!g.done && i === 3 && <Status tone="neutral">With us</Status>}
-                </div>
-              ))}
-            </>
-          ) : d.steps.length === 0 ? (
-            <QuietEmpty
-              title="You're all caught up."
-              body="Nothing needs you right now. New referrals, cover requests and replies appear here as they happen."
-              action={<a className="btn secondary small-btn" href="/dashboard/refer/new">Make a referral</a>}
-            />
-          ) : (
-            <StepsPager steps={d.steps} />
-          )}
-        </section>
-
-        <section className="card tint">
-          <div className="card-title">
-            <h3>Your availability</h3>
-            <a className="text-arrow" href="/dashboard/availability">Manage &rarr;</a>
-          </div>
-          <ul className="summary-list">
-            <li><span>Referrals</span><strong>{d.availability.referrals}</strong></li>
-            <li><span>Cover</span><strong>{d.availability.cover}</strong></li>
-            <li><span>Consult</span><strong>{d.availability.consult}</strong></li>
-          </ul>
-          <p className="micro-note" style={{ marginTop: 12, color: d.availability.stale ? "#865b2b" : undefined }}>
-            {d.availability.confirmedLabel}
+      {d.gettingStarted && (
+        <section className="card getting-started">
+          <div className="card-title"><h3>Getting started</h3></div>
+          <p className="small">
+            {d.gettingStarted.length === 4
+              ? "Referrals, cover, consults and messages open once your credentials are verified. Here's what gets you there."
+              : "Three steps make the network useful to you from day one."}
           </p>
-          {d.availability.canReconfirm ? (
-            <form action={reconfirmAvailability}>
-              <input type="hidden" name="return_to" value="/dashboard" />
-              <button type="submit" className="btn secondary small-btn">Still accurate, reconfirm</button>
-            </form>
-          ) : (
-            <a className="btn secondary small-btn" href="/dashboard/availability">Set your availability</a>
-          )}
-        </section>
-      </div>
-
-      <div className="section-heading"><h2>What would you like to do?</h2></div>
-      <div className="tile-grid">
-        <a className="task-tile" href="/dashboard/cover/new"><span className="symbol"><NavIcon name="cover" size={24} /></span><b>Find cover</b><span>Plan an absence &rarr;</span></a>
-        <a className="task-tile" href="/dashboard/refer/new"><span className="symbol"><NavIcon name="refer" size={24} /></span><b>Refer a client</b><span>Find the right colleague &rarr;</span></a>
-        <a className="task-tile" href="/dashboard/consult"><span className="symbol"><NavIcon name="consult" size={24} /></span><b>Ask colleagues</b><span>Start a consultation &rarr;</span></a>
-        <a className="task-tile" href="/dashboard/network"><span className="symbol"><NavIcon name="network" size={24} /></span><b>Find a clinician</b><span>Search your network &rarr;</span></a>
-      </div>
-
-      <div className="section-heading">
-        <h2>From your circle</h2>
-        <a className="text-arrow" href="/dashboard/network">View network &rarr;</a>
-      </div>
-      <div className="split equal">
-        <section className="card">
-          <div className="card-title">
-            <h3>Relevant requests</h3>
-            {d.relevant.length > 0 && <Status>{d.relevant.length} new</Status>}
-          </div>
-          {d.relevant.length === 0 ? (
-            <QuietEmpty
-              title="Nothing matches your practice right now."
-              body="Referrals and cover requests that fit your specialties, licence and availability appear here. Keeping availability current helps colleagues find you."
-            />
-          ) : (
-            d.relevant.map((r) => (
-              <a key={r.key} href={r.href} className="list-row" style={{ textDecoration: "none", color: "inherit" }}>
-                <span>
-                  <strong>{r.title}</strong>
-                  <small>
-                    {r.detail} &middot; <span style={{ color: "var(--forest)" }}>{r.why}</span>
-                  </small>
-                </span>
-                <span className="text-arrow">Open &rarr;</span>
-              </a>
-            ))
-          )}
-        </section>
-
-        <section className="card">
-          <div className="card-title">
-            <h3>Your circle</h3>
-            <span className="micro-note">Built over time</span>
-          </div>
-          {circleSize === 0 ? (
-            <QuietEmpty
-              title="Your circle starts with people you already trust."
-              body="Invite colleagues you'd refer to today. Trusted colleagues rank first in every match."
-              action={<a className="btn secondary small-btn" href="/dashboard/network">Find colleagues</a>}
-            />
-          ) : (
-            <div className="circle-card">
-              <Orbit nodes={nodes} me={d.circle.me} />
-              <div>
-                <div className="circle-legend">
-                  <div><b>{d.circle.trusted}</b><i style={{ background: "#dce9e1", border: "1px solid #9fbcaa" }} />Trusted colleagues</div>
-                  <div><b>{d.circle.workedWith}</b><i style={{ background: "#f1e5d5", border: "1px solid #d8bd97" }} />Worked with before</div>
-                  <div><b>{d.circle.saved}</b><i style={{ background: "#e1eced", border: "1px solid #a9c3c7" }} />Saved</div>
-                </div>
-                <p className="small" style={{ margin: "14px 0 10px" }}>
-                  {d.circle.newThisMonth > 0 ? `${d.circle.newThisMonth} new this month. ` : ""}
-                  {d.circle.recentlyAvailable.length > 0
-                    ? `${d.circle.recentlyAvailable.slice(0, 2).join(" and ")}${d.circle.recentlyAvailable.length > 2 ? ` and ${d.circle.recentlyAvailable.length - 2} more` : ""} confirmed this week they're taking referrals.`
-                    : ""}
-                </p>
-                <a className="text-arrow" href="/dashboard/network?tab=trusted">See your circle &rarr;</a>
-              </div>
+          {d.gettingStarted.map((g, i) => (
+            <div key={g.label} className="step-item">
+              <span className="row" style={{ gap: 14 }}>
+                <span className="round-number">{g.done ? "✓" : i + 1}</span>
+                <strong style={{ textDecoration: g.done ? "line-through" : undefined }}>{g.label}</strong>
+              </span>
+              {!g.done && i < 3 && <a className="btn secondary small-btn" href={g.href}>Start</a>}
+              {!g.done && i === 3 && <Status tone="neutral">With us</Status>}
             </div>
-          )}
+          ))}
         </section>
-      </div>
-
-      {d.resources.length > 0 && (
-        <>
-          <div className="section-heading">
-            <h2>For this moment</h2>
-            <a className="text-arrow" href="/dashboard/documents">Practice Library &rarr;</a>
-          </div>
-          <div className="split equal">
-            {d.resources.map((r) => (
-              <a key={r.code} href={r.href} className="card" style={{ textDecoration: "none", color: "inherit" }}>
-                <div className="row between">
-                  <span className="eyebrow">{r.code}</span>
-                  <span className="micro-note" style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                    <span className={`review-dot${r.provisional ? "" : " ok"}`} />
-                    {r.provisional ? "Provisional, review pending" : "Reviewed"}
-                  </span>
-                </div>
-                <h3 className="serif-title" style={{ fontSize: 21, margin: "10px 0 6px" }}>{r.title}</h3>
-                <p className="small" style={{ margin: 0 }}>{r.purpose}</p>
-              </a>
-            ))}
-          </div>
-        </>
       )}
-    </>
+
+      <h2 className="home-question">What would you like to do?</h2>
+      <HomeTiles steps={d.steps} />
+
+      <section className="availability-strip" aria-label="Your availability">
+        <span className="label">Your availability</span>
+        <span className="facts">
+          <span><b>Referrals</b> {d.availability.referrals}</span>
+          <span><b>Cover</b> {d.availability.cover}</span>
+          <span><b>Consult</b> {d.availability.consult}</span>
+        </span>
+        <span className={`when${d.availability.stale ? " stale" : ""}`}>{d.availability.confirmedLabel}</span>
+        <span className="strip-actions">
+          {d.availability.canReconfirm && (
+            <form action={reconfirmAvailability} className="inline">
+              <input type="hidden" name="return_to" value="/dashboard" />
+              <button type="submit" className="plain-button small">Still accurate</button>
+            </form>
+          )}
+          <a className="text-arrow" href="/dashboard/availability">Change &rarr;</a>
+        </span>
+      </section>
+    </div>
   );
 }

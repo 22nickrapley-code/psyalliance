@@ -9,6 +9,7 @@ import { buildNavGroups } from "./nav-groups";
 import "../premium.css";
 import { resolveAvatarUrl } from "@/lib/avatars";
 import { getUnreadNotificationCount } from "@/lib/notifications-v2";
+import { SandboxNudge } from "./_components/sandbox-nudge";
 
 export default async function DashboardLayout({
   children,
@@ -186,6 +187,7 @@ export default async function DashboardLayout({
       resetSandboxAction={IS_DEMO_SITE ? resetSandboxAction : undefined}
     >
       {children}
+      {IS_DEMO_SITE && sandbox?.label && !isOperator && <SandboxNudge />}
     </PremiumShell>
   );
 }

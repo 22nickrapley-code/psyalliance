@@ -26,9 +26,9 @@ export default async function CoverPage(props: { searchParams: Promise<{ ok?: st
       .order("created_at", { ascending: false }),
     supabase
       .from("coverage_requests")
-      .select("id, message, sent_at, coverage_plan_cases(*, coverage_plans(id, title, starts_on, ends_on, absence_type, jurisdiction_state, outreach_mode, notes, profile_id, owner:profile_id(full_name, credential_prefix, qualification_level, primary_practice_city, primary_state, avatar_path)))")
+      .select("id, status, message, sent_at, coverage_plan_cases(*, coverage_plans(id, title, starts_on, ends_on, absence_type, jurisdiction_state, outreach_mode, notes, profile_id, owner:profile_id(full_name, credential_prefix, qualification_level, primary_practice_city, primary_state, avatar_path)))")
       .eq("requested_profile_id", myself)
-      .eq("status", "sent")
+      .in("status", ["sent", "discussing"])
       .order("sent_at", { ascending: false }),
   ]);
 
@@ -71,6 +71,7 @@ export default async function CoverPage(props: { searchParams: Promise<{ ok?: st
     }
     byPlan.get(p.id)!.cases.push({
       requestId: r.id,
+      status: r.status,
       reference: clientRef(c.case_reference),
       focus: focusLabel(c.specialism_lookup_ids, options),
       details: [

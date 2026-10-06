@@ -224,73 +224,26 @@ export default async function HomePage(props: { searchParams: Promise<{ reconfir
   }
   steps.sort((a, b) => Number(!!b.urgent) - Number(!!a.urgent) || (a.rank ?? 9) - (b.rank ?? 9));
 
-  // ---- Start here (demo sandbox) ----
-  // One obvious first move above the fold, taken out of the step list so
-  // it isn't shown twice.
-  let startHere: HomeData["startHere"];
-  if (IS_DEMO_SITE) {
-    const firstCover = [...coverGroups.entries()].sort((a, b) => Number(b[1].plan?.absence_type === "unexpected") - Number(a[1].plan?.absence_type === "unexpected"))[0];
-    const firstPlan = (myPlans || [])[0] as any;
-    if (firstCover) {
-      const [key, g] = firstCover;
-      const who = String(g.plan?.owner?.full_name || "A colleague").replace(/^(dr\.?)\s+/i, "").split(/\s+/)[0];
-      const n = g.count === 1 ? "one client" : g.count === 2 ? "two clients" : `${g.count} clients`;
-      startHere = {
-        title: `${who} needs cover for ${n}. Review the request.`,
-        body: `Accept, decline or discuss each client on their own. Accepting marks that client covered on ${who}'s plan; you then arrange the handoff between you, outside PsyAlliance.`,
-        href: "/dashboard/cover",
-        action: `Review ${who}'s request`,
-        urgent: g.plan?.absence_type === "unexpected",
-      };
-      const i = steps.findIndex((x) => x.key === `cover-${key}`);
-      if (i >= 0) steps.splice(i, 1);
-    } else if (firstPlan) {
-      const cases = firstPlan.coverage_plan_cases || [];
-      const open = cases.filter((c: any) => c.status !== "confirmed").length;
-      startHere = {
-        title: open > 0 ? `${firstPlan.title}: find cover for ${open === 1 ? "one client" : `${open} clients`}.` : `${firstPlan.title}: every client is covered.`,
-        body: "Each client is described by need, never by name. Choose who is asked, in order, and watch the replies come in. Nothing is sent until you review it.",
-        href: `/dashboard/cover/${firstPlan.id}?step=${firstPlan.status === "draft" ? "needs" : "track"}`,
-        action: open > 0 ? "Continue the plan" : "See the plan",
-      };
-      const i = steps.findIndex((x) => x.key === `plan-${firstPlan.id}`);
-      if (i >= 0) steps.splice(i, 1);
-    }
+  // Referrals in the wider network that fit this member's practice.
+  const wider = relevantRefs.filter((r: any) => r.audience_type === "wider_network");
+  if (wider.length > 0) {
+    steps.push({
+      key: "wider",
+      title: `${wider.length} referral${wider.length === 1 ? "" : "s"} in the network match${wider.length === 1 ? "es" : ""} your practice`,
+      detail: wider.slice(0, 2).map((r: any) => `${focusName(r.specialism_lookup_ids)} from ${nameOf(r.requester).split(",")[0]}`).join(" · "),
+      href: "/dashboard/refer",
+      action: "Have a look",
+      rank: 5,
+    });
+    steps.sort((x, y) => Number(!!y.urgent) - Number(!!x.urgent) || (x.rank ?? 9) - (y.rank ?? 9));
   }
 
-  // ---- Circle ----
+
+  // ---- Circle (counted for getting started; drawn on Network) ----
   const trustedIds: string[] = [];
-  let newThisMonth = 0;
   for (const c of connections || []) {
     const other = c.requester_id === myself ? c.addressee_id : c.requester_id;
     if (c.tier === "trusted_colleague" || c.tier === "partner") trustedIds.push(other);
-    if ((c.responded_at || c.created_at) >= monthAgo) newThisMonth++;
-  }
-  const workedIds = (worked || []).map((w: any) => w.colleague_id as string);
-  const savedIds = (savedRows || []).map((w: any) => w.clinician_id as string);
-  const circleIds = [...new Set([...trustedIds, ...workedIds, ...savedIds])];
-  let recentlyAvailable: string[] = [];
-  let nodes: CircleNode[] = [];
-  if (circleIds.length) {
-    const { data: people } = await supabase
-      .from("profiles")
-      .select("id, full_name, credential_prefix, qualification_level, avatar_path, referral_availability, availability_confirmed_at")
-      .in("id", circleIds.slice(0, 40));
-    const urls = await resolveAvatarUrls(supabase, (people || []).map((p: any) => p.avatar_path));
-    const byId = new Map((people || []).map((p: any) => [p.id, p]));
-    recentlyAvailable = trustedIds
-      .map((id) => byId.get(id))
-      .filter((p: any) => p && p.referral_availability === "yes" && p.availability_confirmed_at >= weekAgo)
-      .map((p: any) => nameOf(p).split(",")[0]);
-    const kindOf = (id: string): CircleNode["kind"] => (trustedIds.includes(id) ? "trusted" : workedIds.includes(id) ? "worked" : "saved");
-    nodes = circleIds
-      .filter((id) => byId.has(id))
-      .sort((a, b) => ["trusted", "worked", "saved"].indexOf(kindOf(a)) - ["trusted", "worked", "saved"].indexOf(kindOf(b)))
-      .slice(0, 14)
-      .map((id) => {
-        const p: any = byId.get(id);
-        return { id, name: nameOf(p), kind: kindOf(id), avatarUrl: urls.get(p.avatar_path || "") || null };
-      });
   }
 
   // ---- Getting started (new members) ----
@@ -310,24 +263,7 @@ export default async function HomePage(props: { searchParams: Promise<{ reconfir
         ]
       : null;
 
-  // ---- Resources for this moment ----
-  const pick = (code: string, purpose: string) => {
-    const doc: any = (resourceRows || []).find((d: any) => d.library_code === code || String(d.title).startsWith(code));
-    return doc
-      ? { code, title: String(doc.title).replace(/^PA-\d+:\s*/, ""), purpose, href: `/dashboard/documents/${code}`, provisional: doc.review_status !== "published" }
-      : null;
-  };
-  const resources = [
-    (myPlans || []).length ? pick("PA-02", "Guidance and a handoff pack for your cover plan.") : null,
-    expiring.length ? pick("PA-19", "Keep renewals and compliance dates visible.") : null,
-    (myReferrals || []).length ? pick("PA-07", "Referral outcomes and handoff responsibilities.") : null,
-    pick("PA-05", "Shape a focused, de-identified client question."),
-  ]
-    .filter(Boolean)
-    .slice(0, 2) as HomeData["resources"];
-
   const d: HomeData = {
-    startHere,
     firstName: String(profile.full_name || "there").replace(/^(dr\.?)\s+/i, "").split(/[\s,]+/)[0],
     steps,
     today: new Date().toLocaleDateString("en-US", { timeZone: "America/New_York", weekday: "long", month: "long", day: "numeric" }),
@@ -342,24 +278,7 @@ export default async function HomePage(props: { searchParams: Promise<{ reconfir
       stale,
       canReconfirm: !!(profile.referral_availability && profile.coverage_availability && profile.consultation_availability),
     },
-    relevant: [
-      ...[...coverGroups.entries()].slice(0, 2).map(([key, g]) => ({
-        key: `c${key}`,
-        title: `Cover request: ${g.count === 1 ? g.focus[0] : `${g.count} clients`}`,
-        detail: `From ${nameOf(g.plan?.owner)}`,
-        why: "Sent to you",
-        href: "/dashboard/cover",
-      })),
-      ...relevantRefs.slice(0, 4).map((r: any) => ({
-        key: `r${r.id}`,
-        title: `Referral: ${focusName(r.specialism_lookup_ids)}`,
-        detail: `From ${nameOf(r.requester)}${r.state ? ` · ${r.state}` : ""}`,
-        why: r.audience_type === "selected" ? "Sent to you" : r.audience_type === "trusted" ? "From your trusted circle" : "Matches your specialties and licence",
-        href: `/dashboard/refer/${r.id}`,
-      })),
-    ].slice(0, 5),
-    circle: { trusted: trustedIds.length, saved: savedIds.length, workedWith: workedIds.length, newThisMonth, recentlyAvailable, nodes, me: { initials: initialsOf(profile.full_name), avatarUrl: myAvatar } },
-    resources,
+    sandbox: IS_DEMO_SITE,
     options,
     notice: reconfirmed
       ? "Availability reconfirmed. Colleagues will see it as current."

@@ -56,6 +56,7 @@ The demo site opens on a library of five short demos (`src/app/tour/demos.tsx`):
 
 Opening a pass link creates a fresh fictional practice (Alex Rivers, PsyD, Brooklyn, NY, licensed NY and NJ, six weeks of parental leave starting about five weeks out) among the 1,200 fictional colleagues. The demos tell the same story with the same cast and signs them in with a random one-off password nobody sees. No shared password exists.
 
+- The sandbox starts quiet: a circle (7 trusted, 5 saved, a few worked-with), one consultation group and a past referral, but nothing waiting. About a minute in, colleagues start getting in touch one at a time (migration 0095): a message from Maya, a cover request for two clients, a referral from Eli, a trusted-circle invite from Imani, then a consultation-group invite, two to three minutes apart. The browser asks `sandbox_tick()` every 25 seconds; each arrival shows as a balloon under the bell and the screen refreshes. "Start the story again" restarts it.
 - Colleagues answer the prospect's cover requests, referrals, consult questions, invitations and messages within a minute or two.
 - Email invitations are blocked for demo accounts; no email is ever sent.
 - Guests have no admin access.
