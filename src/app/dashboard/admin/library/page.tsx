@@ -345,11 +345,11 @@ export default async function AdminLibraryPage(props: {
             <section className="card">
               <div className="card-title"><h3>Template files</h3></div>
               <p className="small">
-                Replaces each template&rsquo;s PDF with the current one in the repository (the starter set), under its new name. Members&rsquo; working copies
-                aren&rsquo;t changed. Works only when running locally; run it once on each site.
+                Replaces each template&rsquo;s PDF with the current version (PA numbers removed), under its new name. Members&rsquo; working copies
+                aren&rsquo;t changed. Run it once on each site.
               </p>
               <form action={refreshLibraryFilesAction}>
-                <button type="submit" className="btn secondary small-btn">Update files from the repository</button>
+                <button type="submit" className="btn secondary small-btn">Update template files</button>
               </form>
             </section>
           )}
