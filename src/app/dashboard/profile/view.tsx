@@ -61,7 +61,9 @@ export function ProfileView({
   me,
   editing = true,
   licenses = [],
+  ledger = [],
 }: {
+  ledger?: string[];
   sp: { saved?: string; availability_saved?: string; avatar_saved?: string; avatar_error?: string; error?: string };
   profile: any;
   lookups: { id: number; category: string; value: string }[] | null;
@@ -142,6 +144,12 @@ export function ProfileView({
               </div>
             </div>
             {profile?.bio && <p className="lead-text" style={{ marginTop: 20 }}>{profile.bio}</p>}
+            {ledger && ledger.length > 0 && (
+              <div className="home-ledger profile-ledger">
+                <span className="home-ledger-label">This year on PsyAlliance</span>
+                <ul>{ledger.map((l) => <li key={l}>{l}</li>)}</ul>
+              </div>
+            )}
             <ul className="glance" style={{ marginTop: 16, borderTop: "1px solid #e3e9e2" }}>
               {glance.map(([k, v]) => (
                 <li key={k}><span>{k}</span><strong>{v}</strong></li>

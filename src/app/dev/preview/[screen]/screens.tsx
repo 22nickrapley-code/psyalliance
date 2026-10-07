@@ -1,4 +1,8 @@
 import type { ReactNode } from "react";
+import { ContinuityView } from "../../../dashboard/continuity/view";
+import { PlanDocument } from "../../../dashboard/continuity/document";
+import { FullView } from "../../../dashboard/full/view";
+import { OverflowPublicView } from "../../../full/[slug]/view";
 import type { Suggestion } from "@/lib/colleague-suggestions";
 import { ColleaguePicker } from "../../../dashboard/_components/colleague-picker";
 import type { Match } from "@/lib/match-engine";
@@ -199,6 +203,60 @@ export const previewScreens: Record<string, () => ReactNode> = {
         </form>
       </section>
     </MessagesShell>
+  ),
+  continuity: () => (
+    <ContinuityView
+      sp={{}}
+      answers={{ practice_name: "Rivers Psychology, PLLC", practice_contact: "(718) 555-0142, hello@riverspsych.example", records_system: "SimplePractice; older paper files in the locked cabinet at the office" }}
+      backup={{ id: "m", name: "Maya Chen, PsyD", status: "invited" }}
+      alternate={null}
+      updatedAt="2026-10-06T15:00:00Z"
+      reviewedAt={null}
+      suggestions={PICK}
+      dutiesWaiting={1}
+      dutiesTotal={1}
+    />
+  ),
+  "continuity-print": () => (
+    <div className="pa print-shell">
+      <PlanDocument
+        ownerName="Alex Rivers, PsyD"
+        ownerRole="Clinical psychologist · Brooklyn, NY"
+        answers={{ practice_name: "Rivers Psychology, PLLC", records_system: "SimplePractice", access_kept_with: "Sealed envelope with my attorney, Dana Ortiz", notify_clients: "Call every current client within 48 hours." }}
+        backup={{ name: "Maya Chen, PsyD", status: "accepted" }}
+        alternate={{ name: "Dr. Jane Smith, (212) 555-0123" }}
+        updatedAt="2026-10-06T15:00:00Z"
+        reviewedAt="2026-10-06T15:00:00Z"
+      />
+    </div>
+  ),
+  full: () => (
+    <FullView
+      sp={{}}
+      page={{ slug: "alex-rivers", enabled: true, message: null, hidden: ["ah"] }}
+      listing={{ enabled: true, website: null, phone: "(718) 555-0142", email: null, note: null }}
+      candidates={[
+        { profile_id: "m", full_name: "Maya Chen", credential_prefix: "Dr.", qualification_level: "PsyD", city: "Brooklyn", state: "NY", listed: true, open: true, referral: "yes", confirmed_at: "2026-10-03" },
+        { profile_id: "s", full_name: "Samuel Okafor", credential_prefix: "Dr.", qualification_level: "PhD", city: "Brooklyn", state: "NY", listed: true, open: true, referral: "limited", confirmed_at: "2026-09-28" },
+        { profile_id: "ah", full_name: "Aaron Howard", credential_prefix: "Dr.", qualification_level: "PhD", city: "White Plains", state: "NY", listed: true, open: true, referral: "yes", confirmed_at: "2026-09-30" },
+        { profile_id: "e", full_name: "Eli Ramirez", credential_prefix: "Dr.", qualification_level: "MD", city: "Manhattan", state: "NY", listed: true, open: false, referral: "no", confirmed_at: "2026-09-01" },
+        { profile_id: "i", full_name: "Imani Brooks", credential_prefix: "Dr.", qualification_level: "PhD", city: "Queens", state: "NY", listed: false, open: true, referral: "yes", confirmed_at: "2026-10-01" },
+      ]}
+      base="https://psyalliance.example/full/"
+      suggestedSlug="alex-rivers"
+    />
+  ),
+  "full-public": () => (
+    <OverflowPublicView
+      d={{
+        owner: { name: "Alex Rivers", prefix: "Dr.", qualification: "PsyD", city: "Brooklyn", state: "NY" },
+        message: null,
+        colleagues: [
+          { name: "Maya Chen", prefix: "Dr.", qualification: "PsyD", city: "Brooklyn", state: "NY", referral: "yes", confirmed_at: "2026-10-03", website: "https://example.com", phone: "(212) 555-0142", email: "intake@example.com", note: "Evening telehealth; free 15-minute call", focus: ["Trauma/PTSD", "Anxiety/Panic Disorders"], sessions: ["Face to Face", "Virtual"] },
+          { name: "Samuel Okafor", prefix: "Dr.", qualification: "PhD", city: "Brooklyn", state: "NY", referral: "limited", confirmed_at: "2026-09-28", website: null, phone: "(212) 555-0187", email: null, note: null, focus: ["Obsessive/Compulsive Disorder"], sessions: ["Virtual"] },
+        ],
+      }}
+    />
   ),
   "consult-review": () => (
     <ConsultDetailView

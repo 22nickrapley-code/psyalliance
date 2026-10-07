@@ -98,6 +98,21 @@ const PATHS: Record<string, React.ReactNode> = {
     </>
   ),
   pulse: <path d="M3.5 12h3.5l2-5 4 10 2-5h5.5" />,
+  continuity: (
+    <>
+      <path d="M7 3.5h7l4 4V19a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 6 19V5a1.5 1.5 0 0 1 1-1.5z" />
+      <path d="M14 3.5V8h4" />
+      <path d="m9 14 2 2 4-4" />
+    </>
+  ),
+  overflow: (
+    <>
+      <path d="M4 20V5.5A1.5 1.5 0 0 1 5.5 4H12" />
+      <path d="M4 20h9" />
+      <path d="M15 8h5.5M18 5l3 3-3 3" />
+      <path d="M9 9.5h2M9 13h4M9 16.5h3" />
+    </>
+  ),
 };
 
 export function NavIcon({ name, size = 20 }: { name: string; size?: number }) {

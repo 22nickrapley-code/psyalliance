@@ -1,8 +1,6 @@
 import { clinicianName } from "@/lib/profession";
 import {
   saveNotificationPreferences,
-  saveEmergencyContact,
-  removeEmergencyContact,
   removeFromBlocklist,
   unblockMemberAction,
   savePrivacyAction,
@@ -31,9 +29,8 @@ function nameOf(p: any) {
 export function SettingsView({ sp, email, me, prefs, profile, emergency, excluded, blocked, blockedProfiles, circle }: { sp: { saved?: string; error?: string }; email: string; me: string; prefs: any; profile: any; emergency: any; excluded: any[] | null; blocked: { blocked_profile_id: string }[] | null; blockedProfiles: any[] | null; circle: any[] | null }) {
   const blockedNames = new Map((blockedProfiles || []).map((p: any) => [p.id, nameOf(p)]));
 
-  const people = new Map<string, any>();
-  for (const r of circle || []) if (r.id !== me && !people.has(r.id)) people.set(r.id, r);
-  const colleagues = Array.from(people.values()).sort((a, b) => a.full_name.localeCompare(b.full_name));
+  void circle;
+  void me;
   const on = (col: string) => (prefs ? prefs[col] !== false : true);
   const listed = profile?.directory_visible !== false;
 
@@ -164,34 +161,13 @@ export function SettingsView({ sp, email, me, prefs, profile, emergency, exclude
           </section>
 
           <section className="card" id="cover-contact">
-            <h3>Emergency cover contact</h3>
-            <p className="small">The colleague to loop in if you&rsquo;re suddenly unavailable. A designation only: nothing about your clients is shared.</p>
-            {emergency ? (
-              <div className="row between">
-                <span className="small"><strong>{nameOf(emergency.contact)}</strong>{emergency.notes ? ` · ${emergency.notes}` : ""}</span>
-                <form action={removeEmergencyContact} className="inline">
-                  <button type="submit" className="plain-button small">Remove</button>
-                </form>
-              </div>
-            ) : (
-              <p className="micro-note">Not set.</p>
-            )}
-            <form action={saveEmergencyContact} className="fields" style={{ marginTop: 12 }}>
-              <label className="field">
-                Colleague
-                <select name="contact_profile_id" defaultValue="" required>
-                  <option value="" disabled>Choose a colleague</option>
-                  {colleagues.map((p) => (
-                    <option key={p.id} value={p.id}>{nameOf(p)}</option>
-                  ))}
-                </select>
-              </label>
-              <label className="field">
-                Note (optional)
-                <input name="notes" placeholder="e.g. knows where my practice files are" defaultValue={emergency?.notes || ""} />
-              </label>
-              <div><button type="submit" className="btn secondary small-btn">Save</button></div>
-            </form>
+            <h3>Your backup</h3>
+            <p className="small">
+              The colleague who would look after your clients and records if you couldn&rsquo;t practice now lives in your continuity plan, with
+              what they should do and a PDF to sign.
+              {emergency ? ` You'd named ${nameOf(emergency.contact)} here before; name them in the plan so they're asked to agree.` : ""}
+            </p>
+            <a className="btn secondary small-btn" href="/dashboard/continuity#backup">Open your continuity plan</a>
           </section>
 
           {/* The in-production demo view is retired: the demo lives on its own

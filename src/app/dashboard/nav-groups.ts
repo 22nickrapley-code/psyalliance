@@ -39,6 +39,7 @@ export function buildNavGroups(opts: {
     { href: "/dashboard/admin/library", label: "Library governance", glyph: "library" },
     { href: "/dashboard/admin/moderation", label: "Moderation", glyph: "flag" },
     { href: "/dashboard/admin/network-health", label: "Network health", glyph: "pulse" },
+    { href: "/dashboard/admin/activation", label: "Activation", glyph: "check" },
   ];
 
   // An operator (admin-only) login has no practice, so it sees the admin
@@ -67,6 +68,8 @@ export function buildNavGroups(opts: {
       items: [
         { href: "/dashboard/profile", label: "Profile", glyph: "profile" },
         { href: "/dashboard/availability", label: "Availability", glyph: "availability" },
+        { href: "/dashboard/continuity", label: "Continuity plan", glyph: "continuity" },
+        { href: "/dashboard/full", label: "When you're full", glyph: "overflow" },
         { href: "/dashboard/credentials", label: "Credentials", glyph: "credentials" },
         { href: "/dashboard/documents", label: "Practice Library", glyph: "library" },
         { href: "/dashboard/settings", label: "Settings", glyph: "settings" },

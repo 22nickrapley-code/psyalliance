@@ -46,6 +46,7 @@ export function ColleaguePicker({
   label = "To",
   placeholder = "Search by name, or pick someone below",
   limitPerGroup = 4,
+  clearable = false,
 }: {
   suggestions: Suggestion[];
   name: string;
@@ -54,6 +55,7 @@ export function ColleaguePicker({
   label?: string;
   placeholder?: string;
   limitPerGroup?: number;
+  clearable?: boolean;
 }) {
   const [picked, setPicked] = useState<Suggestion[]>(() => suggestions.filter((s) => initial.includes(s.id)));
   const [q, setQ] = useState("");
@@ -115,6 +117,9 @@ export function ColleaguePicker({
             <small>{[picked[0].reason, picked[0].where].filter(Boolean).join(" · ")}</small>
           </span>
           <button type="button" className="btn ghost small-btn" onClick={() => setBrowsing(true)}>Change</button>
+          {clearable && (
+            <button type="button" className="btn ghost small-btn" onClick={() => { setPicked([]); setBrowsing(true); }}>Remove</button>
+          )}
         </div>
       ) : (
         <>

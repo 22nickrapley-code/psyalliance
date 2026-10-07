@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { loadLedger, ledgerItems } from "@/lib/ledger";
 import { effectiveReferral, effectiveCover } from "@/lib/availability";
 import { createClient } from "@/lib/supabase/server";
 import { loadNeedOptions } from "@/lib/need-options";
@@ -203,6 +204,20 @@ export default async function HomePage(props: { searchParams: Promise<{ reconfir
     steps.push({ key: "invs", title: `${(pendingInvites || []).length} colleagues invited you to their trusted circle`, detail: (pendingInvites || []).map((c: any) => nameOf(c.requester).split(",")[0]).join(", "), href: "/dashboard/network", action: "Review", rank: 4 });
   }
   const unread = (conversationRows || []).filter((r: any) => r.conversation && new Date(r.conversation.last_message_at) > new Date(r.last_read_at)).length;
+  // Colleagues who named you as their continuity backup.
+  const { data: dutyRows } = await supabase.rpc("my_continuity_duties");
+  const askedDuties = ((dutyRows as any[]) || []).filter((d) => d.status === "invited");
+  if (askedDuties.length > 0) {
+    const who = askedDuties.map((d) => clinicianName(d.owner_name, d.qualification_level, d.credential_prefix));
+    steps.push({
+      key: "duty",
+      title: askedDuties.length === 1 ? `${who[0]} named you as their backup` : `${askedDuties.length} colleagues named you as their backup`,
+      detail: "If they can't practice, you'd look after their clients and records. Agree, talk first, or decline.",
+      href: "/dashboard/continuity/duties",
+      action: "Reply",
+      rank: 4,
+    });
+  }
   if (unread > 0) steps.push({ key: "msgs", title: `${unread} unread conversation${unread === 1 ? "" : "s"}`, detail: "Messages from colleagues", href: "/dashboard/messages", action: "Read", rank: 5 });
 
   const confirmedAt = profile.availability_confirmed_at as string | null;
@@ -293,6 +308,8 @@ export default async function HomePage(props: { searchParams: Promise<{ reconfir
         ]
       : null;
 
+  const ledger = await loadLedger(supabase, myself);
+
   const d: HomeData = {
     firstName: String(profile.full_name || "there").replace(/^(dr\.?)\s+/i, "").split(/[\s,]+/)[0],
     steps,
@@ -314,6 +331,8 @@ export default async function HomePage(props: { searchParams: Promise<{ reconfir
       },
     },
     circleSnapshot,
+    ledger: ledgerItems(ledger),
+    ledgerYear: ledger.year,
     sandbox: IS_DEMO_SITE,
     options,
     notice: reconfirmed

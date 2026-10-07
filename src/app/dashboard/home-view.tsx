@@ -48,6 +48,8 @@ export type HomeData = {
     tones?: { referrals: Tone; cover: Tone; consult: Tone };
   };
   circleSnapshot?: CircleSnapshot;
+  ledger?: string[];
+  ledgerYear?: number;
   options?: NeedOptions;
   notice?: string;
   sandbox?: boolean;
@@ -206,6 +208,15 @@ export function HomeView({ d }: { d: HomeData }) {
         <h2 className="home-question" id="home-question">What would you like to do?</h2>
         <HomeTiles steps={d.steps} />
       </section>
+
+      {d.ledger && d.ledger.length > 0 && (
+        <section className="home-ledger" aria-label={`Your ${d.ledgerYear || "year"} on PsyAlliance`}>
+          <span className="home-ledger-label">{d.ledgerYear} on PsyAlliance</span>
+          <ul>
+            {d.ledger.map((l) => <li key={l}>{l}</li>)}
+          </ul>
+        </section>
+      )}
 
       <div className="home-lower">
         <AvailabilityCard a={d.availability} />

@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { loadLedger, ledgerItems } from "@/lib/ledger";
 import { resolveAvatarUrl } from "@/lib/avatars";
 import { ProfileView } from "./view";
 import { PageHead } from "../_components/ui";
@@ -54,6 +55,7 @@ export default async function ProfilePage(props: {
       me={me}
       editing={editing}
       licenses={licenses}
+      ledger={ledgerItems(await loadLedger(supabase, me))}
     />
   );
 }

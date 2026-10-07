@@ -13,6 +13,7 @@ const AREAS: Record<string, { icon: string; label: string }> = {
   network: { icon: "network", label: "Network" },
   messages: { icon: "messages", label: "Messages" },
   record: { icon: "credentials", label: "Your record" },
+  continuity: { icon: "continuity", label: "Continuity" },
 };
 const areaOf = (key: string) =>
   /^(cover|plan)-/.test(key) ? "cover"
@@ -20,6 +21,7 @@ const areaOf = (key: string) =>
   : /^consult/.test(key) ? "consult"
   : /^inv/.test(key) ? "network"
   : key === "msgs" ? "messages"
+  : /^duty/.test(key) ? "continuity"
   : "record";
 
 function ActionRow({ s }: { s: NextStep }) {

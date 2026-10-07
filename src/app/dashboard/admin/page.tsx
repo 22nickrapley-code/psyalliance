@@ -20,6 +20,7 @@ const AREAS: [string, string, string, string][] = [
   ["/dashboard/admin/library", "▤", "Library governance", "Reviewers and publishing."],
   ["/dashboard/admin/moderation", "⚑", "Moderation", "Reports and redaction."],
   ["/dashboard/admin/network-health", "↗", "Network health", "Supply and response by state."],
+  ["/dashboard/admin/activation", "✓", "Activation", "Who is verified, connected and available within 7 days."],
   ["/dashboard/admin/insurance-requests", "+", "Insurance requests", "Plans members asked us to add."],
 ];
 
