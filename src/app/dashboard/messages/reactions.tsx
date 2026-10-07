@@ -29,6 +29,9 @@ export function MessageReactions({
   const router = useRouter();
   const [current, setCurrent] = useState<Reaction | null>(mine);
   const [pending, start] = useTransition();
+  // On touch screens the picker opens from a small button, so the three
+  // choices aren't always on show under every message.
+  const [open, setOpen] = useState(false);
   const shown = { ...counts } as Record<Reaction, number>;
   // Reflect the change straight away; the server confirms on refresh.
   if (mine !== current) {
@@ -38,6 +41,7 @@ export function MessageReactions({
   const pick = (r: Reaction) => {
     const next = current === r ? null : r;
     setCurrent(next);
+    setOpen(false);
     start(async () => {
       const res = await reactToMessageAction(messageId, r);
       if (!res.ok) setCurrent(mine);
@@ -65,7 +69,15 @@ export function MessageReactions({
         );
       })}
       {canReact && (
-        <span className="reaction-picker" role="group" aria-label="React to this message">
+        <button type="button" className={`reaction-add${open ? " on" : ""}`} onClick={() => setOpen(!open)} aria-expanded={open} aria-label="React to this message">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
+            <circle cx="11" cy="12" r="7.5" />
+            <path d="M8.5 13.5c.7.9 1.5 1.3 2.5 1.3s1.8-.4 2.5-1.3M8.8 9.8h.01M13.2 9.8h.01M19 3v4M17 5h4" />
+          </svg>
+        </button>
+      )}
+      {canReact && (
+        <span className={`reaction-picker${open ? " open" : ""}`} role="group" aria-label="React to this message">
           {REACTIONS.map((r) => (
             <button key={r.key} type="button" className={current === r.key ? "on" : ""} onClick={() => pick(r.key)} aria-pressed={current === r.key} title={r.label}>
               <span aria-hidden="true">{r.glyph}</span>

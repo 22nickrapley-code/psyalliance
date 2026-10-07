@@ -174,7 +174,7 @@ export function HomeView({ d }: { d: HomeData }) {
 
   return (
     <div className="home-simple">
-      <header className="home-hero">
+      <header className="member-home-hero">
         <div className="eyebrow">{d.today || "Your practice"}</div>
         <h1>{d.greeting || "Welcome back"}, {d.firstName}.</h1>
         <p>{summary}</p>

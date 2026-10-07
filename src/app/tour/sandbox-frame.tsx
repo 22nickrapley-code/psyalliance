@@ -40,6 +40,16 @@ export function TourFrame({
   const [revealed, setRevealed] = useState(!intro || intro.show === false);
   const [hasFocus, setHasFocus] = useState(false);
   const [inView, setInView] = useState(true);
+  // On a phone the note travels in the bar at the bottom instead of
+  // floating over the screen, so nothing is covered or misaligned.
+  const [narrow, setNarrow] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 760px)");
+    const on = () => setNarrow(mq.matches);
+    on();
+    mq.addEventListener("change", on);
+    return () => mq.removeEventListener("change", on);
+  }, []);
   const revealBtn = useRef<HTMLButtonElement>(null);
   useEffect(() => {
     if (!revealed) revealBtn.current?.focus();
@@ -256,14 +266,14 @@ export function TourFrame({
           </div>
         </div>
       )}
-      {revealed && callout && focusNote && (
+      {revealed && !narrow && callout && focusNote && (
         <div id="tour-callout" className={`tour-callout ${callout.side}`} style={{ top: callout.top, left: callout.left }} role="note">
           <b>{intro?.last ? "Last step" : "Next in the story"}</b>
           {focusNote}
           <span className="tour-callout-hint">{intro?.last ? "Then finish the demo below." : `Click the highlighted ${target.current?.closest(".sidebar") ? "link" : "button"} to continue.`}</span>
         </div>
       )}
-      {revealed && (!hasFocus || !inView || intro?.last) && (
+      {revealed && !note && (narrow || !hasFocus || !inView || intro?.last) && (
         <div className={`tour-dock${intro?.colleague ? " colleague" : ""}`} role="region" aria-label="Next step" data-tour-nav>
           <span className="tour-dock-text">
             <b>{intro?.last ? "Last step" : "Next"}</b> {focusNote || "Continue the demo."}

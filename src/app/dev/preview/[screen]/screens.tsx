@@ -1,4 +1,6 @@
 import type { ReactNode } from "react";
+import type { Suggestion } from "@/lib/colleague-suggestions";
+import { ColleaguePicker } from "../../../dashboard/_components/colleague-picker";
 import type { Match } from "@/lib/match-engine";
 import type { NeedOptions } from "@/lib/need-options";
 import { US_STATES } from "@/lib/us-states";
@@ -89,6 +91,17 @@ const lookups = [
   ...["English", "Spanish"].map((v, i) => ({ id: 600 + i, category: "language", value: v })),
 ];
 
+const PICK: Suggestion[] = [
+  { id: "m", name: "Maya Chen, PsyD", avatarUrl: null, where: "Brooklyn, NY", group: "recent", reason: "Trusted · Last message Oct 6 · Accepting referrals", focus: ["Trauma/PTSD", "Anxiety/Panic Disorders"], trusted: true },
+  { id: "ag", name: "Aaron Garcia, DO", avatarUrl: null, where: "White Plains, NY", group: "trusted", reason: "Trusted colleague · Accepting referrals", focus: ["Anxiety/Panic Disorders", "Bipolar Disorder"], trusted: true },
+  { id: "ah", name: "Aaron Howard, PhD", avatarUrl: null, where: "White Plains, NY", group: "trusted", reason: "Trusted colleague · Accepting referrals", focus: ["Life Transitions", "Sleep Disorders"], trusted: true },
+  { id: "ad", name: "Adrian Dalton, PsyD", avatarUrl: null, where: "Brooklyn, NY", group: "trusted", reason: "Trusted colleague · Accepting referrals", focus: ["Stress", "Violence"], trusted: true },
+  { id: "ar", name: "Adrian Ramirez, PsyD", avatarUrl: null, where: "Brooklyn, NY", group: "trusted", reason: "Trusted colleague · Selected referrals only", focus: ["HIV & AIDS", "Disability"], trusted: true },
+  { id: "aq", name: "Aaron Quinn-Whitfield, PsyD", avatarUrl: null, where: "Saratoga Springs, NY", group: "trusted", reason: "Trusted colleague · Selected referrals only", focus: ["Obsessive/Compulsive Disorder", "Eating Disorders"], trusted: true },
+  { id: "e", name: "Eli Ramirez, MD", avatarUrl: null, where: "Manhattan, NY", group: "worked", reason: "Worked with before · Accepting referrals", focus: ["Psychiatry", "Medication management"] },
+  { id: "l", name: "Lena Park, PsyD", avatarUrl: null, where: "Queens, NY", group: "saved", reason: "Saved", focus: ["Couples", "Perinatal"] },
+];
+
 export const previewScreens: Record<string, () => ReactNode> = {
   home: () => (
     <HomeView
@@ -171,6 +184,22 @@ export const previewScreens: Record<string, () => ReactNode> = {
     />
   ),
   "consult-new": () => <ConsultComposeView kind="question" areas={["Anxiety", "Depression"]} suggestions={[{ id: "a", name: "Maya Chen, PsyD", avatarUrl: null, where: "Brooklyn, NY", group: "trusted", reason: "Trusted colleague", focus: [], trusted: true }]} groups={[{ id: 1, name: "Thursday Circle", members: 6 }]} />,
+  "consult-new-one": () => <ConsultComposeView kind="question" areas={["Anxiety", "Depression"]} suggestions={PICK} groups={[{ id: 1, name: "Thursday Circle", members: 5 }, { id: 2, name: "Hudson Child & Adolescent Peer Group", members: 4 }]} preselect="ag" />,
+  "messages-compose": () => (
+    <MessagesShell list={<ConversationList items={[]} composing />} view="compose">
+      <section className="card compose-card">
+        <div className="eyebrow">New message</div>
+        <h2 className="serif-title" style={{ fontSize: 26, margin: "6px 0 14px" }}>Write to a colleague</h2>
+        <form>
+          <ColleaguePicker suggestions={PICK} name="participant_ids" mode="single" />
+          <label className="field grow" style={{ marginTop: 18 }}>
+            Message
+            <textarea name="body" placeholder="Write a professional message. No client-identifying details." />
+          </label>
+        </form>
+      </section>
+    </MessagesShell>
+  ),
   "consult-review": () => (
     <ConsultDetailView
       c={{ id: 3, kind: "question", question: "Approaches to a stalled treatment with adolescent anxiety?", context: "Twelve sessions in, avoidance persists despite exposure work. Looking for ideas on engagement.", typeLabel: "Treatment impasse", tags: ["Anxiety"], status: "draft", mine: true, authorName: "You", createdAt: new Date().toISOString(), audienceLabel: "Selected colleagues", recipients: ["Dr. Maya Chen", "Dr. Eli Ramirez"], responses: [] }}
