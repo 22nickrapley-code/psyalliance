@@ -1,5 +1,5 @@
 import type { Match } from "@/lib/match-engine";
-import { PageHead, Empty, Status, PersonAvatar, MatchCard } from "../_components/ui";
+import { PageHead, Empty, Status, PersonAvatar, MatchCard, Banner, ConnectedNote } from "../_components/ui";
 import { Orbit, type CircleNode } from "../_components/orbit";
 import { respondToConnection, sendConnectionRequest, saveClinicianAction, removeSavedClinicianAction } from "./actions";
 import { roleLabel } from "@/lib/profession";
@@ -141,6 +141,8 @@ export function NetworkView({
   networkSize = 1,
   why,
   circle,
+  connected,
+  declined,
 }: {
   tab: NetworkTab;
   people: Person[];
@@ -159,6 +161,8 @@ export function NetworkView({
   networkSize?: number;
   why?: string;
   circle?: { nodes: CircleNode[]; me: { initials: string; avatarUrl: string | null } };
+  connected?: string;
+  declined?: boolean;
 }) {
   const pages = Math.max(1, Math.ceil(total / pageSize));
   const from = total === 0 ? 0 : (page - 1) * pageSize + 1;
@@ -175,6 +179,8 @@ export function NetworkView({
         lead="Search by relevant professional facts, availability and your existing relationships."
         actions={<a className="btn" href={inviteHref}>Invite a colleague</a>}
       />
+      {connected && <ConnectedNote name={connected} />}
+      {declined && <Banner ok="Invitation declined. They aren't told why." />}
       <div className="split">
         <div>
           <form method="get" action="/dashboard/network">

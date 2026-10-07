@@ -57,7 +57,7 @@ export async function confirmAvailability(formData: FormData) {
   revalidatePath(`/dashboard/people/${user.id}`);
   revalidatePath("/dashboard/network");
   revalidatePath("/refer");
-  redirect("/dashboard/availability?confirmed=1");
+  redirect("/dashboard/profile?availability_saved=1");
 }
 
 // One-tap "nothing's changed" reconfirmation from Home (Product Spec v1,

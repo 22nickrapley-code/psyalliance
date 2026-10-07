@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { IS_DEMO_SITE } from "@/lib/env";
 import { clinicianName, roleLabel } from "@/lib/profession";
 import { resetSandboxAction } from "../sandbox/[token]/actions";
@@ -187,7 +188,11 @@ export default async function DashboardLayout({
       resetSandboxAction={IS_DEMO_SITE ? resetSandboxAction : undefined}
     >
       {children}
-      {IS_DEMO_SITE && sandbox?.label && !isOperator && <SandboxNudge />}
+      {IS_DEMO_SITE && sandbox?.label && !isOperator && (
+        <Suspense fallback={null}>
+          <SandboxNudge />
+        </Suspense>
+      )}
     </PremiumShell>
   );
 }

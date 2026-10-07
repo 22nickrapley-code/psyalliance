@@ -4,6 +4,7 @@ import { sendMessage, removeMessageAction } from "./actions";
 import { ReportContent } from "../_components/report-content";
 import { splitContext } from "./data";
 import { HANDOFF_RULE } from "../_components/ui";
+import { MessageReactions, type Reaction } from "./reactions";
 
 type Supabase = Awaited<ReturnType<typeof createClient>>;
 
@@ -54,6 +55,19 @@ export async function ThreadPanel({ id, myself, error, draft }: { id: number; my
       .order("created_at", { ascending: true }),
   ]);
   if (!conversation) return null;
+  const { data: reactionRows } = await supabase.from("message_reactions").select("message_id, profile_id, reaction").eq("conversation_id", id);
+  const firstName = new Map<string, string>((participants || []).map((p: any) => [p.profile_id, p.profile_id === myself ? "You" : firstOf(p.profile)]));
+  const reactionsFor = (messageId: number) => {
+    const rows = (reactionRows || []).filter((r: any) => r.message_id === messageId);
+    const counts: Partial<Record<Reaction, number>> = {};
+    const names: Partial<Record<Reaction, string[]>> = {};
+    for (const r of rows as any[]) {
+      counts[r.reaction as Reaction] = (counts[r.reaction as Reaction] || 0) + 1;
+      names[r.reaction as Reaction] = [...(names[r.reaction as Reaction] || []), firstName.get(r.profile_id) || "Colleague"];
+    }
+    const mine = ((rows as any[]).find((r) => r.profile_id === myself)?.reaction as Reaction) || null;
+    return { counts, names, mine };
+  };
   const others = (participants || []).filter((p: any) => p.profile_id !== myself);
   const { context, detail } = splitContext(conversation.title);
   const heading = others.map((p: any) => nameOf(p.profile)).join(", ") || detail || "Conversation";
@@ -105,6 +119,10 @@ export async function ThreadPanel({ id, myself, error, draft }: { id: number; my
                   </span>
                 )}
               </small>
+              {!m.deleted_at && (() => {
+                const r = reactionsFor(m.id);
+                return <MessageReactions messageId={m.id} counts={r.counts} names={r.names} mine={r.mine} canReact={!mine} />;
+              })()}
             </div>
           );
         })}

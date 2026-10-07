@@ -4,7 +4,7 @@ import { ProfileView } from "./view";
 import { PageHead } from "../_components/ui";
 
 export default async function ProfilePage(props: {
-  searchParams: Promise<{ saved?: string; avatar_saved?: string; avatar_error?: string; error?: string; edit?: string }>;
+  searchParams: Promise<{ saved?: string; availability_saved?: string; avatar_saved?: string; avatar_error?: string; error?: string; edit?: string }>;
 }) {
   const sp = await props.searchParams;
   const supabase = await createClient();

@@ -331,3 +331,12 @@ export async function removeMessageAction(formData: FormData) {
   revalidatePath(`/dashboard/messages/${conversationId}`);
   redirect(`/dashboard/messages/${conversationId}`);
 }
+
+// A quick acknowledgement on a message: like, dislike or heart. Choosing the
+// same one again takes it back. Returns the caller's reaction now.
+export async function reactToMessageAction(messageId: number, reaction: "like" | "dislike" | "heart"): Promise<{ ok: boolean; mine: string | null }> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("react_to_message", { p_message: messageId, p_reaction: reaction });
+  if (error) return { ok: false, mine: null };
+  return { ok: true, mine: (data as string | null) ?? null };
+}

@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { raiseNotification } from "@/lib/notifications-v2";
 import { redirect } from "next/navigation";
 import { saveClinicianRelationship, removeSavedClinicianRelationship } from "@/lib/relationships";
 
@@ -189,17 +190,41 @@ export async function sendDueConnectionReminders(supabase: Awaited<ReturnType<ty
 
 export async function respondToConnection(formData: FormData) {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   const id = Number(formData.get("id"));
   const decision = String(formData.get("decision") || "accepted");
+  const returnTo = String(formData.get("return_to") || "/dashboard/network");
+  const back = returnTo.startsWith("/dashboard") ? returnTo : "/dashboard/network";
 
-  const { error } = await supabase
+  const { data: updated, error } = await supabase
     .from("connections")
     .update({ status: decision, responded_at: new Date().toISOString() })
-    .eq("id", id);
+    .eq("id", id)
+    .select("requester_id, requester:requester_id(full_name)")
+    .maybeSingle();
   if (error) networkError(error.message);
+
+  // Accepting is a moment: the inviter hears about it, and the member sees
+  // a clear confirmation of what has changed.
+  const requesterId = (updated as any)?.requester_id as string | undefined;
+  const requesterName = String((updated as any)?.requester?.full_name || "your colleague");
+  if (decision === "accepted" && user && requesterId) {
+    await raiseNotification(supabase, {
+      eventType: "trusted_invitation_accepted",
+      actorProfileId: user.id,
+      actorType: "member_web",
+      recipientProfileIds: [requesterId],
+      summary: "accepted your invitation. You're now trusted colleagues",
+      deepLink: `/dashboard/people/${user.id}`,
+    });
+  }
 
   revalidatePath("/dashboard/network");
   revalidatePath("/dashboard/people/[id]", "page");
+  const flag = decision === "accepted" ? `connected=${encodeURIComponent(requesterName)}` : "declined=1";
+  redirect(`${back}${back.includes("?") ? "&" : "?"}${flag}`);
 }
 
 export async function removeConnection(formData: FormData) {

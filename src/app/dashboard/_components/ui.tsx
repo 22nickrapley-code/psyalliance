@@ -339,3 +339,25 @@ export function QuietEmpty({ title, body, action }: { title: string; body: React
     </div>
   );
 }
+
+// Shown once, right after a trusted-circle invitation is accepted: what
+// changed, and the obvious next things to do together.
+export function ConnectedNote({ name, profileId }: { name: string; profileId?: string }) {
+  const first = name.replace(/^(dr\.?)\s+/i, "").split(/[\s,]+/)[0] || name;
+  return (
+    <section className="connected-note" role="status">
+      <span className="connected-seal" aria-hidden="true">&#10003;</span>
+      <div>
+        <div className="eyebrow">Trusted circle</div>
+        <h3>You and {first} are now trusted colleagues.</h3>
+        <p>
+          You&rsquo;ll each come first in the other&rsquo;s matches for referrals, cover and questions. We&rsquo;ve let {first} know.
+        </p>
+        <div className="connected-actions">
+          {profileId && <a className="btn small-btn" href={`/dashboard/messages?to=${profileId}`}>Say hello</a>}
+          <a className="btn secondary small-btn" href="/dashboard/network?tab=trusted">See your circle</a>
+        </div>
+      </div>
+    </section>
+  );
+}

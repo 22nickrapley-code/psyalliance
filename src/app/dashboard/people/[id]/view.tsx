@@ -2,7 +2,7 @@ import { sendConnectionRequest, respondToConnection, removeConnection, saveClini
 import { startConversation } from "../../messages/actions";
 import { addToBlocklist, removeFromBlocklist, blockMemberAction } from "../../settings/actions";
 import { fileReportAction } from "../../moderation-actions";
-import { Banner, PersonAvatar } from "../../_components/ui";
+import { Banner, PersonAvatar, ConnectedNote } from "../../_components/ui";
 
 // A colleague's profile, laid out as the design concept: who they are on
 // a dark hero, their practice at a glance, the facts PsyAlliance holds
@@ -28,6 +28,8 @@ export type ClinicianProfile = {
   relationship: string;
   status: "trusted" | "pending_out" | "pending_in" | null;
   connectionId: number | null;
+  since?: string | null;
+  workedWith?: boolean;
   saved: boolean;
   excluded: boolean;
   collaborations: number;
@@ -35,31 +37,110 @@ export type ClinicianProfile = {
   primaryState: string | null;
 };
 
-export function ClinicianProfileView({ p, error }: { p: ClinicianProfile; error?: string }) {
+// Your relationship with this colleague, said plainly at the top of their
+// profile: what it is, what it means, and the one thing you can do next.
+function RelationshipBand({ p }: { p: ClinicianProfile }) {
+  const first = p.firstName;
+  if (p.status === "pending_in" && p.connectionId) {
+    return (
+      <div className="rel-band rel-invite">
+        <span className="rel-icon" aria-hidden="true">&#9993;</span>
+        <span className="rel-copy">
+          <b>{first} invited you to their trusted circle</b>
+          <small>Trusted colleagues come first in each other&rsquo;s matches. It&rsquo;s mutual, and you can change it any time.</small>
+        </span>
+        <span className="rel-actions">
+          <form action={respondToConnection} className="inline">
+            <input type="hidden" name="id" value={p.connectionId} />
+            <input type="hidden" name="decision" value="accepted" />
+            <input type="hidden" name="return_to" value={`/dashboard/people/${p.id}`} />
+            <button type="submit" className="btn small-btn">Accept</button>
+          </form>
+          <form action={respondToConnection} className="inline">
+            <input type="hidden" name="id" value={p.connectionId} />
+            <input type="hidden" name="decision" value="declined" />
+            <input type="hidden" name="return_to" value={`/dashboard/people/${p.id}`} />
+            <button type="submit" className="btn ghost small-btn">Decline</button>
+          </form>
+        </span>
+      </div>
+    );
+  }
+  if (p.status === "trusted") {
+    return (
+      <div className="rel-band rel-trusted">
+        <span className="rel-icon" aria-hidden="true">&#10003;</span>
+        <span className="rel-copy">
+          <b>Trusted colleague</b>
+          <small>
+            In each other&rsquo;s circle{p.since ? ` since ${p.since}` : ""}. {first} comes first in your matches, and you in theirs.
+          </small>
+        </span>
+      </div>
+    );
+  }
+  if (p.status === "pending_out") {
+    return (
+      <div className="rel-band rel-pending">
+        <span className="rel-icon" aria-hidden="true">&#8987;</span>
+        <span className="rel-copy">
+          <b>Invitation sent</b>
+          <small>Waiting for {first} to accept. You&rsquo;ll get a notification when they do.</small>
+        </span>
+      </div>
+    );
+  }
+  if (p.workedWith || p.saved) {
+    return (
+      <div className={`rel-band ${p.workedWith ? "rel-worked" : "rel-saved"}`}>
+        <span className="rel-icon" aria-hidden="true">{p.workedWith ? "↔" : "★"}</span>
+        <span className="rel-copy">
+          <b>{p.workedWith ? "Worked with before" : "Saved"}</b>
+          <small>
+            {p.workedWith
+              ? `${p.collaborations > 0 ? `${p.collaborations} collaboration${p.collaborations === 1 ? "" : "s"} together. ` : ""}Invite ${first} to your trusted circle to rank each other first.`
+              : `Only you can see this. Invite ${first} to your trusted circle to rank each other first.`}
+          </small>
+        </span>
+        <span className="rel-actions">
+          <form action={sendConnectionRequest}>
+            <input type="hidden" name="addressee_id" value={p.id} />
+            <input type="hidden" name="tier" value="trusted_colleague" />
+            <button type="submit" className="btn secondary small-btn">Invite to trusted circle</button>
+          </form>
+        </span>
+      </div>
+    );
+  }
+  return (
+    <div className="rel-band rel-none">
+      <span className="rel-icon" aria-hidden="true">&#9675;</span>
+      <span className="rel-copy">
+        <b>Verified member, not yet in your circle</b>
+        <small>You can message, refer or ask {first} for cover. Inviting them makes it mutual.</small>
+      </span>
+      <span className="rel-actions">
+        <form action={sendConnectionRequest}>
+          <input type="hidden" name="addressee_id" value={p.id} />
+          <input type="hidden" name="tier" value="trusted_colleague" />
+          <button type="submit" className="btn secondary small-btn">Invite to trusted circle</button>
+        </form>
+      </span>
+    </div>
+  );
+}
+
+export function ClinicianProfileView({ p, error, connected, declined }: { p: ClinicianProfile; error?: string; connected?: string; declined?: boolean }) {
   return (
     <>
       <a href="/dashboard/network" className="text-arrow">&larr; Network</a>
       <div style={{ height: 14 }} />
       <Banner error={error} />
-      {p.status === "pending_in" && p.connectionId && (
-        <div className="banner ok row between wrap">
-          <span>{p.name} invited you to their trusted circle.</span>
-          <span className="row">
-            <form action={respondToConnection} className="inline">
-              <input type="hidden" name="id" value={p.connectionId} />
-              <input type="hidden" name="decision" value="accepted" />
-              <button type="submit" className="btn small-btn">Accept</button>
-            </form>
-            <form action={respondToConnection} className="inline">
-              <input type="hidden" name="id" value={p.connectionId} />
-              <input type="hidden" name="decision" value="declined" />
-              <button type="submit" className="btn ghost small-btn">Decline</button>
-            </form>
-          </span>
-        </div>
-      )}
+      {connected && p.status === "trusted" && <ConnectedNote name={p.name} profileId={p.id} />}
+      {declined && <Banner ok="Invitation declined. They aren't told why." />}
+      <RelationshipBand p={p} />
 
-      <section className="profile-hero">
+      <section className={`profile-hero rel-${p.status || (p.workedWith ? "worked" : p.saved ? "saved" : "none")}`}>
         <PersonAvatar name={p.name} url={p.avatarUrl} size={84} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <div className="eyebrow">Clinician profile</div>

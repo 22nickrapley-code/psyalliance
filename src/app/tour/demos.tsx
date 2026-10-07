@@ -7,6 +7,7 @@ import { ReferNeedView, ReferShortlistView, ReferReviewView, ReferTrackView } fr
 import { ConsultComposeView, ConsultDetailView } from "../dashboard/consult/views";
 import { ConversationList, MessagesShell } from "../dashboard/messages/views";
 import { HomeView } from "../dashboard/home-view";
+import { MessageReactions } from "../dashboard/messages/reactions";
 import { NetworkView, type Person } from "../dashboard/network/views";
 import { ClinicianProfileView, type ClinicianProfile } from "../dashboard/people/[id]/view";
 import { CredentialsView } from "../dashboard/credentials/view";
@@ -143,6 +144,16 @@ const ALEX_CIRCLE = {
     { id: "noah", name: "Noah Patel, PsyD", kind: "saved", avatarUrl: AV.noah },
   ] as { id: string; name: string; kind: "trusted" | "worked" | "saved"; avatarUrl: string | null }[],
 };
+const ALEX_SUGGESTIONS = ALEX_CIRCLE.nodes.map((n) => ({
+  id: n.id,
+  name: n.name,
+  avatarUrl: n.avatarUrl,
+  where: n.id === "maya" ? "Brooklyn, NY" : "New York",
+  group: (n.kind === "trusted" ? "trusted" : n.kind) as "trusted" | "worked" | "saved",
+  reason: n.kind === "trusted" ? "Trusted colleague" : n.kind === "worked" ? "Worked with before" : "Saved",
+  focus: [] as string[],
+  trusted: n.kind === "trusted",
+}));
 const people: Person[] = [
   { id: "maya", name: "Maya Chen, PsyD", qualification: "PsyD", city: "Brooklyn", state: "NY", licenceStates: ["NY"], topFocus: ["Trauma/PTSD", "Anxiety/Panic Disorders"], modalities: ["EMDR"], availability: "Accepting referrals", fresh: true, confirmedDaysAgo: 3, psypact: false, avatarUrl: AV.maya, relationship: "trusted", saved: false },
   { id: "sam", name: "Samuel Okafor, PhD", qualification: "PhD", city: "Brooklyn", state: "NY", licenceStates: ["NY"], topFocus: ["Obsessive/Compulsive Disorder", "Anxiety/Panic Disorders"], modalities: ["Exposure and Response Prevention"], availability: "Accepting referrals", fresh: true, confirmedDaysAgo: 8, psypact: false, avatarUrl: AV.samuel, relationship: "trusted", saved: false },
@@ -509,8 +520,8 @@ export const DEMOS: Demo[] = [
           <ConsultComposeView
             kind="question"
             areas={["Anxiety/Panic Disorders", "Trauma/PTSD"]}
-            colleagues={[{ id: "maya", name: "Maya Chen, PsyD", relation: "Trusted" }]}
-            groups={[]}
+            suggestions={ALEX_SUGGESTIONS}
+            groups={[{ id: 1, name: "Thursday Circle", members: 6 }]}
             preset={{
               question: "How do you structure the handover call when a colleague covers mid-treatment?",
               context: "Six weeks of parental leave coming up. I want the transition to feel steady for clients without over-sharing.",
@@ -584,7 +595,7 @@ export const DEMOS: Demo[] = [
     minutes: "2 minutes",
     outcome: "A clear morning, and colleagues you can reach.",
     learned: [
-      "Home is four jobs and one Actions tile, nothing else.",
+      "Home is four jobs, one Actions tile, your availability and your circle today.",
       "Search the network by need; trusted colleagues come first, with reasons.",
       "Profiles show facts on file with dates, not testimonials.",
       "Every conversation shows what it's about.",
@@ -594,7 +605,7 @@ export const DEMOS: Demo[] = [
         slug: "home",
         perspective: "alex",
         title: "Alex's morning",
-        what: "Home asks one question: what would you like to do? Four jobs, and a fifth tile that counts what's waiting for Alex and opens the list in place. Availability sits underneath as one line.",
+        what: "Home asks one question: what would you like to do? Four jobs, and a fifth tile that counts what's waiting for Alex and opens the list in place. Underneath: what colleagues see of Alex's availability, and who in the trusted circle is open today.",
         focus: "Find a clinician",
         focusNote: "Next, find a colleague in the network.",
         render: () => (
@@ -604,14 +615,20 @@ export const DEMOS: Demo[] = [
               today: new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", timeZone: "America/New_York" }),
               greeting: "Good morning",
               steps: [
-                { key: "c", title: "Aaron needs cover for two clients", detail: "An unexpected absence this week. Accept, discuss or decline each client.", href: "#", action: "Review the request", urgent: true },
-                { key: "r", title: "Your Obsessive/Compulsive Disorder referral is ready to choose", detail: "Everyone you asked has replied. 2 interested", href: "#", action: "Choose a colleague" },
-                { key: "o", title: "3 referrals are waiting for your reply", detail: "Trauma/PTSD from Maya Chen · Anxiety/Panic Disorders from Eli Ramirez · Anxiety/Panic Disorders from Aaron Quinn", href: "#", action: "Review referrals" },
-                { key: "i", title: "2 colleagues invited you to their trusted circle", detail: "Imani Brooks, Adrian Turner", href: "#", action: "Review" },
-                { key: "m", title: "1 unread conversation", detail: "Messages from colleagues", href: "#", action: "Read" },
+                { key: "cover-1", title: "Aaron Garcia, DO asked you to cover 2 clients", detail: "Anxiety/Panic Disorders and Trauma/PTSD · Unexpected absence · NY · this week", href: "#", action: "Review request", urgent: true, person: { id: "t3", name: "Aaron Garcia, DO" } },
+                { key: "ref-1", title: "Your Obsessive/Compulsive Disorder referral is ready to choose", detail: "Everyone you asked has replied. 2 interested", href: "#", action: "Choose a colleague" },
+                { key: "offers", title: "3 referrals are waiting for your reply", detail: "Trauma/PTSD from Maya Chen · Anxiety/Panic Disorders from Eli Ramirez · Anxiety/Panic Disorders from Aaron Quinn", href: "#", action: "Review referrals" },
+                { key: "invs", title: "2 colleagues invited you to their trusted circle", detail: "Imani Brooks, Adrian Turner", href: "#", action: "Review" },
+                { key: "msgs", title: "1 unread conversation", detail: "Messages from colleagues", href: "#", action: "Read" },
               ],
               gettingStarted: null,
-              availability: { referrals: "Selected referrals", cover: "Cover: ask me", consult: "Open to consult", confirmedLabel: "Last confirmed 3 days ago", stale: false, canReconfirm: true },
+              availability: { referrals: "Selected referrals only", cover: "Cover: ask me", consult: "Open to consult", confirmedLabel: "Confirmed 3 days ago", stale: false, canReconfirm: true, tones: { referrals: "limited", cover: "limited", consult: "open" } },
+              circleSnapshot: {
+                trusted: 7,
+                referrals: 4,
+                cover: 3,
+                people: ALEX_CIRCLE.nodes.filter((n) => n.kind === "trusted").map((n, i) => ({ id: n.id, name: n.name, avatarUrl: n.avatarUrl, open: i < 4 })),
+              },
               options,
             }}
           />
@@ -659,7 +676,7 @@ export const DEMOS: Demo[] = [
         slug: "messages",
         perspective: "alex",
         title: "Messages with context",
-        what: "Every conversation shows what it's about: this one is Alex's cover plan with Maya, so the thread and the plan stay together.",
+        what: "Every conversation shows what it's about: this one is Alex's cover plan with Maya, so the thread and the plan stay together. A thumbs up or a heart says you've seen a message without another reply.",
         focusNote: "That's a day in Alex's practice.",
         render: () => (
           <MessagesShell
@@ -684,8 +701,8 @@ export const DEMOS: Demo[] = [
               </div>
               <div className="message-scroll">
                 <div className="bubble">Congratulations again! I&rsquo;ve kept two cover slots free for {leave.range}. Send the plan over when it&rsquo;s ready.<small>Maya &middot; Yesterday, 4:10 PM</small></div>
-                <div className="bubble me">Thank you. I&rsquo;ll set it up this week: three clients, no identifiers, and I&rsquo;ll use the PA-02 handoff pack.<small>You &middot; Yesterday, 4:25 PM</small></div>
-                <div className="bubble">Perfect. A joint handover call the week before works for me.<small>Maya &middot; 9:14 AM</small></div>
+                <div className="bubble me">Thank you. I&rsquo;ll set it up this week: three clients, no identifiers, and I&rsquo;ll use the PA-02 handoff pack.<small>You &middot; Yesterday, 4:25 PM</small><MessageReactions messageId={2} counts={{ heart: 1 }} names={{ heart: ["Maya"] }} mine={null} canReact={false} /></div>
+                <div className="bubble">Perfect. A joint handover call the week before works for me.<small>Maya &middot; 9:14 AM</small><MessageReactions messageId={3} counts={{ like: 1 }} names={{ like: ["You"] }} mine="like" canReact /></div>
               </div>
               <div className="message-compose">
                 <textarea placeholder="Write a professional message..." aria-label="Message" />

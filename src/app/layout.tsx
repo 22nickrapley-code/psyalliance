@@ -6,6 +6,7 @@ import "./globals.css";
 // blocked, in this dev sandbox or in whatever host ends up building this
 // for production.
 import "./fonts/newsreader.css";
+import "./fonts/inter.css";
 import "@fontsource/inter/400.css";
 import "@fontsource/inter/500.css";
 import "@fontsource/inter/600.css";

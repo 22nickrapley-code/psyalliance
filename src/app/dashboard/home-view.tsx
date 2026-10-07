@@ -19,6 +19,17 @@ export type NextStep = {
   action: string;
   urgent?: boolean;
   rank?: number;
+  // The colleague this is about, when there's one: their name links to them.
+  person?: { id: string; name: string };
+};
+
+export type Tone = "open" | "limited" | "closed" | "unset";
+
+export type CircleSnapshot = {
+  trusted: number;
+  referrals: number;
+  cover: number;
+  people: { id: string; name: string; avatarUrl: string | null; open: boolean }[];
 };
 
 export type HomeData = {
@@ -34,7 +45,9 @@ export type HomeData = {
     confirmedLabel: string;
     stale: boolean;
     canReconfirm: boolean;
+    tones?: { referrals: Tone; cover: Tone; consult: Tone };
   };
+  circleSnapshot?: CircleSnapshot;
   options?: NeedOptions;
   notice?: string;
   sandbox?: boolean;
@@ -44,6 +57,107 @@ export type HomeData = {
   circle?: unknown;
   resources?: unknown;
 };
+
+const initialsOf = (name: string) =>
+  name
+    .replace(/^(dr\.?)\s+/i, "")
+    .replace(/,.*$/, "")
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((p) => p[0]?.toUpperCase())
+    .join("");
+
+// "Cover: ask me" reads oddly beside a "Cover" label.
+const plain = (label: string) => {
+  const t = label.replace(/^Cover:\s*/i, "");
+  return t.charAt(0).toUpperCase() + t.slice(1);
+};
+
+function AvailabilityCard({ a }: { a: HomeData["availability"] }) {
+  const rows: [string, string, Tone][] = [
+    ["Referrals", plain(a.referrals), a.tones?.referrals || "unset"],
+    ["Cover", plain(a.cover), a.tones?.cover || "unset"],
+    ["Consult", plain(a.consult), a.tones?.consult || "unset"],
+  ];
+  return (
+    <section className="card home-card avail-card" aria-labelledby="avail-title">
+      <div className="home-card-head">
+        <div>
+          <div className="eyebrow">What colleagues see</div>
+          <h3 id="avail-title">Your availability</h3>
+        </div>
+        <span className={`avail-when${a.stale ? " stale" : ""}`}>{a.confirmedLabel}</span>
+      </div>
+      <ul className="avail-rows">
+        {rows.map(([k, v, tone]) => (
+          <li key={k}>
+            <span className={`avail-dot ${tone}`} aria-hidden="true" />
+            <span className="k">{k}</span>
+            <span className="v">{v}</span>
+          </li>
+        ))}
+      </ul>
+      <div className="home-card-actions">
+        {a.canReconfirm && (
+          <form action={reconfirmAvailability} className="inline">
+            <input type="hidden" name="return_to" value="/dashboard" />
+            <button type="submit" className="btn secondary small-btn">Still accurate</button>
+          </form>
+        )}
+        <a className="btn ghost small-btn" href="/dashboard/availability">Update &rarr;</a>
+      </div>
+    </section>
+  );
+}
+
+function CircleCard({ c }: { c?: CircleSnapshot }) {
+  if (!c || c.trusted === 0) {
+    return (
+      <section className="card home-card circle-snap empty" aria-labelledby="circle-title">
+        <div className="eyebrow">Your circle</div>
+        <h3 id="circle-title">Start with the colleagues you already trust</h3>
+        <p className="small">Trusted colleagues come first in every match, for referrals, cover and questions. Invite two or three to begin.</p>
+        <div className="home-card-actions">
+          <a className="btn small-btn" href="/dashboard/network">Find colleagues</a>
+        </div>
+      </section>
+    );
+  }
+  const extra = c.trusted - c.people.length;
+  return (
+    <section className="card home-card circle-snap" aria-labelledby="circle-title">
+      <div className="home-card-head">
+        <div>
+          <div className="eyebrow">Your circle today</div>
+          <h3 id="circle-title">
+            {c.trusted} trusted colleague{c.trusted === 1 ? "" : "s"}
+          </h3>
+        </div>
+      </div>
+      <div className="face-stack" aria-hidden="true">
+        {c.people.map((p) => (
+          <span key={p.id} className={`face${p.open ? " open" : ""}`} title={p.name}>
+            {p.avatarUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={p.avatarUrl} alt="" />
+            ) : (
+              initialsOf(p.name)
+            )}
+          </span>
+        ))}
+        {extra > 0 && <span className="face more">+{extra}</span>}
+      </div>
+      <ul className="circle-facts">
+        <li><b>{c.referrals}</b> taking referrals</li>
+        <li><b>{c.cover}</b> open for cover</li>
+      </ul>
+      <div className="home-card-actions">
+        <a className="btn ghost small-btn" href="/dashboard/network?tab=trusted">See your circle &rarr;</a>
+      </div>
+    </section>
+  );
+}
 
 export function HomeView({ d }: { d: HomeData }) {
   const n = d.steps.length;
@@ -60,13 +174,11 @@ export function HomeView({ d }: { d: HomeData }) {
 
   return (
     <div className="home-simple">
-      <div className="page-head">
-        <div>
-          <div className="eyebrow">{d.today || "Your practice"}</div>
-          <h1>{d.greeting || "Welcome back"}, {d.firstName}.</h1>
-          <p>{summary}</p>
-        </div>
-      </div>
+      <header className="home-hero">
+        <div className="eyebrow">{d.today || "Your practice"}</div>
+        <h1>{d.greeting || "Welcome back"}, {d.firstName}.</h1>
+        <p>{summary}</p>
+      </header>
       <Banner ok={d.notice} />
 
       {d.gettingStarted && (
@@ -90,27 +202,15 @@ export function HomeView({ d }: { d: HomeData }) {
         </section>
       )}
 
-      <h2 className="home-question">What would you like to do?</h2>
-      <HomeTiles steps={d.steps} />
-
-      <section className="availability-strip" aria-label="Your availability">
-        <span className="label">Your availability</span>
-        <span className="facts">
-          <span><b>Referrals</b> {d.availability.referrals}</span>
-          <span><b>Cover</b> {d.availability.cover}</span>
-          <span><b>Consult</b> {d.availability.consult}</span>
-        </span>
-        <span className={`when${d.availability.stale ? " stale" : ""}`}>{d.availability.confirmedLabel}</span>
-        <span className="strip-actions">
-          {d.availability.canReconfirm && (
-            <form action={reconfirmAvailability} className="inline">
-              <input type="hidden" name="return_to" value="/dashboard" />
-              <button type="submit" className="plain-button small">Still accurate</button>
-            </form>
-          )}
-          <a className="text-arrow" href="/dashboard/availability">Change &rarr;</a>
-        </span>
+      <section className="home-ask" aria-labelledby="home-question">
+        <h2 className="home-question" id="home-question">What would you like to do?</h2>
+        <HomeTiles steps={d.steps} />
       </section>
+
+      <div className="home-lower">
+        <AvailabilityCard a={d.availability} />
+        <CircleCard c={d.circleSnapshot} />
+      </div>
     </div>
   );
 }

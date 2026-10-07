@@ -157,7 +157,7 @@ export function TourFrame({
       if (target.current && (t === target.current || target.current.contains(t))) return false;
       if (!t.closest("[data-tour-screen]")) return false;
       if (t.closest("summary")) return false;
-      const f = t.closest("input, select, textarea, label");
+      const f = t.closest("input, select, textarea, label, .aud-option, .picker-row, .picker-more, .picker-chosen button, .reaction-picker button, .reaction-chip");
       if (!f) return false;
       // A label that wraps a link (a colleague's name) behaves like the link.
       if (f.tagName === "LABEL" && t.closest("a")) return false;

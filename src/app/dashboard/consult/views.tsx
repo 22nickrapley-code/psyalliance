@@ -1,3 +1,5 @@
+import { AudiencePicker } from "./audience-picker";
+import type { Suggestion } from "@/lib/colleague-suggestions";
 import { ReportContent } from "../_components/report-content";
 import type { ReactNode } from "react";
 import type { Match } from "@/lib/match-engine";
@@ -217,7 +219,7 @@ export function ConsultIndexView({
 export function ConsultComposeView({
   kind,
   areas,
-  colleagues,
+  suggestions,
   groups,
   preselect,
   preselectGroup,
@@ -226,8 +228,8 @@ export function ConsultComposeView({
 }: {
   kind: "question" | "supervision_request" | "supervision_offer";
   areas: string[];
-  colleagues: { id: string; name: string; relation: string }[];
-  groups: { id: number; name: string }[];
+  suggestions: Suggestion[];
+  groups: { id: number; name: string; members: number }[];
   preselect?: string;
   preselectGroup?: number;
   error?: string;
@@ -262,52 +264,7 @@ export function ConsultComposeView({
             <textarea name="context" rows={4} maxLength={2000} defaultValue={preset?.context} placeholder="Broad, de-identified context: what you've tried, where you're stuck, what would help." />
           </label>
 
-          <details className="audience-pick" open={!!preselect || !!preselectGroup}>
-            <summary>
-              <span className="eyebrow" style={{ margin: 0 }}>Who sees this</span>
-              <b className="aud aud-one">One colleague</b>
-              <b className="aud aud-selected">Selected colleagues</b>
-              <b className="aud aud-group">Your consultation group</b>
-              <b className="aud aud-trusted">Your trusted colleagues</b>
-              <b className="aud aud-wider">The verified network</b>
-              <span className="text-arrow">Change</span>
-            </summary>
-            <label className="radio-card">
-              <input type="radio" name="audience" value="trusted" defaultChecked={!preselect && !preselectGroup} />
-              <span><b>My trusted colleagues</b><span>Your circle. The default, and usually the right place to start.</span></span>
-            </label>
-            <label className="radio-card">
-              <input type="radio" name="audience" value="one" defaultChecked={!!preselect} />
-              <span><b>One colleague</b><span>A private question, like knocking on a colleague&rsquo;s door.</span></span>
-            </label>
-            <label className="radio-card">
-              <input type="radio" name="audience" value="selected" />
-              <span><b>Selected colleagues</b><span>Choose a few people below.</span></span>
-            </label>
-            {groups.map((g) => (
-              <label key={g.id} className="radio-card">
-                <input type="radio" name="audience" value={`group:${g.id}`} defaultChecked={preselectGroup === g.id} />
-                <span><b>{g.name}</b><span>Your consultation group. Members only.</span></span>
-              </label>
-            ))}
-            <label className="radio-card">
-              <input type="radio" name="audience" value="wider_network" />
-              <span><b>Verified network</b><span>Every verified member can see and reply. Shown to those following your tags.</span></span>
-            </label>
-            {colleagues.length > 0 && (
-              <details open={!!preselect} style={{ marginTop: 8 }}>
-                <summary className="small">Choose colleagues (for One colleague or Selected)</summary>
-                <div className="stack" style={{ gap: 6, marginTop: 10, maxHeight: 280, overflow: "auto" }}>
-                  {colleagues.map((c) => (
-                    <label key={c.id} className="checkline">
-                      <input type="checkbox" name="recipients" value={c.id} defaultChecked={preselect === c.id} />
-                      {c.name} <span className="micro-note">{c.relation}</span>
-                    </label>
-                  ))}
-                </div>
-              </details>
-            )}
-          </details>
+          <AudiencePicker suggestions={suggestions} groups={groups} preselect={preselect} preselectGroup={preselectGroup} />
 
           <details className="refine-fit">
             <summary>

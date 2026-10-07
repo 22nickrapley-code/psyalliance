@@ -12,7 +12,7 @@ import type { CircleNode } from "../_components/orbit";
 const PAGE_SIZE = 20;
 
 export default async function NetworkPage(props: {
-  searchParams: Promise<{ tab?: string; q?: string; focus?: string; state?: string; available?: string; profession?: string; insurance?: string; age?: string; language?: string; modality?: string; session?: string; psypact?: string; page?: string }>;
+  searchParams: Promise<{ tab?: string; q?: string; focus?: string; state?: string; available?: string; profession?: string; insurance?: string; age?: string; language?: string; modality?: string; session?: string; psypact?: string; page?: string; connected?: string; declined?: string }>;
 }) {
   const sp = await props.searchParams;
   const tab = (["directory", "trusted", "saved", "worked", "suggested"].includes(sp.tab || "") ? sp.tab : "directory") as NetworkTab;
@@ -185,6 +185,8 @@ export default async function NetworkPage(props: {
 
   return (
     <NetworkView
+      connected={sp.connected}
+      declined={!!sp.declined}
       tab={tab}
       people={people}
       total={Number(res.total) || 0}

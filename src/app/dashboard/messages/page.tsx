@@ -1,16 +1,19 @@
+import { ColleaguePicker } from "../_components/colleague-picker";
+import { loadColleagueSuggestions } from "@/lib/colleague-suggestions";
 import { createClient } from "@/lib/supabase/server";
 import { startConversation, setNotificationReadState } from "./actions";
 import { acknowledgeProviderReferral, declineProviderReferral } from "../referrals/actions";
 import { loadConversations } from "./data";
 import { ConversationList, MessagesShell } from "./views";
 import { ThreadPanel } from "./thread";
-import { clinicianName } from "@/lib/profession";
 import { Banner, Empty } from "../_components/ui";
 
 // Messages (Product Spec v1): the direct inbox for professional
 // conversation. Threads that started from a referral, cover request or
 // consult carry that context. Admin notices and physician-portal referrals
 // sit below the conversation list.
+const composingFirst = (sp: { compose?: string; to?: string; error?: string }, n: number) => !!sp.compose || !!sp.to || !!sp.error || n === 0;
+
 export default async function MessagesPage(props: { searchParams: Promise<{ error?: string; compose?: string; to?: string; list?: string }> }) {
   const sp = await props.searchParams;
   const supabase = await createClient();
@@ -19,14 +22,8 @@ export default async function MessagesPage(props: { searchParams: Promise<{ erro
   } = await supabase.auth.getUser();
   const myself = user!.id;
 
-  const [items, { data: conns }, { data: saved }, { data: notices }, { data: providerReferrals }] = await Promise.all([
+  const [items, { data: notices }, { data: providerReferrals }] = await Promise.all([
     loadConversations(supabase, myself),
-    supabase
-      .from("connections")
-      .select("requester_id, addressee_id, requester:requester_id(full_name, credential_prefix, qualification_level), addressee:addressee_id(full_name, credential_prefix, qualification_level)")
-      .eq("status", "accepted")
-      .or(`requester_id.eq.${myself},addressee_id.eq.${myself}`),
-    supabase.from("saved_clinicians").select("clinician_id, clinician:clinician_id(full_name, credential_prefix, qualification_level)").eq("profile_id", myself),
     supabase.from("system_notifications").select("id, title, body, created_at, read_at").eq("profile_id", myself).order("created_at", { ascending: false }).limit(10),
     supabase
       .from("provider_referrals")
@@ -35,13 +32,7 @@ export default async function MessagesPage(props: { searchParams: Promise<{ erro
       .order("created_at", { ascending: false })
       .limit(10),
   ]);
-  const nameOf = (p: any) => (p ? clinicianName(p.full_name, p.qualification_level, p.credential_prefix) : "Colleague");
-  const contacts = new Map<string, string>();
-  for (const c of conns || []) {
-    const mine = c.requester_id === myself;
-    contacts.set(mine ? c.addressee_id : c.requester_id, nameOf(mine ? (c as any).addressee : (c as any).requester));
-  }
-  for (const s of saved || []) if (!contacts.has(s.clinician_id)) contacts.set(s.clinician_id, nameOf((s as any).clinician));
+  const suggestions = composingFirst(sp, items.length) ? await loadColleagueSuggestions(supabase, myself, sp.to || null) : [];
   const unreadNotices = (notices || []).filter((n: any) => !n.read_at);
 
   // Messages opens on the latest conversation; "New" opens the composer.
@@ -59,7 +50,7 @@ export default async function MessagesPage(props: { searchParams: Promise<{ erro
         <div className="index-thread">
           <ThreadPanel id={openId} myself={myself} />
         </div>
-      ) : items.length === 0 && contacts.size === 0 ? (
+      ) : items.length === 0 && suggestions.length === 0 ? (
         <Empty
           symbol={"✉"}
           title="No conversations yet."
@@ -70,27 +61,17 @@ export default async function MessagesPage(props: { searchParams: Promise<{ erro
       <section className="card compose-card">
         <div className="eyebrow">New message</div>
         <h2 className="serif-title" style={{ fontSize: 26, margin: "6px 0 14px" }}>Write to a colleague</h2>
-        {contacts.size === 0 ? (
-          <p className="small">Message anyone from their profile in Network. Trusted colleagues and saved clinicians appear here for quick access.</p>
-        ) : (
-          <form action={startConversation}>
-            <label className="field">
-              To
-              <select name="participant_ids" required defaultValue={sp.to || ""}>
-                <option value="">Choose a colleague</option>
-                {Array.from(contacts.entries()).map(([id, n]) => <option key={id} value={id}>{n}</option>)}
-              </select>
-            </label>
-            <label className="field grow">
-              Message
-              <textarea name="body" required maxLength={4000} placeholder="Write a professional message. No client-identifying details." />
-            </label>
-            <div className="row between">
-              <span className="micro-note">For a client question with several colleagues, use <a href="/dashboard/consult">Consult</a>.</span>
-              <button type="submit" className="btn lg">Send</button>
-            </div>
-          </form>
-        )}
+        <form action={startConversation}>
+          <ColleaguePicker suggestions={suggestions} name="participant_ids" mode="single" initial={sp.to ? [sp.to] : []} />
+          <label className="field grow" style={{ marginTop: 18 }}>
+            Message
+            <textarea name="body" required maxLength={4000} placeholder="Write a professional message. No client-identifying details." />
+          </label>
+          <div className="row between">
+            <span className="micro-note">For a client question with several colleagues, use <a href="/dashboard/consult/new">Ask colleagues</a>.</span>
+            <button type="submit" className="btn lg">Send</button>
+          </div>
+        </form>
       </section>
       )}
 

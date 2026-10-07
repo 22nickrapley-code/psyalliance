@@ -27,9 +27,9 @@ const AVAIL = {
   consult: { yes: "Open to consult", limited: "Consult: limited", no: "Not consulting now" } as Record<string, string>,
 };
 
-export default async function PersonPage(props: { params: Promise<{ id: string }>; searchParams: Promise<{ error?: string }> }) {
+export default async function PersonPage(props: { params: Promise<{ id: string }>; searchParams: Promise<{ error?: string; connected?: string; declined?: string }> }) {
   const { id } = await props.params;
-  const { error } = await props.searchParams;
+  const { error, connected, declined } = await props.searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -144,6 +144,10 @@ export default async function PersonPage(props: { params: Promise<{ id: string }
     relationship,
     status: status as ClinicianProfile["status"],
     connectionId: connection?.id ?? null,
+    since: connection?.status === "accepted" && (connection?.responded_at || connection?.created_at)
+      ? new Date(connection.responded_at || connection.created_at).toLocaleDateString("en-US", { month: "long", year: "numeric", timeZone: "America/New_York" })
+      : null,
+    workedWith: !!workedWithMe,
     saved: !!savedRow,
     excluded: !!excludedRow,
     collaborations: Number(workedWithMe?.interaction_count || 0),
@@ -153,5 +157,5 @@ export default async function PersonPage(props: { params: Promise<{ id: string }
   void AVAIL.referral;
   void AVAIL.cover;
 
-  return <ClinicianProfileView p={view} error={error} />;
+  return <ClinicianProfileView p={view} error={error} connected={connected} declined={!!declined} />;
 }

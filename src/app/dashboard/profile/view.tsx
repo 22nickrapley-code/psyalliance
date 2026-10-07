@@ -61,7 +61,7 @@ export function ProfileView({
   editing = true,
   licences = [],
 }: {
-  sp: { saved?: string; avatar_saved?: string; avatar_error?: string; error?: string };
+  sp: { saved?: string; availability_saved?: string; avatar_saved?: string; avatar_error?: string; error?: string };
   profile: any;
   lookups: { id: number; category: string; value: string }[] | null;
   selectedRows: { lookup_value_id: number; rank: number | null }[] | null;
@@ -129,7 +129,7 @@ export function ProfileView({
           lead="What colleagues see about your practice. PsyAlliance also uses it to suggest you for the right referrals and cover."
           actions={<a className="btn lg" href="/dashboard/profile?edit=1">Edit profile</a>}
         />
-        <Banner ok={sp.saved ? "Profile saved." : sp.avatar_saved ? "Photo updated." : null} />
+        <Banner ok={sp.availability_saved ? "Availability saved and confirmed as of today. This is what colleagues now see." : sp.saved ? "Profile saved." : sp.avatar_saved ? "Photo updated." : null} />
         <div className="split">
           <section className="card roomy">
             <div className="row" style={{ gap: 18, alignItems: "center" }}>
@@ -189,7 +189,7 @@ export function ProfileView({
       />
       <Banner
         error={sp.error || sp.avatar_error}
-        ok={sp.saved ? "Profile saved." : sp.avatar_saved ? "Photo updated." : null}
+        ok={sp.availability_saved ? "Availability saved and confirmed as of today. This is what colleagues now see." : sp.saved ? "Profile saved." : sp.avatar_saved ? "Photo updated." : null}
       />
       <HashOpener />
       <div className="split">

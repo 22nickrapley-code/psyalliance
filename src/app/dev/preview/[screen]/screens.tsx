@@ -170,7 +170,7 @@ export const previewScreens: Record<string, () => ReactNode> = {
       supervisorAvatars={{}}
     />
   ),
-  "consult-new": () => <ConsultComposeView kind="question" areas={["Anxiety", "Depression"]} colleagues={[{ id: "a", name: "Dr. Maya Chen", relation: "Trusted" }]} groups={[{ id: 1, name: "Thursday Circle" }]} />,
+  "consult-new": () => <ConsultComposeView kind="question" areas={["Anxiety", "Depression"]} suggestions={[{ id: "a", name: "Maya Chen, PsyD", avatarUrl: null, where: "Brooklyn, NY", group: "trusted", reason: "Trusted colleague", focus: [], trusted: true }]} groups={[{ id: 1, name: "Thursday Circle", members: 6 }]} />,
   "consult-review": () => (
     <ConsultDetailView
       c={{ id: 3, kind: "question", question: "Approaches to a stalled treatment with adolescent anxiety?", context: "Twelve sessions in, avoidance persists despite exposure work. Looking for ideas on engagement.", typeLabel: "Treatment impasse", tags: ["Anxiety"], status: "draft", mine: true, authorName: "You", createdAt: new Date().toISOString(), audienceLabel: "Selected colleagues", recipients: ["Dr. Maya Chen", "Dr. Eli Ramirez"], responses: [] }}

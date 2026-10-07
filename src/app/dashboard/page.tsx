@@ -10,6 +10,10 @@ import { HomeView, type HomeData, type NextStep, type CircleNode } from "./home-
 // Home (Product Spec v1). Everything here is derived from real activity:
 // requests, replies, invitations, messages, availability and licences.
 
+// Colour for an availability line: open, limited (selected / ask me), closed.
+const toneOf = (open: boolean, value: string | null | undefined): "open" | "limited" | "closed" | "unset" =>
+  !value ? "unset" : !open ? "closed" : value === "limited" || value === "ask_me" ? "limited" : "open";
+
 const AVAIL = {
   referral: { yes: "Accepting", limited: "Selected referrals", no: "Not accepting" } as Record<string, string>,
   cover: { yes: "Available", ask_me: "Limited, ask me", no: "Not available" } as Record<string, string>,
@@ -60,7 +64,7 @@ export default async function HomePage(props: { searchParams: Promise<{ reconfir
     loadNeedOptions(supabase),
     supabase
       .from("coverage_requests")
-      .select("id, coverage_plan_cases(specialism_lookup_ids, coverage_plans(id, title, absence_type, starts_on, ends_on, jurisdiction_state, owner:profile_id(full_name, credential_prefix, qualification_level)))")
+      .select("id, coverage_plan_cases(specialism_lookup_ids, coverage_plans(id, title, absence_type, starts_on, ends_on, jurisdiction_state, profile_id, owner:profile_id(full_name, credential_prefix, qualification_level)))")
       .eq("requested_profile_id", myself)
       .eq("status", "sent"),
     supabase.from("coverage_plans").select("id, title, status, coverage_plan_cases(status)").eq("profile_id", myself).in("status", ["draft", "active"]),
@@ -71,7 +75,7 @@ export default async function HomePage(props: { searchParams: Promise<{ reconfir
       .in("status", ["sent", "open", "connected"]),
     supabase
       .from("referral_requests")
-      .select("id, specialism_lookup_ids, state, city, audience_type, created_at, requester:requesting_profile_id(full_name, credential_prefix, qualification_level)")
+      .select("id, specialism_lookup_ids, state, city, audience_type, created_at, requesting_profile_id, requester:requesting_profile_id(full_name, credential_prefix, qualification_level)")
       .neq("requesting_profile_id", myself)
       .in("status", ["sent", "open"])
       .order("created_at", { ascending: false })
@@ -79,7 +83,7 @@ export default async function HomePage(props: { searchParams: Promise<{ reconfir
     supabase.from("referral_responses").select("referral_request_id").eq("responding_profile_id", myself),
     supabase
       .from("connections")
-      .select("id, requester:requester_id(full_name, credential_prefix, qualification_level)")
+      .select("id, requester_id, requester:requester_id(full_name, credential_prefix, qualification_level)")
       .eq("addressee_id", myself)
       .eq("status", "pending"),
     supabase
@@ -135,6 +139,7 @@ export default async function HomePage(props: { searchParams: Promise<{ reconfir
       detail: [g.focus.join(" and "), ABSENCE_LABEL[p?.absence_type] || p?.title, p?.jurisdiction_state, shortRange(p?.starts_on, p?.ends_on)].filter(Boolean).join(" · "),
       href: "/dashboard/cover",
       action: "Review request",
+      person: p?.profile_id ? { id: p.profile_id, name: nameOf(p?.owner) } : undefined,
       urgent: p?.absence_type === "unexpected",
       rank: 0,
     });
@@ -178,7 +183,7 @@ export default async function HomePage(props: { searchParams: Promise<{ reconfir
   const incoming = relevantRefs.filter((r: any) => r.audience_type !== "wider_network");
   if (incoming.length === 1) {
     const r: any = incoming[0];
-    steps.push({ key: `offer-${r.id}`, title: `${nameOf(r.requester)} sent you a referral`, detail: [focusName(r.specialism_lookup_ids), r.city || r.state].filter(Boolean).join(" · "), href: `/dashboard/refer/${r.id}`, action: "Reply", rank: 3 });
+    steps.push({ key: `offer-${r.id}`, title: `${nameOf(r.requester)} sent you a referral`, detail: [focusName(r.specialism_lookup_ids), r.city || r.state].filter(Boolean).join(" · "), href: `/dashboard/refer/${r.id}`, action: "Reply", rank: 3, person: { id: r.requesting_profile_id, name: nameOf(r.requester) } });
   } else if (incoming.length > 1) {
     steps.push({
       key: "offers",
@@ -191,7 +196,7 @@ export default async function HomePage(props: { searchParams: Promise<{ reconfir
   }
   if ((pendingInvites || []).length === 1) {
     const c: any = (pendingInvites || [])[0];
-    steps.push({ key: `inv-${c.id}`, title: `${nameOf(c.requester)} invited you to their trusted circle`, detail: "A relationship request is waiting for your decision", href: "/dashboard/network", action: "Review", rank: 4 });
+    steps.push({ key: `inv-${c.id}`, title: `${nameOf(c.requester)} invited you to their trusted circle`, detail: "A relationship request is waiting for your decision", href: `/dashboard/people/${c.requester_id}`, action: "Review", rank: 4, person: { id: c.requester_id, name: nameOf(c.requester) } });
   } else if ((pendingInvites || []).length > 1) {
     steps.push({ key: "invs", title: `${(pendingInvites || []).length} colleagues invited you to their trusted circle`, detail: (pendingInvites || []).map((c: any) => nameOf(c.requester).split(",")[0]).join(", "), href: "/dashboard/network", action: "Review", rank: 4 });
   }
@@ -246,6 +251,29 @@ export default async function HomePage(props: { searchParams: Promise<{ reconfir
     if (c.tier === "trusted_colleague" || c.tier === "partner") trustedIds.push(other);
   }
 
+  // ---- Circle snapshot: who in the trusted circle is open right now ----
+  const { data: circlePeople } = trustedIds.length
+    ? await supabase
+        .from("profiles")
+        .select("id, full_name, credential_prefix, qualification_level, avatar_path, referral_availability, coverage_availability, availability_confirmed_at, availability_paused_until")
+        .in("id", trustedIds.slice(0, 60))
+    : { data: [] as any[] };
+  const circleUrls = await resolveAvatarUrls(supabase, (circlePeople || []).map((p: any) => p.avatar_path));
+  const circleRows = (circlePeople || []).map((p: any) => ({
+    id: p.id as string,
+    name: clinicianName(p.full_name, p.qualification_level, p.credential_prefix),
+    avatarUrl: circleUrls.get(p.avatar_path || "") || null,
+    referrals: effectiveReferral(p.referral_availability, p.availability_confirmed_at, p.availability_paused_until).open,
+    cover: effectiveCover(p.coverage_availability, p.availability_confirmed_at, p.availability_paused_until).open,
+  }));
+  circleRows.sort((a, b) => Number(b.referrals || b.cover) - Number(a.referrals || a.cover) || a.name.localeCompare(b.name));
+  const circleSnapshot = {
+    trusted: trustedIds.length,
+    referrals: circleRows.filter((r) => r.referrals).length,
+    cover: circleRows.filter((r) => r.cover).length,
+    people: circleRows.slice(0, 7).map((r) => ({ id: r.id, name: r.name, avatarUrl: r.avatarUrl, open: r.referrals || r.cover })),
+  };
+
   // ---- Getting started (new members) ----
   // Not yet in the network: the steps that get them verified.
   const gettingStarted = !status?.is_member
@@ -277,13 +305,19 @@ export default async function HomePage(props: { searchParams: Promise<{ reconfir
         age === null ? "Never confirmed" : age === 0 ? "Confirmed today" : `Last confirmed ${age} day${age === 1 ? "" : "s"} ago${stale ? ". Reconfirm to stay in suggestions" : ""}`,
       stale,
       canReconfirm: !!(profile.referral_availability && profile.coverage_availability && profile.consultation_availability),
+      tones: {
+        referrals: toneOf(effectiveReferral(profile.referral_availability, profile.availability_confirmed_at, profile.availability_paused_until).open, profile.referral_availability),
+        cover: toneOf(effectiveCover(profile.coverage_availability, profile.availability_confirmed_at, profile.availability_paused_until).open, profile.coverage_availability),
+        consult: profile.consultation_availability === "yes" ? "open" : profile.consultation_availability ? "closed" : "unset",
+      },
     },
+    circleSnapshot,
     sandbox: IS_DEMO_SITE,
     options,
     notice: reconfirmed
       ? "Availability reconfirmed. Colleagues will see it as current."
       : welcome === "reset"
-        ? "Your sandbox is back to the start of the story."
+        ? "Your sandbox is back to the start. Everything you did has been cleared; colleagues will start getting in touch again in a minute or two."
         : undefined,
   };
 

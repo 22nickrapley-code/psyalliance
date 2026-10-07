@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { sandboxTickAction, type SandboxEvent } from "../sandbox-actions";
 import { NavIcon } from "../icons";
 
@@ -14,6 +14,11 @@ export function SandboxNudge() {
   const router = useRouter();
   const [event, setEvent] = useState<SandboxEvent | null>(null);
   const busy = useRef(false);
+  // After "Start the story again" nothing from the old story stays on screen.
+  const welcome = useSearchParams().get("welcome");
+  useEffect(() => {
+    if (welcome === "reset") setEvent(null);
+  }, [welcome]);
 
   useEffect(() => {
     let stopped = false;
