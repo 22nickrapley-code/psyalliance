@@ -2,6 +2,8 @@ import { loadColleagueSuggestions } from "@/lib/colleague-suggestions";
 import { createClient } from "@/lib/supabase/server";
 import { ConsultComposeView } from "../views";
 
+export const metadata = { title: "Ask colleagues" };
+
 export default async function NewConsultPage(props: { searchParams: Promise<{ kind?: string; to?: string; group?: string; error?: string }> }) {
   const sp = await props.searchParams;
   const kind = (sp.kind === "supervision_request" || sp.kind === "supervision_offer" ? sp.kind : "question") as

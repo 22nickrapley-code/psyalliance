@@ -417,8 +417,8 @@
 .pa .hero-actions{justify-content:flex-start}
 .pa .public-hero h1{font-size:clamp(44px,4.8vw,66px)}
 .pa .pa-cta{text-align:left}
-.pa .skip-link{position:absolute;left:12px;top:-60px;z-index:100;background:var(--forest);color:#fff;padding:10px 14px;border-radius:8px;font-weight:650;text-decoration:none}
-.pa .skip-link:focus{top:12px}
+.pa .skip-link{position:absolute;left:12px;top:12px;transform:translateY(-200%);clip-path:inset(50%);z-index:100;background:var(--forest);color:#fff;padding:10px 14px;border-radius:8px;font-weight:650;text-decoration:none}
+.pa .skip-link:focus{transform:none;clip-path:none}
 .pa main.page:focus{outline:none}
 /* Accessibility: text contrast at least 4.5:1 (axe, WCAG AA) */
 .pa .eyebrow,.pa .editorial-card .n,.pa .step .k,.pa .resource .code{color:#82572a}
@@ -1567,3 +1567,20 @@
   .pa .reaction-picker{display:none;opacity:1;transform:none;box-shadow:0 4px 14px rgba(16,35,29,.08)}
   .pa .reaction-picker.open{display:inline-flex}
 }
+
+/* Home tiles on phones: icon then title, so titles in a row line up. */
+@media (max-width:760px){.pa .home-tile:not(.actions-tile) .symbol{margin-bottom:0}.pa .home-tile:not(.actions-tile){justify-content:flex-start}}
+
+/* Demo library: five cards fill the grid (two wide, then three). */
+@media (min-width:980px){
+  .pa .demo-grid{grid-template-columns:repeat(6,minmax(0,1fr))}
+  .pa .demo-grid > *{grid-column:span 2}
+  .pa .demo-grid > :nth-child(-n+2){grid-column:span 3}
+}
+/* FAQ: our own open/close mark instead of the browser triangle. */
+.pa .faq summary{list-style:none;display:flex;justify-content:space-between;align-items:center;gap:16px}
+.pa .faq summary::-webkit-details-marker{display:none}
+.pa .faq summary:after{content:"+";flex:0 0 28px;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:var(--sage);color:var(--forest);font-size:18px;font-weight:500;line-height:1}
+.pa .faq details[open] summary:after{content:"\2212"}
+.pa h1,.pa h2{text-wrap:balance}
+.pa .section-inner.founder p{max-width:62ch}

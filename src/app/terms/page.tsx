@@ -18,10 +18,10 @@ export default function TermsPage() {
             </div>
             <p>
               PsyAlliance is a professional network for verified doctoral-level psychologists and psychiatrists. It doesn&rsquo;t replace your professional judgment.
-              What you see about a colleague (licences, availability, specialties) is what is on file, with dates, not a guarantee that they suit a particular client.
+              What you see about a colleague (licenses, availability, specialties) is what is on file, with dates, not a guarantee that they suit a particular client.
             </p>
             <p>
-              Keep client-identifying information out of PsyAlliance, act within your licence and your state&rsquo;s rules, and treat what colleagues share as confidential.
+              Keep client-identifying information out of PsyAlliance, act within your license and your state&rsquo;s rules, and treat what colleagues share as confidential.
               Practice Library templates show whether they have been independently reviewed; adapt any template with your own advisers before you rely on it.
             </p>
           </div>

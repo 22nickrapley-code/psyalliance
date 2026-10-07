@@ -14,7 +14,7 @@ import { PageHead, Banner, Status } from "../_components/ui";
 import { US_STATES } from "@/lib/us-states";
 
 // Credentials (Product Spec v1): verification evidence first (identity,
-// degree, each licence with state, number, expiry and review status), then
+// degree, each license with state, number, expiry and review status), then
 // a separate section for self-tracked renewals with reminders. Badges only
 // show what an admin has reviewed. The NPI check can help, but never
 // approves anyone on its own.
@@ -61,14 +61,14 @@ const ACCOUNT_STATE: Record<string, { label: string; tone: "" | "warn" | "danger
   },
 };
 
-export function CredentialsView({ sp, profile, licences, ce, panels, npiChecks }: { sp: { saved?: string; added?: string; error?: string }; profile: any; licences: any[] | null; ce: any[] | null; panels: any[] | null; npiChecks: any[] | null }) {
+export function CredentialsView({ sp, profile, licenses, ce, panels, npiChecks }: { sp: { saved?: string; added?: string; error?: string }; profile: any; licenses: any[] | null; ce: any[] | null; panels: any[] | null; npiChecks: any[] | null }) {
   const status = profile?.account_status === "suspended" ? "suspended" : profile?.verification_status || "pending";
   const account =
     status === "suspended"
       ? { label: "Suspended", tone: "danger" as const, body: "This account is suspended. You can't send or receive requests. Contact us for details." }
       : ACCOUNT_STATE[status] || ACCOUNT_STATE.pending;
   const verified = status === "verified";
-  const lic = licences || [];
+  const lic = licenses || [];
   const reviewedActive = lic.filter((l: any) => l.reviewed_at && l.status === "active" && (daysUntil(l.expiration_date) ?? 1) >= 0);
   const ceHours = (ce || []).reduce((s: number, c: any) => s + Number(c.hours || 0), 0);
   const caqhDue = profile?.caqh_last_attested_date
@@ -82,12 +82,12 @@ export function CredentialsView({ sp, profile, licences, ce, panels, npiChecks }
     <>
       <PageHead
         eyebrow="Credentials"
-        title="Facts that earn trust."
+        title="Credentials"
         lead="The evidence behind your profile, and the renewals you track for yourself. Colleagues only see what an admin has reviewed."
       />
       <Banner
         error={sp.error}
-        ok={sp.added === "licence" ? "Licence added. It counts once an admin has reviewed it, usually within two working days." : sp.saved ? "Saved." : null}
+        ok={sp.added === "license" ? "License added. It counts once an admin has reviewed it, usually within two working days." : sp.saved ? "Saved." : null}
       />
       <div className="split">
         <div className="stack">
@@ -119,7 +119,7 @@ export function CredentialsView({ sp, profile, licences, ce, panels, npiChecks }
                 <div key={l.id} className="item row between wrap">
                   <span>
                     <strong>
-                      {US_STATES.find((s) => s.code === l.state)?.name || l.state} licence &middot; #{l.license_number}
+                      {US_STATES.find((s) => s.code === l.state)?.name || l.state} license &middot; #{l.license_number}
                     </strong>
                     <p>
                       {l.license_type ? `${l.license_type} · ` : ""}Expires {fmt(l.expiration_date)}
@@ -139,14 +139,14 @@ export function CredentialsView({ sp, profile, licences, ce, panels, npiChecks }
             })}
             {lic.length === 0 && (
               <div className="quiet-panel" style={{ marginTop: 12 }}>
-                <strong className="small">No licence on file.</strong>
+                <strong className="small">No license on file.</strong>
                 <p className="small" style={{ margin: "5px 0 0" }}>
-                  You&rsquo;re listed and matched only in states where a reviewed, in-date licence is on file. Add each state you hold.
+                  You&rsquo;re listed and matched only in states where a reviewed, in-date license is on file. Add each state you hold.
                 </p>
               </div>
             )}
             <details style={{ marginTop: 16 }} open={lic.length === 0}>
-              <summary className="small" style={{ cursor: "pointer", fontWeight: 650 }}>Add a licence</summary>
+              <summary className="small" style={{ cursor: "pointer", fontWeight: 650 }}>Add a license</summary>
               <form action={addLicense} style={{ marginTop: 12 }}>
                 <div className="fields">
                   <label className="field">
@@ -159,7 +159,7 @@ export function CredentialsView({ sp, profile, licences, ce, panels, npiChecks }
                     </select>
                   </label>
                   <label className="field">
-                    Licence number
+                    License number
                     <input name="license_number" required autoComplete="off" />
                   </label>
                   <label className="field">
@@ -172,7 +172,7 @@ export function CredentialsView({ sp, profile, licences, ce, panels, npiChecks }
                   </label>
                 </div>
                 <div className="row" style={{ marginTop: 12 }}>
-                  <button type="submit" className="btn small-btn">Add licence</button>
+                  <button type="submit" className="btn small-btn">Add license</button>
                   <span className="micro-note">An admin checks it against the state board before it counts.</span>
                 </div>
               </form>
@@ -291,7 +291,7 @@ export function CredentialsView({ sp, profile, licences, ce, panels, npiChecks }
             <div className="eyebrow">What your badge means</div>
             <h3>Reviewed, at a point in time.</h3>
             <p className="small" style={{ marginBottom: 0 }}>
-              Verified means an admin has reviewed your identity, doctoral degree and at least one in-date licence. It doesn&rsquo;t certify fitness for a particular client, referral or state. Colleagues see the facts on file, with dates.
+              Verified means an admin has reviewed your identity, doctoral degree and at least one in-date license. It doesn&rsquo;t certify fitness for a particular client, referral or state. Colleagues see the facts on file, with dates.
             </p>
           </section>
           <section className="card">
@@ -306,7 +306,7 @@ export function CredentialsView({ sp, profile, licences, ce, panels, npiChecks }
               <li><span>Pending review</span><strong>Not listed yet</strong></li>
               <li><span>Action required</span><strong>We need something</strong></li>
               <li><span>Verified</span><strong>Listed and matched</strong></li>
-              <li><span>Licence expired</span><strong>Hidden in that state</strong></li>
+              <li><span>License expired</span><strong>Hidden in that state</strong></li>
               <li><span>Suspended</span><strong>No requests</strong></li>
             </ul>
           </section>

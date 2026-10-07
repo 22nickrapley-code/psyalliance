@@ -2,6 +2,8 @@ import { createClient } from "@/lib/supabase/server";
 import { CredentialsView } from "./view";
 import { PageHead } from "../_components/ui";
 
+export const metadata = { title: "Credentials" };
+
 export default async function CredentialsPage(props: { searchParams: Promise<{ saved?: string; added?: string; error?: string }> }) {
   const sp = await props.searchParams;
   const supabase = await createClient();
@@ -10,7 +12,7 @@ export default async function CredentialsPage(props: { searchParams: Promise<{ s
   } = await supabase.auth.getUser();
   const myself = user!.id;
 
-  const [{ data: profile }, { data: licences }, { data: ce }, { data: panels }, { data: npiChecks }] = await Promise.all([
+  const [{ data: profile }, { data: licenses }, { data: ce }, { data: panels }, { data: npiChecks }] = await Promise.all([
     supabase
       .rpc("my_profile")
       .select("verification_status, verified_at, account_status, qualification_level, npi_number, caqh_provider_id, caqh_last_attested_date, malpractice_carrier, malpractice_expires, account_kind")
@@ -30,9 +32,9 @@ export default async function CredentialsPage(props: { searchParams: Promise<{ s
   if (profile?.account_kind === "operator") {
     return (
       <>
-        <PageHead eyebrow="Credentials" title="Not needed for admin accounts." lead="Admin-only accounts hold no licences and are never verified as clinicians." />
+        <PageHead eyebrow="Credentials" title="Not needed for admin accounts." lead="Admin-only accounts hold no licenses and are never verified as clinicians." />
       </>
     );
   }
-  return <CredentialsView sp={sp} profile={profile} licences={licences} ce={ce} panels={panels} npiChecks={npiChecks} />;
+  return <CredentialsView sp={sp} profile={profile} licenses={licenses} ce={ce} panels={panels} npiChecks={npiChecks} />;
 }

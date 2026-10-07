@@ -61,13 +61,13 @@ function confirmedLabel(days: number | null) {
 
 function PersonCard({ p }: { p: Person }) {
   const where = [p.city, p.state].filter(Boolean).join(", ");
-  const licence =
+  const license =
     p.licenceStates.length === 0
       ? null
       : p.licenceStates.length === 1
-        ? `${stateName(p.licenceStates[0])} licence on file`
-        : `Licences on file: ${p.licenceStates.join(", ")}`;
-  const facts = [licence, p.topFocus.join(" · "), (p.modalities || [])[0], p.psypact ? "PSYPACT" : null].filter(Boolean) as string[];
+        ? `${stateName(p.licenceStates[0])} license on file`
+        : `Licenses on file: ${p.licenceStates.join(", ")}`;
+  const facts = [license, p.topFocus.join(" · "), (p.modalities || [])[0], p.psypact ? "PSYPACT" : null].filter(Boolean) as string[];
   const paused = /^Paused/.test(p.availability);
   return (
     <article className="person-card">
@@ -175,7 +175,7 @@ export function NetworkView({
     <>
       <PageHead
         eyebrow="Your professional circle"
-        title="Find the right colleague."
+        title="Network"
         lead="Search by relevant professional facts, availability and your existing relationships."
         actions={<a className="btn" href={inviteHref}>Invite a colleague</a>}
       />
@@ -318,7 +318,7 @@ export function NetworkView({
                       ? "Save clinicians you'd refer to or call on. Saving is private; they aren't told."
                       : tab === "worked"
                         ? "Colleagues appear here automatically after a completed referral, cover arrangement or consultation together."
-                        : "Try removing a filter. Only verified members with an active licence on record are listed."
+                        : "Try removing a filter. Only verified members with an active license on record are listed."
                 }
                 action={filtered ? <a className="btn secondary small-btn" href={`/dashboard/network?tab=${tab}`}>Clear filters</a> : undefined}
               />
@@ -334,7 +334,7 @@ export function NetworkView({
                 </nav>
               )}
               <p className="micro-note" style={{ marginTop: 16 }}>
-                Listed members are verified, with an active licence reviewed against the state board. Availability is set by each member; fit for a particular client is always your clinical judgement.
+                Listed members are verified, with an active license reviewed against the state board. Availability is set by each member; fit for a particular client is always your clinical judgment.
               </p>
             </>
           )}

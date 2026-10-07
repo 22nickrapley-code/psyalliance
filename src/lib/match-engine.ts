@@ -1,3 +1,4 @@
+import { psypactCovers } from "./psypact";
 import { createClient } from "@/lib/supabase/server";
 
 // The shared matching engine (Product Spec v1, "The matching engine").
@@ -106,7 +107,7 @@ export async function findMatches(
   const allowsTelehealth = need.setting === "virtual" || need.setting === "either" || !need.setting;
 
   // The candidate pool comes pre-filtered from the database (state, focus,
-  // partition, reviewed licence, blocks): one call, whatever the network size.
+  // partition, reviewed license, blocks): one call, whatever the network size.
   const [
     { data: pool },
     { data: connectionRows },
@@ -153,10 +154,10 @@ export async function findMatches(
   for (const p of candidates) {
     if (excluded.has(p.id)) continue;
     const states = licenceStates.get(p.id);
-    if (!states || states.size === 0) continue; // no active licence on record
+    if (!states || states.size === 0) continue; // no active license on record
     let telehealthOnly = false;
     if (needState && !states.has(needState)) {
-      if (allowsTelehealth && p.psypact_participating) telehealthOnly = true;
+      if (allowsTelehealth && psypactCovers(needState, p.primary_state, p.qualification_level, !!p.psypact_participating)) telehealthOnly = true;
       else continue;
     }
     if (need.prescribing && !PRESCRIBER_QUALIFICATIONS.has(String(p.qualification_level))) continue;
@@ -231,11 +232,18 @@ export async function findMatches(
       reasons.push("PSYPACT telehealth");
     } else if (needCity && city && city === needCity) {
       score += 8;
-      reasons.push(`Practises in ${p.primary_practice_city}`);
-    } else if (needState) {
+      reasons.push(`Practices in ${p.primary_practice_city}`);
+    } else if (needState && String(p.primary_state || "").toUpperCase() === needState) {
       score += 6;
+    } else if (needState) {
+      // Licensed in the client's state but practicing elsewhere: fine for
+      // telehealth, a long way for in-person care.
+      score += need.setting === "in_person" ? -10 : need.setting === "virtual" ? 2 : -4;
+      if (p.primary_practice_city && p.primary_state) reasons.push(`Practices in ${p.primary_practice_city}, ${p.primary_state}`);
     }
-    if (needState && !telehealthOnly) reasons.push(`${needState} licence on file`);
+    // Without a prescribing need, therapy referrals go to psychologists first.
+    if (!need.prescribing && (need.kind === "referral" || need.kind === "cover") && PRESCRIBER_QUALIFICATIONS.has(String(p.qualification_level))) score -= 6;
+    if (needState && !telehealthOnly) reasons.push(`${needState} license on file`);
     if (need.setting === "in_person" && telehealthOnly) continue;
 
     if (need.insurance && !need.insurance.toLowerCase().startsWith("self-pay")) {

@@ -5,6 +5,8 @@ import { LIBRARY_SELECT, isMemberVisible, toResource } from "@/lib/library";
 import { ResourceDetailView } from "../views";
 import { REVIEWER_ROLE_LABELS, type ReviewerRole } from "@/lib/library-governance";
 
+export const metadata = { title: "Practice Library" };
+
 // One Practice Library resource: the card's facts, the PDF, a private
 // working copy and the workflow it supports. Addressed by PA number
 // (/dashboard/documents/PA-02) so workflows can link to it directly.

@@ -1,3 +1,4 @@
+import { shortDate } from "@/lib/dates";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 
@@ -50,7 +51,7 @@ export default async function ProviderReferralsPage(
               {r.patient_age_range ? `, ${r.patient_age_range}` : ""} · {r.reason}
             </p>
             <p className="muted" style={{ margin: "0.15rem 0 0", fontSize: "0.82rem" }}>
-              Sent {new Date(r.created_at).toLocaleDateString()}
+              Sent {shortDate(r.created_at)}
             </p>
             {r.status_note && (
               <p className="muted" style={{ margin: "0.15rem 0 0", fontSize: "0.82rem" }}>

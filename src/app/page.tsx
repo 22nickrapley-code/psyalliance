@@ -21,7 +21,7 @@ const FAQ: [string, string][] = [
   ],
   [
     "Will I get a flood of notifications?",
-    "No. You hear about what needs you: a cover request, a referral that fits, a reply. Everything else waits for a weekly digest.",
+    "No. You hear about what needs you: a cover request, a referral that fits, a reply. Nothing else interrupts you.",
   ],
 ];
 

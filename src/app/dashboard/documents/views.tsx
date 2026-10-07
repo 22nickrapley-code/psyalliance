@@ -80,7 +80,7 @@ export function LibraryView({
     <>
       <PageHead
         eyebrow="Practice resources"
-        title="The Practice Library."
+        title="Practice Library"
         lead="Templates placed near the work they support. Each one shows whether it has been independently reviewed. Adapt any template to your state and practice before you rely on it."
         actions={
           <>
@@ -260,7 +260,7 @@ export function MyLibraryView({
     <>
       <PageHead
         eyebrow="Private to you"
-        title="My Library."
+        title="My Library"
         lead="Your working copies and uploads. Nobody else can see these."
         actions={<a className="btn secondary" href="/dashboard/documents">Practice Library</a>}
       />

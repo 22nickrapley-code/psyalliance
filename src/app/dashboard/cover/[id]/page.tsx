@@ -7,6 +7,8 @@ import { PageHead, Empty } from "../../_components/ui";
 import { CoverNeedsView, CoverCandidatesView, CoverInviteView, CoverTrackView } from "../views";
 import { loadPlan, caseNeed, excludedFor } from "../data";
 
+export const metadata = { title: "Cover plan" };
+
 type SP = Record<string, string | string[] | undefined>;
 
 export default async function CoverPlanPage(props: { params: Promise<{ id: string }>; searchParams: Promise<SP> }) {
@@ -20,7 +22,7 @@ export default async function CoverPlanPage(props: { params: Promise<{ id: strin
     const v = sp[k];
     return Array.isArray(v) ? v : v ? [v] : [];
   };
-  const step = one("step") || "needs";
+  const asked = one("step");
   const supabase = await createClient();
   const {
     data: { user },
@@ -37,6 +39,8 @@ export default async function CoverPlanPage(props: { params: Promise<{ id: strin
     );
   }
   const { plan, raw, cases, summary } = loaded;
+  // A plan that has been sent opens on tracking; a draft opens on its needs.
+  const step = asked || (plan.status === "draft" ? "needs" : "track");
 
   if (step === "candidates") {
     const open = raw.filter((c: any) => c.status === "needs_cover" || c.status === "declined_all");

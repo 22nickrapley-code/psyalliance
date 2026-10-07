@@ -13,6 +13,8 @@ import {
   setReviewerActiveAction,
 } from "./actions";
 
+export const metadata = { title: "Library governance" };
+
 const ALL_ROLES = Object.keys(ROLE_LABELS) as ReviewerRole[];
 
 const STATUS: Record<string, [string, "" | "warn" | "neutral" | "danger"]> = {

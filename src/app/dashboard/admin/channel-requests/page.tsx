@@ -1,7 +1,10 @@
+import { shortDate } from "@/lib/dates";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { requireAdminOrRedirectPath } from "@/lib/admin";
 import { reviewChannelRequest } from "./actions";
+
+export const metadata = { title: "Channel requests" };
 
 export default async function AdminChannelRequestsPage(
   props: { searchParams: Promise<{ error?: string }> }
@@ -37,7 +40,7 @@ export default async function AdminChannelRequestsPage(
               <strong>{r.channel_name}</strong>{" "}
               <span className="muted">
                 requested by {r.requester?.credential_prefix ? `${r.requester.credential_prefix} ` : ""}
-                {r.requester?.full_name || "Colleague"} · {new Date(r.created_at).toLocaleDateString()}
+                {r.requester?.full_name || "Colleague"} · {shortDate(r.created_at)}
               </span>
             </div>
             {r.reason && <p style={{ margin: "0.35rem 0 0" }}>{r.reason}</p>}

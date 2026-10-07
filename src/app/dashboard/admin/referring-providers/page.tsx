@@ -1,7 +1,10 @@
+import { shortDate } from "@/lib/dates";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { requireAdminOrRedirectPath } from "@/lib/admin";
 import { reviewProviderRegistration } from "./actions";
+
+export const metadata = { title: "Referring providers" };
 
 export default async function ReferringProvidersAdminPage(
   props: { searchParams: Promise<{ error?: string }> }
@@ -78,7 +81,7 @@ export default async function ReferringProvidersAdminPage(
                 <td>{p.full_name}</td>
                 <td>{p.practice_name || "-"}</td>
                 <td><span className="tag">{p.approval_status}</span></td>
-                <td>{p.reviewed_at ? new Date(p.reviewed_at).toLocaleDateString() : "-"}</td>
+                <td>{p.reviewed_at ? shortDate(p.reviewed_at) : "-"}</td>
               </tr>
             ))}
             {decided.length === 0 && (

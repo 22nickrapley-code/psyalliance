@@ -27,7 +27,7 @@ export async function requireAdminOrRedirectPath(
 }
 
 // Changes a member's verification status. Verified requires at least one
-// reviewed, in-date licence; the database enforces that
+// reviewed, in-date license; the database enforces that
 // (guard_verification_evidence, migration 0082) and its message comes back
 // as the error. Only a real transition into verified notifies the member.
 export async function setVerificationStatus(
@@ -48,7 +48,7 @@ export async function setVerificationStatus(
     await notifyProfile(supabase, {
       profileId,
       title: "Your credentials are verified",
-      body: "You're now part of the network in the states where your licence has been reviewed: listed, matched for referrals and cover, and able to consult with colleagues.",
+      body: "You're now part of the network in the states where your license has been reviewed: listed, matched for referrals and cover, and able to consult with colleagues.",
       createdBy: adminId,
     });
   }

@@ -7,6 +7,8 @@ import { US_STATES } from "@/lib/us-states";
 import { ClinicianProfileView, type ClinicianProfile } from "./view";
 import { PageHead, Empty } from "../../_components/ui";
 
+export const metadata = { title: "Colleague" };
+
 // A colleague's profile (Product Spec v1, Network > Profiles). Top: who
 // they are, verified facts on file, availability and your relationship.
 // Below: their practice in labelled sections, then factual activity
@@ -61,7 +63,7 @@ export default async function PersonPage(props: { params: Promise<{ id: string }
     return (
       <>
         <PageHead eyebrow="Network" title="Profile not available" />
-        <Empty title="This colleague isn't listed." body="Only verified members with an active licence on record appear in the network." action={<a className="btn secondary" href="/dashboard/network">Back to Network</a>} />
+        <Empty title="This colleague isn't listed." body="Only verified members with an active license on record appear in the network." action={<a className="btn secondary" href="/dashboard/network">Back to Network</a>} />
       </>
     );
   }

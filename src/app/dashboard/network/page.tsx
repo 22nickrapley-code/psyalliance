@@ -9,6 +9,8 @@ import { loadNeedOptions } from "@/lib/need-options";
 import { NetworkView, type NetworkTab, type Person, type Invitation } from "./views";
 import type { CircleNode } from "../_components/orbit";
 
+export const metadata = { title: "Network" };
+
 const PAGE_SIZE = 20;
 
 export default async function NetworkPage(props: {

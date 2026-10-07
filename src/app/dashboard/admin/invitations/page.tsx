@@ -1,9 +1,12 @@
+import { shortDate } from "@/lib/dates";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { requireAdminOrRedirectPath } from "@/lib/admin";
 import { PageHead, Banner, Status, Empty } from "../../_components/ui";
 import { createInvitationAction, declineJoinRequestAction, revokeInvitationAction } from "./actions";
+
+export const metadata = { title: "Invitations" };
 
 async function origin() {
   if (process.env.NEXT_PUBLIC_SITE_URL) return process.env.NEXT_PUBLIC_SITE_URL;
@@ -52,7 +55,7 @@ export default async function InvitationsPage(props: { searchParams: Promise<{ e
                 <div className="row between" style={{ gap: 12, alignItems: "flex-start" }}>
                   <span>
                     <strong>{r.full_name}{r.qualification ? `, ${r.qualification}` : ""}</strong>
-                    <p>{r.email}{r.licensed_states ? ` · ${r.licensed_states}` : ""} · {new Date(r.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</p>
+                    <p>{r.email}{r.licensed_states ? ` · ${r.licensed_states}` : ""} · {shortDate(r.created_at)}</p>
                     {r.practice_note && <p>{r.practice_note}</p>}
                   </span>
                 </div>
@@ -92,7 +95,7 @@ export default async function InvitationsPage(props: { searchParams: Promise<{ e
                 <div key={i.id} className="item row between" style={{ gap: 10 }}>
                   <span>
                     <strong>{i.full_name || i.email || "Unnamed"}</strong>
-                    <p>{i.email || "any email"} · {new Date(i.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</p>
+                    <p>{i.email || "any email"} · {shortDate(i.created_at)}</p>
                   </span>
                   <span className="row" style={{ gap: 6 }}>
                     <Status tone={tone}>{label}</Status>

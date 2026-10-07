@@ -16,7 +16,7 @@ export async function GET() {
     return data || [];
   };
 
-  const [profile, practiceFacts, licences, ce, panels, referrals, coverPlans, consultations, consultReplies, messages, saved, excluded, blocked, ratings, prefs, myDocuments] =
+  const [profile, practiceFacts, licenses, ce, panels, referrals, coverPlans, consultations, consultReplies, messages, saved, excluded, blocked, ratings, prefs, myDocuments] =
     await Promise.all([
       supabase.rpc("my_profile").maybeSingle<any>().then((r) => r.data),
       q("profile_lookup_values", "profile_id", "rank, lookup_values(category, value)"),
@@ -41,7 +41,7 @@ export async function GET() {
     account_email: user.email,
     profile,
     practice_facts: practiceFacts,
-    licences,
+    licenses,
     continuing_education: ce,
     insurance_panels: panels,
     referrals_sent: referrals,

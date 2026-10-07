@@ -5,6 +5,8 @@ import { findMatches } from "@/lib/match-engine";
 import { resolveAvatarUrls } from "@/lib/avatars";
 import { ReferNeedView, ReferShortlistView, ReferReviewView } from "../views";
 
+export const metadata = { title: "New referral" };
+
 type SP = Record<string, string | string[] | undefined>;
 
 // New referral: Need -> Shortlist -> Review. Criteria travel in the query

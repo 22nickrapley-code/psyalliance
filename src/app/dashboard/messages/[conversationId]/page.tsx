@@ -4,6 +4,8 @@ import { loadConversations } from "../data";
 import { ConversationList, MessagesShell } from "../views";
 import { ThreadPanel } from "../thread";
 
+export const metadata = { title: "Messages" };
+
 export default async function ConversationPage(props: { params: Promise<{ conversationId: string }>; searchParams: Promise<{ error?: string; draft?: string }> }) {
   const { conversationId } = await props.params;
   const { error, draft } = await props.searchParams;

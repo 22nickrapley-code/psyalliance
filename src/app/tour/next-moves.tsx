@@ -9,8 +9,8 @@ export function NextMoves() {
         <div className="eyebrow">Try it yourself</div>
         <h3>Explore a sandbox</h3>
         <p className="small">
-          Your own private copy of Alex&rsquo;s fictional practice for 7 days, where you can try everything. Send requests and invented colleagues reply. Ask, and we email you a
-          personal link; resetting it clears your fictional activity.
+          Your own private copy of Alex&rsquo;s fictional practice for 7 days, where you can try everything. Send requests and invented colleagues reply. Ask, and we send you a
+          personal link, usually within a working day; resetting it clears your fictional activity.
         </p>
         <a className="btn secondary" href="/sandbox/request">Ask for a sandbox</a>
       </section>
@@ -18,7 +18,7 @@ export function NextMoves() {
         <div className="eyebrow">The real network</div>
         <h3>Ask to join the founding cohort</h3>
         <p className="small">
-          For doctoral-level psychologists and psychiatrists. We invite a few states at a time, and a person checks every licence against the state board.
+          For doctoral-level psychologists and psychiatrists. We invite a few states at a time, and a person checks every license against the state board.
         </p>
         <a className="btn" href={JOIN_URL}>Request an invitation</a>
       </section>

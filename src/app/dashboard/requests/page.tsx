@@ -1,5 +1,7 @@
 import { redirect } from "next/navigation";
 
+export const metadata = { title: "Requests" };
+
 // The old combined Requests hub is replaced by Cover and Refer (Product
 // Spec v1). Kept as a redirect so older notification links still land in
 // the right place.

@@ -1,3 +1,4 @@
+import { shortDate } from "@/lib/dates";
 import { ColleaguePicker } from "../_components/colleague-picker";
 import { loadColleagueSuggestions } from "@/lib/colleague-suggestions";
 import { createClient } from "@/lib/supabase/server";
@@ -7,6 +8,8 @@ import { loadConversations } from "./data";
 import { ConversationList, MessagesShell } from "./views";
 import { ThreadPanel } from "./thread";
 import { Banner, Empty } from "../_components/ui";
+
+export const metadata = { title: "Messages" };
 
 // Messages (Product Spec v1): the direct inbox for professional
 // conversation. Threads that started from a referral, cover request or
@@ -83,7 +86,7 @@ export default async function MessagesPage(props: { searchParams: Promise<{ erro
           {(providerReferrals || []).map((r: any) => (
             <div key={r.id} className="item">
               <strong>{r.referring_providers?.full_name || "A physician"}{r.referring_providers?.practice_name ? ` · ${r.referring_providers.practice_name}` : ""}</strong>
-              <p>{r.reason || "Referral"} &middot; {new Date(r.created_at).toLocaleDateString()} &middot; {r.status}</p>
+              <p>{r.reason || "Referral"} &middot; {shortDate(r.created_at)} &middot; {r.status}</p>
               {r.status === "sent" && (
                 <div className="row" style={{ marginTop: 6 }}>
                   <form action={acknowledgeProviderReferral} className="inline"><input type="hidden" name="id" value={r.id} /><button type="submit" className="btn small-btn">Acknowledge</button></form>

@@ -1,3 +1,4 @@
+import { psypactEligible } from "@/lib/psypact";
 import { effectiveReferral } from "@/lib/availability";
 import { saveProfile, uploadAvatar } from "./actions";
 import { professionFor, professionLabel, clinicianName, roleLabel } from "@/lib/profession";
@@ -11,7 +12,7 @@ import { PageHead, Banner, PersonAvatar, Status } from "../_components/ui";
 // Profession, specialties ranked 1 to 5, populations and age bands,
 // modalities, insurance, languages, session types, practice location,
 // PSYPACT, photo and a short bio. A completeness bar and a preview of how
-// colleagues see you sit alongside. Licences live in Credentials.
+// colleagues see you sit alongside. Licenses live in Credentials.
 
 type LV = { id: number; value: string };
 
@@ -59,7 +60,7 @@ export function ProfileView({
   avatarUrl,
   me,
   editing = true,
-  licences = [],
+  licenses = [],
 }: {
   sp: { saved?: string; availability_saved?: string; avatar_saved?: string; avatar_error?: string; error?: string };
   profile: any;
@@ -69,7 +70,7 @@ export function ProfileView({
   avatarUrl: string | null;
   me: string;
   editing?: boolean;
-  licences?: { state: string; reviewed: boolean }[];
+  licenses?: { state: string; reviewed: boolean }[];
 }) {
   const selected = new Map<number, number | null>((selectedRows || []).map((s) => [s.lookup_value_id, s.rank]));
   const by: Record<string, LV[]> = {};
@@ -94,7 +95,7 @@ export function ProfileView({
     { label: "Insurance", done: pick("insurance").length > 0, href: "#insurance" },
     { label: "Languages", done: pick("language").length > 0, href: "#languages" },
     { label: "Session types", done: pick("session_type").length > 0, href: "#populations" },
-    { label: "Licence in Credentials", done: (licenceCount || 0) > 0, href: "/dashboard/credentials" },
+    { label: "License in Credentials", done: (licenceCount || 0) > 0, href: "/dashboard/credentials" },
     { label: "Availability confirmed", done: !!profile?.availability_confirmed_at, href: "/dashboard/availability" },
   ];
   const basicsDone = !!(profile?.full_name && profile?.qualification_level && profile?.primary_state && profile?.primary_practice_city);
@@ -107,7 +108,7 @@ export function ProfileView({
 
   if (!editing) {
     const stateName = (c: string) => US_STATES.find((s) => s.code === c)?.name || c;
-    const reviewed = licences.filter((l) => l.reviewed);
+    const reviewed = licenses.filter((l) => l.reviewed);
     const joinSome = (xs: string[], n: number) => (xs.length > n ? `${xs.slice(0, n).join(", ")} +${xs.length - n}` : xs.join(", "));
     const glance: [string, string][] = [
       ["Practice focus", ranked.slice(0, 3).map((l) => l.value).join(" · ") || "Not set"],
@@ -116,7 +117,7 @@ export function ProfileView({
       ["Sessions", pick("session_type").map((l) => l.value).join(", ") || "Not set"],
       ["Languages", pick("language").map((l) => l.value).join(", ") || "Not set"],
       ["Insurance", joinSome(pick("insurance").map((l) => l.value), 3) || "Self-pay only"],
-      ["Jurisdiction", licences.length ? licences.map((l) => stateName(l.state)).join(", ") + (profile?.psypact_participating ? " · PSYPACT" : "") : "No licence on file"],
+      ["Jurisdiction", licenses.length ? licenses.map((l) => stateName(l.state)).join(", ") + (profile?.psypact_participating ? " · PSYPACT" : "") : "No license on file"],
       ...(profile?.founding_member_since || profile?.created_at
         ? ([["Member since", new Date(profile.founding_member_since || profile.created_at).toLocaleDateString("en-US", { month: "long", year: "numeric" })]] as [string, string][])
         : []),
@@ -125,7 +126,7 @@ export function ProfileView({
       <>
         <PageHead
           eyebrow="Your account"
-          title="A clear professional profile."
+          title="Your profile"
           lead="What colleagues see about your practice. PsyAlliance also uses it to suggest you for the right referrals and cover."
           actions={<a className="btn lg" href="/dashboard/profile?edit=1">Edit profile</a>}
         />
@@ -137,7 +138,7 @@ export function ProfileView({
               <div style={{ minWidth: 0 }}>
                 <h2 className="serif-title" style={{ fontSize: 32, margin: 0 }}>{display}</h2>
                 <p style={{ margin: "4px 0 10px", fontSize: 15 }}>{roleLabel(profile?.qualification_level)}{where ? ` · ${where}` : ""}</p>
-                {reviewed.length > 0 ? <Status>Professional evidence reviewed</Status> : licences.length ? <Status tone="warn">Licence awaiting review</Status> : <Status tone="warn">Add your licence</Status>}
+                {reviewed.length > 0 ? <Status>Professional evidence reviewed</Status> : licenses.length ? <Status tone="warn">License awaiting review</Status> : <Status tone="warn">Add your license</Status>}
               </div>
             </div>
             {profile?.bio && <p className="lead-text" style={{ marginTop: 20 }}>{profile.bio}</p>}
@@ -178,7 +179,7 @@ export function ProfileView({
     <>
       <PageHead
         eyebrow="Your profile"
-        title="What colleagues match against."
+        title="Edit your profile"
         lead="Every referral and cover suggestion is computed from these facts. No client information lives here."
         actions={
           <>
@@ -256,10 +257,16 @@ export function ProfileView({
                   <input id="board_certified" type="checkbox" name="board_certified" defaultChecked={!!profile?.board_certified} />
                   Board certified
                 </label>
-                <label className="checkline">
-                  <input id="psypact_participating" type="checkbox" name="psypact_participating" defaultChecked={!!profile?.psypact_participating} />
-                  I hold PSYPACT authority to practise telepsychology across participating states (APIT)
-                </label>
+                {psypactEligible(profile?.primary_state, profile?.qualification_level) ? (
+                  <label className="checkline">
+                    <input id="psypact_participating" type="checkbox" name="psypact_participating" defaultChecked={!!profile?.psypact_participating} />
+                    I hold PSYPACT authority to practice telepsychology in other member states (APIT)
+                  </label>
+                ) : (
+                  <p className="micro-note" style={{ margin: 0 }}>
+                    PSYPACT applies to psychologists whose home state is a member state. {profile?.primary_state ? `${profile.primary_state} isn't a member state, so colleagues match you only where you hold a license.` : "Add your primary state to see whether it applies to you."}
+                  </p>
+                )}
               </div>
             </Section>
 
@@ -433,12 +440,12 @@ export function ProfileView({
               </ul>
               {profile?.bio && <p className="small" style={{ margin: "10px 0 0" }}>{profile.bio.length > 180 ? profile.bio.slice(0, 180) + "..." : profile.bio}</p>}
             </div>
-            <p className="micro-note" style={{ margin: "10px 0 0" }}>Colleagues also see your reviewed licence states, availability dates and activity on PsyAlliance.</p>
+            <p className="micro-note" style={{ margin: "10px 0 0" }}>Colleagues also see your reviewed license states, availability dates and activity on PsyAlliance.</p>
           </section>
           <section className="card">
             <div className="eyebrow">Elsewhere</div>
             <ul className="summary-list">
-              <li><span>Licences and renewals</span><strong><a href="/dashboard/credentials">Credentials</a></strong></li>
+              <li><span>Licenses and renewals</span><strong><a href="/dashboard/credentials">Credentials</a></strong></li>
               <li><span>Referrals, cover, consult</span><strong><a href="/dashboard/availability">Availability</a></strong></li>
               <li><span>Who can see you</span><strong><a href="/dashboard/settings">Settings</a></strong></li>
             </ul>

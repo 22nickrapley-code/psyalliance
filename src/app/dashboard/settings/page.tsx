@@ -1,6 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { SettingsView } from "./view";
 
+export const metadata = { title: "Settings" };
+
 export default async function SettingsPage(props: { searchParams: Promise<{ saved?: string; error?: string }> }) {
   const sp = await props.searchParams;
   const supabase = await createClient();

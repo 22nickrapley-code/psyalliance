@@ -30,9 +30,9 @@ export default async function SandboxRequestPage(props: { searchParams: Promise<
             {sp.sent ? (
               <div className="card tint roomy">
                 <div className="eyebrow">Request received</div>
-                <h3>We&rsquo;ll email you a personal link.</h3>
+                <h3>We&rsquo;ll be in touch personally.</h3>
                 <p className="small">
-                  A member of the PsyAlliance team reads each request and emails you a link. It is yours alone and works for 7 days;
+                  A member of the PsyAlliance team reads each request and sends you a link, usually within a working day. It is yours alone and works for 7 days;
                   please don&rsquo;t pass it on. &ldquo;Start the story again&rdquo; inside the sandbox clears your fictional activity whenever you like.
                 </p>
                 <div className="row wrap" style={{ gap: 10, marginTop: 12 }}>

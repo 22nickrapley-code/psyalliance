@@ -1,6 +1,9 @@
+import { clinicianName } from "@/lib/profession";
 import { createClient } from "@/lib/supabase/server";
 import { markNotificationReadAction, openNotificationAction, markAllNotificationsReadAction } from "./actions";
 import type { NotificationEventType } from "@/lib/notifications-v2";
+
+export const metadata = { title: "Notifications" };
 
 const EVENT_TYPE_LABELS: Record<NotificationEventType, string> = {
   coverage_request: "Coverage",
@@ -151,8 +154,7 @@ export default async function NotificationsPage() {
                   <div style={{ fontWeight: unread ? 600 : 400, marginTop: "0.2rem" }}>
                     {event.actor?.full_name && (
                       <>
-                        {event.actor.credential_prefix ? `${event.actor.credential_prefix} ` : ""}
-                        {event.actor.full_name}{" "}
+                        {clinicianName(event.actor.full_name, event.actor.qualification_level, event.actor.credential_prefix)}{" "}
                       </>
                     )}
                     {event.summary}

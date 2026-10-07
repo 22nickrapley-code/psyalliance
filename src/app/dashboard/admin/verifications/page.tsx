@@ -5,7 +5,9 @@ import { requireAdminOrRedirectPath, allAdminMembers } from "@/lib/admin";
 import { reviewCredential, setProfileVerificationStatus, reviewLicenceAction } from "./actions";
 import { PageHead, Banner, Status, Empty } from "../../_components/ui";
 
-// Verification, in the order the evidence has to arrive: licences are
+export const metadata = { title: "Verifications" };
+
+// Verification, in the order the evidence has to arrive: licenses are
 // reviewed against the state board first, then the member is verified.
 // Real clinicians only: demo accounts and admin-only logins never appear.
 export default async function VerificationQueuePage(props: { searchParams: Promise<{ error?: string }> }) {
@@ -24,7 +26,7 @@ export default async function VerificationQueuePage(props: { searchParams: Promi
       .order("created_at", { ascending: true }),
   ]);
   const members = ((membersRaw as any[]) || []).filter((p) => p.account_kind === "clinician" && !p.is_demo && !p.demo_view);
-  const licences = (licencesRaw || []).filter((l: any) => l.profile?.account_kind === "clinician");
+  const licenses = (licencesRaw || []).filter((l: any) => l.profile?.account_kind === "clinician");
   const awaiting = members.filter((p) => p.verification_status === "pending" || p.verification_status === "flagged");
   const unlicensed = members.filter((p) => p.verification_status === "verified" && p.reviewed_licences === 0);
   const eligible = members.filter((p) => p.eligible).length;
@@ -47,22 +49,22 @@ export default async function VerificationQueuePage(props: { searchParams: Promi
       <PageHead
         eyebrow="Admin"
         title="Verification"
-        lead="Check each licence against the state board, then verify the member. Nothing here is automatic."
+        lead="Check each license against the state board, then verify the member. Nothing here is automatic."
       />
       <Banner error={error} />
 
       <div className="three-grid" style={{ marginBottom: 20 }}>
-        <div className="quiet-panel"><div className="eyebrow">Licences to review</div><div className="metric" style={{ marginTop: 8 }}>{licences.length}</div></div>
+        <div className="quiet-panel"><div className="eyebrow">Licenses to review</div><div className="metric" style={{ marginTop: 8 }}>{licenses.length}</div></div>
         <div className="quiet-panel"><div className="eyebrow">Awaiting a decision</div><div className="metric" style={{ marginTop: 8 }}>{awaiting.length}</div></div>
         <div className="quiet-panel"><div className="eyebrow">Eligible members</div><div className="metric" style={{ marginTop: 8 }}>{eligible}</div></div>
       </div>
 
       <section className="card" style={{ marginBottom: 20 }}>
-        <div className="card-title"><h3>1. Licences to review</h3><span className="micro-note">Check number, name and expiry on the state board</span></div>
-        {licences.length === 0 ? (
-          <p className="small">No licences waiting.</p>
+        <div className="card-title"><h3>1. Licenses to review</h3><span className="micro-note">Check number, name and expiry on the state board</span></div>
+        {licenses.length === 0 ? (
+          <p className="small">No licenses waiting.</p>
         ) : (
-          licences.map((l: any) => (
+          licenses.map((l: any) => (
             <div key={l.id} className="item row between" style={{ gap: 12, alignItems: "flex-start" }}>
               <span>
                 <strong>{nameOf(l.profile)}{l.profile?.qualification_level ? `, ${l.profile.qualification_level}` : ""}</strong>
@@ -89,7 +91,7 @@ export default async function VerificationQueuePage(props: { searchParams: Promi
       </section>
 
       <section className="card" style={{ marginBottom: 20 }}>
-        <div className="card-title"><h3>2. Members awaiting a decision</h3><span className="micro-note">Verify once a licence is reviewed</span></div>
+        <div className="card-title"><h3>2. Members awaiting a decision</h3><span className="micro-note">Verify once a license is reviewed</span></div>
         {awaiting.length === 0 ? (
           <Empty symbol={"✓"} title="No one is waiting." body="New sign-ups appear here after they add their credentials." />
         ) : (
@@ -99,7 +101,7 @@ export default async function VerificationQueuePage(props: { searchParams: Promi
                 <span>
                   <strong>{nameOf(p)}{p.qualification_level ? `, ${p.qualification_level}` : ""}</strong>
                   <p>
-                    {p.email} &middot; {p.reviewed_licences} reviewed licence{p.reviewed_licences === 1 ? "" : "s"}
+                    {p.email} &middot; {p.reviewed_licences} reviewed license{p.reviewed_licences === 1 ? "" : "s"}
                     {p.unreviewed_licences ? `, ${p.unreviewed_licences} to review above` : ""}
                     {p.npi_number ? ` · NPI ${p.npi_number}` : " · no NPI"}
                   </p>
@@ -133,7 +135,7 @@ export default async function VerificationQueuePage(props: { searchParams: Promi
                 <form action={setProfileVerificationStatus} className="inline">
                   <input type="hidden" name="profile_id" value={p.id} />
                   <input type="hidden" name="status" value="verified" />
-                  <button type="submit" className="btn small-btn" disabled={p.reviewed_licences === 0} title={p.reviewed_licences === 0 ? "Review a licence first" : undefined}>Verify</button>
+                  <button type="submit" className="btn small-btn" disabled={p.reviewed_licences === 0} title={p.reviewed_licences === 0 ? "Review a license first" : undefined}>Verify</button>
                 </form>
                 {p.verification_status !== "flagged" && (
                   <form action={setProfileVerificationStatus} className="inline">
@@ -154,15 +156,15 @@ export default async function VerificationQueuePage(props: { searchParams: Promi
       </section>
 
       <section className="card" id="unlicensed">
-        <div className="card-title"><h3>Verified without a reviewed licence</h3><span className="micro-note">Not eligible for the network until fixed</span></div>
+        <div className="card-title"><h3>Verified without a reviewed license</h3><span className="micro-note">Not eligible for the network until fixed</span></div>
         {unlicensed.length === 0 ? (
-          <p className="small">None. Every verified member has a reviewed, in-date licence.</p>
+          <p className="small">None. Every verified member has a reviewed, in-date license.</p>
         ) : (
           unlicensed.map((p) => (
             <div key={p.id} className="item row between" style={{ gap: 12 }}>
               <span>
                 <strong>{nameOf(p)}</strong>
-                <p>{p.unreviewed_licences ? `${p.unreviewed_licences} licence${p.unreviewed_licences === 1 ? "" : "s"} to review above` : "No licence on file, or all expired"}</p>
+                <p>{p.unreviewed_licences ? `${p.unreviewed_licences} license${p.unreviewed_licences === 1 ? "" : "s"} to review above` : "No license on file, or all expired"}</p>
               </span>
               <form action={setProfileVerificationStatus} className="inline">
                 <input type="hidden" name="profile_id" value={p.id} />

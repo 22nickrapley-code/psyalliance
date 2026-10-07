@@ -7,8 +7,10 @@ import { clinicianName } from "@/lib/profession";
 import { IS_DEMO_SITE } from "@/lib/env";
 import { HomeView, type HomeData, type NextStep, type CircleNode } from "./home-view";
 
+export const metadata = { title: "Home" };
+
 // Home (Product Spec v1). Everything here is derived from real activity:
-// requests, replies, invitations, messages, availability and licences.
+// requests, replies, invitations, messages, availability and licenses.
 
 // Colour for an availability line: open, limited (selected / ask me), closed.
 const toneOf = (open: boolean, value: string | null | undefined): "open" | "limited" | "closed" | "unset" =>
@@ -219,13 +221,13 @@ export default async function HomePage(props: { searchParams: Promise<{ reconfir
   const expiring = activeLicences.filter((l: any) => l.expiration_date && l.expiration_date <= in90);
   for (const l of expiring) {
     const days = Math.ceil((new Date(l.expiration_date).getTime() - Date.now()) / 86_400_000);
-    steps.push({ key: `lic-${l.state}`, title: `Your ${l.state} licence expires in ${days} day${days === 1 ? "" : "s"}`, detail: "Renew it and update Credentials to stay listed", href: "/dashboard/credentials", action: "Open", urgent: days <= 7, rank: 6 });
+    steps.push({ key: `lic-${l.state}`, title: `Your ${l.state} license expires in ${days} day${days === 1 ? "" : "s"}`, detail: "Renew it and update Credentials to stay listed", href: "/dashboard/credentials", action: "Open", urgent: days <= 7, rank: 6 });
   }
   if (activeLicences.length > 0 && !activeLicences.some((l: any) => l.reviewed_at) && profile.verification_status === "verified") {
-    steps.push({ key: "lic-review", title: "Your licence is awaiting review", detail: "You'll be listed and matched as soon as an admin has checked it. Nothing to do.", href: "/dashboard/credentials", action: "View", rank: 7 });
+    steps.push({ key: "lic-review", title: "Your license is awaiting review", detail: "You'll be listed and matched as soon as an admin has checked it. Nothing to do.", href: "/dashboard/credentials", action: "View", rank: 7 });
   }
   if (activeLicences.length === 0 && profile.verification_status === "verified") {
-    steps.push({ key: "lic-none", title: "Add your licence", detail: "Members are only listed and matched with an active licence on record", href: "/dashboard/credentials", action: "Add", rank: 1 });
+    steps.push({ key: "lic-none", title: "Add your license", detail: "Members are only listed and matched with an active license on record", href: "/dashboard/credentials", action: "Add", rank: 1 });
   }
   steps.sort((a, b) => Number(!!b.urgent) - Number(!!a.urgent) || (a.rank ?? 9) - (b.rank ?? 9));
 
@@ -279,7 +281,7 @@ export default async function HomePage(props: { searchParams: Promise<{ reconfir
   const gettingStarted = !status?.is_member
     ? [
         { label: "Complete your profile: specialties and practice state", done: myFocus.size > 0 && !!profile.primary_state, href: "/dashboard/profile" },
-        { label: "Add your licence so we can review it", done: (licenceCount || 0) > 0, href: "/dashboard/credentials" },
+        { label: "Add your license so we can review it", done: (licenceCount || 0) > 0, href: "/dashboard/credentials" },
         { label: "Set your availability", done: age !== null, href: "/dashboard/availability" },
         { label: "We check your credentials against the state board", done: false, href: "/dashboard/credentials" },
       ]

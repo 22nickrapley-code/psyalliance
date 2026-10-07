@@ -21,7 +21,7 @@ const TRIGGERS: { key: string; label: string; when: string; col: string; always?
   { key: "n_invitations", label: "Invitations to a trusted circle or group", when: "Straight away", col: "email_on_trusted_invitation" },
   { key: "n_messages", label: "New messages", when: "Only if still unread after an hour", col: "email_on_message" },
   { key: "n_availability", label: "Monthly availability check", when: "Once a month, answer in one click", col: "email_on_availability_reminder" },
-  { key: "n_credentials", label: "Licence and renewal reminders", when: "90, 30 and 7 days before", col: "email_on_credential_reminder" },
+  { key: "n_credentials", label: "License and renewal reminders", when: "90, 30 and 7 days before", col: "email_on_credential_reminder" },
 ];
 
 function nameOf(p: any) {
@@ -44,7 +44,7 @@ export function SettingsView({ sp, email, me, prefs, profile, emergency, exclude
     <>
       <PageHead
         eyebrow="Settings"
-        title="Your account and privacy."
+        title="Settings"
         lead="Nothing on this page is visible to anyone else."
       />
       <Banner error={sp.error} ok={okMsg} />
@@ -60,11 +60,19 @@ export function SettingsView({ sp, email, me, prefs, profile, emergency, exclude
         <div className="stack">
           <section className="card" id="account">
             <h3>Account and sign-in</h3>
-            <ul className="summary-list">
-              <li><span>Signed in as</span><strong>{email}</strong></li>
-            </ul>
-            <p className="small" style={{ marginTop: 12 }}>To change your password we send you a reset link. You stay signed in on this device until you use it.</p>
-            <a className="btn secondary small-btn" href="/auth/forgot-password">Send a password reset link</a>
+            {email.endsWith("@sandbox.psyalliance.test") ? (
+              <p className="small" style={{ margin: 0 }}>
+                This is a sandbox: it has no email address or password. Your personal link signs you in, on any device, until it expires.
+              </p>
+            ) : (
+              <>
+                <ul className="summary-list">
+                  <li><span>Signed in as</span><strong>{email}</strong></li>
+                </ul>
+                <p className="small" style={{ marginTop: 12 }}>To change your password we send you a reset link. You stay signed in on this device until you use it.</p>
+                <a className="btn secondary small-btn" href="/auth/forgot-password">Send a password reset link</a>
+              </>
+            )}
           </section>
 
           <form action={saveNotificationPreferences} className="card" id="notifications">
@@ -223,7 +231,7 @@ export function SettingsView({ sp, email, me, prefs, profile, emergency, exclude
             <ul className="summary-list">
               <li><span>Availability</span><strong><a href="/dashboard/availability">Update</a></strong></li>
               <li><span>Profile</span><strong><a href="/dashboard/profile">Edit</a></strong></li>
-              <li><span>Licences</span><strong><a href="/dashboard/credentials">Credentials</a></strong></li>
+              <li><span>Licenses</span><strong><a href="/dashboard/credentials">Credentials</a></strong></li>
             </ul>
           </section>
         </aside>

@@ -4,6 +4,8 @@ import { resolveAvatarUrls } from "@/lib/avatars";
 import { PageHead, Empty } from "../../_components/ui";
 import { ConsultDetailView, CONSULT_TYPES, audienceLabel } from "../views";
 
+export const metadata = { title: "Consultation" };
+
 const nameOf = (p: any) => (p ? clinicianName(p?.full_name, p?.qualification_level, p?.credential_prefix) : "A colleague");
 
 export default async function ConsultDetailPage(props: { params: Promise<{ id: string }>; searchParams: Promise<{ error?: string; published?: string }> }) {
@@ -35,7 +37,7 @@ export default async function ConsultDetailPage(props: { params: Promise<{ id: s
       .eq("consultation_id", c.id)
       .order("created_at"),
     c.author_profile_id === myself && (c.audience_profile_ids || []).length
-      ? supabase.from("profiles").select("full_name, credential_prefix").in("id", c.audience_profile_ids)
+      ? supabase.from("profiles").select("full_name, credential_prefix, qualification_level").in("id", c.audience_profile_ids)
       : Promise.resolve({ data: [] as any[] }),
   ]);
   const urls = await resolveAvatarUrls(supabase, (responses || []).map((r: any) => r.responder?.avatar_path));

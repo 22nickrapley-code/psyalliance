@@ -3,6 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { loadNeedOptions } from "@/lib/need-options";
 import { ReferIndexView, type ReferralListItem } from "./views";
 
+export const metadata = { title: "Refer" };
+
 // Refer (Product Spec v1): quick search, your referrals out, and referrals
 // offered to you that fit your practice.
 export default async function ReferPage(props: { searchParams: Promise<{ error?: string; ok?: string }> }) {
@@ -55,7 +57,7 @@ export default async function ReferPage(props: { searchParams: Promise<{ error?:
   }));
 
   // Relevance for referrals offered to me: selected/trusted always; the
-  // wider network only when it overlaps my specialties and licence states.
+  // wider network only when it overlaps my specialties and license states.
   const myFocus = new Set((myFocusRows || []).map((r: any) => Number(r.lookup_value_id)));
   const myStates = new Set((myLicences || []).map((l: any) => String(l.state).toUpperCase()));
   const relevant = (visibleRows || []).filter((r: any) => {

@@ -2,6 +2,8 @@ import { createClient } from "@/lib/supabase/server";
 import { createConsultationGroupAction, respondToGroupInviteAction } from "./actions";
 import { PageHead, Banner, Empty, Status } from "../../_components/ui";
 
+export const metadata = { title: "Consultation groups" };
+
 // Consultation groups (PA-04): small, persistent, closed peer groups with
 // a written charter. Your virtual case conference. Lives under Consult.
 export default async function ConsultationGroupsPage(props: { searchParams: Promise<{ error?: string }> }) {
@@ -35,7 +37,7 @@ export default async function ConsultationGroupsPage(props: { searchParams: Prom
       </div>
       <PageHead
         eyebrow="Consultation groups"
-        title="A standing consultation group."
+        title="Consultation groups"
         lead="A few colleagues, a written charter, and threads only members see. Different from a one-off question to your circle."
       />
       <Banner error={error} />

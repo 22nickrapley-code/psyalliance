@@ -93,7 +93,7 @@ const plan: PlanSummary = { id: 1, title: PLAN_TITLE, absenceType: "extended_lea
 const clientsOpen: CaseItem[] = [
   { id: 1, reference: "Client 1", focus: "Trauma/PTSD", details: ["Adults", "Virtual or in person", "Weekly"], status: "needs_cover", invited: [], assignedName: null, assignedId: null, queueCount: 0 },
   { id: 2, reference: "Client 2", focus: "Anxiety/Panic Disorders", details: ["Adolescents", "Virtual", "Weekly"], status: "needs_cover", invited: [], assignedName: null, assignedId: null, queueCount: 0 },
-  { id: 3, reference: "Client 3", focus: "Depression", details: ["Adults", "In person", "Fortnightly", "Prescribing needed"], status: "needs_cover", invited: [], assignedName: null, assignedId: null, queueCount: 0 },
+  { id: 3, reference: "Client 3", focus: "Depression", details: ["Adults", "In person", "Every two weeks", "Prescribing needed"], status: "needs_cover", invited: [], assignedName: null, assignedId: null, queueCount: 0 },
 ];
 const clientsCovered: CaseItem[] = [
   { ...clientsOpen[0], status: "confirmed", invited: [{ name: "Maya Chen, PsyD", status: "accepted" }], assignedName: "Maya Chen, PsyD", assignedId: "maya" },
@@ -101,10 +101,10 @@ const clientsCovered: CaseItem[] = [
   { ...clientsOpen[2], status: "confirmed", invited: [{ name: "Eli Ramirez, MD", status: "accepted" }], assignedName: "Eli Ramirez, MD", assignedId: "eli" },
 ];
 
-const MAYA_TRAUMA = ["Trauma/PTSD is her top specialty", "NY licence reviewed", "Sees adults, virtual or in person", "Open to cover, confirmed 3 days ago"];
-const MAYA_ANX = ["Anxiety is one of her top specialties", "NY licence reviewed", "Sees adolescents, virtual", "Open to cover, confirmed 3 days ago"];
-const IMANI = ["Trauma/PTSD is her top specialty", "NY licence reviewed", "Sees adults", "Availability confirmed 19 days ago"];
-const ELI = ["Psychiatrist: can prescribe", "Treats depression", "NY licence reviewed", "Sees adults in person, Manhattan", "Open to cover, confirmed 6 days ago"];
+const MAYA_TRAUMA = ["Trauma/PTSD is her top specialty", "NY license reviewed", "Sees adults, virtual or in person", "Open to cover, confirmed 3 days ago"];
+const MAYA_ANX = ["Anxiety is one of her top specialties", "NY license reviewed", "Sees adolescents, virtual", "Open to cover, confirmed 3 days ago"];
+const IMANI = ["Trauma/PTSD is her top specialty", "NY license reviewed", "Sees adults", "Availability confirmed 19 days ago"];
+const ELI = ["Psychiatrist: can prescribe", "Treats depression", "NY license reviewed", "Sees adults in person, Manhattan", "Open to cover, confirmed 6 days ago"];
 
 const coverSuggestions = {
   1: [person("maya", "Maya Chen", "trusted", MAYA_TRAUMA), person("imani", "Imani Brooks", "none", IMANI, "PhD", "Queens", 19)],
@@ -115,9 +115,9 @@ const coverSuggestions = {
 // ---- Refer fixtures ----
 const referNeed = { focusIds: [4], state: "NY", city: "Brooklyn", insurance: "Aetna", ageBand: "Adults", setting: "either", languageId: null, prescribing: false } as const;
 const referMatches: Match[] = [
-  { ...person("maya", "Maya Chen", "trusted", ["OCD is one of her top specialties", "NY licence reviewed", "In network: Aetna", "Accepting referrals, confirmed 3 days ago"]), availabilityLabel: "Accepting referrals" },
-  { ...person("sam", "Samuel Okafor", "worked_with", ["Treats OCD with ERP", "NY licence reviewed", "Evening telehealth", "Accepting referrals, confirmed 8 days ago"], "PhD", "Brooklyn", 8), availabilityLabel: "Accepting referrals" },
-  { ...person("lena", "Lena Park", "none", ["Works with OCD", "NY licence reviewed", "PSYPACT: telehealth across member states", "Selected referrals only"], "PsyD", "Albany", 12), availabilityLabel: "Selected referrals" },
+  { ...person("maya", "Maya Chen", "trusted", ["OCD is one of her top specialties", "NY license reviewed", "In network: Aetna", "Accepting referrals, confirmed 3 days ago"]), availabilityLabel: "Accepting referrals" },
+  { ...person("sam", "Samuel Okafor", "worked_with", ["Treats OCD with ERP", "NY license reviewed", "Evening telehealth", "Accepting referrals, confirmed 8 days ago"], "PhD", "Brooklyn", 8), availabilityLabel: "Accepting referrals" },
+  { ...person("lena", "Lena Park", "none", ["Works with OCD", "NY license reviewed", "In person in Albany, telehealth across New York", "Selected referrals only"], "PsyD", "Albany", 12), availabilityLabel: "Selected referrals" },
 ];
 const referralRows: [string, string][] = [
   ["Where", "Brooklyn, New York"],
@@ -159,7 +159,8 @@ const people: Person[] = [
   { id: "sam", name: "Samuel Okafor, PhD", qualification: "PhD", city: "Brooklyn", state: "NY", licenceStates: ["NY"], topFocus: ["Obsessive/Compulsive Disorder", "Anxiety/Panic Disorders"], modalities: ["Exposure and Response Prevention"], availability: "Accepting referrals", fresh: true, confirmedDaysAgo: 8, psypact: false, avatarUrl: AV.samuel, relationship: "trusted", saved: false },
   { id: "eli", name: "Eli Ramirez, MD", qualification: "MD", city: "Manhattan", state: "NY", licenceStates: ["NY", "NJ"], topFocus: ["Depression", "Bipolar Disorder"], modalities: ["Medication management"], availability: "Selected referrals", fresh: true, confirmedDaysAgo: 6, psypact: false, avatarUrl: AV.eli, relationship: "worked_with", saved: false },
   { id: "imani", name: "Imani Brooks, PhD", qualification: "PhD", city: "Queens", state: "NY", licenceStates: ["NY"], topFocus: ["Pregnancy/Childbirth", "Anxiety/Panic Disorders"], modalities: ["CBT"], availability: "Accepting referrals", fresh: true, confirmedDaysAgo: 1, psypact: false, avatarUrl: AV.imani, relationship: "pending_in", saved: false },
-  { id: "lena", name: "Lena Park, PsyD", qualification: "PsyD", city: "Albany", state: "NY", licenceStates: ["NY"], topFocus: ["Obsessive/Compulsive Disorder", "Anxiety/Panic Disorders"], modalities: ["ERP"], availability: "Selected referrals", fresh: true, confirmedDaysAgo: 12, psypact: true, avatarUrl: AV.lena, relationship: "saved", saved: true },
+  { id: "lena", name: "Lena Park, PsyD", qualification: "PsyD", city: "Albany", state: "NY", licenceStates: ["NY"], topFocus: ["Obsessive/Compulsive Disorder", "Anxiety/Panic Disorders"], modalities: ["ERP"], availability: "Selected referrals", fresh: true, confirmedDaysAgo: 12, psypact: false, avatarUrl: AV.lena, relationship: "saved", saved: true },
+  { id: "noah", name: "Noah Patel, PsyD", qualification: "PsyD", city: "Princeton", state: "NJ", licenceStates: ["NJ"], topFocus: ["Obsessive/Compulsive Disorder", "Depression"], modalities: ["ERP"], availability: "Accepting referrals", fresh: true, confirmedDaysAgo: 9, psypact: true, avatarUrl: AV.noah, relationship: "saved", saved: true },
 ];
 
 const profileBase = {
@@ -211,8 +212,8 @@ const alexProfile: ClinicianProfile = {
   role: "Clinical psychologist",
   where: "Brooklyn, NY",
   avatarUrl: AV.alex,
-  licenceStates: ["New York"],
-  psypact: true,
+  licenceStates: ["New York", "New Jersey"],
+  psypact: false,
   bio: "I work with adults and adolescents living with anxiety, trauma and OCD, mostly CBT, ERP and EMDR. In person in Brooklyn and by telehealth across New York.",
   availabilityChip: "Selected referrals",
   glance: [
@@ -246,7 +247,7 @@ export const DEMOS: Demo[] = [
     outcome: "Six weeks away, every client covered.",
     learned: [
       "Each client is described by need, never by name.",
-      "Matches come with reasons: licence, focus, setting and fresh availability.",
+      "Matches come with reasons: license, focus, setting and fresh availability.",
       "You choose who is asked, and in what order, before anything is sent.",
       "A client only counts as covered once a colleague accepts.",
     ],
@@ -273,7 +274,7 @@ export const DEMOS: Demo[] = [
         slug: "matches",
         perspective: "alex",
         title: "Matched colleagues, with the reasons",
-        what: "For each client, colleagues with a reviewed New York licence, the right focus and recently confirmed availability, trusted colleagues first. Each match says why it fits.",
+        what: "For each client, colleagues with a reviewed New York license, the right focus and recently confirmed availability, trusted colleagues first. Each match says why it fits.",
         focus: "Review invitations",
         focusNote: "Alex has ticked who to ask for each client. Next, a final check.",
         render: () => <CoverCandidatesView plan={plan} cases={clientsOpen} suggestions={coverSuggestions} avatarUrls={avatars} preselected={{ 1: ["maya", "imani"], 2: ["maya"], 3: ["eli"] }} />,
@@ -319,7 +320,7 @@ export const DEMOS: Demo[] = [
                 length: "6 weeks",
                 location: "Brooklyn, New York",
                 outreach: "You are asked first; others follow if you decline",
-                note: "Thank you for offering. Two clients below; a joint handover call the week before works for me.",
+                note: "Two clients below. A joint handoff call the week before I go would suit me best.",
                 urgent: false,
                 sentAt: null,
                 cases: [
@@ -345,7 +346,7 @@ export const DEMOS: Demo[] = [
   {
     key: "refer",
     title: "Refer a client",
-    blurb: "An enquiry Alex can't take. Describe the need, see who fits and why, and choose from the replies.",
+    blurb: "An inquiry Alex can't take. Describe the need, see who fits and why, and choose from the replies.",
     minutes: "2 minutes",
     outcome: "The right colleague found, and the handoff under way.",
     learned: [
@@ -359,7 +360,7 @@ export const DEMOS: Demo[] = [
       {
         slug: "need",
         perspective: "alex",
-        title: "A new enquiry Alex can't take",
+        title: "A new inquiry Alex can't take",
         what: "An adult with OCD asks Alex for help, but Alex is about to go on leave. Alex starts with the main need and where the client is; everything else is optional.",
         focus: "See shortlist",
         focusNote: "Next, colleagues who fit, with reasons.",
@@ -369,7 +370,7 @@ export const DEMOS: Demo[] = [
         slug: "shortlist",
         perspective: "alex",
         title: "A shortlist that explains itself",
-        what: "Colleagues with a reviewed New York licence and OCD experience who are taking referrals. Trusted colleagues and people Alex has worked with come first, and each says why.",
+        what: "Colleagues with a reviewed New York license and OCD experience who are taking referrals. Trusted colleagues and people Alex has worked with come first, and each says why.",
         focus: "Review before sending",
         focusNote: "Alex keeps all three. Next, the final check.",
         render: () => <ReferShortlistView options={options} need={referNeed as any} matches={referMatches} widen={[]} avatarUrls={avatars} />,
@@ -513,7 +514,7 @@ export const DEMOS: Demo[] = [
         slug: "ask",
         perspective: "alex",
         title: "Alex asks the circle",
-        what: "How do colleagues run the handover call when someone covers mid-treatment? A quick question like this goes to the people Alex trusts and gets answers in a day. (Standing consultation groups, with a charter and regular meetings, are separate.)",
+        what: "How do colleagues run the handoff call when someone covers mid-treatment? A quick question like this goes to the people Alex trusts and gets answers in a day. (Standing consultation groups, with a charter and regular meetings, are separate.)",
         focus: "Review before posting",
         focusNote: "Next, a last look before it's shared.",
         render: () => (
@@ -523,7 +524,7 @@ export const DEMOS: Demo[] = [
             suggestions={ALEX_SUGGESTIONS}
             groups={[{ id: 1, name: "Thursday Circle", members: 6 }]}
             preset={{
-              question: "How do you structure the handover call when a colleague covers mid-treatment?",
+              question: "How do you structure the handoff call when a colleague covers mid-treatment?",
               context: "Six weeks of parental leave coming up. I want the transition to feel steady for clients without over-sharing.",
             }}
           />
@@ -541,7 +542,7 @@ export const DEMOS: Demo[] = [
             c={{
               id: 9,
               kind: "question",
-              question: "How do you structure the handover call when a colleague covers mid-treatment?",
+              question: "How do you structure the handoff call when a colleague covers mid-treatment?",
               context: "Six weeks of parental leave coming up. I want the transition to feel steady for clients without over-sharing.",
               typeLabel: "Practice question",
               tags: ["Private practice"],
@@ -568,7 +569,7 @@ export const DEMOS: Demo[] = [
             c={{
               id: 9,
               kind: "question",
-              question: "How do you structure the handover call when a colleague covers mid-treatment?",
+              question: "How do you structure the handoff call when a colleague covers mid-treatment?",
               context: "Six weeks of parental leave coming up. I want the transition to feel steady for clients without over-sharing.",
               typeLabel: "Practice question",
               tags: ["Private practice"],
@@ -638,7 +639,7 @@ export const DEMOS: Demo[] = [
         slug: "network",
         perspective: "alex",
         title: "Find colleagues by need",
-        what: "1,200 fictional clinicians in six states. The network opens on Alex's state, trusted colleagues first, with licence, focus and availability on every card.",
+        what: "1,200 fictional clinicians in six states. The network opens on Alex's state, trusted colleagues first, with license, focus and availability on every card.",
         focus: "Maya Chen",
         focusNote: "Open a colleague's profile.",
         render: () => (
@@ -667,7 +668,7 @@ export const DEMOS: Demo[] = [
         slug: "colleague",
         perspective: "alex",
         title: "Facts, not testimonials",
-        what: "Maya's profile: licences on file, focus, who she sees and whether she's taking referrals, with dates. Your controls over the relationship are private to you.",
+        what: "Maya's profile: licenses on file, focus, who she sees and whether she's taking referrals, with dates. Your controls over the relationship are private to you.",
         focus: "Send message",
         focusNote: "Next, a conversation with context.",
         render: () => <ClinicianProfileView p={mayaProfile} />,
@@ -684,7 +685,7 @@ export const DEMOS: Demo[] = [
               <ConversationList
                 activeId={1}
                 items={[
-                  { id: 1, title: "Maya Chen, PsyD", context: `Cover · ${PLAN_TITLE}`, preview: "A joint handover call the week before works for me.", when: "9:14 AM", unread: false, avatarName: "Maya Chen", avatarUrl: AV.maya },
+                  { id: 1, title: "Maya Chen, PsyD", context: `Cover · ${PLAN_TITLE}`, preview: "A joint handoff call the week before works for me.", when: "9:14 AM", unread: false, avatarName: "Maya Chen", avatarUrl: AV.maya },
                   { id: 2, title: "Samuel Okafor, PhD", context: "Referral · Obsessive/Compulsive Disorder · Brooklyn", preview: "Happy to. I run ERP weekly.", when: "Yesterday", unread: false, avatarName: "Samuel Okafor", avatarUrl: AV.samuel },
                   { id: 3, title: "Eli Ramirez, MD", context: "Referral · Trauma/PTSD · Manhattan", preview: "Needs someone soon; current clinician is relocating.", when: "Mon", unread: true, avatarName: "Eli Ramirez", avatarUrl: AV.eli },
                 ]}
@@ -702,7 +703,7 @@ export const DEMOS: Demo[] = [
               <div className="message-scroll">
                 <div className="bubble">Congratulations again! I&rsquo;ve kept two cover slots free for {leave.range}. Send the plan over when it&rsquo;s ready.<small>Maya &middot; Yesterday, 4:10 PM</small></div>
                 <div className="bubble me">Thank you. I&rsquo;ll set it up this week: three clients, no identifiers, and I&rsquo;ll use the PA-02 handoff pack.<small>You &middot; Yesterday, 4:25 PM</small><MessageReactions messageId={2} counts={{ heart: 1 }} names={{ heart: ["Maya"] }} mine={null} canReact={false} /></div>
-                <div className="bubble">Perfect. A joint handover call the week before works for me.<small>Maya &middot; 9:14 AM</small><MessageReactions messageId={3} counts={{ like: 1 }} names={{ like: ["You"] }} mine="like" canReact /></div>
+                <div className="bubble">Perfect. A joint handoff call the week before works for me.<small>Maya &middot; 9:14 AM</small><MessageReactions messageId={3} counts={{ like: 1 }} names={{ like: ["You"] }} mine="like" canReact /></div>
               </div>
               <div className="message-compose">
                 <textarea placeholder="Write a professional message..." aria-label="Message" />
@@ -718,12 +719,12 @@ export const DEMOS: Demo[] = [
   {
     key: "verified",
     title: "Join, get verified, stay visible",
-    blurb: "What joining involves: your licence checked by a person, availability you control, and the profile colleagues see.",
+    blurb: "What joining involves: your license checked by a person, availability you control, and the profile colleagues see.",
     minutes: "1 minute",
     outcome: "Verified, visible, and in control of what colleagues see.",
     learned: [
-      "Every licence is checked against the state board by a person.",
-      "You're listed and matched only where a reviewed licence is on file.",
+      "Every license is checked against the state board by a person.",
+      "You're listed and matched only where a reviewed license is on file.",
       "Availability is yours to set, pause and reconfirm.",
       "Your profile shows facts colleagues can rely on.",
     ],
@@ -731,15 +732,15 @@ export const DEMOS: Demo[] = [
       {
         slug: "credentials",
         perspective: "alex",
-        title: "A person checks every licence",
-        what: "Alex adds each licence; a PsyAlliance reviewer checks it against the state board. New York is reviewed, New Jersey is waiting. Alex is matched only where a reviewed licence is on file.",
+        title: "A person checks every license",
+        what: "Alex adds each license; a PsyAlliance reviewer checks it against the state board. New York is reviewed, New Jersey is waiting. Alex is matched only where a reviewed license is on file.",
         focus: "nav:Availability",
         focusNote: "Next, Alex sets availability.",
         render: () => (
           <CredentialsView
             sp={{}}
             profile={{ verification_status: "verified", verified_at: daysAgo(30), account_status: "active", qualification_level: "PsyD", npi_number: "1234567890", caqh_provider_id: null, caqh_last_attested_date: null, malpractice_carrier: null, malpractice_expires: null }}
-            licences={[
+            licenses={[
               { id: 1, state: "NY", license_number: "019283", license_type: "Licensed Psychologist", expiration_date: "2027-08-31", status: "active", reviewed_at: daysAgo(29) },
               { id: 2, state: "NJ", license_number: "35SI00123", license_type: "Licensed Psychologist", expiration_date: "2027-06-30", status: "active", reviewed_at: null },
             ]}
@@ -767,7 +768,7 @@ export const DEMOS: Demo[] = [
         slug: "profile",
         perspective: "alex",
         title: "What colleagues see",
-        what: "Alex's profile as a colleague sees it: focus, who Alex sees and current availability, with dates. Only reviewed licences appear, so New Jersey shows here, and Alex is matched there, once a reviewer has checked it.",
+        what: "Alex's profile as a colleague sees it: focus, who Alex sees and current availability, with dates. Only reviewed licenses appear, so New Jersey shows here, and Alex is matched there, once a reviewer has checked it.",
         focus: "Send message",
         focusNote: "Colleagues message or refer to Alex from here.",
         render: () => <ClinicianProfileView p={alexProfile} />,

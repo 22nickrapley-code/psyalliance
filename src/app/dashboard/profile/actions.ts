@@ -40,7 +40,7 @@ export async function saveProfile(formData: FormData) {
   if (!user) throw new Error("Not signed in");
 
   // Practice state comes from a US state picker now. Licensed states live
-  // in Credentials (reviewed licences); states_qualified is kept only as a
+  // in Credentials (reviewed licenses); states_qualified is kept only as a
   // legacy mirror so older read paths still see the practice state.
   const primaryState = String(formData.get("primary_state") || "").trim().toUpperCase() || null;
   const { data: existing } = await supabase.from("profiles").select("states_qualified").eq("id", user.id).maybeSingle();

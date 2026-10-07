@@ -3,6 +3,8 @@ import { resolveAvatarUrl } from "@/lib/avatars";
 import { ProfileView } from "./view";
 import { PageHead } from "../_components/ui";
 
+export const metadata = { title: "Your profile" };
+
 export default async function ProfilePage(props: {
   searchParams: Promise<{ saved?: string; availability_saved?: string; avatar_saved?: string; avatar_error?: string; error?: string; edit?: string }>;
 }) {
@@ -35,7 +37,7 @@ export default async function ProfilePage(props: {
   }
   const avatarUrl = await resolveAvatarUrl(supabase, profile?.avatar_path);
   const today = new Date().toISOString().slice(0, 10);
-  const licences = (licenceRows || [])
+  const licenses = (licenceRows || [])
     .filter((l: any) => l.status === "active" && (!l.expiration_date || l.expiration_date >= today))
     .map((l: any) => ({ state: String(l.state).toUpperCase(), reviewed: !!l.reviewed_at }));
   const ranked = (selectedRows || []).filter((r: any) => typeof r.rank === "number").length;
@@ -51,7 +53,7 @@ export default async function ProfilePage(props: {
       avatarUrl={avatarUrl}
       me={me}
       editing={editing}
-      licences={licences}
+      licenses={licenses}
     />
   );
 }

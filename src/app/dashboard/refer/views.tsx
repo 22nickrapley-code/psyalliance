@@ -1,3 +1,4 @@
+import { shortDate } from "@/lib/dates";
 import type { ReactNode } from "react";
 import type { Match } from "@/lib/match-engine";
 import type { NeedOptions } from "@/lib/need-options";
@@ -65,7 +66,7 @@ export function ReferNeedView({ options, need, error }: { options: NeedOptions; 
     <>
       <PageHead
         eyebrow="Refer / new referral"
-        title="A thoughtful route to the right colleague."
+        title="Refer"
         lead="Start with the service need. Review a shortlist before anyone is contacted."
         actions={<a className="btn secondary" href="/dashboard/refer">Back to referrals</a>}
       />
@@ -339,7 +340,7 @@ export function ReferIndexView({
     <>
       <PageHead
         eyebrow="Refer"
-        title="A thoughtful route to the right colleague."
+        title="Refer"
         lead="Hand a client to someone you trust, and see referrals that fit your practice."
         actions={<a className="btn" href="/dashboard/refer/new">New referral</a>}
       />
@@ -368,7 +369,7 @@ export function ReferIndexView({
                     <small>
                       {r.where} &middot; {r.responses}
                       {r.audienceCount ? ` of ${r.audienceCount}` : ""} repl{r.responses === 1 ? "y" : "ies"} &middot;{" "}
-                      {new Date(r.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                      {shortDate(r.createdAt)}
                     </small>
                   </span>
                   <span className="status-next">
@@ -389,7 +390,7 @@ export function ReferIndexView({
               <a key={r.id} className="list-row" href={`/dashboard/refer/${r.id}`} style={{ textDecoration: "none", color: "inherit" }}>
                 <span>
                   <strong>{r.focus}</strong>
-                  <small>From {r.from} &middot; {r.where} &middot; {new Date(r.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</small>
+                  <small>From {r.from} &middot; {r.where} &middot; {shortDate(r.createdAt)}</small>
                 </span>
                 <span className="status-next">
                   {r.myResponse ? <Status tone="neutral">You replied</Status> : <Status tone="warn">Needs your reply</Status>}
@@ -453,7 +454,7 @@ export function ReferTrackView({ r, ok, error }: { r: ReferralDetail; ok?: strin
       <PageHead
         eyebrow={r.isMine ? "Refer / your referral" : `Refer / from ${r.requesterName}`}
         title={r.focus}
-        lead={`${r.where} · sent ${new Date(r.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`}
+        lead={`${r.where} · sent ${shortDate(r.createdAt)}`}
         actions={<a className="btn secondary" href="/dashboard/refer">All referrals</a>}
       />
       {r.isMine && <Progress steps={STEPS} current={3} />}

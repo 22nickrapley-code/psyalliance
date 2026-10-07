@@ -83,7 +83,7 @@ export function AvailabilityView({ p, sp }: { p: AvailabilityData; sp: { confirm
     <>
       <PageHead
         eyebrow="Your availability"
-        title="Keep your signals current."
+        title="Availability"
         lead="Colleagues see these when deciding whether to refer to you, ask you for cover or invite you to consult. Each one is separate: pausing one doesn't close the others."
         actions={
           allSet && preselect ? (

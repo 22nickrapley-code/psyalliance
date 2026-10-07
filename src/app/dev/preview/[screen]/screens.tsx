@@ -48,16 +48,16 @@ const m = (id: string, name: string, tier: Match["tier"], reasons: string[], q =
   reasons,
 });
 const matches: Match[] = [
-  m("a", "Maya Chen", "trusted", ["Trusted colleague", "Trauma / PTSD is their top specialty", "Practises in Brooklyn", "NY licence on file", "In network: Aetna", "Accepting referrals, confirmed 3 days ago"]),
-  m("b", "Eli Ramirez", "worked_with", ["Worked together before", "Works with Trauma / PTSD", "NY licence on file", "Accepting referrals, confirmed 5 days ago"], "MD", "Manhattan"),
-  m("c", "Imani Brooks", "none", ["Trauma / PTSD is their top specialty", "NY licence on file", "Sees adults", "Selected referrals only, not recently confirmed"]),
+  m("a", "Maya Chen", "trusted", ["Trusted colleague", "Trauma / PTSD is their top specialty", "Practices in Brooklyn", "NY license on file", "In network: Aetna", "Accepting referrals, confirmed 3 days ago"]),
+  m("b", "Eli Ramirez", "worked_with", ["Worked together before", "Works with Trauma / PTSD", "NY license on file", "Accepting referrals, confirmed 5 days ago"], "MD", "Manhattan"),
+  m("c", "Imani Brooks", "none", ["Trauma / PTSD is their top specialty", "NY license on file", "Sees adults", "Selected referrals only, not recently confirmed"]),
 ];
 const need = { focusIds: [2], state: "NY", city: "Brooklyn", insurance: "Aetna", ageBand: "Adults", setting: "either" as const, languageId: null, prescribing: false };
 const plan = { id: 7, title: "October leave", absenceType: "extended_leave", starts: "2026-10-12", ends: "2026-11-20", state: "NY", status: "active", counts: { total: 4, covered: 2, invited: 1, open: 1 } };
 const cases = [
   { id: 1, reference: "Client 1", focus: "Trauma / PTSD", details: ["Adults", "Virtual or in person", "Weekly"], status: "confirmed" as const, invited: [{ name: "Dr. Maya Chen", status: "accepted" }], assignedName: "Dr. Maya Chen", assignedId: "a", queueCount: 0 },
   { id: 2, reference: "Client 2", focus: "Anxiety", details: ["Adolescents", "Virtual", "Weekly"], status: "awaiting_response" as const, invited: [{ name: "Dr. Eli Ramirez", status: "sent" }], assignedName: null, assignedId: null, queueCount: 2 },
-  { id: 3, reference: "Client 3", focus: "Depression", details: ["Adults", "In person", "Fortnightly", "Prescribing needed"], status: "needs_cover" as const, invited: [{ name: "Dr. Imani Brooks", status: "declined" }], assignedName: null, assignedId: null, queueCount: 0 },
+  { id: 3, reference: "Client 3", focus: "Depression", details: ["Adults", "In person", "Every two weeks", "Prescribing needed"], status: "needs_cover" as const, invited: [{ name: "Dr. Imani Brooks", status: "declined" }], assignedName: null, assignedId: null, queueCount: 0 },
   { id: 4, reference: "Client 4", focus: "ADHD", details: ["Children", "Virtual"], status: "confirmed" as const, invited: [{ name: "Dr. Maya Chen", status: "accepted" }], assignedName: "Dr. Maya Chen", assignedId: "a", queueCount: 0 },
 ];
 
@@ -155,7 +155,7 @@ export const previewScreens: Record<string, () => ReactNode> = {
     <NetworkView
       tab="directory"
       people={[
-        { id: "a", name: "Maya Chen, PsyD", qualification: "PsyD", city: "Brooklyn", state: "NY", licenceStates: ["NY"], topFocus: ["Trauma / PTSD", "Anxiety"], availability: "Accepting referrals", fresh: true, confirmedDaysAgo: 2, psypact: true, avatarUrl: null, relationship: "trusted", saved: false },
+        { id: "a", name: "Maya Chen, PsyD", qualification: "PsyD", city: "Brooklyn", state: "NY", licenceStates: ["NY"], topFocus: ["Trauma / PTSD", "Anxiety"], availability: "Accepting referrals", fresh: true, confirmedDaysAgo: 2, psypact: false, avatarUrl: null, relationship: "trusted", saved: false },
         { id: "b", name: "Eli Ramirez, MD", qualification: "MD", city: "Manhattan", state: "NY", licenceStates: ["NY", "NJ"], topFocus: ["Depression"], availability: "Selected referrals", fresh: false, confirmedDaysAgo: 41, psypact: false, avatarUrl: null, relationship: "none", saved: true },
       ]}
       suggested={[]}
@@ -276,9 +276,9 @@ export const previewScreens: Record<string, () => ReactNode> = {
   "availability-new": () => <AvailabilityView p={{ referral_availability: null, coverage_availability: null, consultation_availability: null, availability_confirmed_at: null, approx_spaces: null, availability_paused_until: null }} sp={{}} />,
   credentials: () => (
     <CredentialsView
-      sp={{ added: "licence" }}
+      sp={{ added: "license" }}
       profile={{ verification_status: "verified", verified_at: "2026-09-01T10:00:00Z", account_status: "active", qualification_level: "PsyD", npi_number: "1234567890", caqh_provider_id: null, caqh_last_attested_date: "2026-06-10", malpractice_carrier: "The Trust", malpractice_expires: "2026-11-01" }}
-      licences={[
+      licenses={[
         { id: 1, state: "NY", license_number: "019283", license_type: "Licensed Psychologist", expiration_date: "2027-08-31", status: "active", reviewed_at: "2026-09-02T10:00:00Z" },
         { id: 2, state: "NJ", license_number: "35SI00123", license_type: "Licensed Psychologist", expiration_date: "2026-12-01", status: "active", reviewed_at: null },
       ]}

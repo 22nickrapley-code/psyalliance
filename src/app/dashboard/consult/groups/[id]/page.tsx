@@ -1,3 +1,4 @@
+import { shortDate } from "@/lib/dates";
 import { clinicianName } from "@/lib/profession";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
@@ -10,6 +11,8 @@ import {
   updateCharterAction,
 } from "../actions";
 import { PageHead, Banner, Empty, Status, PersonAvatar } from "../../../_components/ui";
+
+export const metadata = { title: "Consultation group" };
 
 const MEMBER_STATUS: Record<string, string> = { invited: "Invited", joined: "Member", declined: "Declined", left: "Left", removed: "Removed" };
 
@@ -103,7 +106,7 @@ export default async function ConsultationGroupPage(props: { params: Promise<{ i
           <section className="card">
             <div className="card-title"><h3>Group threads</h3><span className="micro-note">Members only</span></div>
             {!group.charter_body ? (
-              <div className="tone-panel">This group needs a charter before anyone can post. {isCreator ? "Write it on the right." : "The organiser is writing it."}</div>
+              <div className="tone-panel">This group needs a charter before anyone can post. {isCreator ? "Write it on the right." : "The organizer is writing it."}</div>
             ) : (threads || []).length === 0 ? (
               <Empty symbol={"✳"} title="Nothing posted yet." body="Bring a de-identified client question to the group." action={isMember ? <a className="btn secondary small-btn" href={`/dashboard/consult/new?group=${group.id}`}>Ask this group</a> : undefined} />
             ) : (
@@ -112,7 +115,7 @@ export default async function ConsultationGroupPage(props: { params: Promise<{ i
                   <span>
                     <strong>{t.question}</strong>
                     <small>
-                      {t.author_profile_id === me ? "You" : nameOf(t.author)} &middot; {new Date(t.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })} &middot; {(t.consultation_responses || []).length} repl{(t.consultation_responses || []).length === 1 ? "y" : "ies"}
+                      {t.author_profile_id === me ? "You" : nameOf(t.author)} &middot; {shortDate(t.created_at)} &middot; {(t.consultation_responses || []).length} repl{(t.consultation_responses || []).length === 1 ? "y" : "ies"}
                     </small>
                   </span>
                   <Status tone={t.status === "resolved" ? "neutral" : ""}>{t.status === "resolved" ? "Resolved" : "Open"}</Status>
@@ -133,7 +136,7 @@ export default async function ConsultationGroupPage(props: { params: Promise<{ i
                     ) : (
                       <strong>{m.external_email} <span className="micro-note">(invited by email)</span></strong>
                     )}
-                    <p>{m.role === "creator" || m.profile_id === group.created_by ? "Organiser" : MEMBER_STATUS[m.status] || m.status}</p>
+                    <p>{m.role === "creator" || m.profile_id === group.created_by ? "Organizer" : MEMBER_STATUS[m.status] || m.status}</p>
                   </span>
                 </span>
                 {isCreator && m.profile_id !== group.created_by && ["joined", "invited"].includes(m.status) && (

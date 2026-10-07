@@ -5,6 +5,8 @@ import { requireAdminOrRedirectPath } from "@/lib/admin";
 import { PageHead, Status, Banner } from "../_components/ui";
 import { removeOrphanedFilesAction } from "./storage-actions";
 
+export const metadata = { title: "Admin" };
+
 // Admin overview. Counts come from admin_network_metrics(), which never
 // includes demo accounts, the demo view or operator (admin-only) logins,
 // and separates registered, verified, eligible and available supply.
@@ -13,7 +15,7 @@ type Metrics = Record<string, any>;
 
 const AREAS: [string, string, string, string][] = [
   ["/dashboard/admin/invitations", "✉", "Invitations", "Requests to join and cohort invitations."],
-  ["/dashboard/admin/verifications", "✓", "Verification", "Licences and credentials to review."],
+  ["/dashboard/admin/verifications", "✓", "Verification", "Licenses and credentials to review."],
   ["/dashboard/admin/members", "◎", "Members", "Search, suspend, promote."],
   ["/dashboard/admin/library", "▤", "Library governance", "Reviewers and publishing."],
   ["/dashboard/admin/moderation", "⚑", "Moderation", "Reports and redaction."],
@@ -47,9 +49,9 @@ export default async function AdminOverviewPage(props: { searchParams: Promise<{
 
   const needs: [string, number, string][] = [
     ["Requests to join", joinRequests || 0, "/dashboard/admin/invitations"],
-    ["Licences to review", n("licences_awaiting_review"), "/dashboard/admin/verifications"],
+    ["Licenses to review", n("licences_awaiting_review"), "/dashboard/admin/verifications"],
     ["Members awaiting a decision", n("pending") + n("flagged"), "/dashboard/admin/verifications"],
-    ["Verified without a reviewed licence", n("verified_without_licence"), "/dashboard/admin/verifications#unlicensed"],
+    ["Verified without a reviewed license", n("verified_without_licence"), "/dashboard/admin/verifications#unlicensed"],
     ["Open reports", openReports || 0, "/dashboard/admin/moderation"],
     ["Library resources hidden for review", libraryHidden || 0, "/dashboard/admin/library"],
   ];
@@ -110,7 +112,7 @@ export default async function AdminOverviewPage(props: { searchParams: Promise<{
           {[
             ["Registered", n("registered"), "Clinician accounts"],
             ["Verified", n("verified"), "Identity and degree signed off"],
-            ["Eligible", n("eligible"), "Verified, active, reviewed in-date licence"],
+            ["Eligible", n("eligible"), "Verified, active, reviewed in-date license"],
             ["Available", n("available"), "Eligible, open to referrals or cover, confirmed in 30 days"],
           ].map(([label, value, note]) => (
             <div key={String(label)} className="quiet-panel">

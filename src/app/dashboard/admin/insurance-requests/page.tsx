@@ -1,7 +1,10 @@
+import { shortDate } from "@/lib/dates";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { requireAdminOrRedirectPath } from "@/lib/admin";
 import { reviewInsuranceRequest } from "./actions";
+
+export const metadata = { title: "Insurance requests" };
 
 export default async function AdminInsuranceRequestsPage(
   props: { searchParams: Promise<{ error?: string }> }
@@ -37,7 +40,7 @@ export default async function AdminInsuranceRequestsPage(
               <strong>{r.requested_value}</strong>{" "}
               <span className="muted">
                 requested by {r.requester?.credential_prefix ? `${r.requester.credential_prefix} ` : ""}
-                {r.requester?.full_name || "Colleague"} · {new Date(r.created_at).toLocaleDateString()}
+                {r.requester?.full_name || "Colleague"} · {shortDate(r.created_at)}
               </span>
             </div>
             <div style={{ marginTop: "0.5rem" }}>

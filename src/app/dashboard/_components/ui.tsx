@@ -54,7 +54,8 @@ export function PageHead({
   return (
     <div className="page-head">
       <div>
-        <div className="eyebrow">{eyebrow}</div>
+        {/* A plain title says it already; the eyebrow only adds context. */}
+        {!(typeof title === "string" && title.toLowerCase() === eyebrow.toLowerCase()) && <div className="eyebrow">{eyebrow}</div>}
         <h1>{title}</h1>
         {lead && <p>{lead}</p>}
       </div>
@@ -171,7 +172,7 @@ export function MatchCard({
   if (select) {
     return (
       <label className="mini-person selectable">
-        <input type="checkbox" name={select.name} value={m.profileId} defaultChecked={select.checked} />
+        <input type="checkbox" name={select.name} value={m.profileId} defaultChecked={select.checked} aria-label={`Select ${m.fullName}`} />
         {body}
       </label>
     );

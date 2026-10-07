@@ -3,6 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { requireAdminOrRedirectPath } from "@/lib/admin";
 
+export const metadata = { title: "Network health" };
+
 // PsyA2 #98/#102: the admin console "must exist from launch" and must
 // include a Network-health dashboard - explicitly "important operationally
 // ... the point is to manage liquidity, not vanity registrations." Every

@@ -31,9 +31,9 @@ export async function addLicense(formData: FormData) {
   if (!user) throw new Error("Not signed in");
 
   const state = stateCode(String(formData.get("state") || ""));
-  if (!state) credentialsError("Choose the state the licence was issued in");
+  if (!state) credentialsError("Choose the state the license was issued in");
   const licenseNumber = String(formData.get("license_number") || "").trim();
-  if (!licenseNumber) credentialsError("Add the licence number");
+  if (!licenseNumber) credentialsError("Add the license number");
 
   const { error } = await supabase.from("licenses").insert({
     profile_id: user.id,
@@ -47,7 +47,7 @@ export async function addLicense(formData: FormData) {
   if (error) credentialsError(error.message);
 
   revalidatePath("/dashboard/credentials");
-  redirect("/dashboard/credentials?added=licence");
+  redirect("/dashboard/credentials?added=license");
 }
 
 export async function deleteLicense(formData: FormData) {

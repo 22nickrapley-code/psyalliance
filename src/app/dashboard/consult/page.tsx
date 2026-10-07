@@ -5,6 +5,8 @@ import { findMatches } from "@/lib/match-engine";
 import { resolveAvatarUrls } from "@/lib/avatars";
 import { ConsultIndexView, audienceLabel, type ConsultTab, type PostItem } from "./views";
 
+export const metadata = { title: "Consult" };
+
 const nameOf = (p: any) => (p ? clinicianName(p?.full_name, p?.qualification_level, p?.credential_prefix) : "A colleague");
 
 export default async function ConsultPage(props: { searchParams: Promise<{ tab?: string; tag?: string; error?: string }> }) {
@@ -66,7 +68,7 @@ export default async function ConsultPage(props: { searchParams: Promise<{ tab?:
   } else {
     let q = supabase
       .from("consultations")
-      .select("id, kind, question, context, tags, audience_type, audience_profile_ids, group_id, status, created_at, author_profile_id, author:author_profile_id(full_name, credential_prefix, is_demo), consultation_responses(count)")
+      .select("id, kind, question, context, tags, audience_type, audience_profile_ids, group_id, status, created_at, author_profile_id, author:author_profile_id(full_name, credential_prefix, qualification_level, is_demo), consultation_responses(count)")
       .order("created_at", { ascending: false })
       .limit(60);
     if (tab === "mine") q = q.eq("author_profile_id", myself);

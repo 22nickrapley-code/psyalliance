@@ -33,7 +33,7 @@ export default async function JoinPage(props: { searchParams: Promise<{ sent?: s
               </p>
               <ol className="join-steps">
                 <li><b>Request an invitation</b><span>You&rsquo;ll see a confirmation straight away. This is a request, not membership.</span></li>
-                <li><b>We invite you when your state opens</b><span>A personal invitation link by email, once your state is open and you&rsquo;re eligible.</span></li>
+                <li><b>We invite you when your state opens</b><span>We&rsquo;re in touch personally, with your invitation link, once your state is open and you&rsquo;re eligible.</span></li>
                 <li><b>Set up your account</b><span>Add your practice details and each license you hold.</span></li>
                 <li><b>A person reviews your license</b><span>Identity, doctoral degree and license, checked against the state board, before you&rsquo;re listed or matched.</span></li>
               </ol>
@@ -45,7 +45,7 @@ export default async function JoinPage(props: { searchParams: Promise<{ sent?: s
               <div className="card tint roomy join-card">
                 <div className="eyebrow">Request received</div>
                 <h2 className="serif-title" style={{ fontSize: 30, margin: "6px 0 10px" }}>You&rsquo;re on the list.</h2>
-                <p>This is a request for an invitation, not membership. When we open your state we&rsquo;ll email you a personal invitation link. After you sign up, you add your license and a person checks it against the state board before you can use the network.</p>
+                <p>This is a request for an invitation, not membership. When we open your state we&rsquo;ll be in touch personally with your invitation link. After you sign up, you add your license and a person checks it against the state board before you can use the network.</p>
                 <p style={{ marginBottom: 0 }}>Nothing else is sent to you until then.</p>
               </div>
             ) : (

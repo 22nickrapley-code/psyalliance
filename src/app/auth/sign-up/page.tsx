@@ -32,7 +32,7 @@ export default async function SignUpPage(props: { searchParams: Promise<{ error?
             <input type="hidden" name="invite" value={invite} />
             <h2>Create your account</h2>
             <p className="muted" style={{ marginTop: "-0.5rem" }}>
-              For PhD, PsyD and EdD psychologists and MD and DO psychiatrists. After you sign up, add your licence in Credentials: a person reviews it before you
+              For PhD, PsyD and EdD psychologists and MD and DO psychiatrists. After you sign up, add your license in Credentials: a person reviews it before you
               can use the network.
             </p>
             <div className="field">

@@ -4,6 +4,8 @@ import { REVIEWER_ROLE_LABELS, type ReviewerRole } from "@/lib/library-governanc
 import { PageHead, Banner, Status, Empty } from "../../_components/ui";
 import { recordReviewAction } from "./actions";
 
+export const metadata = { title: "Library review" };
+
 // The reviewer's desk: resources that need the roles this member is
 // appointed to, current version only. Each review is of the whole
 // resource, including the PDF.

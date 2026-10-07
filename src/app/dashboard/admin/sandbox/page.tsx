@@ -7,6 +7,8 @@ import { PageHead, Banner, Status } from "../../_components/ui";
 import { CopyLink } from "../../_components/copy-link";
 import { createSandboxPassAction, revokeSandboxPassAction, issueSandboxRequestAction, declineSandboxRequestAction } from "./actions";
 
+export const metadata = { title: "Sandbox passes" };
+
 async function origin() {
   if (process.env.NEXT_PUBLIC_SITE_URL) return process.env.NEXT_PUBLIC_SITE_URL;
   const h = await headers();

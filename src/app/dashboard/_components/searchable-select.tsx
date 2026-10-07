@@ -2,6 +2,47 @@
 
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 
+// Abbreviations clinicians type, and the words in our list they mean.
+const ALIASES: Record<string, string[]> = {
+  ocd: ["obsessive"],
+  gad: ["anxiety"],
+  panic: ["anxiety"],
+  adhd: ["adhd"],
+  add: ["adhd"],
+  bpd: ["personality", "borderline"],
+  borderline: ["personality"],
+  sud: ["addiction"],
+  substance: ["addiction"],
+  alcohol: ["addiction"],
+  ed: ["eating"],
+  anorexia: ["eating"],
+  bulimia: ["eating"],
+  ppd: ["pregnancy"],
+  postpartum: ["pregnancy"],
+  perinatal: ["pregnancy"],
+  ptsd: ["trauma"],
+  cptsd: ["trauma"],
+  mdd: ["depression"],
+  asd: ["autism"],
+  dementia: ["alzheimer"],
+  couples: ["marriage"],
+  insomnia: ["sleep"],
+  grief: ["grief"],
+  lgbt: ["lgbtq"],
+  testing: ["testing", "neuropsychology"],
+  assessment: ["testing", "neuropsychology"],
+  psychosis: ["schizophrenia", "serious mental"],
+  smi: ["serious mental"],
+  dv: ["domestic violence"],
+  ipv: ["domestic violence"],
+};
+
+const matches = (label: string, q: string) => {
+  const l = label.toLowerCase();
+  if (l.includes(q)) return true;
+  return (ALIASES[q] || []).some((a) => l.includes(a));
+};
+
 // One box: type to narrow the list, or open it and pick. The chosen value
 // is submitted under `name`, so forms and server parsing are unchanged.
 export function SearchableSelect({
@@ -34,7 +75,7 @@ export function SearchableSelect({
     const t = q.trim().toLowerCase();
     if (!t) return options;
     const starts = options.filter((o) => o.label.toLowerCase().startsWith(t));
-    const rest = options.filter((o) => !o.label.toLowerCase().startsWith(t) && o.label.toLowerCase().includes(t));
+    const rest = options.filter((o) => !o.label.toLowerCase().startsWith(t) && matches(o.label, t));
     return [...starts, ...rest];
   }, [q, options]);
 

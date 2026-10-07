@@ -23,7 +23,7 @@ export default async function DashboardLayout({
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/auth/sign-in");
+    redirect(IS_DEMO_SITE ? "/sandbox/ended" : "/auth/sign-in");
   }
 
   const { data: profile } = await supabase
@@ -48,7 +48,7 @@ export default async function DashboardLayout({
 
   // The badge says what's true. Admin-only (operator) logins make no
   // clinical claim. A clinician is "Verified" only when they are a network
-  // member: verified, active and holding a reviewed, in-date licence.
+  // member: verified, active and holding a reviewed, in-date license.
   const { data: status } = await supabase.rpc("my_network_status").maybeSingle<any>();
   const { count: licenceCount } = await supabase.from("licenses").select("id", { count: "exact", head: true }).eq("profile_id", user.id);
   const isOperator = profile?.account_kind === "operator";
@@ -63,15 +63,15 @@ export default async function DashboardLayout({
           : profile.verification_status === "rejected"
             ? "Not verified"
             : (licenceCount || 0) === 0
-              ? "Add your licence"
+              ? "Add your license"
               : status?.has_reviewed_licence
                 ? "Verification pending"
-                : "Licence awaiting review";
+                : "License awaiting review";
   const gateNotice =
     !profile || isOperator || status?.is_member || profile.demo_view
       ? null
       : (licenceCount || 0) === 0
-        ? "Add a licence to be reviewed. Referrals, cover, consults and messages open once you're verified."
+        ? "Add a license to be reviewed. Referrals, cover, consults and messages open once you're verified."
         : "Your credentials are with us for review. Referrals, cover, consults and messages open once you're verified.";
 
   const { data: sandbox } = IS_DEMO_SITE ? await supabase.rpc("my_sandbox").maybeSingle<any>() : { data: null };

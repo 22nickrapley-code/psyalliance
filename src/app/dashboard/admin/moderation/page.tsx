@@ -1,3 +1,4 @@
+import { shortDate } from "@/lib/dates";
 import { clinicianName } from "@/lib/profession";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
@@ -5,6 +6,8 @@ import { requireAdminOrRedirectPath } from "@/lib/admin";
 import { REDACTABLE } from "@/lib/moderation";
 import { resolveReportAction, redactContentAction } from "./actions";
 import { PageHead, Banner, Status } from "../../_components/ui";
+
+export const metadata = { title: "Moderation" };
 
 const TARGET_LABELS: Record<string, string> = {
   consultation: "Consult question",
@@ -79,7 +82,7 @@ export default async function ModerationQueuePage(props: { searchParams: Promise
               <div className="row between" style={{ gap: 12, alignItems: "flex-start" }}>
                 <span>
                   <strong>{TARGET_LABELS[r.target_type] || r.target_type} #{r.target_id}</strong>
-                  <p>Reported by {nameOf(r.reporter)} on {new Date(r.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}{r.reason ? ` · ${r.reason}` : ""}</p>
+                  <p>Reported by {nameOf(r.reporter)} on {shortDate(r.created_at)}{r.reason ? ` · ${r.reason}` : ""}</p>
                 </span>
                 <Status tone={cTone}>{cLabel}</Status>
               </div>
@@ -127,7 +130,7 @@ export default async function ModerationQueuePage(props: { searchParams: Promise
               <strong>{TARGET_LABELS[r.target_type] || r.target_type} #{r.target_id}</strong>
               <p>{(CATEGORY[r.category] || CATEGORY.other)[0]} &middot; {r.action_taken || r.status} by {r.resolver?.full_name || "an admin"}</p>
             </span>
-            <span className="micro-note">{r.resolved_at ? new Date(r.resolved_at).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : ""}</span>
+            <span className="micro-note">{r.resolved_at ? shortDate(r.resolved_at) : ""}</span>
           </div>
         ))}
       </section>

@@ -1,3 +1,4 @@
+import type { CoveringItem } from "./views";
 import { createClient } from "@/lib/supabase/server";
 import { loadNeedOptions } from "@/lib/need-options";
 import { CoverIndexView } from "./views";
@@ -6,6 +7,8 @@ import { ABSENCE, type IncomingPlan } from "./views";
 import { clinicianName, roleLabel } from "@/lib/profession";
 import { resolveAvatarUrls } from "@/lib/avatars";
 import { US_STATES } from "@/lib/us-states";
+
+export const metadata = { title: "Cover" };
 
 // Cover (Product Spec v1): your plans, and cover requests colleagues have
 // sent you.
@@ -17,7 +20,7 @@ export default async function CoverPage(props: { searchParams: Promise<{ ok?: st
   } = await supabase.auth.getUser();
   const myself = user!.id;
 
-  const [options, { data: plans }, { data: incomingRows }] = await Promise.all([
+  const [options, { data: plans }, { data: incomingRows }, { data: acceptedRows }] = await Promise.all([
     loadNeedOptions(supabase),
     supabase
       .from("coverage_plans")
@@ -30,6 +33,13 @@ export default async function CoverPage(props: { searchParams: Promise<{ ok?: st
       .eq("requested_profile_id", myself)
       .in("status", ["sent", "discussing"])
       .order("sent_at", { ascending: false }),
+    supabase
+      .from("coverage_requests")
+      .select("id, responded_at, coverage_plan_cases(case_reference, specialism_lookup_ids, coverage_plans(id, starts_on, ends_on, status, profile_id, owner:profile_id(full_name, credential_prefix, qualification_level)))")
+      .eq("requested_profile_id", myself)
+      .eq("status", "accepted")
+      .order("responded_at", { ascending: false })
+      .limit(40),
   ]);
 
   const fmt = (d: string | null) =>
@@ -85,12 +95,35 @@ export default async function CoverPage(props: { searchParams: Promise<{ ok?: st
     });
   }
   const incoming = [...byPlan.values()].sort((a, b) => Number(b.urgent) - Number(a.urgent));
+
+  // What you've agreed to cover: by colleague, with dates and clients, until
+  // their plan ends.
+  const today = new Date().toISOString().slice(0, 10);
+  const coveringBy = new Map<number, CoveringItem>();
+  for (const r of (acceptedRows || []) as any[]) {
+    const c = r.coverage_plan_cases;
+    const p = c?.coverage_plans;
+    if (!p || p.status === "cancelled" || (p.ends_on && p.ends_on < today)) continue;
+    const o = p.owner || {};
+    if (!coveringBy.has(p.id)) {
+      coveringBy.set(p.id, {
+        planId: p.id,
+        ownerId: p.profile_id,
+        ownerName: clinicianName(o.full_name, o.qualification_level, o.credential_prefix),
+        dates: p.starts_on ? `${fmt(p.starts_on)} to ${fmt(p.ends_on)}` : "Dates to confirm",
+        clients: [],
+      });
+    }
+    coveringBy.get(p.id)!.clients.push(`${clientRef(c.case_reference) || "Client"} · ${focusLabel(c.specialism_lookup_ids, options)}`);
+  }
+  const covering = [...coveringBy.values()];
   void caseDetails;
 
   return (
     <CoverIndexView
       plans={(plans || []).map((p: any) => summarise(p, p.coverage_plan_cases || []))}
       incoming={incoming}
+      covering={covering}
       ok={ok}
       error={error}
     />

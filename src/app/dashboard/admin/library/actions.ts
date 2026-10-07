@@ -51,7 +51,7 @@ export async function appointReviewerAction(formData: FormData) {
   const role = String(formData.get("role") || "") as ReviewerRole;
   const qualification = String(formData.get("qualification") || "").trim();
   if (!profileId || !ALL_ROLES.includes(role)) libraryError("Choose a person and a role");
-  if (qualification.length < 5) libraryError("Say what qualifies them, for example their licence or bar admission");
+  if (qualification.length < 5) libraryError("Say what qualifies them, for example their license or bar admission");
 
   const { error } = await supabase
     .from("library_reviewers")

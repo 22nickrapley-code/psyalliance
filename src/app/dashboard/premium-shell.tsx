@@ -161,8 +161,12 @@ export default function PremiumShell({
               </svg>
             </button>
             <div className="breadcrumbs">
-              <span>{currentGroup?.label === "Admin" ? "Admin" : "Workspace"}</span>
-              <span aria-hidden="true">&rsaquo;</span>
+              {currentGroup?.label === "Admin" && (
+                <>
+                  <span>Admin</span>
+                  <span aria-hidden="true">&rsaquo;</span>
+                </>
+              )}
               <b>{current?.label || "PsyAlliance"}</b>
             </div>
             <div className="top-actions">

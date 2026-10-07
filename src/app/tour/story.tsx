@@ -40,7 +40,7 @@ export function AlexCard({ compact, eyebrow = "In every demo you’re" }: { comp
         {compact && <p className="story-alex-line">Six weeks of parental leave from {leave.startLong}. Licensed in New York and New Jersey.</p>}
         {!compact && (
           <ul className="story-facts">
-            <li>Licensed in New York and New Jersey, PSYPACT telehealth</li>
+            <li>Licensed in New York and New Jersey</li>
             <li>Adults and adolescents: anxiety, trauma and OCD</li>
             <li>Parental leave for six weeks from {leave.startLong}</li>
             <li>1,200 fictional colleagues across NY, NJ, MA, CT, RI and VT</li>

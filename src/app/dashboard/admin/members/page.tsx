@@ -4,6 +4,8 @@ import { requireAdminOrRedirectPath, allAdminMembers } from "@/lib/admin";
 import { setMemberVerificationStatus, setMemberAdminFlag, setMemberAccountStatusAction, setAccountKindAction } from "./actions";
 import { PageHead, Banner, Status } from "../../_components/ui";
 
+export const metadata = { title: "Members" };
+
 const VERIFICATION: Record<string, [string, "" | "warn" | "neutral" | "danger"]> = {
   verified: ["Verified", ""],
   pending: ["Pending", "warn"],
@@ -48,7 +50,7 @@ export default async function AdminMembersPage(props: {
 
   return (
     <>
-      <PageHead eyebrow="Admin" title="Members" lead="Search, verify, suspend or promote. Verifying needs at least one reviewed, in-date licence." />
+      <PageHead eyebrow="Admin" title="Members" lead="Search, verify, suspend or promote. Verifying needs at least one reviewed, in-date license." />
       <Banner error={sp.error} />
       <div className="tabs" style={{ marginBottom: 14 }}>
         {tab("clinician", "Clinicians")}
@@ -90,7 +92,7 @@ export default async function AdminMembersPage(props: {
                     {` · joined ${new Date(p.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`}
                   </p>
                   <p>
-                    {p.reviewed_licences} reviewed licence{p.reviewed_licences === 1 ? "" : "s"}
+                    {p.reviewed_licences} reviewed license{p.reviewed_licences === 1 ? "" : "s"}
                     {p.unreviewed_licences ? `, ${p.unreviewed_licences} awaiting review` : ""}
                     {p.npi_number ? ` · NPI ${p.npi_number}` : ""}
                   </p>
@@ -112,7 +114,7 @@ export default async function AdminMembersPage(props: {
                         <form key={s} action={setMemberVerificationStatus} className="inline">
                           <input type="hidden" name="profile_id" value={p.id} />
                           <input type="hidden" name="status" value={s} />
-                          <button type="submit" className={s === "verified" ? "btn small-btn" : "btn secondary small-btn"} disabled={s === "verified" && p.reviewed_licences === 0} title={s === "verified" && p.reviewed_licences === 0 ? "Review a licence first" : undefined}>
+                          <button type="submit" className={s === "verified" ? "btn small-btn" : "btn secondary small-btn"} disabled={s === "verified" && p.reviewed_licences === 0} title={s === "verified" && p.reviewed_licences === 0 ? "Review a license first" : undefined}>
                             {s === "verified" ? "Verify" : s === "pending" ? "Back to pending" : s[0].toUpperCase() + s.slice(1)}
                           </button>
                         </form>

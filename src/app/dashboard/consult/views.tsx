@@ -1,3 +1,4 @@
+import { shortDate } from "@/lib/dates";
 import { AudiencePicker } from "./audience-picker";
 import type { Suggestion } from "@/lib/colleague-suggestions";
 import { ReportContent } from "../_components/report-content";
@@ -70,7 +71,7 @@ function timeAgo(iso: string) {
 }
 
 function PostCard({ p }: { p: PostItem }) {
-  const statusLabel = p.status === "resolved" ? "Resolved" : p.status === "draft" ? "Draft" : p.replies > 0 ? "Open · replies in" : "Open";
+  const statusLabel = p.status === "resolved" ? "Resolved" : p.status === "draft" ? "Draft" : p.replies > 0 ? `Open · ${p.replies} repl${p.replies === 1 ? "y" : "ies"}` : "Open · no replies yet";
   const kicker = [
     p.kind === "supervision_request" ? "Supervision wanted" : p.kind === "supervision_offer" ? "Supervision offered" : "Practice question",
     ...p.tags.slice(0, 2),
@@ -120,7 +121,7 @@ export function ConsultIndexView({
     <>
       <PageHead
         eyebrow="Consult / professional dialogue"
-        title="Better questions, better thinking."
+        title="Consult"
         lead="Discuss practice questions with a chosen audience. Keep client information out of the conversation."
         actions={<a className="btn" href={newHref}>{tab === "supervision" ? "Request supervision" : "Ask a question"}</a>}
       />
@@ -147,7 +148,7 @@ export function ConsultIndexView({
               <input type="hidden" name="tag" value={activeTag} />
               <input type="hidden" name="follow" value={followed.includes(activeTag) ? "0" : "1"} />
               <button type="submit" className="btn secondary small-btn">{followed.includes(activeTag) ? `Unfollow ${activeTag}` : `Follow ${activeTag}`}</button>
-              <span className="micro-note">Followed tags rank first in your feed and weekly digest.</span>
+              <span className="micro-note">Followed tags rank first in your feed.</span>
             </form>
           )}
 
@@ -254,7 +255,7 @@ export function ConsultComposeView({
                 kind === "supervision_request"
                   ? "e.g. Seeking weekly supervision towards NY licensure, trauma focus"
                   : kind === "supervision_offer"
-                    ? "e.g. Offering fortnightly supervision for early-career clinicians in CBT"
+                    ? "e.g. Offering supervision every two weeks for early-career clinicians in CBT"
                     : "e.g. How are you structuring a transition to a new covering clinician?"
               }
             />
@@ -343,7 +344,7 @@ export function ConsultDetailView({ c, ok, error, extra }: { c: ConsultDetail; o
       <PageHead
         eyebrow={isDraft ? "Consult / review before posting" : `Consult / ${c.tags.join(" · ") || "discussion"}`}
         title={c.question}
-        lead={`${c.authorName} · ${new Date(c.createdAt).toLocaleDateString()} · ${c.audienceLabel}`}
+        lead={`${c.authorName} · ${shortDate(c.createdAt)} · ${c.audienceLabel}`}
         actions={<a className="btn secondary" href="/dashboard/consult">All discussions</a>}
       />
       <Banner ok={ok} error={error} />
@@ -401,7 +402,7 @@ export function ConsultDetailView({ c, ok, error, extra }: { c: ConsultDetail; o
                     </div>
                     <p style={{ whiteSpace: "pre-wrap" }}>{r.body}</p>
                     <div className="row" style={{ gap: 10 }}>
-                      <span className="micro-note">{new Date(r.createdAt).toLocaleDateString()}</span>
+                      <span className="micro-note">{shortDate(r.createdAt)}</span>
                       <ReportContent targetType="consultation_response" targetId={r.id} returnTo={`/dashboard/consult/${c.id}`} />
                     </div>
                   </div>

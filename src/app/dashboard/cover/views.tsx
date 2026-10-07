@@ -1,4 +1,6 @@
+import { shortDate } from "@/lib/dates";
 import type { ReactNode } from "react";
+import { SearchableSelect } from "../_components/searchable-select";
 import type { Match } from "@/lib/match-engine";
 import type { NeedOptions } from "@/lib/need-options";
 import { QuietEmpty, PageHead, Banner, Progress, Empty, Status, MatchCard, SummaryList, PersonAvatar, HANDOFF_RULE } from "../_components/ui";
@@ -66,14 +68,14 @@ const INVITE_STATUS: Record<string, { label: string; tone: "" | "warn" | "neutra
 };
 
 function fmt(d: string | null) {
-  return d ? new Date(d + "T00:00:00").toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" }) : "Not set";
+  return d ? shortDate(d) : "Not set";
 }
 
 function PLAN_RESOURCE(type: string | null) {
   if (type === "reciprocal" || type === "short_planned")
     return { code: "PA-01", title: "Reciprocal Coverage Agreement", purpose: "Agree roles and response times with the colleague covering, with a per-client summary." };
   if (type === "closing_practice")
-    return { code: "PA-03", title: "Professional Will & Succession Plan", purpose: "Plan records custody, client notice and the handover of your practice." };
+    return { code: "PA-03", title: "Professional Will & Succession Plan", purpose: "Plan records custody, client notice and the handoff of your practice." };
   return { code: "PA-02", title: "Extended Leave & Handoff Pack", purpose: "Keep continuity while you're away: client letters, who does what, and a plan for your return." };
 }
 
@@ -178,7 +180,8 @@ function IncomingCard({ r }: { r: IncomingPlan }) {
       {r.note && <blockquote className="request-note">&ldquo;{r.note}&rdquo;</blockquote>}
       <div className="incoming-cases">
         {r.cases.map((c, i) => {
-          const label = c.reference && !/^(case|client)\s*\d+$/i.test(c.reference.trim()) ? c.reference : `Client ${i + 1}`;
+          // Keep the owner's numbering, so "Client 2" stays Client 2 after Client 1 is answered.
+          const label = c.reference ? c.reference.trim().replace(/^case\s*(\d+)$/i, "Client $1") : `Client ${i + 1}`;
           const ownerFirst = r.ownerName.replace(/^(dr\.?)\s+/i, "").split(/[\s,]+/)[0];
           const draft = `Hi ${ownerFirst}, I may be able to cover ${label} (${c.focus}) for ${r.dates}. Before I accept, could we talk through the schedule and how you'd like the handoff to work?`;
           return (
@@ -214,14 +217,18 @@ function IncomingCard({ r }: { r: IncomingPlan }) {
   );
 }
 
+export type CoveringItem = { planId: number; ownerId: string; ownerName: string; dates: string; clients: string[] };
+
 export function CoverIndexView({
   plans,
   incoming,
+  covering = [],
   ok,
   error,
 }: {
   plans: PlanSummary[];
   incoming: IncomingPlan[];
+  covering?: CoveringItem[];
   ok?: string;
   error?: string;
 }) {
@@ -231,7 +238,7 @@ export function CoverIndexView({
     <>
       <PageHead
         eyebrow="Cover"
-        title="Time away, thoughtfully covered."
+        title="Cover"
         lead="Plan cover for one client or your whole caseload, and answer colleagues who need cover."
         actions={<a className="btn" href="/dashboard/cover/new">Plan cover</a>}
       />
@@ -246,6 +253,25 @@ export function CoverIndexView({
             {incoming.map((r) => <IncomingCard key={r.planId} r={r} />)}
           </div>
         </>
+      )}
+      {covering.length > 0 && (
+        <section className="card covering-card" style={{ marginBottom: 26 }}>
+          <div className="card-title">
+            <h3>You&rsquo;re covering</h3>
+            <span className="micro-note">What you&rsquo;ve agreed to, until each plan ends</span>
+          </div>
+          {covering.map((c) => (
+            <div key={c.planId} className="list-row covering-row">
+              <span>
+                <strong>
+                  For <a href={`/dashboard/people/${c.ownerId}`}>{c.ownerName}</a>
+                </strong>
+                <small>{c.dates} &middot; {c.clients.join(" · ")}</small>
+              </span>
+              <a className="btn secondary small-btn" href={`/dashboard/messages?to=${c.ownerId}`}>Message</a>
+            </div>
+          ))}
+        </section>
       )}
       <div className="split">
         <section className="card">
@@ -287,7 +313,7 @@ export function CoverIndexView({
           <section className="card dark">
             <div className="eyebrow" style={{ color: "#e2c49c" }}>How it works</div>
             <h3>Plan, invite, confirm.</h3>
-            <p className="small">Describe each client by need, without identifiers. PsyAlliance suggests colleagues with the right licence, focus and fresh availability. You choose who&rsquo;s asked, and in what order. A case only counts as covered when someone accepts.</p>
+            <p className="small">Describe each client by need, without identifiers. PsyAlliance suggests colleagues with the right license, focus and fresh availability. You choose who&rsquo;s asked, and in what order. A case only counts as covered when someone accepts.</p>
           </section>
         </aside>
       </div>
@@ -317,7 +343,7 @@ export function CoverPlanStepView({
           <div className="choose-grid">
             {Object.entries(ABSENCE).map(([k, v]) => (
               <label key={k} className="radio-card">
-                <input type="radio" name="absence_type" value={k} required defaultChecked={preset?.absenceType === k} />
+                <input type="radio" name="absence_type" value={k} required defaultChecked={preset?.absenceType === k} aria-label={`${v.label}: ${v.blurb}`} />
                 <b>{v.label}</b>
                 <span>{v.blurb}</span>
               </label>
@@ -393,13 +419,14 @@ export function CoverNeedsView({ plan, cases, options, error }: { plan: PlanSumm
             <div className="eyebrow">Add a client</div>
             <h3>Client {cases.length + 1}</h3>
             <div className="fields three">
-              <label className="field">
-                Treatment focus
-                <select name="focus" required defaultValue="">
-                  <option value="">Choose a focus</option>
-                  {options.focus.map((o) => <option key={o.id} value={o.id}>{o.value}</option>)}
-                </select>
-              </label>
+              <SearchableSelect
+                name="focus"
+                label="Main need"
+                options={options.focus.map((o) => ({ value: String(o.id), label: o.value }))}
+                required
+                emptyLabel="Choose a treatment focus"
+                searchPlaceholder="Search, e.g. OCD, trauma, eating"
+              />
               <label className="field">
                 Also (optional)
                 <select name="focus" defaultValue="">
@@ -426,7 +453,6 @@ export function CoverNeedsView({ plan, cases, options, error }: { plan: PlanSumm
                 Insurance
                 <select name="insurance" defaultValue="">
                   <option value="">Any or not sure</option>
-                  <option value="Self-pay">Self-pay</option>
                   {options.insurance.map((o) => <option key={o.id} value={o.value}>{o.value}</option>)}
                 </select>
               </label>
@@ -434,7 +460,7 @@ export function CoverNeedsView({ plan, cases, options, error }: { plan: PlanSumm
                 Session frequency
                 <select name="frequency" defaultValue="Weekly">
                   <option>Weekly</option>
-                  <option>Fortnightly</option>
+                  <option>Every two weeks</option>
                   <option>Monthly</option>
                   <option>As needed</option>
                 </select>
@@ -500,7 +526,7 @@ export function CoverCandidatesView({
                   <div className="kv">{c.details.slice(0, 3).map((d) => <span key={d} className="chip">{d}</span>)}</div>
                 </div>
                 {list.length === 0 ? (
-                  <Empty title="No colleague matches this client yet." body="Nobody with an active licence in this state, the right focus and current availability is left to ask. Try widening the case, or invite a colleague you trust to join." />
+                  <Empty title="No colleague matches this client yet." body="Nobody with an active license in this state, the right focus and current availability is left to ask. Try widening the case, or invite a colleague you trust to join." />
                 ) : (
                   list.map((m, i) => (
                     <MatchCard
@@ -559,7 +585,15 @@ export function CoverInviteView({
         <div className="stack">
           <section className="card">
             <div className="eyebrow">Step 4 &middot; Recipients</div>
-            <h3>{total === 0 ? "No one selected yet" : `${total} colleague${total === 1 ? "" : "s"} across ${rows.filter((r) => r.picks.length).length} client${rows.filter((r) => r.picks.length).length === 1 ? "" : "s"}`}</h3>
+            <h3>
+              {total === 0
+                ? "No one selected yet"
+                : (() => {
+                    const people = new Set(rows.flatMap((r) => r.picks.map((x) => x.id))).size;
+                    const clients = rows.filter((r) => r.picks.length).length;
+                    return `${total} request${total === 1 ? "" : "s"} to ${people} colleague${people === 1 ? "" : "s"}, for ${clients} client${clients === 1 ? "" : "s"}`;
+                  })()}
+            </h3>
             {rows.length === 0 && <p className="small">Go back to Candidates and tick at least one colleague for a client.</p>}
             {rows.map((r) => (
               <div key={r.caseId} className="pa-case">
@@ -596,7 +630,7 @@ export function CoverInviteView({
             </label>
             <label className="radio-card">
               <input type="radio" name="outreach_mode" value="parallel" defaultChecked={plan.absenceType === "unexpected"} />
-              <span><b>Everyone at once</b><span>Fastest. The first to accept covers the client; tell the others you&rsquo;re sorted.</span></span>
+              <span><b>Everyone at once</b><span>Fastest. The first to accept covers the client; let the others know it&rsquo;s covered.</span></span>
             </label>
             <label className="field" style={{ marginTop: 10 }}>
               Short message (optional)

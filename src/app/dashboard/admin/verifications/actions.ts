@@ -57,7 +57,7 @@ export async function setProfileVerificationStatus(formData: FormData) {
   revalidatePath("/dashboard/admin");
 }
 
-// Trust rule "Verified means reviewed": a licence only counts toward
+// Trust rule "Verified means reviewed": a license only counts toward
 // listing and matching once an admin has checked it against the state
 // board. Members can't set this themselves (guard_licence_review trigger).
 export async function reviewLicenceAction(formData: FormData) {
@@ -71,7 +71,7 @@ export async function reviewLicenceAction(formData: FormData) {
   const id = Number(formData.get("id"));
   const decision = String(formData.get("decision") || "");
   const { data: lic } = await supabase.from("licenses").select("id, profile_id, state").eq("id", id).maybeSingle();
-  if (!lic) verificationsError("Licence not found");
+  if (!lic) verificationsError("License not found");
 
   if (decision === "approve") {
     const { error } = await supabase
@@ -81,15 +81,15 @@ export async function reviewLicenceAction(formData: FormData) {
     if (error) verificationsError(error.message);
     await notifyProfile(supabase, {
       profileId: lic.profile_id,
-      title: `Your ${lic.state} licence has been reviewed`,
+      title: `Your ${lic.state} license has been reviewed`,
       body: "It's now on record. Once your profile is verified, you're listed and matched for referrals and cover in that state.",
       createdBy: user.id,
     });
   } else {
     await notifyProfile(supabase, {
       profileId: lic.profile_id,
-      title: `We couldn't confirm your ${lic.state} licence`,
-      body: "Please check the state, licence number and expiry date in Credentials. Editing them sends the licence back for review.",
+      title: `We couldn't confirm your ${lic.state} license`,
+      body: "Please check the state, license number and expiry date in Credentials. Editing them sends the license back for review.",
       createdBy: user.id,
     });
   }

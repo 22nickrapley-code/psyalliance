@@ -1,6 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { AvailabilityView } from "./view";
 
+export const metadata = { title: "Availability" };
+
 export default async function AvailabilityPage(props: { searchParams: Promise<{ confirmed?: string; reconfirmed?: string; error?: string }> }) {
   const sp = await props.searchParams;
   const supabase = await createClient();

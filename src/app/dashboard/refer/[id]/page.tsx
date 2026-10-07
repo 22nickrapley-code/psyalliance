@@ -5,6 +5,8 @@ import { resolveAvatarUrls } from "@/lib/avatars";
 import { PageHead, Empty } from "../../_components/ui";
 import { ReferTrackView, type ReferralDetail } from "../views";
 
+export const metadata = { title: "Referral" };
+
 // One referral: the owner tracks replies, chooses a colleague and closes
 // it; a recipient reads the need and replies.
 export default async function ReferralDetailPage(props: {

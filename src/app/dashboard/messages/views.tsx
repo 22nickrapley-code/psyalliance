@@ -35,7 +35,7 @@ export function MessagesShell({ list, children, view = "thread" }: { list: React
       <div className="page-head">
         <div>
           <div className="eyebrow">Your conversations</div>
-          <h1>Messages with context.</h1>
+          <h1>Messages</h1>
           <p>Professional conversation, connected to the request or discussion that started it.</p>
         </div>
       </div>
