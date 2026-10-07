@@ -190,7 +190,7 @@ export default function PremiumShell({
           )}
           {gateNotice && !demoView && (
             <div className="demo-bar gate-bar" role="status">
-              {gateNotice} <Link href="/dashboard/credentials">Credentials</Link>
+              {gateNotice} <Link href="/dashboard/credentials">Credentials</Link> &middot; <Link href="/dashboard/documents">Practice Library</Link>
             </div>
           )}
           <main className="page" id="main" tabIndex={-1}>{children}</main>

@@ -1,4 +1,5 @@
 import type { NeedOptions } from "@/lib/need-options";
+import { libraryHref } from "@/lib/library";
 import { Banner, Status } from "./_components/ui";
 import { reconfirmAvailability } from "./availability/actions";
 import { HomeTiles } from "./home-client";
@@ -37,7 +38,8 @@ export type HomeData = {
   today?: string;
   greeting?: string;
   steps: NextStep[];
-  gettingStarted: { label: string; done: boolean; href: string }[] | null;
+  gettingStarted: { label: string; done: boolean; href: string; waiting?: boolean }[] | null;
+  awaitingVerification?: boolean;
   availability: {
     referrals: string;
     cover: string;
@@ -161,6 +163,12 @@ function CircleCard({ c }: { c?: CircleSnapshot }) {
   );
 }
 
+const WHILE_REVIEW: [string, string, string][] = [
+  ["PA-03", "Professional Will & Succession Plan", "Who looks after your clients and records if you can't."],
+  ["PA-02", "Extended Leave Pack", "Step away for more than two weeks without stranding clients."],
+  ["PA-01", "Reciprocal Coverage Agreement", "A standing cover arrangement with a colleague you trust."],
+];
+
 export function HomeView({ d }: { d: HomeData }) {
   const n = d.steps.length;
   const urgent = d.steps.filter((s) => s.urgent).length;
@@ -187,9 +195,9 @@ export function HomeView({ d }: { d: HomeData }) {
         <section className="card getting-started">
           <div className="card-title"><h3>Getting started</h3></div>
           <p className="small">
-            {d.gettingStarted.length === 4
+            {d.awaitingVerification
               ? "Referrals, cover, consults and messages open once your credentials are verified. Here's what gets you there."
-              : "Three steps make the network useful to you from day one."}
+              : "A few steps make the network useful to you from day one."}
           </p>
           {d.gettingStarted.map((g, i) => (
             <div key={g.label} className="step-item">
@@ -197,10 +205,28 @@ export function HomeView({ d }: { d: HomeData }) {
                 <span className="round-number">{g.done ? "✓" : i + 1}</span>
                 <strong style={{ textDecoration: g.done ? "line-through" : undefined }}>{g.label}</strong>
               </span>
-              {!g.done && i < 3 && <a className="btn secondary small-btn" href={g.href}>Start</a>}
-              {!g.done && i === 3 && <Status tone="neutral">With us</Status>}
+              {!g.done && !g.waiting && <a className="btn secondary small-btn" href={g.href}>Start</a>}
+              {!g.done && g.waiting && <Status tone="neutral">With us</Status>}
             </div>
           ))}
+        </section>
+      )}
+
+      {d.awaitingVerification && (
+        <section className="card while-review">
+          <div className="card-title">
+            <h3>While we review your license</h3>
+            <a className="text-arrow" href="/dashboard/documents">Practice Library &rarr;</a>
+          </div>
+          <p className="small">The Practice Library is open to you now. Three templates members start with:</p>
+          <ul className="while-review-list">
+            {WHILE_REVIEW.map(([code, title, line]) => (
+              <li key={code}>
+                <span><b>{title}</b><small>{line}</small></span>
+                <a className="btn secondary small-btn" href={libraryHref(code)}>Explore</a>
+              </li>
+            ))}
+          </ul>
         </section>
       )}
 

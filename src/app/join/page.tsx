@@ -14,7 +14,7 @@ export const metadata = { title: "Join the founding cohort" };
 // Ask for an invitation. PsyAlliance opens to a founding cohort of
 // verified clinicians who overlap by state and specialty, so we invite
 // people deliberately rather than opening sign-up.
-export default async function JoinPage(props: { searchParams: Promise<{ sent?: string; error?: string }> }) {
+export default async function JoinPage(props: { searchParams: Promise<{ sent?: string; error?: string; from?: string }> }) {
   // Join requests always go to the real site's database.
   if (IS_DEMO_SITE) redirect(JOIN_URL);
   const sp = await props.searchParams;
@@ -50,6 +50,7 @@ export default async function JoinPage(props: { searchParams: Promise<{ sent?: s
               </div>
             ) : (
               <form action={requestToJoinAction} className="card join-card join-form">
+                {sp.from && <input type="hidden" name="source" value={String(sp.from).replace(/[^a-z0-9-]/gi, "").slice(0, 60)} />}
                 {sp.error && <div className="banner error" role="alert">{sp.error}</div>}
                 <label className="field">
                   Full name

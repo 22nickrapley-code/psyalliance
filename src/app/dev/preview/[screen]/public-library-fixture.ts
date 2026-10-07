@@ -1,0 +1,16 @@
+import type { PublicDoc } from "@/lib/library";
+
+const d = (code: string, title: string, category: string, summary: string, contents: string[], extra: Partial<PublicDoc> = {}): PublicDoc => ({
+  code, title, category, summary, contents, audience: "Psychologists · Psychiatrists", reviewed: false, review_date: null, reviewers: null, downloadable: false, version: 1, ...extra,
+});
+
+export const PUBLIC_DOCS: PublicDoc[] = [
+  d("PA-01", "Reciprocal Coverage Agreement", "Coverage & Continuity", "Two-clinician reciprocal coverage agreement with per-patient coverage summary and post-coverage debrief.", ["Reciprocal coverage agreement for two clinicians", "Per-client coverage summary", "What the covering clinician may and may not do", "Post-coverage debrief"]),
+  d("PA-02", "Extended Leave Coverage Plan & Clinical Handoff Pack", "Coverage & Continuity", "Step-by-step plan and letter templates for stepping away from practice for more than two weeks without stranding patients.", ["Step-by-step plan for leave of more than two weeks", "Client notification letter templates", "Clinical handoff summary for each client", "Return-to-practice checklist"]),
+  d("PA-03", "Professional Will & Practice Succession Plan", "Coverage & Continuity", "Professional will template, practice continuity inventory, executor acceptance and consent-form language.", ["Professional will template", "Practice continuity inventory", "Professional executor acceptance", "Informed-consent language about your continuity plan"], { reviewed: true, review_date: "2026-09-23", reviewers: ["Dana Whitlock, PhD", "Jordan Hale, JD"], downloadable: true }),
+  d("PA-04", "Peer Consultation Group Charter", "Consultation & Collaboration", "Charter, member agreement, 90-minute agenda, consultation log and quarterly health check for a peer consultation group.", ["Group charter", "Member agreement", "90-minute meeting agenda"]),
+  d("PA-08", "Split-Treatment Collaboration Agreement", "Consultation & Collaboration", "Prescriber and therapist collaboration agreement, patient acknowledgment and communication log for shared treatment.", ["Prescriber and therapist collaboration agreement"]),
+  d("PA-09", "Informed Consent for Psychotherapy (Adult)", "Clinical Practice", "Adult psychotherapy informed consent with optional modules for couples/family, minors, assessment and group, plus a customization checklist.", ["Adult psychotherapy informed consent"]),
+  d("PA-14", "Telepsychiatry & Controlled-Substance Prescribing Compliance Kit", "Regulatory & Compliance", "DEA telemedicine status and contingency plan, prescribing checklist, documentation elements, controlled-substance treatment agreement and patient notice.", ["DEA telemedicine status and contingency plan"], { audience: "Psychiatrists · Prescribing clinicians · Collaborating psychologists" }),
+  d("PA-16", "Group Practice Clinician Agreement Builder & Onboarding Kit", "Business & Practice Management", "Model comparison, classification warning, term sheet, clause guide, onboarding checklist, and joint patient notice for a clinician departure.", ["Group practice model comparison"], { audience: "Group practice owners · Clinicians joining a group · Psychologists · Psychiatrists" }),
+];

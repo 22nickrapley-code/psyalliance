@@ -2,6 +2,7 @@ import "./premium.css";
 import { redirect } from "next/navigation";
 import { IS_DEMO_SITE, DEMO_URL, SITE_URL } from "@/lib/env";
 import { PublicNav, PublicFooter } from "./_public/chrome";
+import { publicLibraryHref } from "@/lib/library";
 
 // Public landing. Written for a busy clinician who gives it a few seconds:
 // what it is and the benefit first, then the three moments it helps with,
@@ -15,6 +16,10 @@ const FAQ: [string, string][] = [
     "Doctoral-level psychologists (PhD, PsyD, EdD) and psychiatrists (MD, DO) licensed in the US. We open a few states at a time, starting in the Northeast.",
   ],
   ["What does it cost?", "Nothing. PsyAlliance is free for founding members."],
+  [
+    "What's in the Practice Library?",
+    "Twenty templates for independent practice, from a professional will to a reciprocal cover agreement. Some are free to download; members get all of them, placed beside the work they support.",
+  ],
   [
     "Do client details go into PsyAlliance?",
     "No. Requests describe needs (\"adult, anxiety, telehealth, Aetna\"). PsyAlliance flags dates, phone numbers, emails, addresses and record numbers before anything is sent. It can't reliably catch names, so leaving those out is up to you.",
@@ -60,6 +65,12 @@ const MOMENTS: [string, string, string][] = [
     "You’re unsure.",
     "Ask colleagues you trust a focused question between consultations, instead of strangers on a listserv.",
   ],
+];
+
+const LIBRARY_PICKS: [string, string, string][] = [ // [PA number, title, line]
+  ["PA-03", "Professional Will & Practice Succession Plan", "Who looks after your clients and records if you can’t."],
+  ["PA-02", "Extended Leave Pack", "Step away for more than two weeks without stranding clients."],
+  ["PA-01", "Reciprocal Coverage Agreement", "A standing cover arrangement with a colleague you trust."],
 ];
 
 const TRUST: [string, string][] = [
@@ -164,7 +175,28 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section className="public-section" id="why">
+        <section className="public-section home-library" id="library">
+          <div className="section-inner">
+            <div className="section-intro">
+              <div className="eyebrow">Practice Library</div>
+              <h2>Templates for the hard moments of independent practice.</h2>
+            </div>
+            <div className="lib-grid">
+              {LIBRARY_PICKS.map(([code, title, line]) => (
+                <article key={code} className="lib-card">
+                  <div className="lib-code">Coverage &amp; continuity</div>
+                  <h3><a href={publicLibraryHref(code)}>{title}</a></h3>
+                  <p>{line}</p>
+                </article>
+              ))}
+            </div>
+            <p className="section-more">
+              <a className="text-arrow" href="/library">Browse all 20 templates &rarr;</a>
+            </p>
+          </div>
+        </section>
+
+        <section className="public-section tint" id="why">
           <div className="section-inner founder">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/team/rena-pazienza.jpg" alt="Rena Pazienza, PhD" />
@@ -179,7 +211,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section className="public-section tint" id="verification">
+        <section className="public-section" id="verification">
           <div className="section-inner">
             <div className="section-intro">
               <div className="eyebrow">Trust</div>
@@ -200,7 +232,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section className="public-section" id="faq">
+        <section className="public-section tint" id="faq">
           <div className="section-inner" style={{ maxWidth: 780 }}>
             <div className="section-intro">
               <div className="eyebrow">Questions</div>

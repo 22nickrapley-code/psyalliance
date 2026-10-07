@@ -63,8 +63,12 @@ export async function requestToJoinAction(formData: FormData) {
     redirect(`/join?error=${encodeURIComponent("Add your name and a valid email address.")}`);
   }
   if (!states) redirect(`/join?error=${encodeURIComponent("Choose at least one state where you're licensed.")}`);
-  const { error } = await supabase.rpc("request_to_join", { p_full_name: fullName, p_email: email, p_qualification: qualification, p_states: states, p_note: note });
-  if (error) redirect(`/join?error=${encodeURIComponent(error.message)}`);
+  // Where the request started (a Practice Library page, say), for Admin.
+  const source = String(formData.get("source") || "").replace(/[^a-z0-9-]/gi, "").slice(0, 60);
+  const { error } = source
+    ? await supabase.rpc("request_to_join_from", { p_full_name: fullName, p_email: email, p_qualification: qualification, p_states: states, p_note: note, p_source: source })
+    : await supabase.rpc("request_to_join", { p_full_name: fullName, p_email: email, p_qualification: qualification, p_states: states, p_note: note });
+  if (error) redirect(`/join?error=${encodeURIComponent(error.message)}${source ? `&from=${source}` : ""}`);
   redirect("/join?sent=1");
 }
 

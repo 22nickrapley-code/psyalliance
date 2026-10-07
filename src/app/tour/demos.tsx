@@ -12,10 +12,12 @@ import { NetworkView, type Person } from "../dashboard/network/views";
 import { ClinicianProfileView, type ClinicianProfile } from "../dashboard/people/[id]/view";
 import { CredentialsView } from "../dashboard/credentials/view";
 import { AvailabilityView } from "../dashboard/availability/view";
+import { LibraryView, ResourceDetailView, MyLibraryView } from "../dashboard/documents/views";
+import type { LibraryResource } from "@/lib/library";
 import { HANDOFF_RULE } from "../dashboard/_components/ui";
 import { AV, leaveDates } from "./story";
 
-// The demo library: five short demos, each one job done start to finish on
+// The demo library: six short demos, each one job done start to finish on
 // the real screens with fictional data. Every person, client and reply is
 // invented and matches the sandbox seed. Demos never repeat each other.
 
@@ -237,6 +239,34 @@ const alexProfile: ClinicianProfile = {
   signals: [],
 };
 
+// The Practice Library demo uses the real titles, summaries and contents.
+const libDoc = (code: string, title: string, summary: string, contents: string[]): LibraryResource => ({
+  id: Number(code.slice(3)),
+  code,
+  title,
+  summary,
+  category: "Coverage & Continuity",
+  audience: "Psychologists · Psychiatrists",
+  tags: ["leave", "coverage", "continuity of care"],
+  version: 1,
+  reviewed: false,
+  reviewDate: null,
+  nextReviewDate: null,
+  storagePath: "",
+  contents,
+});
+const LIB_PA02 = libDoc(
+  "PA-02",
+  "Extended Leave Coverage Plan & Clinical Handoff Pack",
+  "Step-by-step plan and letter templates for stepping away from practice for more than two weeks without stranding patients.",
+  ["Step-by-step plan for leave of more than two weeks", "Client notification letter templates", "Clinical handoff summary for each client", "Return-to-practice checklist"],
+);
+const LIB_LEAVE: LibraryResource[] = [
+  LIB_PA02,
+  libDoc("PA-03", "Professional Will & Practice Succession Plan", "Professional will template, practice continuity inventory, executor acceptance and consent-form language.", []),
+  libDoc("PA-01", "Reciprocal Coverage Agreement", "Two-clinician reciprocal coverage agreement with per-patient coverage summary and post-coverage debrief.", []),
+];
+
 // ---------------------------------------------------------------------------
 export const DEMOS: Demo[] = [
   {
@@ -265,7 +295,7 @@ export const DEMOS: Demo[] = [
         slug: "clients",
         perspective: "alex",
         title: "Three clients, described by need",
-        what: "Each client becomes a short description: focus, age band, setting and frequency. No names, initials or dates ever enter PsyAlliance.",
+        what: "Each client becomes a short description: focus, age band, setting and frequency. No names, initials or dates ever enter PsyAlliance. Beside the plan, the Extended Leave Pack from the Practice Library has the client letters and handoff summary for leave like this.",
         focus: "Find colleagues",
         focusNote: "PsyAlliance now finds colleagues for each client.",
         render: () => <CoverNeedsView plan={{ ...plan, status: "draft" }} cases={clientsOpen} options={options} />,
@@ -580,7 +610,7 @@ export const DEMOS: Demo[] = [
               audienceLabel: "Trusted colleagues",
               recipients: [],
               responses: [
-                { id: 1, name: "Maya Chen, PsyD", body: "A 20-minute joint call before leave starts, then a written summary. PA-02 has a checklist.", type: "reply", useful: true, createdAt: daysAgo(0.5), avatarUrl: AV.maya },
+                { id: 1, name: "Maya Chen, PsyD", body: "A 20-minute joint call before leave starts, then a written summary. The Extended Leave Pack has a checklist.", type: "reply", useful: true, createdAt: daysAgo(0.5), avatarUrl: AV.maya },
                 { id: 2, name: "Eli Ramirez, MD", body: "Tell clients in writing who to contact and when. It's the ambiguity that unsettles people.", type: "reply", useful: false, createdAt: daysAgo(0.3), avatarUrl: AV.eli },
               ],
             }}
@@ -702,7 +732,7 @@ export const DEMOS: Demo[] = [
               </div>
               <div className="message-scroll">
                 <div className="bubble">Congratulations again! I&rsquo;ve kept two cover slots free for {leave.range}. Send the plan over when it&rsquo;s ready.<small>Maya &middot; Yesterday, 4:10 PM</small></div>
-                <div className="bubble me">Thank you. I&rsquo;ll set it up this week: three clients, no identifiers, and I&rsquo;ll use the PA-02 handoff pack.<small>You &middot; Yesterday, 4:25 PM</small><MessageReactions messageId={2} counts={{ heart: 1 }} names={{ heart: ["Maya"] }} mine={null} canReact={false} /></div>
+                <div className="bubble me">Thank you. I&rsquo;ll set it up this week: three clients, no identifiers, and I&rsquo;ll use the Extended Leave Pack.<small>You &middot; Yesterday, 4:25 PM</small><MessageReactions messageId={2} counts={{ heart: 1 }} names={{ heart: ["Maya"] }} mine={null} canReact={false} /></div>
                 <div className="bubble">Perfect. A joint handoff call the week before works for me.<small>Maya &middot; 9:14 AM</small><MessageReactions messageId={3} counts={{ like: 1 }} names={{ like: ["You"] }} mine="like" canReact /></div>
               </div>
               <div className="message-compose">
@@ -775,6 +805,56 @@ export const DEMOS: Demo[] = [
       },
     ],
   },
+  {
+    key: "library",
+    title: "Find the right template",
+    blurb: "Alex is planning leave. Find the template for it, see what's inside and save a private working copy.",
+    minutes: "1 minute",
+    outcome: "The right template, in the moment you need it.",
+    learned: [
+      "Twenty templates for independent practice, each placed beside the work it supports.",
+      "Every template shows its version and whether it has been independently reviewed.",
+      "A working copy is private to you, ready to fill in.",
+    ],
+    steps: [
+      {
+        slug: "search",
+        perspective: "alex",
+        title: "Alex searches for leave",
+        what: "The Extended Leave Pack, the Professional Will and the Reciprocal Coverage Agreement come up. Each template shows its version and whether it has been independently reviewed.",
+        focus: "Explore",
+        focusNote: "Alex opens the Extended Leave pack.",
+        render: () => <LibraryView resources={LIB_LEAVE} q="leave" category="" mineCount={0} />,
+      },
+      {
+        slug: "template",
+        perspective: "alex",
+        title: "What's inside the Extended Leave Pack",
+        what: "What's inside, who it's for and the cover plan it supports. It's still in review, and it says so.",
+        focus: "Save a working copy",
+        focusNote: "Alex saves a private copy to fill in.",
+        render: () => <ResourceDetailView r={LIB_PA02} url="#" />,
+      },
+      {
+        slug: "mine",
+        perspective: "alex",
+        title: "A private copy, ready to fill in",
+        what: "The working copy sits in My Library. Only Alex can see it, and it never holds client details.",
+        focus: "Practice Library",
+        focusNote: "Back to the Library whenever Alex needs the next template.",
+        render: () => (
+          <MyLibraryView
+            docs={[{ id: 1, title: "Extended Leave Coverage Plan & Clinical Handoff Pack (working copy)", storagePath: "", folderId: 1, createdAt: daysAgo(0), source: "From the Practice Library", url: "#" }]}
+            folders={[{ id: 1, name: "Leave" }]}
+            folder="all"
+            folderCounts={{ "1": 1 }}
+            total={1}
+            notice="Saved a working copy of the Extended Leave Pack to My Library."
+          />
+        ),
+      },
+    ],
+  },
 ];
 
 export function findDemo(key: string) {
@@ -787,7 +867,6 @@ export const LEGACY: Record<string, string> = {
   home: "circle",
   network: "circle",
   messages: "circle",
-  library: "circle",
   refer: "refer",
   "referral-replies": "refer",
   consult: "consult",

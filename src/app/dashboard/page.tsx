@@ -293,20 +293,29 @@ export default async function HomePage(props: { searchParams: Promise<{ reconfir
 
   // ---- Getting started (new members) ----
   // Not yet in the network: the steps that get them verified.
-  const gettingStarted = !status?.is_member
-    ? [
-        { label: "Complete your profile: specialties and practice state", done: myFocus.size > 0 && !!profile.primary_state, href: "/dashboard/profile" },
-        { label: "Add your license so we can review it", done: (licenceCount || 0) > 0, href: "/dashboard/credentials" },
-        { label: "Set your availability", done: age !== null, href: "/dashboard/availability" },
-        { label: "We check your credentials against the state board", done: false, href: "/dashboard/credentials" },
-      ]
-    : trustedIds.length === 0 && age === null
-      ? [
-          { label: "Complete your profile", done: myFocus.size > 0 && !!profile.primary_state, href: "/dashboard/profile" },
-          { label: "Confirm your availability", done: age !== null, href: "/dashboard/availability" },
-          { label: "Invite three colleagues you already trust", done: trustedIds.length >= 3, href: "/dashboard/network" },
-        ]
-      : null;
+  const awaitingVerification = !status?.is_member;
+  let gettingStarted: { label: string; done: boolean; href: string; waiting?: boolean }[] | null = null;
+  if (awaitingVerification) {
+    gettingStarted = [
+      { label: "Complete your profile: specialties and practice state", done: myFocus.size > 0 && !!profile.primary_state, href: "/dashboard/profile" },
+      { label: "Add your license so we can review it", done: (licenceCount || 0) > 0, href: "/dashboard/credentials" },
+      { label: "Set your availability", done: age !== null, href: "/dashboard/availability" },
+      { label: "We check your credentials against the state board", done: false, href: "/dashboard/credentials", waiting: true },
+    ];
+  } else if (trustedIds.length === 0 && age === null) {
+    // A continuity plan counts once it's started, or once they've saved a
+    // working copy of the Professional Will template to write it on paper.
+    const [{ count: pa03Copies }, { data: plan }] = await Promise.all([
+      supabase.from("documents").select("id", { count: "exact", head: true }).eq("profile_id", myself).eq("owner_scope", "personal").or("sources.like.Working copy of PA-03%,sources.like.Working copy of the Professional Will%"),
+      supabase.from("continuity_plans").select("updated_at").eq("profile_id", myself).maybeSingle(),
+    ]);
+    gettingStarted = [
+      { label: "Complete your profile", done: myFocus.size > 0 && !!profile.primary_state, href: "/dashboard/profile" },
+      { label: "Confirm your availability", done: age !== null, href: "/dashboard/availability" },
+      { label: "Invite three colleagues you already trust", done: trustedIds.length >= 3, href: "/dashboard/network" },
+      { label: "Make your continuity plan", done: (pa03Copies || 0) > 0 || !!plan, href: "/dashboard/continuity" },
+    ];
+  }
 
   const ledger = await loadLedger(supabase, myself);
 
@@ -316,6 +325,7 @@ export default async function HomePage(props: { searchParams: Promise<{ reconfir
     today: new Date().toLocaleDateString("en-US", { timeZone: "America/New_York", weekday: "long", month: "long", day: "numeric" }),
     greeting: greetingFor(new Date()),
     gettingStarted,
+    awaitingVerification,
     availability: {
       referrals: effectiveReferral(profile.referral_availability, profile.availability_confirmed_at, profile.availability_paused_until).label,
       cover: effectiveCover(profile.coverage_availability, profile.availability_confirmed_at, profile.availability_paused_until).label,

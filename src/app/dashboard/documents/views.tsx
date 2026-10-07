@@ -1,5 +1,13 @@
 import { PageHead, Banner, Empty, Status } from "../_components/ui";
-import { CATEGORIES, WORKFLOW, formatDate, libraryHref, type LibraryResource } from "@/lib/library";
+import { CATEGORIES, WORKFLOW, SHORT_CATEGORY, SHARE_ASK, formatDate, libraryHref, publicLibraryHref, type LibraryResource } from "@/lib/library";
+import { JOIN_URL, REAL_SITE_URL } from "@/lib/env";
+
+function shareHref(code: string) {
+  const s = SHARE_ASK[code];
+  if (!s) return null;
+  const body = `${s.ask}\n\nThe template: ${REAL_SITE_URL}${publicLibraryHref(code)}\n\nYou can ask to join PsyAlliance here: ${JOIN_URL}`;
+  return `mailto:?subject=${encodeURIComponent(s.subject)}&body=${encodeURIComponent(body)}`;
+}
 import { uploadDocument, deleteDocument, createFolder, deleteFolder, moveDocumentToFolder, saveWorkingCopyAction } from "./actions";
 
 // Practice Library (Product Spec v1). Two tabs: the curated, reviewed
@@ -15,20 +23,12 @@ export type MyDoc = {
   url: string | null;
 };
 
-const SHORT_CATEGORY: Record<string, string> = {
-  "Coverage & Continuity": "Coverage",
-  "Consultation & Collaboration": "Consultation",
-  "Clinical Practice": "Clinical practice",
-  "Regulatory & Compliance": "Compliance",
-  "Business & Practice Management": "Business",
-};
-
 export function ResourceCard({ r }: { r: LibraryResource }) {
   const wf = WORKFLOW[r.code];
   return (
     <article className="card resource">
       <div className="code">
-        <span>{r.code} / {SHORT_CATEGORY[r.category] || r.category}</span>
+        <span>{SHORT_CATEGORY[r.category] || r.category}</span>
         {wf && (
           <a className="micro-note" style={{ textDecoration: "none", letterSpacing: 0, fontWeight: 600 }} href={wf.href}>
             {wf.label} &rarr;
@@ -94,7 +94,7 @@ export function LibraryView({
         <div className="stack">
           <form method="get" action="/dashboard/documents" className="searchbar">
             <span className="magnify" aria-hidden="true">&#8981;</span>
-            <input type="search" name="q" defaultValue={q} placeholder="Search a topic, task or PA number" aria-label="Search the library" />
+            <input type="search" name="q" defaultValue={q} placeholder="Search a topic or task, such as leave or consent" aria-label="Search the library" />
             {category && <input type="hidden" name="category" value={category} />}
             <button type="submit" className="btn small-btn">Search</button>
           </form>
@@ -115,7 +115,7 @@ export function LibraryView({
             <Empty
               symbol={"▧"}
               title={q || category ? "No resources match that search." : "No resources yet."}
-              body={q || category ? "Try a task name, a subject or a PA number." : "Resources appear here once they are added to the Library."}
+              body={q || category ? "Try a task name or a subject." : "Resources appear here once they are added to the Library."}
               action={q || category ? <a className="btn secondary small-btn" href="/dashboard/documents">Clear search</a> : undefined}
             />
           ) : (
@@ -139,11 +139,12 @@ export function LibraryView({
             <div className="eyebrow">In your workflow</div>
             <h3>Where these show up</h3>
             <ul className="summary-list">
-              <li><span>Cover</span><strong>PA-01, PA-02</strong></li>
-              <li><span>Refer</span><strong>PA-07, PA-08</strong></li>
-              <li><span>Ask a question</span><strong>PA-05</strong></li>
-              <li><span>Consultation groups</span><strong>PA-04</strong></li>
-              <li><span>Credentials</span><strong>PA-19</strong></li>
+              <li><span>Cover</span><strong>Coverage agreement, leave pack</strong></li>
+              <li><span>Continuity plan</span><strong>Professional will</strong></li>
+              <li><span>Refer</span><strong>Referral letters, split treatment</strong></li>
+              <li><span>Ask a question</span><strong>Case consultation</strong></li>
+              <li><span>Consultation groups</span><strong>Group charter</strong></li>
+              <li><span>Credentials</span><strong>Renewal tracker</strong></li>
             </ul>
           </section>
         </aside>
@@ -164,13 +165,14 @@ export function ResourceDetailView({
   reviewers?: { role: string; name: string }[];
 }) {
   const wf = WORKFLOW[r.code];
+  const share = shareHref(r.code);
   return (
     <>
       <div className="breadcrumbs small" style={{ marginBottom: 14 }}>
-        <a href="/dashboard/documents">Practice Library</a> / <b>{r.code}</b>
+        <a href="/dashboard/documents">&larr; Practice Library</a>
       </div>
       <PageHead
-        eyebrow={`${r.code} · ${r.category}`}
+        eyebrow={r.category}
         title={r.title}
         lead={r.summary}
         actions={
@@ -195,6 +197,14 @@ export function ResourceDetailView({
               <b>Not yet independently reviewed.</b>
               <p>This is a working template from PsyAlliance. No clinician, lawyer or privacy specialist has signed off this version yet. Check it against your state&rsquo;s rules and your own advisers before you use it.</p>
             </div>
+          )}
+          {(r.contents || []).length > 0 && (
+            <>
+              <div className="eyebrow" style={{ marginBottom: 8 }}>What&rsquo;s inside</div>
+              <ul className="lib-inside" style={{ marginBottom: 18 }}>
+                {(r.contents || []).map((c) => <li key={c}>{c}</li>)}
+              </ul>
+            </>
           )}
           <ul className="summary-list">
             <li><span>Applies to</span><strong>{r.audience}</strong></li>
@@ -223,6 +233,14 @@ export function ResourceDetailView({
               <h3>{wf.label}</h3>
               <p className="small">This resource supports that part of PsyAlliance.</p>
               <a className="btn secondary small-btn" href={wf.href}>{wf.label} &rarr;</a>
+            </section>
+          )}
+          {share && (
+            <section className="card">
+              <div className="eyebrow">Needs a colleague</div>
+              <h3>{SHARE_ASK[r.code].subject}</h3>
+              <p className="small">Send this template to the colleague you have in mind, with a link to ask to join.</p>
+              <a className="btn secondary small-btn" href={share}>Send to a colleague</a>
             </section>
           )}
           <section className="card">

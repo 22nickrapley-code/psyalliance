@@ -3,6 +3,9 @@ import { ContinuityView } from "../../../dashboard/continuity/view";
 import { PlanDocument } from "../../../dashboard/continuity/document";
 import { FullView } from "../../../dashboard/full/view";
 import { OverflowPublicView } from "../../../full/[slug]/view";
+import { PublicLibraryView, PublicResourceView } from "../../../library/view";
+import { PUBLIC_DOCS } from "./public-library-fixture";
+import { LeadsView } from "../../../dashboard/admin/library-leads/view";
 import type { Suggestion } from "@/lib/colleague-suggestions";
 import { ColleaguePicker } from "../../../dashboard/_components/colleague-picker";
 import type { Match } from "@/lib/match-engine";
@@ -132,6 +135,24 @@ export const previewScreens: Record<string, () => ReactNode> = {
       }}
     />
   ),
+  "home-new": () => {
+    const base = (previewScreens.home() as any).props.d;
+    return (
+      <HomeView
+        d={{
+          ...base,
+          steps: [],
+          awaitingVerification: true,
+          gettingStarted: [
+            { label: "Complete your profile: specialties and practice state", done: true, href: "#" },
+            { label: "Add your license so we can review it", done: true, href: "#" },
+            { label: "Set your availability", done: false, href: "#" },
+            { label: "We check your credentials against the state board", done: false, href: "#", waiting: true },
+          ],
+        }}
+      />
+    );
+  },
   "refer-index": () => (
     <ReferIndexView
       options={options}
@@ -258,6 +279,25 @@ export const previewScreens: Record<string, () => ReactNode> = {
       }}
     />
   ),
+  "library-leads": () => (
+    <LeadsView
+      d={{
+        leads: [
+          { id: 3, created_at: "2026-10-06T14:02:00Z", library_code: "PA-03", full_name: "Jordan Avery-Whitcombe", email: "jordan.avery-whitcombe.practice@example.com", role: "Psychologist", state: "NY", intent: "download", source: "library-PA-03" },
+          { id: 2, created_at: "2026-10-05T10:40:00Z", library_code: "PA-02", full_name: "Sam Lee", email: "sam@example.com", role: "Other clinician", state: "NJ", intent: "notify", source: "library-PA-02" },
+        ],
+        joins: { "library-PA-03": 1, "library-index": 2 },
+      }}
+      doc=""
+      intent=""
+      error={null}
+    />
+  ),
+  "library-public": () => <PublicLibraryView docs={PUBLIC_DOCS} q="" />,
+  "library-public-search": () => <PublicLibraryView docs={PUBLIC_DOCS} q="nothing matches" />,
+  "library-public-doc": () => <PublicResourceView d={PUBLIC_DOCS[1]} related={[PUBLIC_DOCS[0], PUBLIC_DOCS[2]]} preview />,
+  "library-public-free": () => <PublicResourceView d={PUBLIC_DOCS[2]} related={[PUBLIC_DOCS[0], PUBLIC_DOCS[1]]} preview />,
+  "library-public-long": () => <PublicResourceView d={PUBLIC_DOCS[7]} related={[]} preview />,
   "consult-review": () => (
     <ConsultDetailView
       c={{ id: 3, kind: "question", question: "Approaches to a stalled treatment with adolescent anxiety?", context: "Twelve sessions in, avoidance persists despite exposure work. Looking for ideas on engagement.", typeLabel: "Treatment impasse", tags: ["Anxiety"], status: "draft", mine: true, authorName: "You", createdAt: new Date().toISOString(), audienceLabel: "Selected colleagues", recipients: ["Dr. Maya Chen", "Dr. Eli Ramirez"], responses: [] }}

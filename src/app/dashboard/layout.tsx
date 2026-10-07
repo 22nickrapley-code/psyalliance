@@ -71,8 +71,8 @@ export default async function DashboardLayout({
     !profile || isOperator || status?.is_member || profile.demo_view
       ? null
       : (licenceCount || 0) === 0
-        ? "Add a license to be reviewed. Referrals, cover, consults and messages open once you're verified."
-        : "Your credentials are with us for review. Referrals, cover, consults and messages open once you're verified.";
+        ? "Add a license to be reviewed. Referrals, cover, consults and messages open once you're verified. Meanwhile, the Practice Library is open to you."
+        : "Your credentials are with us for review. Referrals, cover, consults and messages open once you're verified. Meanwhile, the Practice Library is open to you.";
 
   const { data: sandbox } = IS_DEMO_SITE ? await supabase.rpc("my_sandbox").maybeSingle<any>() : { data: null };
 

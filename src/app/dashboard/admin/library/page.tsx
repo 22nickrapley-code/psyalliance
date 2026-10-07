@@ -11,7 +11,10 @@ import {
   seedStarterLibraryAction,
   appointReviewerAction,
   setReviewerActiveAction,
+  setLibraryPublicAction,
 } from "./actions";
+import { REAL_SITE_URL } from "@/lib/env";
+import { publicLibraryHref } from "@/lib/library";
 
 export const metadata = { title: "Library governance" };
 
@@ -31,12 +34,12 @@ const STATUS: Record<string, [string, "" | "warn" | "neutral" | "danger"]> = {
 // database only counts independent approvals of the current version
 // (migration 0081), and only then can a resource be published.
 export default async function AdminLibraryPage(props: {
-  searchParams: Promise<{ error?: string; seeded?: string; skipped?: string; appointed?: string; status?: string; role?: string }>;
+  searchParams: Promise<{ error?: string; seeded?: string; skipped?: string; appointed?: string; status?: string; role?: string; public?: string }>;
 }) {
   const supabase = await createClient();
   const redirectPath = await requireAdminOrRedirectPath(supabase);
   if (redirectPath) redirect(redirectPath);
-  const { error, seeded, skipped, appointed, status: statusFilter = "", role: roleFilter = "" } = await props.searchParams;
+  const { error, seeded, skipped, appointed, status: statusFilter = "", role: roleFilter = "", public: publicSaved } = await props.searchParams;
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -44,7 +47,7 @@ export default async function AdminLibraryPage(props: {
   const [{ data: documents }, { data: reviews }, { data: reviewers }, { data: people }] = await Promise.all([
     supabase
       .from("documents")
-      .select("id, library_code, title, version, review_status, required_reviewer_roles, storage_path")
+      .select("id, library_code, title, version, review_status, review_date, required_reviewer_roles, storage_path, public_listed, public_download, public_contents")
       .eq("owner_scope", "world")
       .order("library_code", { ascending: true }),
     supabase
@@ -94,10 +97,11 @@ export default async function AdminLibraryPage(props: {
         eyebrow="Admin"
         title="Library governance"
         lead="A resource is published only when every role it needs has approved that exact version, each by a different, independent reviewer."
+        actions={<a className="btn secondary" href="/dashboard/admin/library-leads">Library leads</a>}
       />
       <Banner
         error={error}
-        ok={appointed ? "Reviewer appointed." : seeded ? `Seeded ${seeded} resource${seeded === "1" ? "" : "s"}${skipped && skipped !== "0" ? `, ${skipped} already present` : ""}.` : undefined}
+        ok={publicSaved ? "Public page saved." : appointed ? "Reviewer appointed." : seeded ? `Seeded ${seeded} resource${seeded === "1" ? "" : "s"}${skipped && skipped !== "0" ? `, ${skipped} already present` : ""}.` : undefined}
       />
 
       <div className="three-grid" style={{ marginBottom: 20 }}>
@@ -220,6 +224,43 @@ export default async function AdminLibraryPage(props: {
                     </form>
                   </details>
                 </div>
+                {d.library_code && (
+                  <details className="lib-admin">
+                    <summary className="small">
+                      Public page: {d.public_listed ? "listed" : "not listed"}
+                      {d.public_listed ? (d.public_download ? ", free download" : ", members only") : ""}
+                    </summary>
+                    <form action={setLibraryPublicAction} className="stack" style={{ gap: 10, marginTop: 10 }}>
+                      <input type="hidden" name="document_id" value={d.id} />
+                      <label className="checkline">
+                        <input type="checkbox" name="listed" value="1" defaultChecked={!!d.public_listed} /> Listed publicly
+                      </label>
+                      <label className="checkline">
+                        <input
+                          type="checkbox"
+                          name="download"
+                          value="1"
+                          defaultChecked={!!d.public_download}
+                          disabled={!(d.review_status === "published" && d.review_date)}
+                        />{" "}
+                        Free download
+                      </label>
+                      {!(d.review_status === "published" && d.review_date) && (
+                        <p className="micro-note" style={{ margin: 0 }}>Free download opens once this template is independently reviewed and published.</p>
+                      )}
+                      <label className="field">
+                        What&rsquo;s inside <span className="micro-note">(one item per line)</span>
+                        <textarea name="contents" rows={5} defaultValue={(d.public_contents || []).join("\n")} />
+                      </label>
+                      <span className="row wrap" style={{ gap: 10 }}>
+                        <button type="submit" className="btn secondary small-btn">Save public page</button>
+                        {d.public_listed && (
+                          <a className="text-arrow" href={`${REAL_SITE_URL}${publicLibraryHref(d.library_code)}`} target="_blank" rel="noopener">See it &rarr;</a>
+                        )}
+                      </span>
+                    </form>
+                  </details>
+                )}
                 {missing.length > 0 && d.review_status !== "published" && (
                   <p className="micro-note" style={{ marginTop: 6 }}>
                     Needs: {missing.map((r) => ROLE_LABELS[r]).join(", ")}

@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { docName } from "@/lib/library";
 import { LIBRARY_SELECT, isMemberVisible, matchesQuery, toResource } from "@/lib/library";
 import { LibraryView, MyLibraryView, type MyDoc } from "./views";
 
@@ -56,7 +57,7 @@ export default async function DocumentsPage(props: {
       })
     );
     const notice = sp.copied
-      ? `Working copy of ${sp.copied === "1" ? "the resource" : sp.copied} saved. Only you can see it.`
+      ? `Working copy of ${/^PA-\d+$/.test(sp.copied) ? `the ${docName(sp.copied)}` : "the resource"} saved. Only you can see it.`
       : sp.uploaded
         ? "Uploaded. Only you can see it."
         : null;

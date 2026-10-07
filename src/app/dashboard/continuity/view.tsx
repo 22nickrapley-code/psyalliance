@@ -173,6 +173,10 @@ export function ContinuityView({
               The APA Ethics Code expects psychologists to plan for interrupted care (Standards 3.12 and 10.09). A short plan and a colleague who has
               agreed to act on it mean your clients hear from someone who knows what to do.
             </p>
+            <p className="small">
+              Prefer paper? The <a href="/dashboard/documents/professional-will">Professional Will template</a> in the Practice Library covers the same ground,
+              with an executor acceptance form.
+            </p>
             <p className="small" style={{ marginBottom: 0 }}>
               This isn&rsquo;t legal advice. Some states have specific rules on records; check yours and ask your attorney to keep a signed copy.
             </p>

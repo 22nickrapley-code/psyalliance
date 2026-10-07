@@ -301,3 +301,33 @@ export async function seedStarterLibraryAction() {
   if (failures.length > 0) params.set("error", `${failures.length} failed: ${failures.join("; ")}`);
   redirect(`/dashboard/admin/library?${params.toString()}`);
 }
+
+// The public Library page for one template: listed or not, free to
+// download or not (only once published; the database refuses otherwise),
+// and the "What's inside" list, one item per line.
+export async function setLibraryPublicAction(formData: FormData) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not signed in");
+  await assertIsAdmin(supabase, user.id);
+
+  const documentId = Number(formData.get("document_id"));
+  const contents = String(formData.get("contents") || "")
+    .split(/\r?\n/)
+    .map((x) => x.replace(/^[-•*]\s*/, "").trim())
+    .filter(Boolean)
+    .slice(0, 12);
+  const { error } = await supabase.rpc("admin_set_library_public", {
+    p_document: documentId,
+    p_listed: formData.get("listed") === "1",
+    p_download: formData.get("download") === "1",
+    p_contents: contents,
+  });
+  if (error) libraryError(error.message);
+
+  revalidatePath("/dashboard/admin/library");
+  revalidatePath("/library");
+  redirect("/dashboard/admin/library?public=1");
+}

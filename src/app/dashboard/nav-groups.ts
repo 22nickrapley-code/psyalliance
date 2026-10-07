@@ -37,6 +37,7 @@ export function buildNavGroups(opts: {
     { href: "/dashboard/admin/verifications", label: "Verification", glyph: "check" },
     { href: "/dashboard/admin/members", label: "Members", glyph: "members" },
     { href: "/dashboard/admin/library", label: "Library governance", glyph: "library" },
+    { href: "/dashboard/admin/library-leads", label: "Library leads", glyph: "library" },
     { href: "/dashboard/admin/moderation", label: "Moderation", glyph: "flag" },
     { href: "/dashboard/admin/network-health", label: "Network health", glyph: "pulse" },
     { href: "/dashboard/admin/activation", label: "Activation", glyph: "check" },

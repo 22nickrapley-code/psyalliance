@@ -37,6 +37,14 @@ export default function PrivacyPage() {
               We don&rsquo;t sell member data or use it for advertising.
             </p>
 
+            <h3 style={{ marginTop: 28 }}>Practice Library requests</h3>
+            <p>
+              When you download a template from the public Practice Library, or ask us to tell you when one is free, we keep your name, email, role, state, the
+              template you asked for and the page you came from. We use them to tell you when that template is updated and when PsyAlliance opens in your state,
+              and to understand which templates are useful. Only PsyAlliance admins can see them. To have yours removed, email{" "}
+              <a href="mailto:hello@psyalliance.org">hello@psyalliance.org</a>.
+            </p>
+
             <h3 style={{ marginTop: 28 }}>Client information</h3>
             <p>
               PsyAlliance is designed so client identities never enter it. Cover plans, referrals and consults describe needs, not people. Before anything is sent, we flag dates,

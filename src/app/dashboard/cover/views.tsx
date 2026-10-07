@@ -1,4 +1,5 @@
 import { shortDate } from "@/lib/dates";
+import { libraryHref } from "@/lib/library";
 import type { ReactNode } from "react";
 import { SearchableSelect } from "../_components/searchable-select";
 import type { Match } from "@/lib/match-engine";
@@ -101,8 +102,8 @@ function PlanAside({ plan, extra }: { plan: PlanSummary; extra?: ReactNode }) {
         <div className="eyebrow">From the Practice Library</div>
         <h3>{PLAN_RESOURCE(plan.absenceType).title}</h3>
         <p className="small">{PLAN_RESOURCE(plan.absenceType).purpose}</p>
-        <a className="btn secondary small-btn" href={`/dashboard/documents/${PLAN_RESOURCE(plan.absenceType).code}`}>
-          View {PLAN_RESOURCE(plan.absenceType).code}
+        <a className="btn secondary small-btn" href={libraryHref(PLAN_RESOURCE(plan.absenceType).code)}>
+          View the template
         </a>
       </section>
       {extra}

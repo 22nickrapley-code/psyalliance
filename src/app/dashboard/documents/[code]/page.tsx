@@ -1,7 +1,7 @@
 import { clinicianName } from "@/lib/profession";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { LIBRARY_SELECT, isMemberVisible, toResource } from "@/lib/library";
+import { LIBRARY_SELECT, isMemberVisible, toResource, codeFromSlug } from "@/lib/library";
 import { ResourceDetailView } from "../views";
 import { REVIEWER_ROLE_LABELS, type ReviewerRole } from "@/lib/library-governance";
 
@@ -9,7 +9,7 @@ export const metadata = { title: "Practice Library" };
 
 // One Practice Library resource: the card's facts, the PDF, a private
 // working copy and the workflow it supports. Addressed by PA number
-// (/dashboard/documents/PA-02) so workflows can link to it directly.
+// (/dashboard/documents/extended-leave-pack); PA numbers still resolve.
 export default async function ResourcePage(props: {
   params: Promise<{ code: string }>;
   searchParams: Promise<{ error?: string }>;
@@ -22,7 +22,7 @@ export default async function ResourcePage(props: {
     .from("documents")
     .select(LIBRARY_SELECT)
     .eq("owner_scope", "world")
-    .eq("library_code", decodeURIComponent(code).toUpperCase())
+    .eq("library_code", codeFromSlug(code) || "")
     .maybeSingle();
   if (!doc || !isMemberVisible(doc)) notFound();
 

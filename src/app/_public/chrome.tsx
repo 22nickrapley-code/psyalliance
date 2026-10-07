@@ -15,6 +15,7 @@ export function PublicNav({ home = false }: { home?: boolean }) {
       </a>
       <div className="links">
         <a className="text-link" href={`${base}#how`}>How it works</a>
+        <a className="text-link" href={`${PUBLIC_BASE}/library`}>Library</a>
         <a className="text-link keep" href={DEMOS_HREF}>Demos</a>
         {IS_DEMO_SITE ? (
           <a className="btn secondary small-btn" href="/sandbox/request">Get a sandbox</a>
@@ -37,6 +38,7 @@ export function PublicFooter({ home = false }: { home?: boolean }) {
       </div>
       <div className="foot-links">
         <a href={`${base}#how`}>How it works</a>
+        <a href={`${PUBLIC_BASE}/library`}>Practice Library</a>
         <a href={DEMOS_HREF}>Demos</a>
         <a href={`${PUBLIC_BASE}/verification`}>Verification</a>
         <a href={`${PUBLIC_BASE}/privacy`}>Privacy</a>

@@ -1,4 +1,5 @@
 "use server";
+import { docName } from "@/lib/library";
 
 import { isMemberVisible } from "@/lib/library";
 
@@ -258,7 +259,7 @@ export async function saveWorkingCopyAction(formData: FormData) {
     storage_path: target,
     uploaded_by: user.id,
     is_general: true,
-    sources: `Working copy of ${doc.library_code || doc.title}, version ${doc.version || 1}`,
+    sources: `Working copy of ${doc.library_code ? `the ${docName(doc.library_code)}` : doc.title}, version ${doc.version || 1}`,
   });
   if (error) documentsError(error.message);
 
