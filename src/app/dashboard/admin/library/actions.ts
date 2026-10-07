@@ -221,14 +221,14 @@ export async function seedStarterLibraryAction() {
     libraryError(`Couldn't read manifest.csv: ${e?.message || "unknown error"}`);
   }
 
-  // Idempotent: a document from a previous run is titled "PA-XX: ...", so a
-  // re-click (or a partial prior run) doesn't create duplicates.
+  // Idempotent: a document from a previous run carries its PA number in
+  // library_code, so a re-click (or a partial prior run) doesn't duplicate.
   const { data: existing } = await supabase
     .from("documents")
-    .select("title")
+    .select("library_code")
     .eq("owner_scope", "world")
-    .like("title", "PA-__: %");
-  const existingIds = new Set((existing || []).map((d) => d.title.slice(0, 5)));
+    .not("library_code", "is", null);
+  const existingIds = new Set((existing || []).map((d: any) => d.library_code));
 
   let seeded = 0;
   let skipped = 0;
@@ -263,7 +263,7 @@ export async function seedStarterLibraryAction() {
     const { error: insertError } = await supabase.from("documents").insert({
       profile_id: user.id,
       owner_scope: "world",
-      title: `${id}: ${title}`,
+      title,
       library_code: id,
       summary: summary || null,
       category: category || null,
@@ -330,4 +330,74 @@ export async function setLibraryPublicAction(formData: FormData) {
   revalidatePath("/dashboard/admin/library");
   revalidatePath("/library");
   redirect("/dashboard/admin/library?public=1");
+}
+
+// Replace each template's file with the current one in the repository's
+// starter set (for example after the PA numbers were taken out of the
+// PDFs). Uploads under the new file name, points the template at it and
+// removes the old file. Members' working copies are untouched. Like the
+// seed button, it reads the repository, so it only works running locally.
+export async function refreshLibraryFilesAction() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not signed in");
+  await assertIsAdmin(supabase, user.id);
+
+  if (!existsSync(STARTER_LIBRARY_DIR)) {
+    libraryError("Couldn't find the library files on disk. This only works running locally (npm run dev), not on the deployed site.");
+  }
+  let rows: Record<string, string>[];
+  try {
+    rows = parseManifestCsv(readFileSync(join(STARTER_LIBRARY_DIR, "manifest.csv"), "utf8"));
+  } catch (e: any) {
+    libraryError(`Couldn't read manifest.csv: ${e?.message || "unknown error"}`);
+  }
+
+  const { data: docs } = await supabase
+    .from("documents")
+    .select("id, library_code, storage_path")
+    .eq("owner_scope", "world")
+    .not("library_code", "is", null);
+  const byCode = new Map((docs || []).map((d: any) => [d.library_code, d]));
+
+  let updated = 0;
+  let current = 0;
+  const failures: string[] = [];
+  for (const row of rows) {
+    const doc: any = byCode.get(row.id);
+    if (!doc) continue;
+    const safeName = row.filename.replace(/[^a-zA-Z0-9._-]/g, "_");
+    if (String(doc.storage_path).endsWith(`-${safeName}`)) {
+      current++;
+      continue;
+    }
+    let bytes: Buffer;
+    try {
+      bytes = readFileSync(join(STARTER_LIBRARY_DIR, row.filename));
+    } catch (e: any) {
+      failures.push(`${row.id} (read): ${e?.message || "unknown error"}`);
+      continue;
+    }
+    const path = `shared/${user.id}/${Date.now()}-${safeName}`;
+    const { error: uploadError } = await supabase.storage.from("documents").upload(path, bytes, { contentType: "application/pdf" });
+    if (uploadError) {
+      failures.push(`${row.id} (upload): ${uploadError.message}`);
+      continue;
+    }
+    const { data: oldPath, error } = await supabase.rpc("admin_set_library_file", { p_document: doc.id, p_path: path });
+    if (error) {
+      failures.push(`${row.id}: ${error.message}`);
+      await supabase.storage.from("documents").remove([path]);
+      continue;
+    }
+    if (oldPath) await supabase.storage.from("documents").remove([String(oldPath)]);
+    updated++;
+  }
+
+  revalidatePath("/dashboard/admin/library");
+  revalidatePath("/dashboard/documents");
+  if (failures.length) libraryError(`Updated ${updated}. Couldn't update: ${failures.join("; ")}`);
+  redirect(`/dashboard/admin/library?refreshed=${updated}&current=${current}`);
 }

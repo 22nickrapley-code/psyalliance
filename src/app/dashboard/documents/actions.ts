@@ -1,5 +1,5 @@
 "use server";
-import { docName } from "@/lib/library";
+import { docName, cleanTitle } from "@/lib/library";
 
 import { isMemberVisible } from "@/lib/library";
 
@@ -255,7 +255,7 @@ export async function saveWorkingCopyAction(formData: FormData) {
   const { error } = await supabase.from("documents").insert({
     profile_id: user.id,
     owner_scope: "personal",
-    title: `${doc.title} (working copy)`,
+    title: `${cleanTitle(String(doc.title))} (working copy)`,
     storage_path: target,
     uploaded_by: user.id,
     is_general: true,

@@ -12,6 +12,7 @@ import {
   appointReviewerAction,
   setReviewerActiveAction,
   setLibraryPublicAction,
+  refreshLibraryFilesAction,
 } from "./actions";
 import { REAL_SITE_URL } from "@/lib/env";
 import { publicLibraryHref } from "@/lib/library";
@@ -34,12 +35,12 @@ const STATUS: Record<string, [string, "" | "warn" | "neutral" | "danger"]> = {
 // database only counts independent approvals of the current version
 // (migration 0081), and only then can a resource be published.
 export default async function AdminLibraryPage(props: {
-  searchParams: Promise<{ error?: string; seeded?: string; skipped?: string; appointed?: string; status?: string; role?: string; public?: string }>;
+  searchParams: Promise<{ error?: string; seeded?: string; skipped?: string; appointed?: string; status?: string; role?: string; public?: string; refreshed?: string; current?: string }>;
 }) {
   const supabase = await createClient();
   const redirectPath = await requireAdminOrRedirectPath(supabase);
   if (redirectPath) redirect(redirectPath);
-  const { error, seeded, skipped, appointed, status: statusFilter = "", role: roleFilter = "", public: publicSaved } = await props.searchParams;
+  const { error, seeded, skipped, appointed, status: statusFilter = "", role: roleFilter = "", public: publicSaved, refreshed, current } = await props.searchParams;
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -101,7 +102,7 @@ export default async function AdminLibraryPage(props: {
       />
       <Banner
         error={error}
-        ok={publicSaved ? "Public page saved." : appointed ? "Reviewer appointed." : seeded ? `Seeded ${seeded} resource${seeded === "1" ? "" : "s"}${skipped && skipped !== "0" ? `, ${skipped} already present` : ""}.` : undefined}
+        ok={refreshed !== undefined ? `Updated ${refreshed} file${refreshed === "1" ? "" : "s"}${current && current !== "0" ? `; ${current} already current` : ""}.` : publicSaved ? "Public page saved." : appointed ? "Reviewer appointed." : seeded ? `Seeded ${seeded} resource${seeded === "1" ? "" : "s"}${skipped && skipped !== "0" ? `, ${skipped} already present` : ""}.` : undefined}
       />
 
       <div className="three-grid" style={{ marginBottom: 20 }}>
@@ -339,6 +340,19 @@ export default async function AdminLibraryPage(props: {
               A review covers the resource file as well as its summary. Replacing a file creates a new version that needs review again.
             </p>
           </section>
+
+          {starterSetCount > 0 && (
+            <section className="card">
+              <div className="card-title"><h3>Template files</h3></div>
+              <p className="small">
+                Replaces each template&rsquo;s PDF with the current one in the repository (the starter set), under its new name. Members&rsquo; working copies
+                aren&rsquo;t changed. Works only when running locally; run it once on each site.
+              </p>
+              <form action={refreshLibraryFilesAction}>
+                <button type="submit" className="btn secondary small-btn">Update files from the repository</button>
+              </form>
+            </section>
+          )}
 
           {starterSetCount < 20 && (
             <section className="card">

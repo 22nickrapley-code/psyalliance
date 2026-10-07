@@ -77,7 +77,7 @@ SQL in `supabase/tests`, each run in one transaction that always rolls back:
 - `release_check_invitations.sql`: invitation-only sign-up.
 - `release_check_sandbox.sql`: sandbox passes, auto-replies, reset, cleanup, refusal outside the demo.
 
-Parity between the two databases: `supabase/ops/schema_fingerprint.sql`. Any schema change goes to both projects; re-run it after. Migrations 0090 and 0091 (Northeast seed, server-side network search) are on both; the changed functions were checked identical by hash on 25 Sept. Migrations 0099 (continuity plan, "When you're full", activation) and 0100 (public Practice Library, leads, `admin_set_library_public`) are on both, checked by hash on 7 Oct. 0100 adds anon-callable functions on purpose: `public_library`, `request_library_download` (rate-limited, returns a file path only for a published template with its download on), `request_to_join_from` and `library_file_is_public` (used by the storage policy).
+Parity between the two databases: `supabase/ops/schema_fingerprint.sql`. Any schema change goes to both projects; re-run it after. Migrations 0090 and 0091 (Northeast seed, server-side network search) are on both; the changed functions were checked identical by hash on 25 Sept. Migrations 0099 (continuity plan, "When you're full", activation) and 0100 (public Practice Library, leads, `admin_set_library_public`) are on both, checked by hash on 7 Oct. 0101 (`admin_set_library_file`) is on both. 0100 adds anon-callable functions on purpose: `public_library`, `request_library_download` (rate-limited, returns a file path only for a published template with its download on), `request_to_join_from` and `library_file_is_public` (used by the storage policy).
 
 ## Security advisor notes
 
