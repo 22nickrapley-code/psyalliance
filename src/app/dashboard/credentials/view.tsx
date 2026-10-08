@@ -1,3 +1,4 @@
+import { APP_TIME_ZONE } from "@/lib/dates";
 import {
   addLicense,
   deleteLicense,
@@ -28,7 +29,7 @@ function daysUntil(d: string | null): number | null {
 
 function fmt(d: string | null) {
   if (!d) return "Not given";
-  return new Date(d.length === 10 ? d + "T12:00:00Z" : d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
+  return new Date(d.length === 10 ? d + "T12:00:00Z" : d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: d.length === 10 ? "UTC" : APP_TIME_ZONE });
 }
 
 function DueTag({ days, soon = 90 }: { days: number | null; soon?: number }) {

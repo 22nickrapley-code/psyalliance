@@ -56,9 +56,9 @@ const m = (id: string, name: string, tier: Match["tier"], reasons: string[], q =
   reasons,
 });
 const matches: Match[] = [
-  m("a", "Maya Chen", "trusted", ["Trusted colleague", "Trauma / PTSD is their top specialty", "Practices in Brooklyn", "NY license on file", "In network: Aetna", "Accepting referrals, confirmed 3 days ago"]),
-  m("b", "Eli Ramirez", "worked_with", ["Worked together before", "Works with Trauma / PTSD", "NY license on file", "Accepting referrals, confirmed 5 days ago"], "MD", "Manhattan"),
-  m("c", "Imani Brooks", "none", ["Trauma / PTSD is their top specialty", "NY license on file", "Sees adults", "Selected referrals only, not recently confirmed"]),
+  m("a", "Maya Chen", "trusted", ["Trusted colleague", "Trauma / PTSD is their top specialty", "Practices in Brooklyn", "NY license reviewed", "In network: Aetna", "Accepting referrals, confirmed 3 days ago"]),
+  m("b", "Eli Ramirez", "worked_with", ["Worked together before", "Works with Trauma / PTSD", "NY license reviewed", "Accepting referrals, confirmed 5 days ago"], "MD", "Manhattan"),
+  m("c", "Imani Brooks", "none", ["Trauma / PTSD is their top specialty", "NY license reviewed", "Sees adults", "Selected referrals only, not recently confirmed"]),
 ];
 const need = { focusIds: [2], state: "NY", city: "Brooklyn", insurance: "Aetna", ageBand: "Adults", setting: "either" as const, languageId: null, prescribing: false };
 const plan = { id: 7, title: "October leave", absenceType: "extended_leave", starts: "2026-10-12", ends: "2026-11-20", state: "NY", status: "active", counts: { total: 4, covered: 2, invited: 1, open: 1 } };

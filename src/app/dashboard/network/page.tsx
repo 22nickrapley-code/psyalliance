@@ -149,7 +149,13 @@ export default async function NetworkPage(props: {
       city: p.city,
       state: p.state,
       licenceStates: p.lic_states || [],
-      topFocus: (p.focus || []).slice(0, 2),
+      // When filtering by a specialty, the card leads with it, so a correct
+      // result also looks correct.
+      topFocus: (() => {
+        const all: string[] = p.focus || [];
+        const hit = filters.focus ? all.find((f) => f.toLowerCase() === filters.focus.toLowerCase()) : undefined;
+        return hit ? [hit, ...all.filter((f) => f !== hit)].slice(0, 2) : all.slice(0, 2);
+      })(),
       modalities: p.modalities || [],
       availability: effectiveReferral(p.referral_availability, p.confirmed_at, p.paused_until).label,
       fresh: !!p.fresh,

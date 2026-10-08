@@ -70,7 +70,7 @@ export default async function ContinuityDutiesPage(props: { searchParams: Promis
                 {d.status === "accepted" && (
                   <div className="row wrap" style={{ gap: 8, marginTop: 12 }}>
                     <a className="btn secondary small-btn" href={`/dashboard/continuity/view/${d.owner_id}`}>Open their plan</a>
-                    <a className="text-arrow" href={`/continuity/print?owner=${d.owner_id}`} target="_blank" rel="noopener">Download PDF &rarr;</a>
+                    <a className="text-arrow" href={`/continuity/print?owner=${d.owner_id}`} target="_blank" rel="noopener">Print or save as PDF &rarr;</a>
                   </div>
                 )}
               </section>

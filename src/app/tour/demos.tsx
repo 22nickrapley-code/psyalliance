@@ -698,7 +698,7 @@ export const DEMOS: Demo[] = [
         slug: "colleague",
         perspective: "alex",
         title: "Facts, not testimonials",
-        what: "Maya's profile: licenses on file, focus, who she sees and whether she's taking referrals, with dates. Your controls over the relationship are private to you.",
+        what: "Maya's profile: reviewed licenses, focus, who she sees and whether she's taking referrals, with dates. Your controls over the relationship are private to you.",
         focus: "Send message",
         focusNote: "Next, a conversation with context.",
         render: () => <ClinicianProfileView p={mayaProfile} />,
@@ -808,13 +808,13 @@ export const DEMOS: Demo[] = [
   {
     key: "library",
     title: "Find the right template",
-    blurb: "Alex is planning leave. Find the template for it, see what's inside and save a private working copy.",
+    blurb: "Alex is planning leave. Find the template for it, see what's inside and save the PDF to a private library.",
     minutes: "1 minute",
     outcome: "The right template, in the moment you need it.",
     learned: [
       "Twenty templates for independent practice, each placed beside the work it supports.",
       "Every template shows its version and whether it has been independently reviewed.",
-      "A working copy is private to you, ready to fill in.",
+      "Saved templates are private to you, ready to print or fill in.",
     ],
     steps: [
       {
@@ -831,25 +831,25 @@ export const DEMOS: Demo[] = [
         perspective: "alex",
         title: "What's inside the Extended Leave Pack",
         what: "What's inside, who it's for and the cover plan it supports. It's still in review, and it says so.",
-        focus: "Save a working copy",
-        focusNote: "Alex saves a private copy to fill in.",
+        focus: "Save PDF to My Library",
+        focusNote: "Alex saves a private copy to print and complete.",
         render: () => <ResourceDetailView r={LIB_PA02} url="#" />,
       },
       {
         slug: "mine",
         perspective: "alex",
         title: "A private copy, ready to fill in",
-        what: "The working copy sits in My Library. Only Alex can see it, and it never holds client details.",
+        what: "The saved PDF sits in My Library. Only Alex can see it, and it never holds client details.",
         focus: "Practice Library",
         focusNote: "Back to the Library whenever Alex needs the next template.",
         render: () => (
           <MyLibraryView
-            docs={[{ id: 1, title: "Extended Leave Coverage Plan & Clinical Handoff Pack (working copy)", storagePath: "", folderId: 1, createdAt: daysAgo(0), source: "From the Practice Library", url: "#" }]}
+            docs={[{ id: 1, title: "Extended Leave Coverage Plan & Clinical Handoff Pack (your copy)", storagePath: "", folderId: 1, createdAt: daysAgo(0), source: "From the Practice Library", url: "#" }]}
             folders={[{ id: 1, name: "Leave" }]}
             folder="all"
             folderCounts={{ "1": 1 }}
             total={1}
-            notice="Saved a working copy of the Extended Leave Pack to My Library."
+            notice="The Extended Leave Pack is saved to My Library. Only you can see it."
           />
         ),
       },

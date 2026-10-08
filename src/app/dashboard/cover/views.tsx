@@ -94,7 +94,7 @@ function PlanAside({ plan, extra }: { plan: PlanSummary; extra?: ReactNode }) {
             ["Clients", plan.counts.total],
             ["Asked, awaiting reply", plan.counts.invited],
             ["Covered", plan.counts.covered],
-            ["Still unresolved", plan.counts.open],
+            ["No one asked yet", plan.counts.open],
           ]}
         />
       </section>
@@ -387,7 +387,7 @@ export function CoverPlanStepView({
 }
 
 // ---------- Step 2: Needs ----------
-export function CoverNeedsView({ plan, cases, options, error }: { plan: PlanSummary; cases: CaseItem[]; options: NeedOptions; error?: string }) {
+export function CoverNeedsView({ plan, cases, options, error, addedId }: { plan: PlanSummary; cases: CaseItem[]; options: NeedOptions; error?: string; addedId?: number | null }) {
   return (
     <>
       <PlanHead plan={plan} step={1} lead="Describe each client who needs cover, by need. No names, initials or dates." />
@@ -398,9 +398,11 @@ export function CoverNeedsView({ plan, cases, options, error }: { plan: PlanSumm
             <div className="card-title"><h3>Clients needing cover ({cases.length})</h3></div>
             {cases.length === 0 && <p className="small">Add the first client below. One is fine.</p>}
             {cases.map((c) => (
-              <div key={c.id} className="pa-case">
+              <div key={c.id} className={`pa-case${c.id === addedId ? " just-added" : ""}`} data-just-added={c.id === addedId ? "" : undefined}>
                 <div className="row between">
-                  <strong>{c.reference} &middot; {c.focus}</strong>
+                  <strong>
+                    {c.reference} &middot; {c.focus} {c.id === addedId && <span className="added-tag">&#10003; Added</span>}
+                  </strong>
                   {c.status === "needs_cover" ? (
                     <form action={removeCaseAction} className="inline">
                       <input type="hidden" name="plan_id" value={plan.id} />
@@ -415,9 +417,9 @@ export function CoverNeedsView({ plan, cases, options, error }: { plan: PlanSumm
               </div>
             ))}
           </section>
-          <form className="card" action={addCaseAction}>
+          <form className="card new-case-form" action={addCaseAction} id="add-client" key={`add-${cases.length}`}>
             <input type="hidden" name="plan_id" value={plan.id} />
-            <div className="eyebrow">Add a client</div>
+            <div className="eyebrow">{cases.length ? "Add another client" : "Add a client"}</div>
             <h3>Client {cases.length + 1}</h3>
             <div className="fields three">
               <SearchableSelect
@@ -571,11 +573,18 @@ export function CoverInviteView({
   plan,
   rows,
   error,
+  mode,
+  reviewed,
+  fix,
 }: {
   plan: PlanSummary;
   rows: { caseId: number; reference: string; focus: string; picks: { id: string; name: string; why?: string[] }[] }[];
   error?: string;
+  mode?: string;
+  reviewed?: boolean;
+  fix?: string;
 }) {
+  const parallel = mode ? mode === "parallel" : plan.absenceType === "unexpected";
   const total = rows.reduce((n, r) => n + r.picks.length, 0);
   return (
     <>
@@ -626,20 +635,27 @@ export function CoverInviteView({
           <section className="card">
             <h3>How should they be asked?</h3>
             <label className="radio-card">
-              <input type="radio" name="outreach_mode" value="sequential" defaultChecked={plan.absenceType !== "unexpected"} />
+              <input type="radio" name="outreach_mode" value="sequential" defaultChecked={!parallel} />
               <span><b>One at a time, in order</b><span>If someone declines, the next colleague is asked automatically.</span></span>
             </label>
             <label className="radio-card">
-              <input type="radio" name="outreach_mode" value="parallel" defaultChecked={plan.absenceType === "unexpected"} />
+              <input type="radio" name="outreach_mode" value="parallel" defaultChecked={parallel} />
               <span><b>Everyone at once</b><span>Fastest. The first to accept covers the client; let the others know it&rsquo;s covered.</span></span>
             </label>
             <label className="field" style={{ marginTop: 10 }}>
               Short message (optional)
-              <textarea name="message" maxLength={400} placeholder="e.g. Weekly sessions, mostly Tuesday evenings. Happy to talk it through." />
-              <small>No client-identifying details.</small>
+              <textarea
+                name="message"
+                maxLength={400}
+                placeholder="e.g. Weekly sessions, mostly Tuesday evenings. Happy to talk it through."
+                autoFocus={fix === "message"}
+                aria-invalid={fix === "message" || undefined}
+                className={fix === "message" ? "field-invalid" : undefined}
+              />
+              <small>{fix === "message" ? "Leave out names, initials, dates, phone numbers and addresses." : "No client-identifying details."}</small>
             </label>
             <label className="checkline" style={{ marginTop: 12 }}>
-              <input type="checkbox" name="reviewed" required /> I&rsquo;ve reviewed who receives each request.
+              <input type="checkbox" name="reviewed" required defaultChecked={reviewed} autoFocus={fix === "reviewed"} /> I&rsquo;ve reviewed who receives each request.
             </label>
             <div className="step-actions">
               <a className="btn ghost" href={`/dashboard/cover/${plan.id}?step=candidates`}>&larr; Candidates</a>
@@ -686,7 +702,7 @@ export function CoverTrackView({
               <span className="metric">{plan.counts.total ? Math.round((plan.counts.covered / plan.counts.total) * 100) : 0}%</span>
             </div>
             <p className="small">
-              {plan.counts.invited} asked, awaiting reply &middot; {plan.counts.open} not covered yet
+              {plan.counts.covered} accepted &middot; {plan.counts.invited} asked, awaiting reply &middot; {plan.counts.open} with no one asked yet
             </p>
             {(exceptions.length ? exceptions : cases).map((c) => {
               const s = CASE_STATUS[c.status];
@@ -702,6 +718,16 @@ export function CoverTrackView({
                       {c.invited.map((i) => (
                         <span key={i.name} className={`chip invite-${INVITE_STATUS[i.status] ? INVITE_STATUS[i.status].tone || "ok" : "neutral"}`}>{i.name}: {INVITE_STATUS[i.status]?.label || i.status}</span>
                       ))}
+                    </div>
+                  )}
+                  {c.status === "confirmed" && (
+                    <div className="handoff-note">
+                      <b>Accepted. Next, the handoff.</b>
+                      <ul>
+                        <li>Agree the start date and how urgent contacts reach them.</li>
+                        <li>Share the coverage summary through your own secure channel, not PsyAlliance.</li>
+                        <li>Tell the client who is covering and how to reach them.</li>
+                      </ul>
                     </div>
                   )}
                   {c.status === "awaiting_response" && c.queueCount > 0 && (

@@ -70,7 +70,7 @@ export async function addCaseAction(formData: FormData) {
   if (focus.length === 0) back(path, "Choose a treatment focus for this client.");
   const { count } = await supabase.from("coverage_plan_cases").select("id", { count: "exact", head: true }).eq("coverage_plan_id", planId);
   const setting = String(formData.get("setting") || "either");
-  const { error } = await supabase.from("coverage_plan_cases").insert({
+  const { data: added, error } = await supabase.from("coverage_plan_cases").insert({
     coverage_plan_id: planId,
     case_reference: `Client ${(count || 0) + 1}`,
     specialism_lookup_ids: Array.from(new Set(focus)).slice(0, 3),
@@ -79,10 +79,10 @@ export async function addCaseAction(formData: FormData) {
     insurance: String(formData.get("insurance") || "") || null,
     frequency: String(formData.get("frequency") || "") || null,
     prescribing_needed: formData.get("prescribing") === "1",
-  });
+  }).select("id").single();
   if (error) back(path, error.message);
   revalidatePath(`/dashboard/cover/${planId}`);
-  redirect(path);
+  redirect(`${path}&added=${added?.id ?? ""}`);
 }
 
 export async function removeCaseAction(formData: FormData) {
@@ -119,10 +119,16 @@ export async function sendInvitesAction(formData: FormData) {
   if (!plan) back("/dashboard/cover", "Plan not found.");
   const mode = formData.get("outreach_mode") === "parallel" ? "parallel" : "sequential";
   const message = String(formData.get("message") || "").trim() || undefined;
-  const invitePath = `/dashboard/cover/${planId}?step=invite`;
+  // If something needs fixing, come back to the same recipients, order and
+  // choices. The message itself is never carried back, because it may hold
+  // a client identifier.
+  const kept = new URLSearchParams({ step: "invite", mode });
+  for (const [k, v] of formData.entries()) if (k.startsWith("pick_") && typeof v === "string" && v) kept.append(k, v);
+  if (formData.get("reviewed") === "on") kept.set("reviewed", "1");
+  const invitePath = `/dashboard/cover/${planId}?${kept.toString()}`;
   const idErr = identifierError(message);
-  if (idErr) back(invitePath, idErr);
-  if (formData.get("reviewed") !== "on") back(invitePath, "Confirm you've reviewed who receives each request.");
+  if (idErr) back(`${invitePath}&fix=message`, `${idErr} Your recipients are kept; rewrite the message without it, or leave it blank.`);
+  if (formData.get("reviewed") !== "on") back(`${invitePath}&fix=reviewed`, "Confirm you've reviewed who receives each request.");
 
   const { data: cases } = await supabase
     .from("coverage_plan_cases")

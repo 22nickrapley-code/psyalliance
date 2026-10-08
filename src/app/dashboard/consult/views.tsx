@@ -51,6 +51,9 @@ export const CONSULT_TYPES: [string, string][] = [
   ["other", "Other"],
 ];
 
+// The feed starts short; the rest is one tap away.
+const FIRST_POSTS = 8;
+
 export function audienceLabel(c: any) {
   if (c.group_id) return "Consultation group";
   if (c.audience_type === "selected") return (c.audience_profile_ids || []).length === 1 ? "One colleague" : "Selected colleagues";
@@ -136,11 +139,21 @@ export function ConsultIndexView({
           {tab === "discussions" && (
             <div className="chip-row">
               <a className={`chip${!activeTag ? " selected" : ""}`} href="/dashboard/consult">For you</a>
-              {tags.map((t) => (
+              {tags.filter((t) => followed.includes(t) || activeTag === t).map((t) => (
                 <a key={t} className={`chip${activeTag === t ? " selected" : ""}`} href={`/dashboard/consult?tag=${encodeURIComponent(t)}`}>
                   {followed.includes(t) ? "✓ " : ""}{t}
                 </a>
               ))}
+              {tags.some((t) => !followed.includes(t) && activeTag !== t) && (
+                <details className="more-topics">
+                  <summary className="chip">More topics</summary>
+                  <div className="chip-row">
+                    {tags.filter((t) => !followed.includes(t) && activeTag !== t).map((t) => (
+                      <a key={t} className="chip" href={`/dashboard/consult?tag=${encodeURIComponent(t)}`}>{t}</a>
+                    ))}
+                  </div>
+                </details>
+              )}
             </div>
           )}
           {tab === "discussions" && activeTag && (
@@ -177,7 +190,15 @@ export function ConsultIndexView({
               action={<a className="btn secondary small-btn" href={newHref}>{tab === "supervision" ? "Request supervision" : "Ask a question"}</a>}
             />
           ) : (
-            posts.map((p) => <PostCard key={p.id} p={p} />)
+            <>
+              {posts.slice(0, FIRST_POSTS).map((p) => <PostCard key={p.id} p={p} />)}
+              {posts.length > FIRST_POSTS && (
+                <details className="more-posts">
+                  <summary className="btn secondary small-btn">Show {posts.length - FIRST_POSTS} more</summary>
+                  <div className="stack">{posts.slice(FIRST_POSTS).map((p) => <PostCard key={p.id} p={p} />)}</div>
+                </details>
+              )}
+            </>
           )}
 
           {tab === "supervision" && (
@@ -260,10 +281,16 @@ export function ConsultComposeView({
               }
             />
           </label>
-          <label className="field" style={{ marginTop: 14 }}>
-            <span>Context <span className="micro-note">(optional)</span></span>
-            <textarea name="context" rows={4} maxLength={2000} defaultValue={preset?.context} placeholder="Broad, de-identified context: what you've tried, where you're stuck, what would help." />
-          </label>
+          <details className="refine-fit" open={!!preset?.context} style={{ marginTop: 14 }}>
+            <summary>
+              <span>Add context</span>
+              <small>Optional. What you&rsquo;ve tried and where you&rsquo;re stuck.</small>
+            </summary>
+            <label className="field">
+              <span className="sr-only">Context</span>
+              <textarea name="context" rows={4} maxLength={2000} defaultValue={preset?.context} placeholder="Broad, de-identified context: what you've tried, where you're stuck, what would help." />
+            </label>
+          </details>
 
           <AudiencePicker suggestions={suggestions} groups={groups} preselect={preselect} preselectGroup={preselectGroup} />
 
@@ -354,7 +381,16 @@ export function ConsultDetailView({ c, ok, error, extra }: { c: ConsultDetail; o
             <section className="card dark">
               <div className="eyebrow" style={{ color: "#e2c49c" }}>Review</div>
               <h3>Exactly who will see this</h3>
-              <p className="small">{c.audienceLabel}{c.recipients.length ? `: ${c.recipients.join(", ")}` : ""}.</p>
+              {c.recipients.length === 0 ? (
+                <p className="small">{c.audienceLabel}.</p>
+              ) : c.recipients.length <= 4 ? (
+                <p className="small">{c.audienceLabel} ({c.recipients.length}): {c.recipients.join(", ")}.</p>
+              ) : (
+                <details className="aud-all">
+                  <summary>{c.audienceLabel}: {c.recipients.length} people. Show who</summary>
+                  <p className="small">{c.recipients.join(", ")}.</p>
+                </details>
+              )}
               <p className="small">Check once more: no names, dates of birth, contact details or unusual combinations of details that could identify a client.</p>
               <div className="row wrap">
                 <form action={publishConsultAction} className="inline">

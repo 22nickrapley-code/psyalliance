@@ -40,6 +40,7 @@ export type HomeData = {
   today?: string;
   greeting?: string;
   steps: NextStep[];
+  statusLine?: string;
   gettingStarted: { label: string; done: boolean; href: string; waiting?: boolean }[] | null;
   awaitingVerification?: boolean;
   access?: { verified: boolean; openStates: string[]; waitlist: { state: string; position: number; waiting: number }[] } | null;
@@ -245,9 +246,9 @@ export function HomeView({ d }: { d: HomeData }) {
               </form>
             </div>
             <div className="explore-item">
-              <b>Watch the demos</b>
+              <b>Explore the guided demos</b>
               <small>Six short walk-throughs of the real screens, a minute or two each.</small>
-              <a className="btn secondary small-btn" href="/tour">Watch the demos</a>
+              <a className="btn secondary small-btn" href="/tour">Explore the guided demos</a>
             </div>
           </div>
           <p className="small" style={{ margin: "16px 0 0" }}>The Practice Library is open to you now. Three templates members start with:</p>
@@ -265,6 +266,7 @@ export function HomeView({ d }: { d: HomeData }) {
       <section className="home-ask" aria-labelledby="home-question">
         <h2 className="home-question" id="home-question">What would you like to do?</h2>
         <HomeTiles steps={d.steps} />
+        {d.statusLine && <p className="home-status">{d.statusLine}</p>}
       </section>
 
       {d.ledger && d.ledger.length > 0 && (

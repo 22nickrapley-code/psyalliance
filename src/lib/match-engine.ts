@@ -243,7 +243,7 @@ export async function findMatches(
     }
     // Without a prescribing need, therapy referrals go to psychologists first.
     if (!need.prescribing && (need.kind === "referral" || need.kind === "cover") && PRESCRIBER_QUALIFICATIONS.has(String(p.qualification_level))) score -= 6;
-    if (needState && !telehealthOnly) reasons.push(`${needState} license on file`);
+    if (needState && !telehealthOnly) reasons.push(`${needState} license reviewed`);
     if (need.setting === "in_person" && telehealthOnly) continue;
 
     if (need.insurance && !need.insurance.toLowerCase().startsWith("self-pay")) {

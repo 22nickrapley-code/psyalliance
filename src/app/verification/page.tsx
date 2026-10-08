@@ -60,7 +60,7 @@ export default function VerificationPage() {
             <div>
               <div className="eyebrow" style={{ color: "#e2c49c" }}>Founding members</div>
               <h2>Join the founding cohort.</h2>
-              <p>Free for founding members. Opening state by state, starting with New York and Massachusetts.</p>
+              <p>Founding members never pay. Opening state by state, starting with New York and Massachusetts.</p>
             </div>
             <a className="btn" href={JOIN_HREF}>Create your account &rarr;</a>
           </div>

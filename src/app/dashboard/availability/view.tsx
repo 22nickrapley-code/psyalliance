@@ -1,4 +1,5 @@
 import { confirmAvailability, reconfirmAvailability } from "./actions";
+import { APP_TIME_ZONE } from "@/lib/dates";
 import { PageHead, Banner, Status, SummaryList } from "../_components/ui";
 // Availability (Product Spec v1): three separate signals, each with its
 // own status, plus approximate spaces, a pause-until date and the date
@@ -77,7 +78,7 @@ export function AvailabilityView({ p, sp }: { p: AvailabilityData; sp: { confirm
   const preselect = !!confirmedAt;
   const today = new Date().toISOString().slice(0, 10);
   const paused = p?.availability_paused_until && p.availability_paused_until >= today ? p.availability_paused_until : null;
-  const fmt = (d: Date) => d.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+  const fmt = (d: Date) => d.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: APP_TIME_ZONE });
 
   return (
     <>

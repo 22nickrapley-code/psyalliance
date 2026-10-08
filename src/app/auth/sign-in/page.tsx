@@ -19,7 +19,7 @@ export default async function SignInPage(props: { searchParams: Promise<{ error?
             <h1>Professional backup for independent clinicians.</h1>
             <p>Cover when you&rsquo;re away, the right colleague for a referral, and peers to think a decision through with. Verified psychologists and psychiatrists only.</p>
           </div>
-          <p className="auth-foot">Invitation only while the founding cohort forms.</p>
+          <p className="auth-foot">{IS_DEMO_SITE ? "A sandbox with fictional colleagues." : "Open to doctoral psychologists and psychiatrists, state by state."}</p>
         </section>
         <section className="auth-form">
           <div className="auth-form-inner">
@@ -47,7 +47,7 @@ export default async function SignInPage(props: { searchParams: Promise<{ error?
                 </>
               ) : (
                 <>
-                  <p className="small">New to PsyAlliance? Founding members join free.</p>
+                  <p className="small">New to PsyAlliance? Founding members never pay.</p>
                   <a className="btn secondary block" href={JOIN_HREF}>Create your account</a>
                 </>
               )}

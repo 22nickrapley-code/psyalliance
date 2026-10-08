@@ -6,10 +6,11 @@ import { IS_DEMO_SITE, JOIN_URL, TOUR_URL } from "@/lib/env";
 import { US_STATES } from "@/lib/us-states";
 import { loadOpenStates, stateList } from "@/lib/open-states";
 import { PublicNav, PublicFooter } from "../../_public/chrome";
+import { DegreeField } from "./degree-field";
 
 export const metadata = {
   title: "Create your account",
-  description: "Join PsyAlliance, the verified network for doctoral psychologists and psychiatrists in private practice. Free for founding members.",
+  description: "Join PsyAlliance, the verified network for doctoral psychologists and psychiatrists in private practice. Founding members never pay.",
 };
 
 const NORTHEAST = ["NY", "MA", "NJ", "CT", "RI", "VT", "NH", "ME", "PA"];
@@ -38,7 +39,7 @@ export default async function SignUpPage(props: {
         <section className="public-section join-page">
           <div className="section-inner join-layout">
             <div className="join-intro">
-              <div className="eyebrow">Founding members join free</div>
+              <div className="eyebrow">Founding members never pay</div>
               <h1>Create your account.</h1>
               <p className="lead">
                 For doctoral psychologists and psychiatrists in private practice. Open now in {openText || "the Northeast"}; other states open as colleagues
@@ -57,7 +58,7 @@ export default async function SignUpPage(props: {
                 </li>
               </ol>
               <p className="small">
-                Want to see it first? <a href={TOUR_URL}>Watch the short demos</a>.
+                Want to see it first? <a href={TOUR_URL}>Explore the guided demos</a>.
               </p>
             </div>
 
@@ -79,6 +80,8 @@ export default async function SignUpPage(props: {
                 {invite && <input type="hidden" name="invite" value={invite} />}
                 {source && <input type="hidden" name="source" value={source} />}
                 {sp.error && <div className="banner error" role="alert">{sp.error}</div>}
+                <DegreeField />
+                <div className="join-rest">
                 <label className="field">
                   Full name
                   <input name="fullName" required minLength={2} autoComplete="name" defaultValue={inv?.valid ? inv.full_name || "" : ""} />
@@ -91,18 +94,6 @@ export default async function SignUpPage(props: {
                   Password
                   <input name="password" type="password" required minLength={8} autoComplete="new-password" />
                   <small>At least 8 characters.</small>
-                </label>
-                <label className="field">
-                  Degree
-                  <select name="qualification" defaultValue="" required>
-                    <option value="" disabled>Choose one</option>
-                    <option>PhD</option>
-                    <option>PsyD</option>
-                    <option>EdD</option>
-                    <option>MD</option>
-                    <option>DO</option>
-                    <option value="other">Master&rsquo;s-level or other</option>
-                  </select>
                 </label>
                 <fieldset className="state-pick">
                   <legend>States where you&rsquo;re licensed</legend>
@@ -126,9 +117,10 @@ export default async function SignUpPage(props: {
                 </fieldset>
                 <button type="submit" className="btn lg block">Create your account</button>
                 <p className="micro-note" style={{ margin: 0, textAlign: "center" }}>
-                  Free for founding members. See <a href="/privacy">Privacy</a> and <a href="/terms">Terms</a>. Already have an account?{" "}
+                  Founding members never pay. See <a href="/privacy">Privacy</a> and <a href="/terms">Terms</a>. Already have an account?{" "}
                   <a href="/auth/sign-in">Sign in</a>.
                 </p>
+                </div>
               </form>
             )}
           </div>

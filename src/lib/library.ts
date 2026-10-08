@@ -1,3 +1,4 @@
+import { APP_TIME_ZONE } from "./dates";
 // Practice Library (Product Spec v1). Curated, reviewed resources, each a
 // card with a PA number, purpose, who it applies to, version, review date
 // and a route into the workflow it supports.
@@ -71,7 +72,7 @@ export const SHORT_CATEGORY: Record<string, string> = {
 
 export function monthYear(d: string | null) {
   if (!d) return "";
-  return new Date(d + (d.length === 10 ? "T12:00:00Z" : "")).toLocaleDateString("en-US", { month: "short", year: "numeric", timeZone: "UTC" });
+  return new Date(d + (d.length === 10 ? "T12:00:00Z" : "")).toLocaleDateString("en-US", { month: "short", year: "numeric", timeZone: d.length === 10 ? "UTC" : APP_TIME_ZONE });
 }
 
 export const CATEGORIES = [
@@ -182,7 +183,7 @@ export function formatDate(d: string | null) {
     month: "short",
     day: "numeric",
     year: "numeric",
-    timeZone: "UTC",
+    timeZone: d.length === 10 ? "UTC" : APP_TIME_ZONE,
   });
 }
 

@@ -12,14 +12,21 @@ export default async function ContinuityPage(props: { searchParams: Promise<{ sa
     data: { user },
   } = await supabase.auth.getUser();
   const me = user!.id;
-  const [{ data: plan }, { data: duties }] = await Promise.all([
+  const [{ data: plan }, { data: duties }, { data: lic }, { data: prof }] = await Promise.all([
     supabase
       .from("continuity_plans")
       .select("*, backup:backup_profile_id(id, full_name, credential_prefix, qualification_level), alternate:alternate_profile_id(id, full_name, credential_prefix, qualification_level)")
       .eq("profile_id", me)
       .maybeSingle<any>(),
     supabase.rpc("my_continuity_duties"),
+    supabase.from("licenses").select("state, license_number").eq("profile_id", me).order("state"),
+    supabase.from("profiles").select("full_name, credential_prefix, qualification_level").eq("id", me).maybeSingle<any>(),
   ]);
+  // What PsyAlliance already knows, offered as a starting point.
+  const known = {
+    licenses: ((lic as any[]) || []).map((l) => `${l.state} ${l.license_number}`).join(", "),
+    owner: prof ? clinicianName(prof.full_name, prof.qualification_level, prof.credential_prefix) : "",
+  };
   const suggestions = await loadColleagueSuggestions(supabase, me, plan?.backup_profile_id || plan?.alternate_profile_id || null);
   const nameOf = (p: any) => (p ? clinicianName(p.full_name, p.qualification_level, p.credential_prefix) : null);
   return (
@@ -33,6 +40,7 @@ export default async function ContinuityPage(props: { searchParams: Promise<{ sa
       suggestions={suggestions}
       dutiesWaiting={((duties as any[]) || []).filter((d) => d.status === "invited").length}
       dutiesTotal={((duties as any[]) || []).length}
+      known={known}
     />
   );
 }

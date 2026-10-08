@@ -1,4 +1,5 @@
 import { psypactEligible } from "@/lib/psypact";
+import { APP_TIME_ZONE } from "@/lib/dates";
 import { effectiveReferral } from "@/lib/availability";
 import { saveProfile, uploadAvatar } from "./actions";
 import { professionFor, professionLabel, clinicianName, roleLabel } from "@/lib/profession";
@@ -121,7 +122,7 @@ export function ProfileView({
       ["Insurance", joinSome(pick("insurance").map((l) => l.value), 3) || "Self-pay only"],
       ["Jurisdiction", licenses.length ? licenses.map((l) => stateName(l.state)).join(", ") + (profile?.psypact_participating ? " · PSYPACT" : "") : "No license on file"],
       ...(profile?.founding_member_since || profile?.created_at
-        ? ([["Member since", new Date(profile.founding_member_since || profile.created_at).toLocaleDateString("en-US", { month: "long", year: "numeric" })]] as [string, string][])
+        ? ([["Member since", new Date(profile.founding_member_since || profile.created_at).toLocaleDateString("en-US", { month: "long", year: "numeric", timeZone: APP_TIME_ZONE })]] as [string, string][])
         : []),
     ];
     return (
@@ -159,13 +160,13 @@ export function ProfileView({
           <aside className="stack">
             <section className="card tint roomy">
               <div className="eyebrow">{pct === 100 ? "Complete" : `${pct}% complete`}</div>
-              <h2 className="serif-title" style={{ fontSize: 26 }}>{pct === 100 ? "Ready to be matched." : "Almost there."}</h2>
+              <h2 className="serif-title" style={{ fontSize: 26 }}>{pct === 100 ? "Profile complete." : "Almost there."}</h2>
               <div className="meter" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label="Profile completeness">
                 <span style={{ width: `${pct}%` }} />
               </div>
               <p className="small" style={{ marginTop: 10, marginBottom: 0 }}>
                 {pct === 100
-                  ? "Every field matching uses is filled in, and your availability is current."
+                  ? `Every field matching uses is filled in, and your availability is current. ${reviewed.length > 0 ? "Your license is reviewed, so colleagues can find you." : "You'll be matched once an admin has reviewed your license."}`
                   : `Still to add: ${checks.filter((c) => !c.done).map((c) => c.label.toLowerCase()).join(", ")}.`}
               </p>
             </section>

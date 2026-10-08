@@ -148,7 +148,7 @@ export function ClinicianProfileView({ p, error, connected, declined }: { p: Cli
           <p className="hero-role">{p.role}{p.where ? ` · ${p.where}` : ""}</p>
           <div className="chip-row">
             {p.licenceStates.length > 0 && (
-              <span className="chip">{p.licenceStates.length === 1 ? `${p.licenceStates[0]} license on file` : `Licenses on file: ${p.licenceStates.join(", ")}`}</span>
+              <span className="chip">{p.licenceStates.length === 1 ? `${p.licenceStates[0]} license reviewed` : `Reviewed licenses: ${p.licenceStates.join(", ")}`}</span>
             )}
             <span className="chip">{p.availabilityChip}</span>
             {p.psypact && <span className="chip">PSYPACT</span>}
@@ -253,7 +253,7 @@ export function ClinicianProfileView({ p, error, connected, declined }: { p: Cli
             <h2 className="serif-title">What is known here</h2>
             <p className="small">Professional license evidence reviewed by PsyAlliance; current availability confirmed by the member.</p>
             <ul className="glance">
-              <li><span>Authority recorded</span><strong>{p.licenceStates.length ? `${p.licenceStates.join(", ")} license${p.licenceStates.length === 1 ? "" : "s"} on file` : "None on file"}</strong></li>
+              <li><span>Reviewed licenses</span><strong>{p.licenceStates.length ? p.licenceStates.join(", ") : "None reviewed yet"}</strong></li>
               {p.psypact && <li><span>PSYPACT</span><strong>Participating</strong></li>}
               {p.boardCertified && <li><span>Board certification</span><strong>Self-reported</strong></li>}
               <li><span>Availability</span><strong>{p.confirmed}</strong></li>

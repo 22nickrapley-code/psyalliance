@@ -10,14 +10,14 @@ import { publicLibraryHref } from "@/lib/library";
 // what it is and the benefit first, then the three moments it helps with,
 // why it exists, why it's safe, the questions people ask first and one way
 // in. Verification detail lives at /verification and the full rules at
-// /privacy. Founding members join free.
+// /privacy. Founding members never pay.
 
 const FAQ: [string, string][] = [
   [
     "Who can join?",
     "Doctoral-level psychologists (PhD, PsyD, EdD) and psychiatrists (MD, DO) licensed in the US. Anyone eligible can create an account; the network opens state by state, starting with New York and Massachusetts.",
   ],
-  ["What does it cost?", "Nothing. PsyAlliance is free for founding members."],
+  ["What does it cost?", "Nothing. Founding members never pay: membership stays free for as long as you remain a member. If a fee is ever introduced, it applies only to people who join after the founding period."],
   [
     "What's in the Practice Library?",
     "Twenty templates for independent practice, from a professional will to a reciprocal cover agreement. Some are free to download; members get all of them, placed beside the work they support.",
@@ -110,9 +110,9 @@ export default async function HomePage() {
             </p>
             <div className="hero-actions">
               <a className="btn lg" href="/auth/sign-up">Create your account</a>
-              <a className="btn secondary lg" href={DEMO("/cover")}>Watch the 2-minute demo &rarr;</a>
+              <a className="btn secondary lg" href={DEMO("/cover")}>Try the guided demo &rarr;</a>
             </div>
-            <p className="hero-free">Free for founding members.</p>
+            <p className="hero-free">Founding members never pay.</p>
             <ul className="hero-trust" aria-label="Who it's for">
               <li>Doctoral-level only</li>
               <li>Every license checked by a person</li>
@@ -257,7 +257,7 @@ export default async function HomePage() {
             <div>
               <div className="eyebrow" style={{ color: "#e2c49c" }}>Founding members</div>
               <h2>Join the founding cohort.</h2>
-              <p>Free for founding members. Open now in {open || "the Northeast"}; other states open as colleagues join.</p>
+              <p>Founding members never pay. Open now in {open || "the Northeast"}; other states open as colleagues join.</p>
             </div>
             <a className="btn" href="/auth/sign-up">Create your account &rarr;</a>
           </div>

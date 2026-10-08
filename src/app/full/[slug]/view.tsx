@@ -92,7 +92,7 @@ export function OverflowPublicView({ d }: { d: OverflowData }) {
 
         <section className="full-trust">
           <p>
-            <b>In a crisis?</b> Call or text 988, or go to your nearest emergency room.
+            <b>In an emergency?</b> If you are in immediate danger or need urgent medical help, call 911. For a mental health, suicide or substance use crisis, call or text 988.
           </p>
           <p>
             Every clinician listed is a member of PsyAlliance, a private network of psychologists and psychiatrists whose licenses are checked by a

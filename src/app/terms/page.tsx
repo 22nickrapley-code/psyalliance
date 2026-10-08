@@ -24,6 +24,10 @@ export default function TermsPage() {
               Keep client-identifying information out of PsyAlliance, act within your license and your state&rsquo;s rules, and treat what colleagues share as confidential.
               Practice Library templates show whether they have been independently reviewed; adapt any template with your own advisers before you rely on it.
             </p>
+            <p>
+              Founding members never pay. Membership stays free for as long as you remain a member; if PsyAlliance introduces a fee, it applies only to people who
+              join after the founding period.
+            </p>
           </div>
         </section>
       </main>

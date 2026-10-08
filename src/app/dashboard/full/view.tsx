@@ -82,7 +82,7 @@ export function FullView({
               <label className="field">
                 What it says
                 <textarea name="message" rows={3} maxLength={400} defaultValue={page?.message || DEFAULT_MESSAGE} />
-                <small>Visitors also see a reminder to call or text 988 in an emergency.</small>
+                <small>Visitors also see what to do in an emergency: 911 for immediate danger or a medical emergency, 988 for a mental health crisis.</small>
               </label>
               <div><button type="submit" className="btn">Save your page</button></div>
             </form>

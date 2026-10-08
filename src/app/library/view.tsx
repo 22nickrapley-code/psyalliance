@@ -62,7 +62,7 @@ export function PublicLibraryView({ docs, q }: { docs: PublicDoc[]; q: string })
               <button type="submit" className="btn small-btn">Search</button>
             </form>
             <p className="lib-count micro-note">
-              {docs.length} templates{free > 0 ? `, ${free} free to download` : ""}. Members get all of them, placed beside the work they support.
+              {docs.length} templates{free > 0 ? `, ${free} free to download` : ""}. Members get every template now, beside the work it supports. Each becomes a free download for everyone once it has been independently reviewed.
             </p>
           </div>
         </section>
@@ -100,7 +100,7 @@ export function PublicLibraryView({ docs, q }: { docs: PublicDoc[]; q: string })
             <div>
               <div className="eyebrow" style={{ color: "#e2c49c" }}>Members get every template</div>
               <h2>Join the founding cohort.</h2>
-              <p>Free for founding members. For doctoral-level psychologists and psychiatrists, opening state by state.</p>
+              <p>Founding members never pay. For doctoral-level psychologists and psychiatrists, opening state by state.</p>
             </div>
             <a className="btn" href={`${JOIN_HREF}?from=library-index`}>Create your account &rarr;</a>
           </div>
@@ -166,13 +166,13 @@ export function PublicResourceView({ d, related, preview = false }: { d: PublicD
                 ) : (
                   <>
                     <div className="eyebrow">Members</div>
-                    <h3>Free for members.</h3>
+                    <h3>Members get it now.</h3>
                     <p className="small">
-                      Members get every template in the Library, beside the work it supports, and can save a private working copy.
+                      Members get every template in the Library, beside the work it supports. It becomes a free download for everyone once it has been independently reviewed.
                     </p>
                     <a className="btn" href={join}>Create your account</a>
                     <details className="lib-notify">
-                      <summary>Tell me when it&rsquo;s free to download</summary>
+                      <summary>Email me when it&rsquo;s reviewed and free to download</summary>
                       <LeadForm code={d.code} name={docName(d.code)} intent="notify" joinHref={join} demoHref={DEMO_HREF} preview={preview} />
                     </details>
                   </>

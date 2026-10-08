@@ -3404,3 +3404,11 @@ a.person-link.tier-recommended:hover {
   gap: 0.4rem;
   flex: 0 0 auto;
 }
+
+/* The note that echoes a page's message at the bottom of the screen. */
+.live-note{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom));z-index:120;display:flex;align-items:center;gap:12px;max-width:min(560px,calc(100vw - 32px));padding:11px 12px 11px 16px;border-radius:10px;font:500 14px/1.4 Inter,Arial,sans-serif;box-shadow:0 12px 30px rgba(15,40,33,.22);animation:live-note-in .22s ease-out}
+.live-note.ok{background:#153f35;color:#fff}
+.live-note.error{background:#9c4238;color:#fff}
+.live-note button{border:0;background:transparent;color:inherit;font-size:20px;line-height:1;padding:2px 4px;cursor:pointer;opacity:.85}
+@media (min-width:901px){.live-note{bottom:28px}}
+@keyframes live-note-in{from{opacity:0;transform:translate(-50%,8px)}to{opacity:1;transform:translate(-50%,0)}}

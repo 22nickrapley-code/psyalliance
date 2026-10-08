@@ -180,7 +180,7 @@ export function ResourceDetailView({
             {url && <a className="btn" href={url} target="_blank" rel="noopener noreferrer">Open the PDF</a>}
             <form action={saveWorkingCopyAction} className="inline">
               <input type="hidden" name="document_id" value={r.id} />
-              <button type="submit" className="btn secondary">Save a working copy</button>
+              <button type="submit" className="btn secondary">Save PDF to My Library</button>
             </form>
           </>
         }
@@ -223,7 +223,7 @@ export function ResourceDetailView({
             </div>
           )}
           <p className="small" style={{ marginTop: 16, marginBottom: 0 }}>
-            A working copy goes to My Library, where only you can see it. Complete it outside PsyAlliance if it will hold client details. Never upload a completed form that identifies a client.
+            The PDF is saved to My Library, where only you can see it. Print it or fill it in outside PsyAlliance, especially if it will hold client details. Never upload a completed form that identifies a client.
           </p>
         </section>
         <aside className="stack">
@@ -303,7 +303,7 @@ export function MyLibraryView({
             <Empty
               symbol={"▧"}
               title={total === 0 ? "Your working copies live here." : "Nothing in this folder."}
-              body={total === 0 ? "Open a Practice Library resource and save a working copy, or upload your own practice documents." : "Move documents here from the list, or pick another folder."}
+              body={total === 0 ? "Open a Practice Library template and save its PDF, or upload your own practice documents." : "Move documents here from the list, or pick another folder."}
               action={total === 0 ? <a className="btn secondary small-btn" href="/dashboard/documents">Browse the Practice Library</a> : undefined}
             />
           ) : (

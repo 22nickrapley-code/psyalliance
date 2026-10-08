@@ -65,8 +65,8 @@ function PersonCard({ p }: { p: Person }) {
     p.licenceStates.length === 0
       ? null
       : p.licenceStates.length === 1
-        ? `${stateName(p.licenceStates[0])} license on file`
-        : `Licenses on file: ${p.licenceStates.join(", ")}`;
+        ? `${stateName(p.licenceStates[0])} license reviewed`
+        : `Reviewed licenses: ${p.licenceStates.join(", ")}`;
   const facts = [license, p.topFocus.join(" · "), (p.modalities || [])[0], p.psypact ? "PSYPACT" : null].filter(Boolean) as string[];
   const paused = /^Paused/.test(p.availability);
   return (

@@ -57,7 +57,7 @@ export default async function DocumentsPage(props: {
       })
     );
     const notice = sp.copied
-      ? `Working copy of ${/^PA-\d+$/.test(sp.copied) ? `the ${docName(sp.copied)}` : "the resource"} saved. Only you can see it.`
+      ? `${/^PA-\d+$/.test(sp.copied) ? `The ${docName(sp.copied)}` : "The PDF"} is saved to My Library. Only you can see it.`
       : sp.uploaded
         ? "Uploaded. Only you can see it."
         : null;

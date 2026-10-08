@@ -27,7 +27,7 @@ export default function DemoLibraryPage() {
                 <h1>See PsyAlliance in action.</h1>
                 <p className="lead">
                   Six short demos: the three workflows (cover, referrals and consultation), your day and your network, joining and verification, and the
-                  Practice Library. Each takes a minute or two on the real screens, with a fictional practice. Watch them in any order; we suggest starting with cover.
+                  Practice Library. Each takes a minute or two on the real screens, with a fictional practice. Explore them in any order; we suggest starting with cover.
                 </p>
               </div>
               <AlexCard compact />

@@ -1,4 +1,6 @@
 import { IS_DEMO_SITE, SITE_URL } from "@/lib/env";
+import { Suspense } from "react";
+import { Live } from "./_live/live";
 import "./globals.css";
 // Self-hosted via @fontsource rather than next/font/google: this bundles the
 // font files at build time with no network fetch required, so the build
@@ -57,7 +59,12 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        {children}
+        <Suspense fallback={null}>
+          <Live />
+        </Suspense>
+      </body>
     </html>
   );
 }

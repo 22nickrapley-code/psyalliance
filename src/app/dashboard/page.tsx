@@ -238,8 +238,10 @@ export default async function HomePage(props: { searchParams: Promise<{ reconfir
     const days = Math.ceil((new Date(l.expiration_date).getTime() - Date.now()) / 86_400_000);
     steps.push({ key: `lic-${l.state}`, title: `Your ${l.state} license expires in ${days} day${days === 1 ? "" : "s"}`, detail: "Renew it and update Credentials to stay listed", href: "/dashboard/credentials", action: "Open", urgent: days <= 7, rank: 6 });
   }
+  // Waiting on PsyAlliance, not on the member: a status line, not a task.
+  let statusLine: string | undefined;
   if (activeLicences.length > 0 && !activeLicences.some((l: any) => l.reviewed_at) && profile.verification_status === "verified") {
-    steps.push({ key: "lic-review", title: "Your license is awaiting review", detail: "You'll be listed and matched as soon as an admin has checked it. Nothing to do.", href: "/dashboard/credentials", action: "View", rank: 7 });
+    statusLine = "Your license is with a reviewer. You'll be listed and matched as soon as it's checked; nothing for you to do.";
   }
   if (activeLicences.length === 0 && profile.verification_status === "verified") {
     steps.push({ key: "lic-none", title: "Add your license", detail: "Members are only listed and matched with an active license on record", href: "/dashboard/credentials", action: "Add", rank: 1 });
@@ -314,7 +316,7 @@ export default async function HomePage(props: { searchParams: Promise<{ reconfir
     // A continuity plan counts once it's started, or once they've saved a
     // working copy of the Professional Will template to write it on paper.
     const [{ count: pa03Copies }, { data: plan }] = await Promise.all([
-      supabase.from("documents").select("id", { count: "exact", head: true }).eq("profile_id", myself).eq("owner_scope", "personal").or("sources.like.Working copy of PA-03%,sources.like.Working copy of the Professional Will%"),
+      supabase.from("documents").select("id", { count: "exact", head: true }).eq("profile_id", myself).eq("owner_scope", "personal").or("sources.like.Working copy of PA-03%,sources.like.Working copy of the Professional Will%,sources.like.Your copy of the Professional Will%"),
       supabase.from("continuity_plans").select("updated_at").eq("profile_id", myself).maybeSingle(),
     ]);
     gettingStarted = [
@@ -330,6 +332,7 @@ export default async function HomePage(props: { searchParams: Promise<{ reconfir
   const d: HomeData = {
     firstName: String(profile.full_name || "there").replace(/^(dr\.?)\s+/i, "").split(/[\s,]+/)[0],
     steps,
+    statusLine,
     today: new Date().toLocaleDateString("en-US", { timeZone: "America/New_York", weekday: "long", month: "long", day: "numeric" }),
     greeting: greetingFor(new Date()),
     gettingStarted,

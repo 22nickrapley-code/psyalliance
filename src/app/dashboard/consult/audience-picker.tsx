@@ -107,6 +107,12 @@ export function AudiencePicker({
             <p>
               <b>{trusted.length} trusted colleague{trusted.length === 1 ? "" : "s"}</b> will see this: {firstNames(trusted)}.
             </p>
+            {trusted.length > 2 && (
+              <details className="aud-all">
+                <summary>Show all {trusted.length}</summary>
+                <p>{trusted.map((p) => p.name).join(", ")}.</p>
+              </details>
+            )}
           </>
         )}
         {group && (

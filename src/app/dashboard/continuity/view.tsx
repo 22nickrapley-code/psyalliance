@@ -20,6 +20,7 @@ export function ContinuityView({
   suggestions,
   dutiesWaiting,
   dutiesTotal,
+  known,
 }: {
   sp: { saved?: string; error?: string; reviewed?: string };
   answers: ContinuityAnswers;
@@ -30,6 +31,7 @@ export function ContinuityView({
   suggestions: Suggestion[];
   dutiesWaiting: number;
   dutiesTotal: number;
+  known?: { licenses: string; owner: string };
 }) {
   const hasBackup = !!backup || !!(answers.backup_outside || "").trim();
   const progress = planProgress(answers, hasBackup);
@@ -45,7 +47,7 @@ export function ContinuityView({
         lead="If you couldn't practice tomorrow, who would tell your clients? Name a colleague, write down where things are, then print it and sign it. It never holds client information."
         actions={
           <a className="btn" href="/continuity/print" target="_blank" rel="noopener">
-            Download PDF
+            Print or save as PDF
           </a>
         }
       />
@@ -139,13 +141,16 @@ export function ContinuityView({
                 <form action={saveContinuitySection} className="continuity-form">
                   <input type="hidden" name="section" value={s.key} />
                   {s.fields.map((f) => {
-                    const value = answers[f.key] ?? f.preset ?? "";
+                    const fromProfile = answers[f.key] === undefined && f.key === "licenses" && !!known?.licenses;
+                    const preset = f.preset && known?.owner ? f.preset.replace("Dr. [name]", known.owner) : f.preset;
+                    const value = answers[f.key] ?? (fromProfile ? known!.licenses : preset) ?? "";
                     const suggested = answers[f.key] === undefined && !!f.preset;
                     return (
                       <label key={f.key} className="field">
                         <span>
                           {f.label}
                           {suggested && <span className="continuity-suggested">Suggested wording, edit freely</span>}
+                          {fromProfile && <span className="continuity-suggested">From your credentials, check and save</span>}
                         </span>
                         {f.kind === "long" ? (
                           <textarea name={f.key} rows={4} defaultValue={value} placeholder={f.placeholder} maxLength={2000} />

@@ -170,6 +170,25 @@ export async function establishProfessionalConnection(
   referralRequestId: number,
   respondingProfileId: string
 ) {
+  // Only someone who received the referral and replied Interested can be
+  // chosen for the handoff.
+  const [{ data: request }, { data: reply }] = await Promise.all([
+    supabase.from("referral_requests").select("requesting_profile_id, audience_type, audience_profile_ids").eq("id", referralRequestId).maybeSingle(),
+    supabase
+      .from("referral_responses")
+      .select("status")
+      .eq("referral_request_id", referralRequestId)
+      .eq("responding_profile_id", respondingProfileId)
+      .maybeSingle(),
+  ]);
+  if (!request || request.requesting_profile_id !== requestingProfileId) return { error: "Referral not found." };
+  if (request.audience_type === "selected" && !(request.audience_profile_ids || []).includes(respondingProfileId)) {
+    return { error: "You can only choose a colleague you sent this referral to." };
+  }
+  if (!reply || !["interested", "accepted"].includes(reply.status)) {
+    return { error: "Choose a colleague who replied Interested." };
+  }
+
   const { error } = await supabase
     .from("referral_requests")
     .update({ status: "connected" })

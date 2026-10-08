@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { APP_TIME_ZONE } from "@/lib/dates";
 import { redirect } from "next/navigation";
 import { requireAdminOrRedirectPath, allAdminMembers } from "@/lib/admin";
 import { setMemberVerificationStatus, setMemberAdminFlag, setMemberAccountStatusAction, setAccountKindAction } from "./actions";
@@ -89,7 +90,7 @@ export default async function AdminMembersPage(props: {
                   <p>
                     {p.email || "no login email"}
                     {p.primary_state ? ` · ${p.primary_practice_city ? p.primary_practice_city + ", " : ""}${p.primary_state}` : ""}
-                    {` · joined ${new Date(p.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`}
+                    {` · joined ${new Date(p.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: APP_TIME_ZONE })}`}
                   </p>
                   <p>
                     {p.reviewed_licences} reviewed license{p.reviewed_licences === 1 ? "" : "s"}

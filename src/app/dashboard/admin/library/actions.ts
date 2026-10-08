@@ -332,33 +332,35 @@ export async function setLibraryPublicAction(formData: FormData) {
   redirect("/dashboard/admin/library?public=1");
 }
 
-// The current template files: the starter set as committed in 54d55af
-// (PA numbers taken out of the PDFs), each checked against its SHA-256 so
+// The current template files: the starter set as committed in 2a29e3c
+// (no PA numbers; "In review" printed on every page), each checked against its SHA-256 so
 // nothing else can be swapped in. Read from disk when running locally,
 // otherwise fetched from that exact commit on GitHub.
-const FILES_COMMIT = "54d55af24d8758a7863b94c6462062e474ad5048";
+const FILES_COMMIT = "2a29e3c7da6867d01d16f61f6f65d15d0d011895";
 const FILES_BASE = `https://raw.githubusercontent.com/22nickrapley-code/psyalliance/${FILES_COMMIT}/seed-data/PsyAlliance-Shared-Library-Starter-Set/`;
+// Every file in this set is printed as version 1.0.
+const FILES_VERSION = 1;
 const LIBRARY_FILES: Record<string, { file: string; sha256: string }> = {
-  "PA-01": { file: "Reciprocal-Coverage-Agreement.pdf", sha256: "51067b4147e33b51410be14a8a9d167f99dbb12b244c1f69de818fcec4690a6b" },
-  "PA-02": { file: "Extended-Leave-Coverage-and-Handoff-Pack.pdf", sha256: "45302b03c18b8d0f49f80779c6b869b17457fc83d4ceb69d5707f133b6dd697e" },
-  "PA-03": { file: "Professional-Will-and-Succession-Plan.pdf", sha256: "b80d9495a9ddb0a50c902d53c7116a6f09bafebe630ca1a273b0e87ddf36ef75" },
-  "PA-04": { file: "Peer-Consultation-Group-Charter.pdf", sha256: "8dba348e5c8bb8ea2bb9249f0dcb94cec570939e7945c4de601a58c9c008e9ab" },
-  "PA-05": { file: "Case-Consultation-Presentation-Template.pdf", sha256: "fbaeed8b694fc17270256b144ac9d35f0222d3e102cc2459f580d2283c6da44f" },
-  "PA-06": { file: "Clinical-Supervision-Agreement-and-Log.pdf", sha256: "62c734f1da50527e1476657cf157d57a3eb919f76ff00c01f5e04d85f771e099" },
-  "PA-07": { file: "Referral-Termination-and-Transfer-of-Care-Toolkit.pdf", sha256: "64a4251dc5494300e035e8e366ed9381dad22fa1f2fd083484d9d6e48a671b34" },
-  "PA-08": { file: "Split-Treatment-Collaboration-Agreement.pdf", sha256: "51caa1642f45c6d27d53d42521052952b7ef07d86de4319906d9f661ab960238" },
-  "PA-09": { file: "Informed-Consent-for-Psychotherapy.pdf", sha256: "b20d337cf92c781f55af8e34221a50b76de98170949242259d15b8b8578914ec" },
-  "PA-10": { file: "Telepsychology-Consent-and-Multi-State-Checklist.pdf", sha256: "9933bf06a7d4f849e6a73ae4d0dfd55a3d51f0ecd592abb0e92c27e1322f86bb" },
-  "PA-11": { file: "AI-Scribe-and-AI-Tools-Consent-Vetting-and-Policy.pdf", sha256: "5dbbadebc527a27f00d3e960d2caecfe1a2a3da0ab177886b8c7c9ee19b0af08" },
-  "PA-12": { file: "Clinical-Documentation-Pack.pdf", sha256: "5b40c73ef416c3deffce4eae8912b90e1d67a6cadf2ca134eef9b978aac648cb" },
-  "PA-13": { file: "Suicide-Risk-Safety-Planning-and-Follow-Up-Pack.pdf", sha256: "7360b72a9ab8bffdb3aea74f3535b63b8c77dd54cbcf763dfc80166d122d1b02" },
-  "PA-14": { file: "Telepsychiatry-and-Controlled-Substance-Compliance-Kit.pdf", sha256: "7e79558476d9fec03b5cda1d26b455b9ac83568853bc75bdca142a62c8ee8198" },
-  "PA-15": { file: "Financial-Policy-Good-Faith-Estimate-and-Superbill-Pack.pdf", sha256: "fa845c493b88d4bbd816ec820fb1e3c31712f99d05d32f477cae9c7c232e6982" },
-  "PA-16": { file: "Group-Practice-Clinician-Agreement-Builder.pdf", sha256: "be38f718cab06abdf1740c35ae014c672103936c5496bfc3e8d320c743a5c8f1" },
-  "PA-17": { file: "Privacy-Notice-and-Release-of-Information-Pack.pdf", sha256: "a52db0dea8000b9a54d645dccc681804fe29e7a15198eab6ae37654368f90c06" },
-  "PA-18": { file: "HIPAA-Security-Risk-Analysis-and-Breach-Response-Kit.pdf", sha256: "e418446f65a2a754ec3ba5a96fd0e43280839328567819931b6f9c4451a19e57" },
-  "PA-19": { file: "Practice-Compliance-Calendar-and-Renewal-Tracker.pdf", sha256: "f77df1294d6cb2c8eebb79d6416be07d5b0381a87821f8beccc40bbf65f08935" },
-  "PA-20": { file: "Subpoena-Court-Order-and-Records-Request-Response-Guide.pdf", sha256: "43b9f2a939614335ca226ae2bceb8f4f497d17f18c12df81c0d38133c5927fc5" },
+  "PA-01": { file: "Reciprocal-Coverage-Agreement.pdf", sha256: "ef0042f35f9dc1de452127c594d25e77f8739c38a0145879b3c6422dd98ec18f" },
+  "PA-02": { file: "Extended-Leave-Coverage-and-Handoff-Pack.pdf", sha256: "f188e7497e10ba33bc94b4896b16c2981af0eb91f0e39d8b3b4fae2a5ba5af7d" },
+  "PA-03": { file: "Professional-Will-and-Succession-Plan.pdf", sha256: "029fa8ed99999179063c66d64c7a6cea72957bcbf43bcfdb7c3f630812af25ab" },
+  "PA-04": { file: "Peer-Consultation-Group-Charter.pdf", sha256: "117af1a8eaa9581167e8bc32a9d84bd3789dc5a115d01fa699b82aa086c86d07" },
+  "PA-05": { file: "Case-Consultation-Presentation-Template.pdf", sha256: "cd2e9a994ac872ad51c0010be61b853f266883b77b9f731804017f2f24145825" },
+  "PA-06": { file: "Clinical-Supervision-Agreement-and-Log.pdf", sha256: "00e407b776d2f8e7f4248cd682c9a8755caec7c26d703bed5bb8dde15e0a5640" },
+  "PA-07": { file: "Referral-Termination-and-Transfer-of-Care-Toolkit.pdf", sha256: "e14284971e79b12551bb10fc1b543bd6d1c72e994a2d6ca92a0589bede8b56c4" },
+  "PA-08": { file: "Split-Treatment-Collaboration-Agreement.pdf", sha256: "1a0ae59e8ad6d89d850da9219d118a3a677992f545dfcf58e354158c2d25a71f" },
+  "PA-09": { file: "Informed-Consent-for-Psychotherapy.pdf", sha256: "64026a2e7716faeb64150c01ab0bd9ce3b6adc2219de1f3a6252d0a19c46ef0f" },
+  "PA-10": { file: "Telepsychology-Consent-and-Multi-State-Checklist.pdf", sha256: "700196a779fa87a2e0da171a88dd1915fdbf02bb09c3147c1893217a3c91bea3" },
+  "PA-11": { file: "AI-Scribe-and-AI-Tools-Consent-Vetting-and-Policy.pdf", sha256: "6aeba075710e4a5ee2079693eb7e85cbb9d0774e55a078eb177bef0f4678bce2" },
+  "PA-12": { file: "Clinical-Documentation-Pack.pdf", sha256: "849fcf9de302cd7751f5eb59a852c061c2fa3029621e675b35e85fe02e39fd1b" },
+  "PA-13": { file: "Suicide-Risk-Safety-Planning-and-Follow-Up-Pack.pdf", sha256: "a5bd81eb68a16e9d0925c8f57a3efe406ed9fbb18afd526bafc9ab2258d2d568" },
+  "PA-14": { file: "Telepsychiatry-and-Controlled-Substance-Compliance-Kit.pdf", sha256: "7702a66f3353f2133673d5a18751b2c483235f827bbf8219b9a1e1b3754d9639" },
+  "PA-15": { file: "Financial-Policy-Good-Faith-Estimate-and-Superbill-Pack.pdf", sha256: "2422af9bd1c39fcc6fd21520f8d5a244159f3045b1b9284e4eb63fec7baf7472" },
+  "PA-16": { file: "Group-Practice-Clinician-Agreement-Builder.pdf", sha256: "c4d1a771c2b3a1c0c1261c6d856f43faff86b04b2adf5147333d2361fac6d453" },
+  "PA-17": { file: "Privacy-Notice-and-Release-of-Information-Pack.pdf", sha256: "19c01435ba167fd4e8e568e5860a7b856a32be69d654abda1d64692acc5c2c59" },
+  "PA-18": { file: "HIPAA-Security-Risk-Analysis-and-Breach-Response-Kit.pdf", sha256: "4015cf2bc9b0f7d28504492891a465dc2eefd67417249b157104fbaef76b3fba" },
+  "PA-19": { file: "Practice-Compliance-Calendar-and-Renewal-Tracker.pdf", sha256: "69e3f662e7105946e5da9c3bdd1b477e7ee46327d1353b9fe2547bffd85b881b" },
+  "PA-20": { file: "Subpoena-Court-Order-and-Records-Request-Response-Guide.pdf", sha256: "5a068021286dd29f81faf5d55d310616d88d36ee34e884b27fd1102377e6dd09" },
 };
 
 async function sha256Hex(bytes: Uint8Array<ArrayBuffer>) {
@@ -374,9 +376,9 @@ async function readLibraryFile(file: string): Promise<Uint8Array<ArrayBuffer>> {
   return new Uint8Array(await res.arrayBuffer());
 }
 
-// Replace each template's file with the current one: upload under the new
-// file name, point the template at it (one new version, title without its
-// PA number) and remove the old file. Members' working copies are
+// Replace each template's file with the current one: upload it, point the
+// template at it (version as printed in the file, title without its PA
+// number) and remove the old file. Members' working copies are
 // untouched. Works on the deployed site and locally; run once per site.
 export async function refreshLibraryFilesAction() {
   const supabase = await createClient();
@@ -398,7 +400,8 @@ export async function refreshLibraryFilesAction() {
   for (const doc of (docs || []) as any[]) {
     const entry = LIBRARY_FILES[doc.library_code];
     if (!entry) continue;
-    if (String(doc.storage_path).endsWith(`-${entry.file}`)) {
+    const tag = entry.sha256.slice(0, 10);
+    if (String(doc.storage_path).endsWith(`-${tag}-${entry.file}`)) {
       current++;
       continue;
     }
@@ -410,13 +413,14 @@ export async function refreshLibraryFilesAction() {
       failures.push(`${doc.library_code}: ${e?.message || "couldn't read the file"}`);
       continue;
     }
-    const path = `shared/${user.id}/${Date.now()}-${entry.file}`;
+    const path = `shared/${user.id}/${Date.now()}-${tag}-${entry.file}`;
     const { error: uploadError } = await supabase.storage.from("documents").upload(path, bytes, { contentType: "application/pdf" });
     if (uploadError) {
       failures.push(`${doc.library_code} (upload): ${uploadError.message}`);
       continue;
     }
-    const { data: oldPath, error } = await supabase.rpc("admin_set_library_file", { p_document: doc.id, p_path: path });
+    // The template's version follows the version printed in the file.
+    const { data: oldPath, error } = await supabase.rpc("admin_set_library_file", { p_document: doc.id, p_path: path, p_version: FILES_VERSION });
     if (error) {
       failures.push(`${doc.library_code}: ${error.message}`);
       await supabase.storage.from("documents").remove([path]);

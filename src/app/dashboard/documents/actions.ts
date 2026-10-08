@@ -255,11 +255,11 @@ export async function saveWorkingCopyAction(formData: FormData) {
   const { error } = await supabase.from("documents").insert({
     profile_id: user.id,
     owner_scope: "personal",
-    title: `${cleanTitle(String(doc.title))} (working copy)`,
+    title: `${cleanTitle(String(doc.title))} (your copy)`,
     storage_path: target,
     uploaded_by: user.id,
     is_general: true,
-    sources: `Working copy of ${doc.library_code ? `the ${docName(doc.library_code)}` : doc.title}, version ${doc.version || 1}`,
+    sources: `Your copy of ${doc.library_code ? `the ${docName(doc.library_code)}` : doc.title}, version ${doc.version || 1}`,
   });
   if (error) documentsError(error.message);
 

@@ -13,10 +13,18 @@ export async function loadPlanForDocument(supabase: Supabase, owner: string) {
     .maybeSingle<any>();
   if (!plan) return null;
   const { data: p } = await supabase.from("profiles").select("full_name, credential_prefix, qualification_level, primary_practice_city, primary_state").eq("id", owner).maybeSingle<any>();
-  const answers = (plan.answers || {}) as Record<string, string>;
+  const answers = { ...((plan.answers || {}) as Record<string, string>) };
+  // Fill gaps from what's already on file: license numbers and the name in
+  // the suggested voicemail.
+  if (!(answers.licenses || "").trim()) {
+    const { data: lic } = await supabase.from("licenses").select("state, license_number").eq("profile_id", owner).order("state");
+    const list = ((lic as any[]) || []).map((l) => `${l.state} ${l.license_number}`).join(", ");
+    if (list) answers.licenses = list;
+  }
   const nameOf = (x: any) => clinicianName(x.full_name, x.qualification_level, x.credential_prefix);
   const person = (member: any, status: string, outside: string) =>
     member ? { name: nameOf(member), status } : outside?.trim() ? { name: outside.trim() } : null;
+  if (p) for (const k of Object.keys(answers)) answers[k] = String(answers[k] ?? "").replace("Dr. [name]", nameOf(p));
   return {
     ownerName: p ? nameOf(p) : "Clinician",
     ownerRole: p ? [roleLabel(p.qualification_level), [p.primary_practice_city, p.primary_state].filter(Boolean).join(", ")].filter(Boolean).join(" · ") : "",

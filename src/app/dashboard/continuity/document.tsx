@@ -20,16 +20,24 @@ export function PlanDocument({
   reviewedAt: string | null;
 }) {
   const v = (k: string) => (answers[k] || "").trim();
+  // A plan with gaps is a draft: it says so, and isn't laid out for signing.
+  const blanks = CONTINUITY_SECTIONS.reduce((n, s) => n + s.required.filter((k) => !v(k)).length, 0) + (backup ? 0 : 1);
+  const draft = blanks > 0;
   return (
-    <article className="plan-doc">
+    <article className={`plan-doc${draft ? " is-draft" : ""}`}>
       <header className="plan-doc-head">
-        <div className="plan-doc-kicker">Professional will and continuity plan</div>
+        <div className="plan-doc-kicker">Professional will and continuity plan{draft ? " · Draft" : ""}</div>
         <h1>{ownerName}</h1>
         <p>{ownerRole}</p>
         <p className="plan-doc-meta">
-          {updatedAt ? `Last updated ${longDate(updatedAt)}` : "Draft"}
+          {updatedAt ? `Last updated ${longDate(updatedAt)}` : "Not saved yet"}
           {reviewedAt ? ` · Reviewed ${longDate(reviewedAt)}` : ""}
         </p>
+        {draft && (
+          <p className="plan-doc-draft">
+            Draft: {blanks} essential item{blanks === 1 ? "" : "s"} still to complete. Finish the plan before you sign it or give it to your backup.
+          </p>
+        )}
       </header>
 
       <section className="plan-doc-section">
@@ -60,6 +68,7 @@ export function PlanDocument({
         </section>
       ))}
 
+      {!draft && (
       <section className="plan-doc-section plan-doc-sign">
         <h2>Signatures</h2>
         <p>
@@ -72,6 +81,7 @@ export function PlanDocument({
           <div><span /><small>Witness &middot; signature, name and date</small></div>
         </div>
       </section>
+      )}
 
       <footer className="plan-doc-foot">
         Prepared with PsyAlliance. Keep signed copies with your backup, your attorney and your own records, and review it every year.

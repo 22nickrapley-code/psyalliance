@@ -36,9 +36,25 @@ export default async function ConsultDetailPage(props: { params: Promise<{ id: s
       .select("id, body, response_type, marked_useful, created_at, responder:responder_profile_id(full_name, credential_prefix, qualification_level, avatar_path)")
       .eq("consultation_id", c.id)
       .order("created_at"),
-    c.author_profile_id === myself && (c.audience_profile_ids || []).length
-      ? supabase.from("profiles").select("full_name, credential_prefix, qualification_level").in("id", c.audience_profile_ids)
-      : Promise.resolve({ data: [] as any[] }),
+    (async () => {
+      // The author sees exactly who the audience is, by name.
+      if (c.author_profile_id !== myself) return { data: [] as any[] };
+      let ids: string[] = c.audience_profile_ids || [];
+      if (c.group_id) {
+        const { data: members } = await supabase.from("consultation_group_members").select("profile_id").eq("group_id", c.group_id).eq("status", "joined");
+        ids = (members || []).map((m: any) => m.profile_id).filter((id: string) => id && id !== myself);
+      } else if (c.audience_type === "trusted") {
+        const { data: links } = await supabase
+          .from("connections")
+          .select("requester_id, addressee_id")
+          .eq("status", "accepted")
+          .eq("tier", "trusted_colleague")
+          .or(`requester_id.eq.${myself},addressee_id.eq.${myself}`);
+        ids = (links || []).map((l: any) => (l.requester_id === myself ? l.addressee_id : l.requester_id));
+      }
+      if (!ids.length) return { data: [] as any[] };
+      return supabase.from("profiles").select("full_name, credential_prefix, qualification_level").in("id", ids);
+    })(),
   ]);
   const urls = await resolveAvatarUrls(supabase, (responses || []).map((r: any) => r.responder?.avatar_path));
   const label = c.group_id ? `Consultation group: ${(c as any).consultation_groups?.name || ""}` : audienceLabel(c);

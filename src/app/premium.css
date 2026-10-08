@@ -1810,3 +1810,55 @@
   .pa .states-row.head{display:none}
   .pa .states-row [data-label]::before{content:attr(data-label);display:block;font-size:11px;color:var(--muted)}
 }
+
+/* Phone navigation stands apart from the page: a forest bar with light
+   labels, and a forest menu button. */
+@media (max-width: 900px) {
+  .pa .mobile-bottom{background:var(--forest);border-top:1px solid #0f3129;box-shadow:0 -6px 18px rgba(12,38,31,.18)}
+  .pa .mobile-bottom a,.pa .mobile-bottom button{color:#c9d8cf}
+  .pa .mobile-bottom a.active,.pa .mobile-bottom button.active{color:#fff}
+  .pa .mobile-bottom a.active:before{background:#d9b27c}
+  .pa .mobile-bottom .count,.pa .mobile-bottom .red-dot{box-shadow:0 0 0 2px var(--forest)}
+  .pa .mobile-menu{background:var(--forest);border-color:var(--forest);color:#fff}
+  .pa .mobile-menu:hover,.pa .mobile-menu:active{background:#0f3129}
+}
+
+/* A save in progress. */
+.pa .btn.is-pending,.pa button.is-pending{opacity:.65;cursor:progress}
+.pa .btn.is-pending::after{content:"";width:12px;height:12px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:pa-spin .7s linear infinite}
+@keyframes pa-spin{to{transform:rotate(360deg)}}
+
+/* Something just added stands out until the next change. */
+.pa .pa-case.just-added{background:#eaf3ec;border-color:#9fc2a9;box-shadow:inset 3px 0 0 #3f7d5e;animation:pa-arrive .5s ease-out}
+.pa .pa-case.just-added .added-tag{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;color:#2f6b4f;background:#fff;border:1px solid #bcd6c3;border-radius:999px;padding:2px 9px}
+@keyframes pa-arrive{from{background:#cfe6d6}to{background:#eaf3ec}}
+.pa .new-case-form{border-style:dashed;border-color:#b9c8bb;background:#fbfcf9}
+.pa .field textarea.field-invalid,.pa .field input.field-invalid{border-color:var(--danger);box-shadow:0 0 0 3px rgba(156,66,56,.14)}
+.pa .join-form .join-rest{display:grid;gap:inherit}
+.pa .join-form.not-eligible .join-rest{display:none}
+.pa .eligibility-note{border:1px solid #e2c9a6;background:var(--brass-soft);border-radius:8px;padding:14px 16px;display:grid;gap:8px;justify-items:start}
+.pa .eligibility-note p{margin:0;font-size:13px}
+.pa .handoff-note{margin-top:10px;border-left:3px solid #3f7d5e;background:#f2f7f3;border-radius:0 7px 7px 0;padding:9px 12px;font-size:13px}
+.pa .handoff-note ul{margin:4px 0 0;padding-left:18px;color:var(--muted)}
+.pa .handoff-note li{margin:2px 0}
+.pa .aud-all{font-size:13px;margin-top:6px}
+.pa .aud-all summary{cursor:pointer;font-weight:650;color:inherit}
+.pa .card.dark .aud-all summary{color:#f1e6d4}
+.pa .aud-all p{margin:6px 0 0}
+.pa .plan-doc-draft{margin:10px 0 0;padding:8px 12px;border:1px solid #e2c9a6;background:var(--brass-soft);border-radius:6px;font-size:13px;color:#7a5326}
+@media print{.pa .plan-doc-draft{border-color:#999;background:none;color:#000}}
+.pa .home-status{margin:12px 0 0;font-size:13px;color:var(--muted);display:flex;gap:8px;align-items:baseline}
+.pa .home-status::before{content:"";width:7px;height:7px;border-radius:50%;background:#c9a46a;flex:0 0 7px;transform:translateY(-1px)}
+.pa .more-topics{display:inline-block}
+.pa .more-topics[open]{display:block;width:100%}
+.pa .more-topics > summary{list-style:none;cursor:pointer;border-style:dashed}
+.pa .more-topics > summary::-webkit-details-marker{display:none}
+.pa .more-topics[open] > summary{background:var(--soft)}
+.pa .more-topics > .chip-row{flex-basis:100%;margin-top:4px}
+.pa .more-posts > summary{list-style:none;cursor:pointer;align-self:flex-start;display:inline-flex}
+.pa .more-posts > summary::-webkit-details-marker{display:none}
+.pa .more-posts[open] > summary{display:none}
+.pa .mobile-menu{padding:0;justify-items:center;align-items:center}
+.pa .mobile-menu svg{width:20px;min-width:20px;height:20px;display:block;margin:auto}
+.pa .aud-summary .aud-all{flex:1 1 100%;min-width:0}
+.pa .aud-summary .aud-all p{min-width:0;font-size:13px;color:var(--muted)}

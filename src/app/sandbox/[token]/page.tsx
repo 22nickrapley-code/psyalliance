@@ -53,7 +53,7 @@ export default async function SandboxPage(props: { params: Promise<{ token: stri
                     <p>Sandbox links last 7 days. Sign in to PsyAlliance and open a fresh sandbox from your account in one click.</p>
                     <div className="row wrap" style={{ gap: 10 }}>
                       <a className="btn lg" href={`${REAL_SITE_URL}/dashboard`}>Open a new sandbox &rarr;</a>
-                      <a className="btn secondary" href={TOUR_URL}>Watch the demos</a>
+                      <a className="btn secondary" href={TOUR_URL}>Explore the guided demos</a>
                     </div>
                   </div>
                 )}
@@ -68,7 +68,7 @@ export default async function SandboxPage(props: { params: Promise<{ token: stri
                     ["Look around", "Home starts quiet. Open your profile and the network; about a minute in, colleagues start getting in touch, one at a time."],
                     ["Answer what arrives", "A message from Maya, a cover request for two clients, a referral from Eli, and invitations to a trusted circle and a consultation group."],
                     ["Plan your leave", "Cover: add your six weeks of parental leave, describe each client by need and invite colleagues in order."],
-                    ["Find the right template", "Open the Practice Library and save a working copy of the Extended Leave Pack for your leave."],
+                    ["Find the right template", "Open the Practice Library and save the Extended Leave Pack PDF to My Library."],
                   ].map(([t, b], n) => (
                     <div key={t} className="chapter">
                       <div className="chapter-head"><span className="n">{n + 1}</span><h3>{t}</h3></div>
@@ -77,7 +77,7 @@ export default async function SandboxPage(props: { params: Promise<{ token: stri
                   ))}
                 </div>
                 <p className="small" style={{ marginTop: 16 }}>
-                  Prefer to watch first? <a href={TOUR_URL} target="_blank" rel="noopener">See the demos</a>: six short ones, a minute or two each.
+                  Prefer a guided look first? <a href={TOUR_URL} target="_blank" rel="noopener">Explore the guided demos</a>: six short click-throughs, a minute or two each.
                 </p>
               </div>
             </div>

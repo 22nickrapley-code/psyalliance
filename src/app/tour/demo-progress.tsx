@@ -49,7 +49,7 @@ export function DemoGrid({ demos, current }: { demos: DemoCard[]; current?: stri
             </span>
             <b>{d.title}</b>
             <span className="demo-blurb">{d.blurb}</span>
-            <span className="text-arrow">{watched ? "Watch again" : "Watch the demo"} &rarr;</span>
+            <span className="text-arrow">{watched ? "Explore again" : "Start the guided demo"} &rarr;</span>
           </a>
         );
       })}

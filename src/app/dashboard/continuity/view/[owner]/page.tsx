@@ -24,7 +24,7 @@ export default async function ColleaguePlanPage(props: { params: Promise<{ owner
         eyebrow="Continuity plan"
         title={doc.ownerName}
         lead="You agreed to act on this plan. Keep a printed, signed copy somewhere you can reach it."
-        actions={<a className="btn" href={`/continuity/print?owner=${owner}`} target="_blank" rel="noopener">Download PDF</a>}
+        actions={<a className="btn" href={`/continuity/print?owner=${owner}`} target="_blank" rel="noopener">Print or save as PDF</a>}
       />
       <section className="card plan-doc-card">
         <PlanDocument {...doc} />

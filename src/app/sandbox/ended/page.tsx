@@ -22,7 +22,7 @@ export default function SandboxEndedPage() {
               </p>
               <div className="row wrap" style={{ gap: 10, marginTop: 8 }}>
                 <a className="btn" href={`${REAL_SITE_URL}/auth/sign-in`}>Sign in to PsyAlliance</a>
-                <a className="btn secondary" href={TOUR_URL}>Watch the demos</a>
+                <a className="btn secondary" href={TOUR_URL}>Explore the guided demos</a>
               </div>
             </div>
           </div>
