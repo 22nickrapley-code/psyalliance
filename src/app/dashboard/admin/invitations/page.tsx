@@ -14,8 +14,9 @@ async function origin() {
   return `${h.get("x-forwarded-proto") ?? "https"}://${h.get("x-forwarded-host") ?? h.get("host")}`;
 }
 
-// The founding cohort is invitation-only. Requests from /join land here;
-// each invitation is personal, works once and expires after 30 days.
+// Sign-up is open (0102), so invitations are optional: a personal link
+// that fills in the person's name and email. Requests to join from before
+// sign-up opened are still listed so nobody is lost.
 export default async function InvitationsPage(props: { searchParams: Promise<{ error?: string; created?: string }> }) {
   const supabase = await createClient();
   const redirectPath = await requireAdminOrRedirectPath(supabase);
@@ -34,7 +35,7 @@ export default async function InvitationsPage(props: { searchParams: Promise<{ e
 
   return (
     <>
-      <PageHead eyebrow="Admin" title="Invitations" lead="Invite verified, currently licensed clinicians who overlap by state and specialty, a few states at a time." />
+      <PageHead eyebrow="Admin" title="Invitations" lead="Anyone eligible can create an account now. Use a personal link when you want to invite someone directly; it fills in their name and email." />
       <Banner error={sp.error} />
       {sp.created && (
         <section className="card tint" style={{ marginBottom: 20 }}>
@@ -46,9 +47,9 @@ export default async function InvitationsPage(props: { searchParams: Promise<{ e
 
       <div className="split">
         <section className="card">
-          <div className="card-title"><h3>Requests to join</h3><span className="micro-note">{(requests || []).length} new</span></div>
+          <div className="card-title"><h3>Requests from before sign-up opened</h3><span className="micro-note">{(requests || []).length} new</span></div>
           {(requests || []).length === 0 ? (
-            <Empty symbol={"✉"} title="No new requests." body="People who ask to join at /join appear here." />
+            <Empty symbol={"✉"} title="No new requests." body="Send each of these people the sign-up link, or a personal invitation." />
           ) : (
             (requests || []).map((r: any) => (
               <div key={r.id} className="item">

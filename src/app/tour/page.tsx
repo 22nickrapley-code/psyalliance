@@ -1,6 +1,6 @@
 import "../premium.css";
-import { notFound } from "next/navigation";
-import { TOUR_ENABLED } from "@/lib/env";
+import { notFound, redirect } from "next/navigation";
+import { TOUR_ENABLED, IS_DEMO_SITE, REAL_SITE_URL } from "@/lib/env";
 import { PublicNav, PublicFooter } from "../_public/chrome";
 import { DEMOS } from "./demos";
 import { AlexCard } from "./story";
@@ -14,6 +14,7 @@ export const metadata = { title: "Demos", robots: { index: false, follow: false 
 // or a request to join.
 export default function DemoLibraryPage() {
   if (!TOUR_ENABLED) notFound();
+  if (IS_DEMO_SITE && process.env.NODE_ENV === "production") redirect(REAL_SITE_URL + "/tour");
   return (
     <div className="pa">
       <PublicNav />

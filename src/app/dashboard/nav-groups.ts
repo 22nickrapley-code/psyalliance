@@ -33,7 +33,7 @@ export function buildNavGroups(opts: {
 }): NavGroup[] {
   const adminItems: NavItem[] = [
     { href: "/dashboard/admin", label: "Overview", glyph: "overview" },
-    ...(IS_DEMO_SITE ? [{ href: "/dashboard/admin/sandbox", label: "Sandbox passes", glyph: "pass" }] : [{ href: "/dashboard/admin/invitations", label: "Invitations", glyph: "pass" }]),
+    ...(IS_DEMO_SITE ? [{ href: "/dashboard/admin/sandbox", label: "Sandbox passes", glyph: "pass" }] : [{ href: "/dashboard/admin/states", label: "States", glyph: "pulse" }, { href: "/dashboard/admin/invitations", label: "Invitations", glyph: "pass" }]),
     { href: "/dashboard/admin/verifications", label: "Verification", glyph: "check" },
     { href: "/dashboard/admin/members", label: "Members", glyph: "members" },
     { href: "/dashboard/admin/library", label: "Library governance", glyph: "library" },

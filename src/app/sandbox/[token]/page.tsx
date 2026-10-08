@@ -1,6 +1,6 @@
 import "../../premium.css";
 import { notFound } from "next/navigation";
-import { IS_DEMO_SITE } from "@/lib/env";
+import { IS_DEMO_SITE, REAL_SITE_URL, TOUR_URL } from "@/lib/env";
 import { PublicNav } from "../../_public/chrome";
 import { enterSandboxAction } from "./actions";
 import { AlexCard } from "../../tour/story";
@@ -50,10 +50,10 @@ export default async function SandboxPage(props: { params: Promise<{ token: stri
                 ) : (
                   <div className="way">
                     <h3>{state === "expired" ? "This sandbox link has expired." : state === "revoked" ? "This sandbox link has been closed." : "We don't recognize this sandbox link."}</h3>
-                    <p>Sandbox links are personal and last 7 days. Ask for a new one and we&rsquo;ll be in touch personally, usually within a working day.</p>
+                    <p>Sandbox links last 7 days. Sign in to PsyAlliance and open a fresh sandbox from your account in one click.</p>
                     <div className="row wrap" style={{ gap: 10 }}>
-                      <a className="btn lg" href="/sandbox/request">Ask for a new sandbox &rarr;</a>
-                      <a className="btn secondary" href="/tour">Watch the demos</a>
+                      <a className="btn lg" href={`${REAL_SITE_URL}/dashboard`}>Open a new sandbox &rarr;</a>
+                      <a className="btn secondary" href={TOUR_URL}>Watch the demos</a>
                     </div>
                   </div>
                 )}
@@ -77,7 +77,7 @@ export default async function SandboxPage(props: { params: Promise<{ token: stri
                   ))}
                 </div>
                 <p className="small" style={{ marginTop: 16 }}>
-                  Prefer to watch first? <a href="/tour">See the demos</a>: six short ones, a minute or two each.
+                  Prefer to watch first? <a href={TOUR_URL} target="_blank" rel="noopener">See the demos</a>: six short ones, a minute or two each.
                 </p>
               </div>
             </div>

@@ -1,5 +1,5 @@
 import { PublicNav, PublicFooter } from "../_public/chrome";
-import { JOIN_HREF, DEMO_URL } from "@/lib/env";
+import { JOIN_HREF, TOUR_URL } from "@/lib/env";
 import { CATEGORIES, PUBLIC_WORKFLOW, SHORT_CATEGORY, monthYear, docName, publicLibraryHref, type PublicDoc } from "@/lib/library";
 import { LeadForm } from "./lead-form";
 
@@ -7,7 +7,7 @@ import { LeadForm } from "./lead-form";
 // whether it has been independently reviewed. Provisional templates are
 // always labelled "In review"; only reviewed ones can be downloaded.
 
-const DEMO_HREF = DEMO_URL ? `${DEMO_URL}/tour/cover` : "/tour/cover";
+const DEMO_HREF = `${TOUR_URL}/cover`;
 
 export const joinFrom = (code: string) => `${JOIN_HREF}?from=library-${code}`;
 
@@ -102,7 +102,7 @@ export function PublicLibraryView({ docs, q }: { docs: PublicDoc[]; q: string })
               <h2>Join the founding cohort.</h2>
               <p>Free for founding members. For doctoral-level psychologists and psychiatrists, opening state by state.</p>
             </div>
-            <a className="btn" href={`${JOIN_HREF}?from=library-index`}>Request an invitation &rarr;</a>
+            <a className="btn" href={`${JOIN_HREF}?from=library-index`}>Create your account &rarr;</a>
           </div>
         </section>
       </main>
@@ -170,7 +170,7 @@ export function PublicResourceView({ d, related, preview = false }: { d: PublicD
                     <p className="small">
                       Members get every template in the Library, beside the work it supports, and can save a private working copy.
                     </p>
-                    <a className="btn" href={join}>Request an invitation</a>
+                    <a className="btn" href={join}>Create your account</a>
                     <details className="lib-notify">
                       <summary>Tell me when it&rsquo;s free to download</summary>
                       <LeadForm code={d.code} name={docName(d.code)} intent="notify" joinHref={join} demoHref={DEMO_HREF} preview={preview} />

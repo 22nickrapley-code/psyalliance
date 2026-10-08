@@ -51,7 +51,7 @@ export function LeadForm({
           </>
         )}
         <div className="lib-done-actions">
-          <a className="btn" href={joinHref}>Request an invitation</a>
+          <a className="btn" href={joinHref}>Create your account</a>
           <a className="btn secondary" href={demoHref}>Watch the 2-minute demo</a>
         </div>
       </div>

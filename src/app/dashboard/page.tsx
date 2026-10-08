@@ -25,8 +25,8 @@ const AVAIL = {
 
 const nameOf = (p: any) => (p ? clinicianName(p.full_name, p.qualification_level, p.credential_prefix) : "A colleague");
 
-export default async function HomePage(props: { searchParams: Promise<{ reconfirmed?: string; welcome?: string }> }) {
-  const { reconfirmed, welcome } = await props.searchParams;
+export default async function HomePage(props: { searchParams: Promise<{ reconfirmed?: string; welcome?: string; sandbox_error?: string }> }) {
+  const { reconfirmed, welcome, sandbox_error } = await props.searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -293,15 +293,23 @@ export default async function HomePage(props: { searchParams: Promise<{ reconfir
 
   // ---- Getting started (new members) ----
   // Not yet in the network: the steps that get them verified.
-  const awaitingVerification = !status?.is_member;
+  const awaitingVerification = !status?.is_member && !IS_DEMO_SITE;
+  // Not in the network yet: still being verified, or verified in a state
+  // that hasn't opened (my_access, 0102).
+  const { data: accessRaw } = awaitingVerification ? await supabase.rpc("my_access") : { data: null };
+  const access = (accessRaw as any) || null;
+  const verifiedWaiting = awaitingVerification && profile.verification_status === "verified" && !!status?.has_reviewed_licence;
   let gettingStarted: { label: string; done: boolean; href: string; waiting?: boolean }[] | null = null;
   if (awaitingVerification) {
     gettingStarted = [
       { label: "Complete your profile: specialties and practice state", done: myFocus.size > 0 && !!profile.primary_state, href: "/dashboard/profile" },
       { label: "Add your license so we can review it", done: (licenceCount || 0) > 0, href: "/dashboard/credentials" },
       { label: "Set your availability", done: age !== null, href: "/dashboard/availability" },
-      { label: "We check your credentials against the state board", done: false, href: "/dashboard/credentials", waiting: true },
+      { label: "We check your license against the state board", done: verifiedWaiting, href: "/dashboard/credentials", waiting: true },
     ];
+    if (verifiedWaiting) {
+      gettingStarted.push({ label: `PsyAlliance opens in your state`, done: false, href: "/dashboard", waiting: true });
+    }
   } else if (trustedIds.length === 0 && age === null) {
     // A continuity plan counts once it's started, or once they've saved a
     // working copy of the Professional Will template to write it on paper.
@@ -326,6 +334,14 @@ export default async function HomePage(props: { searchParams: Promise<{ reconfir
     greeting: greetingFor(new Date()),
     gettingStarted,
     awaitingVerification,
+    access: awaitingVerification
+      ? {
+          verified: verifiedWaiting,
+          openStates: (access?.open_states as string[]) || [],
+          waitlist: ((access?.waitlist as any[]) || []).map((w) => ({ state: String(w.state), position: Number(w.position), waiting: Number(w.waiting) })),
+        }
+      : null,
+    error: sandbox_error || null,
     availability: {
       referrals: effectiveReferral(profile.referral_availability, profile.availability_confirmed_at, profile.availability_paused_until).label,
       cover: effectiveCover(profile.coverage_availability, profile.availability_confirmed_at, profile.availability_paused_until).label,

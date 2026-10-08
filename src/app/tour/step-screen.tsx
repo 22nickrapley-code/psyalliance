@@ -1,4 +1,5 @@
 import PremiumShell from "../dashboard/premium-shell";
+import { JOIN_HREF } from "@/lib/env";
 import { buildNavGroups } from "../dashboard/nav-groups";
 import { PEOPLE, type Demo } from "./demos";
 import { TourFrame } from "./sandbox-frame";
@@ -85,7 +86,7 @@ export function DemoStepScreen({ demo, index: i }: { demo: Demo; index: number }
           <div className="story-fiction">
             <a href="/tour">&larr; All demos</a>
             <span>A read-only preview with fictional people. Nothing is sent.</span>
-            <a href="/sandbox/request">Explore freely in your own sandbox &rarr;</a>
+            <a href={JOIN_HREF}>Create your account &rarr;</a>
           </div>
         </div>
       </div>

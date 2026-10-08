@@ -1,4 +1,5 @@
 "use client";
+import { JOIN_HREF } from "@/lib/env";
 
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 
@@ -208,7 +209,7 @@ export function TourFrame({
       const a = t.closest("a");
       if (a) {
         const href = a.getAttribute("href") || "";
-        if (href.startsWith("/tour") || href.startsWith("/sandbox/request") || /^https?:/.test(href) || href.startsWith("mailto:")) return;
+        if (href.startsWith("/tour") || href.startsWith("/auth/sign-up") || /^https?:/.test(href) || href.startsWith("mailto:")) return;
         e.preventDefault();
         e.stopPropagation();
         explain();
@@ -293,7 +294,7 @@ export function TourFrame({
             ) : (
               next && <a className="tour-toast-btn" href={next}>Next step &rarr;</a>
             )}
-            <a className="tour-toast-link" href="/sandbox/request">Explore freely in a sandbox &rarr;</a>
+            <a className="tour-toast-link" href={JOIN_HREF}>Try it for real: create your account &rarr;</a>
             <button type="button" className="tour-toast-close" onClick={() => setNote(null)}>Close</button>
           </div>
         </div>

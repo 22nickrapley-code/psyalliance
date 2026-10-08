@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { IS_DEMO_SITE } from "@/lib/env";
+import { stateList, stateName } from "@/lib/open-states";
 import { clinicianName, roleLabel } from "@/lib/profession";
 import { resetSandboxAction } from "../sandbox/[token]/actions";
 import { createClient } from "@/lib/supabase/server";
@@ -58,6 +59,8 @@ export default async function DashboardLayout({
       ? "Admin"
       : status?.is_member
         ? "Verified"
+        : profile.verification_status === "verified" && status?.has_reviewed_licence
+          ? "Verified, state opening soon"
         : profile.verification_status === "flagged"
           ? "Action required"
           : profile.verification_status === "rejected"
@@ -67,12 +70,18 @@ export default async function DashboardLayout({
               : status?.has_reviewed_licence
                 ? "Verification pending"
                 : "License awaiting review";
-  const gateNotice =
-    !profile || isOperator || status?.is_member || profile.demo_view
-      ? null
+  const waiting = !!profile && !isOperator && !status?.is_member && !profile.demo_view;
+  const { data: access } = waiting && !IS_DEMO_SITE ? await supabase.rpc("my_access") : { data: null };
+  const queue = ((access as any)?.waitlist as any[]) || [];
+  const gateNotice = !waiting
+    ? null
+    : profile.verification_status === "verified" && status?.has_reviewed_licence
+      ? queue.length
+        ? `You're verified. PsyAlliance opens in ${stateList(queue.map((w) => w.state))} as colleagues join; you're number ${queue[0].position} on the ${stateName(queue[0].state)} list. Meanwhile, your sandbox and the Practice Library are open to you.`
+        : "You're verified. PsyAlliance opens in your state as colleagues join. Meanwhile, your sandbox and the Practice Library are open to you."
       : (licenceCount || 0) === 0
-        ? "Add a license to be reviewed. Referrals, cover, consults and messages open once you're verified. Meanwhile, the Practice Library is open to you."
-        : "Your credentials are with us for review. Referrals, cover, consults and messages open once you're verified. Meanwhile, the Practice Library is open to you.";
+        ? "Add a license to be reviewed. Referrals, cover, consults and messages open once you're verified. Meanwhile, your sandbox and the Practice Library are open to you."
+        : "Your license is with us for review. Referrals, cover, consults and messages open once you're verified. Meanwhile, your sandbox and the Practice Library are open to you.";
 
   const { data: sandbox } = IS_DEMO_SITE ? await supabase.rpc("my_sandbox").maybeSingle<any>() : { data: null };
 

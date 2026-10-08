@@ -1,4 +1,5 @@
 "use client";
+import { TOUR_URL } from "@/lib/env";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -128,7 +129,7 @@ export default function PremiumShell({
                   </div>
                 </div>
                 <div className="band-actions">
-                  <Link className="btn" href="/tour">Demos</Link>
+                  <a className="btn" href={TOUR_URL} target="_blank" rel="noopener">Demos</a>
                   {resetSandboxAction && demoSite.label && (
                     <form action={resetSandboxAction}>
                       <button type="submit" className="btn outline" title="Clears everything you have done here and restores Alex's practice">
@@ -190,7 +191,7 @@ export default function PremiumShell({
           )}
           {gateNotice && !demoView && (
             <div className="demo-bar gate-bar" role="status">
-              {gateNotice} <Link href="/dashboard/credentials">Credentials</Link> &middot; <Link href="/dashboard/documents">Practice Library</Link>
+              {gateNotice} <Link href="/dashboard#explore">Your sandbox</Link> &middot; <Link href="/dashboard/documents">Practice Library</Link> &middot; <Link href="/dashboard/credentials">Credentials</Link>
             </div>
           )}
           <main className="page" id="main" tabIndex={-1}>{children}</main>

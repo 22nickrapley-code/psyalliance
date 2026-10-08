@@ -14,7 +14,8 @@ export const metadata = { title: "Admin" };
 type Metrics = Record<string, any>;
 
 const AREAS: [string, string, string, string][] = [
-  ["/dashboard/admin/invitations", "✉", "Invitations", "Requests to join and cohort invitations."],
+  ["/dashboard/admin/states", "◫", "States", "Where the network is open, and who is waiting where."],
+  ["/dashboard/admin/invitations", "✉", "Invitations", "Personal invitation links, and requests from before sign-up opened."],
   ["/dashboard/admin/verifications", "✓", "Verification", "Licenses and credentials to review."],
   ["/dashboard/admin/members", "◎", "Members", "Search, suspend, promote."],
   ["/dashboard/admin/library", "▤", "Library governance", "Reviewers, publishing and public pages."],

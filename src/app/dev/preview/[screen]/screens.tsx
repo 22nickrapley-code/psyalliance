@@ -6,6 +6,7 @@ import { OverflowPublicView } from "../../../full/[slug]/view";
 import { PublicLibraryView, PublicResourceView } from "../../../library/view";
 import { PUBLIC_DOCS } from "./public-library-fixture";
 import { LeadsView } from "../../../dashboard/admin/library-leads/view";
+import { StatesView } from "../../../dashboard/admin/states/view";
 import type { Suggestion } from "@/lib/colleague-suggestions";
 import { ColleaguePicker } from "../../../dashboard/_components/colleague-picker";
 import type { Match } from "@/lib/match-engine";
@@ -143,6 +144,7 @@ export const previewScreens: Record<string, () => ReactNode> = {
           ...base,
           steps: [],
           awaitingVerification: true,
+          access: { verified: false, openStates: ["MA", "NY"], waitlist: [] },
           gettingStarted: [
             { label: "Complete your profile: specialties and practice state", done: true, href: "#" },
             { label: "Add your license so we can review it", done: true, href: "#" },
@@ -153,6 +155,29 @@ export const previewScreens: Record<string, () => ReactNode> = {
       />
     );
   },
+  "home-waiting": () => {
+    const base = (previewScreens["home-new"]() as any).props.d;
+    return (
+      <HomeView
+        d={{
+          ...base,
+          access: { verified: true, openStates: ["MA", "NY"], waitlist: [{ state: "OH", position: 4, waiting: 11 }, { state: "PA", position: 12, waiting: 30 }] },
+          gettingStarted: [...base.gettingStarted.slice(0, 3).map((g: any) => ({ ...g, done: true })), { label: "We check your license against the state board", done: true, href: "#", waiting: true }, { label: "PsyAlliance opens in your state", done: false, href: "#", waiting: true }],
+        }}
+      />
+    );
+  },
+  "admin-states": () => (
+    <StatesView
+      sp={{}}
+      rows={[
+        { state: "MA", open: true, changed_at: "2026-10-07T12:00:00Z", verified: 3, signed_up: 7, awaiting: 4 },
+        { state: "NY", open: true, changed_at: "2026-10-07T12:00:00Z", verified: 9, signed_up: 21, awaiting: 12 },
+        { state: "NJ", open: false, changed_at: null, verified: 0, signed_up: 6, awaiting: 6 },
+        { state: "OH", open: false, changed_at: null, verified: 1, signed_up: 11, awaiting: 10 },
+      ]}
+    />
+  ),
   "refer-index": () => (
     <ReferIndexView
       options={options}

@@ -1,6 +1,8 @@
 import "./premium.css";
 import { redirect } from "next/navigation";
-import { IS_DEMO_SITE, DEMO_URL, SITE_URL } from "@/lib/env";
+import { IS_DEMO_SITE, REAL_SITE_URL, SITE_URL } from "@/lib/env";
+import { createClient } from "@/lib/supabase/server";
+import { loadOpenStates, stateList } from "@/lib/open-states";
 import { PublicNav, PublicFooter } from "./_public/chrome";
 import { publicLibraryHref } from "@/lib/library";
 
@@ -13,7 +15,7 @@ import { publicLibraryHref } from "@/lib/library";
 const FAQ: [string, string][] = [
   [
     "Who can join?",
-    "Doctoral-level psychologists (PhD, PsyD, EdD) and psychiatrists (MD, DO) licensed in the US. We open a few states at a time, starting in the Northeast.",
+    "Doctoral-level psychologists (PhD, PsyD, EdD) and psychiatrists (MD, DO) licensed in the US. Anyone eligible can create an account; the network opens state by state, starting with New York and Massachusetts.",
   ],
   ["What does it cost?", "Nothing. PsyAlliance is free for founding members."],
   [
@@ -47,7 +49,7 @@ const faqData = {
   mainEntity: FAQ.map(([q, a]) => ({ "@type": "Question", name: q, acceptedAnswer: { "@type": "Answer", text: a } })),
 };
 
-const DEMO = (path = "") => (DEMO_URL ? `${DEMO_URL}/tour${path}` : `/tour${path}`);
+const DEMO = (path = "") => `/tour${path}`;
 
 const MOMENTS: [string, string, string][] = [
   [
@@ -85,9 +87,10 @@ const TRUST: [string, string][] = [
   ],
 ];
 
-export default function HomePage() {
+export default async function HomePage() {
   // The demo site opens on the demo library.
-  if (IS_DEMO_SITE) redirect("/tour");
+  if (IS_DEMO_SITE) redirect(REAL_SITE_URL);
+  const open = stateList(await loadOpenStates(await createClient()));
   return (
     <div className="pa">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }} />
@@ -106,7 +109,7 @@ export default function HomePage() {
               you can&rsquo;t take, and talk a hard decision through with peers you trust.
             </p>
             <div className="hero-actions">
-              <a className="btn lg" href="/join">Request an invitation</a>
+              <a className="btn lg" href="/auth/sign-up">Create your account</a>
               <a className="btn secondary lg" href={DEMO("/cover")}>Watch the 2-minute demo &rarr;</a>
             </div>
             <p className="hero-free">Free for founding members.</p>
@@ -254,9 +257,9 @@ export default function HomePage() {
             <div>
               <div className="eyebrow" style={{ color: "#e2c49c" }}>Founding members</div>
               <h2>Join the founding cohort.</h2>
-              <p>Free for founding members. Opening state by state, starting in the Northeast.</p>
+              <p>Free for founding members. Open now in {open || "the Northeast"}; other states open as colleagues join.</p>
             </div>
-            <a className="btn" href="/join">Request an invitation &rarr;</a>
+            <a className="btn" href="/auth/sign-up">Create your account &rarr;</a>
           </div>
         </section>
       </main>

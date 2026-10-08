@@ -42,15 +42,13 @@ export default async function SignInPage(props: { searchParams: Promise<{ error?
             <div className="auth-alt">
               {IS_DEMO_SITE ? (
                 <>
-                  <p className="small">Exploring PsyAlliance? The demos need no account. A personal sandbox link signs you in by itself; you don&rsquo;t need a password.</p>
-                  <a className="btn secondary block" href="/tour">See the demos</a>
-                  <a className="text-arrow" href="/sandbox/request">Ask for a personal sandbox &rarr;</a>
-                  <a className="text-arrow" href={JOIN_URL}>Ask to join the real network &rarr;</a>
+                  <p className="small">This sign-in is for running the sandbox. Members sign in on the main site, and open their sandbox from their account.</p>
+                  <a className="btn secondary block" href={JOIN_URL.replace("/auth/sign-up", "/auth/sign-in")}>Sign in to PsyAlliance</a>
                 </>
               ) : (
                 <>
-                  <p className="small">New to PsyAlliance? We&rsquo;re inviting verified clinicians a few states at a time.</p>
-                  <a className="btn secondary block" href={JOIN_HREF}>Ask to join</a>
+                  <p className="small">New to PsyAlliance? Founding members join free.</p>
+                  <a className="btn secondary block" href={JOIN_HREF}>Create your account</a>
                 </>
               )}
             </div>

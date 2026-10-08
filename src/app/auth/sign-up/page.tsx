@@ -1,60 +1,140 @@
+import "../../premium.css";
+import { redirect } from "next/navigation";
 import { signUp } from "../actions";
 import { createClient } from "@/lib/supabase/server";
-import { JOIN_HREF } from "@/lib/env";
+import { IS_DEMO_SITE, JOIN_URL, TOUR_URL } from "@/lib/env";
+import { US_STATES } from "@/lib/us-states";
+import { loadOpenStates, stateList } from "@/lib/open-states";
+import { PublicNav, PublicFooter } from "../../_public/chrome";
 
-const MARK = { display: "inline-grid", placeItems: "center", width: 30, height: 30, border: "1.5px solid currentColor", borderRadius: "50%", fontFamily: "Georgia, serif", transform: "rotate(-18deg)", marginRight: 10, fontSize: 20 } as const;
+export const metadata = {
+  title: "Create your account",
+  description: "Join PsyAlliance, the verified network for doctoral psychologists and psychiatrists in private practice. Free for founding members.",
+};
 
-// Sign-up needs a personal invitation link while the founding cohort forms.
-export default async function SignUpPage(props: { searchParams: Promise<{ error?: string; invite?: string }> }) {
+const NORTHEAST = ["NY", "MA", "NJ", "CT", "RI", "VT", "NH", "ME", "PA"];
+
+// The one way in. Anyone with a doctoral degree can create an account; a
+// person checks the license; the network opens state by state.
+export default async function SignUpPage(props: {
+  searchParams: Promise<{ error?: string; invite?: string; from?: string; ineligible?: string }>;
+}) {
+  if (IS_DEMO_SITE) redirect(JOIN_URL);
   const sp = await props.searchParams;
   const invite = (sp.invite || "").trim();
+  const source = String(sp.from || "").replace(/[^a-z0-9-]/gi, "").slice(0, 60);
   const supabase = await createClient();
-  const { data: inv } = invite ? await supabase.rpc("invitation_status", { p_token: invite }).maybeSingle<any>() : { data: null };
+  const [open, { data: inv }] = await Promise.all([
+    loadOpenStates(supabase),
+    invite ? supabase.rpc("invitation_status", { p_token: invite }).maybeSingle<any>() : Promise.resolve({ data: null as any }),
+  ]);
+  const openText = stateList(open);
+  const first = [...open, ...NORTHEAST.filter((c) => !open.includes(c))];
 
   return (
-    <div className="auth-shell">
-      <div className="auth-card-wrap">
-        <a href="/" className="brand"><span aria-hidden="true" style={MARK}>ψ</span>psyalliance</a>
-        {sp.error && <div className="error-banner">{sp.error}</div>}
+    <div className="pa">
+      <PublicNav />
+      <main>
+        <section className="public-section join-page">
+          <div className="section-inner join-layout">
+            <div className="join-intro">
+              <div className="eyebrow">Founding members join free</div>
+              <h1>Create your account.</h1>
+              <p className="lead">
+                For doctoral psychologists and psychiatrists in private practice. Open now in {openText || "the Northeast"}; other states open as colleagues
+                join.
+              </p>
+              <ol className="join-steps">
+                <li><b>Create your account</b><span>It takes a minute.</span></li>
+                <li><b>Add your license</b><span>A person checks it against the state board before anyone can see you.</span></li>
+                <li><b>Explore while we check</b><span>The Practice Library and a sandbox with fictional colleagues are open to you straight away.</span></li>
+                <li>
+                  <b>You&rsquo;re in</b>
+                  <span>
+                    Licensed in {openText || "an open state"}? You join the network as soon as you&rsquo;re verified. Elsewhere, you&rsquo;ll see your place in line
+                    and we open your state as colleagues join.
+                  </span>
+                </li>
+              </ol>
+              <p className="small">
+                Want to see it first? <a href={TOUR_URL}>Watch the short demos</a>.
+              </p>
+            </div>
 
-        {!inv?.valid ? (
-          <div className="card">
-            <h2>{invite ? "This invitation isn't valid" : "PsyAlliance is invitation-only for now"}</h2>
-            <p className="muted">
-              {invite
-                ? "The link has expired or has already been used. Ask us for a new one at hello@psyalliance.org."
-                : "We're opening to a founding group of verified psychologists and psychiatrists first. Ask to join and we'll send you a personal invitation."}
-            </p>
-            <a className="btn" href={JOIN_HREF} style={{ display: "inline-block" }}>Ask to join</a>
+            {sp.ineligible ? (
+              <div className="card tint roomy join-card">
+                <div className="eyebrow">Membership</div>
+                <h2 className="serif-title" style={{ fontSize: 28, margin: "6px 0 10px" }}>PsyAlliance membership is for doctoral clinicians.</h2>
+                <p>
+                  The network is for psychologists with a PhD, PsyD or EdD and psychiatrists with an MD or DO, licensed in the US. The Practice Library is open to
+                  everyone, and every template can be used by master&rsquo;s-level clinicians.
+                </p>
+                <div className="row wrap" style={{ gap: 10 }}>
+                  <a className="btn" href="/library">Browse the Practice Library</a>
+                  <a className="btn secondary" href={`/auth/sign-up${source ? `?from=${source}` : ""}`}>Back</a>
+                </div>
+              </div>
+            ) : (
+              <form action={signUp} className="card join-card join-form">
+                {invite && <input type="hidden" name="invite" value={invite} />}
+                {source && <input type="hidden" name="source" value={source} />}
+                {sp.error && <div className="banner error" role="alert">{sp.error}</div>}
+                <label className="field">
+                  Full name
+                  <input name="fullName" required minLength={2} autoComplete="name" defaultValue={inv?.valid ? inv.full_name || "" : ""} />
+                </label>
+                <label className="field">
+                  Email
+                  <input name="email" type="email" required autoComplete="email" defaultValue={inv?.valid ? inv.email || "" : ""} />
+                </label>
+                <label className="field">
+                  Password
+                  <input name="password" type="password" required minLength={8} autoComplete="new-password" />
+                  <small>At least 8 characters.</small>
+                </label>
+                <label className="field">
+                  Degree
+                  <select name="qualification" defaultValue="" required>
+                    <option value="" disabled>Choose one</option>
+                    <option>PhD</option>
+                    <option>PsyD</option>
+                    <option>EdD</option>
+                    <option>MD</option>
+                    <option>DO</option>
+                    <option value="other">Master&rsquo;s-level or other</option>
+                  </select>
+                </label>
+                <fieldset className="state-pick">
+                  <legend>States where you&rsquo;re licensed</legend>
+                  <div className="check-grid">
+                    {US_STATES.filter((s) => first.includes(s.code)).map((s) => (
+                      <label key={s.code} className="check-pill">
+                        <input type="checkbox" name="state" value={s.code} /> <span>{s.name}{open.includes(s.code) ? " (open)" : ""}</span>
+                      </label>
+                    ))}
+                  </div>
+                  <details className="more-states">
+                    <summary>Licensed somewhere else?</summary>
+                    <div className="check-grid">
+                      {US_STATES.filter((s) => !first.includes(s.code)).map((s) => (
+                        <label key={s.code} className="check-pill">
+                          <input type="checkbox" name="state" value={s.code} /> <span>{s.name}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </details>
+                </fieldset>
+                <button type="submit" className="btn lg block">Create your account</button>
+                <p className="micro-note" style={{ margin: 0, textAlign: "center" }}>
+                  Free for founding members. See <a href="/privacy">Privacy</a> and <a href="/terms">Terms</a>. Already have an account?{" "}
+                  <a href="/auth/sign-in">Sign in</a>.
+                </p>
+              </form>
+            )}
           </div>
-        ) : (
-          <form action={signUp} className="card">
-            <input type="hidden" name="invite" value={invite} />
-            <h2>Create your account</h2>
-            <p className="muted" style={{ marginTop: "-0.5rem" }}>
-              For PhD, PsyD and EdD psychologists and MD and DO psychiatrists. After you sign up, add your license in Credentials: a person reviews it before you
-              can use the network.
-            </p>
-            <div className="field">
-              <label htmlFor="fullName">Full name</label>
-              <input id="fullName" name="fullName" type="text" defaultValue={inv.full_name || ""} required autoComplete="name" />
-            </div>
-            <div className="field">
-              <label htmlFor="email">Email</label>
-              <input id="email" name="email" type="email" defaultValue={inv.email || ""} readOnly={!!inv.email} required autoComplete="email" />
-            </div>
-            <div className="field">
-              <label htmlFor="password">Password</label>
-              <input id="password" name="password" type="password" minLength={8} required autoComplete="new-password" />
-            </div>
-            <button type="submit" style={{ width: "100%" }}>Create account</button>
-          </form>
-        )}
-
-        <p className="muted" style={{ textAlign: "center" }}>
-          Already have an account? <a href="/auth/sign-in">Sign in</a>
-        </p>
-      </div>
+        </section>
+      </main>
+      <PublicFooter />
     </div>
   );
 }

@@ -169,7 +169,7 @@ export function NetworkView({
   const to = Math.min(total, page * pageSize);
   const filtered = !!(filters.q || filters.focus || filters.state || filters.available || filters.profession || filters.insurance || filters.age || filters.language || filters.modality || filters.session || filters.psypact);
   const scope = [filters.focus, filters.state ? stateName(filters.state) : null].filter(Boolean).join(" in ");
-  const inviteHref = `mailto:?subject=${encodeURIComponent("Join me on PsyAlliance")}&body=${encodeURIComponent(`I use PsyAlliance for cover, referrals and consultation with colleagues I trust. You can ask to join here: ${JOIN_URL}`)}`;
+  const inviteHref = `mailto:?subject=${encodeURIComponent("Join me on PsyAlliance")}&body=${encodeURIComponent(`I use PsyAlliance for cover, referrals and consultation with colleagues I trust. You can create an account here: ${JOIN_URL}`)}`;
 
   return (
     <>

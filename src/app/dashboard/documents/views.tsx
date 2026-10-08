@@ -5,7 +5,7 @@ import { JOIN_URL, REAL_SITE_URL } from "@/lib/env";
 function shareHref(code: string) {
   const s = SHARE_ASK[code];
   if (!s) return null;
-  const body = `${s.ask}\n\nThe template: ${REAL_SITE_URL}${publicLibraryHref(code)}\n\nYou can ask to join PsyAlliance here: ${JOIN_URL}`;
+  const body = `${s.ask}\n\nThe template: ${REAL_SITE_URL}${publicLibraryHref(code)}\n\nYou can create a PsyAlliance account here: ${JOIN_URL}`;
   return `mailto:?subject=${encodeURIComponent(s.subject)}&body=${encodeURIComponent(body)}`;
 }
 import { uploadDocument, deleteDocument, createFolder, deleteFolder, moveDocumentToFolder, saveWorkingCopyAction } from "./actions";

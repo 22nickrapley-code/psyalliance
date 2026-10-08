@@ -19,57 +19,53 @@ async function siteOrigin() {
   return `${protocol}://${host}`;
 }
 
-// Invitation-only while the founding cohort forms. The database refuses
-// any new account without a valid invitation (enforce_invitation, migration
-// 0085); checking first here just turns that into a clear message.
+const DEGREES = new Set(["PhD", "PsyD", "EdD", "MD", "DO"]);
+
+// One door in: anyone can create an account. A person then checks the
+// license, and the network opens state by state (open_states, 0102). An
+// invitation link, if someone has one, still works and is redeemed.
 export async function signUp(formData: FormData) {
+  if (IS_DEMO_SITE) redirect(JOIN_URL);
   const supabase = await createClient();
   const email = String(formData.get("email") || "").trim();
   const password = String(formData.get("password") || "");
-  const fullName = String(formData.get("fullName") || "").trim();
+  const fullName = String(formData.get("fullName") || "").trim().slice(0, 120);
+  const qualification = String(formData.get("qualification") || "");
   const invite = String(formData.get("invite") || "").trim();
-  const back = (msg: string) => redirect(`/auth/sign-up?invite=${encodeURIComponent(invite)}&error=${encodeURIComponent(msg)}`);
+  const source = String(formData.get("source") || "").replace(/[^a-z0-9-]/gi, "").slice(0, 60);
+  const valid = new Set(US_STATES.map((s) => s.code));
+  const states = Array.from(new Set(formData.getAll("state").map((v) => String(v).toUpperCase()).filter((c) => valid.has(c))));
+  const keep = `${invite ? `&invite=${encodeURIComponent(invite)}` : ""}${source ? `&from=${source}` : ""}`;
+  const back = (msg: string) => redirect(`/auth/sign-up?error=${encodeURIComponent(msg)}${keep}`);
 
-  const { data: inv } = await supabase.rpc("invitation_status", { p_token: invite }).maybeSingle<any>();
-  if (!inv?.valid) back("This invitation link has expired or has already been used. Ask us for a new one at hello@psyalliance.org.");
-  if (inv.email && inv.email.toLowerCase() !== email.toLowerCase()) back(`This invitation is for ${inv.email}. Sign up with that address.`);
+  if (qualification === "other") redirect(`/auth/sign-up?ineligible=1${keep}`);
+  if (fullName.length < 2) back("Add your full name.");
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) back("Add a valid email address.");
+  if (password.length < 8) back("Choose a password of at least 8 characters.");
+  if (!DEGREES.has(qualification)) back("Choose your doctoral degree.");
+  if (states.length === 0) back("Choose at least one state where you're licensed.");
 
-  const { error } = await supabase.auth.signUp({
+  const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
-      data: { full_name: fullName, invite },
-      emailRedirectTo: `${await siteOrigin()}/auth/callback?next=${encodeURIComponent("/dashboard")}`,
+      data: { full_name: fullName, qualification, states, source: source || null, invite: invite || null },
+      emailRedirectTo: `${await siteOrigin()}/auth/callback?next=${encodeURIComponent("/dashboard/profile")}`,
     },
   });
 
-  if (error) back(error.message.includes("Database error") ? "We couldn't create your account with this invitation. Ask us for a new one at hello@psyalliance.org." : error.message);
-
-  redirect("/auth/sign-in?message=" + encodeURIComponent("Check your email to confirm your account, then sign in."));
-}
-
-// Public: ask for an invitation (anon RPC request_to_join).
-export async function requestToJoinAction(formData: FormData) {
-  // Never capture a prospect's details in the demo database.
-  if (IS_DEMO_SITE) redirect(JOIN_URL);
-  const supabase = await createClient();
-  const fullName = String(formData.get("full_name") || "").trim();
-  const email = String(formData.get("email") || "").trim();
-  const qualification = String(formData.get("qualification") || "");
-  const valid = new Set(US_STATES.map((s) => s.code));
-  const states = Array.from(new Set(formData.getAll("state").map((v) => String(v).toUpperCase()).filter((c) => valid.has(c)))).join(", ");
-  const note = String(formData.get("note") || "").trim().slice(0, 600);
-  if (fullName.length < 2 || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
-    redirect(`/join?error=${encodeURIComponent("Add your name and a valid email address.")}`);
+  if (error) {
+    back(
+      /database error/i.test(error.message)
+        ? "We couldn't create your account just now. Please try again in a little while, or write to hello@psyalliance.org."
+        : /registered|exists/i.test(error.message)
+          ? "There's already an account with that email. Sign in instead."
+          : error.message
+    );
   }
-  if (!states) redirect(`/join?error=${encodeURIComponent("Choose at least one state where you're licensed.")}`);
-  // Where the request started (a Practice Library page, say), for Admin.
-  const source = String(formData.get("source") || "").replace(/[^a-z0-9-]/gi, "").slice(0, 60);
-  const { error } = source
-    ? await supabase.rpc("request_to_join_from", { p_full_name: fullName, p_email: email, p_qualification: qualification, p_states: states, p_note: note, p_source: source })
-    : await supabase.rpc("request_to_join", { p_full_name: fullName, p_email: email, p_qualification: qualification, p_states: states, p_note: note });
-  if (error) redirect(`/join?error=${encodeURIComponent(error.message)}${source ? `&from=${source}` : ""}`);
-  redirect("/join?sent=1");
+  // With email confirmation on, there's no session until they click the link.
+  if (data?.session) redirect("/dashboard/profile");
+  redirect("/auth/sign-in?message=" + encodeURIComponent(`Check ${email} for a link to confirm your account, then sign in.`));
 }
 
 export async function signIn(formData: FormData) {

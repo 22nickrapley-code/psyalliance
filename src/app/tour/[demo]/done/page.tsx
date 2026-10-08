@@ -1,6 +1,6 @@
 import "../../../premium.css";
 import { notFound, redirect } from "next/navigation";
-import { TOUR_ENABLED } from "@/lib/env";
+import { TOUR_ENABLED, IS_DEMO_SITE, REAL_SITE_URL } from "@/lib/env";
 import { PublicNav, PublicFooter } from "../../../_public/chrome";
 import { DEMOS, findDemo } from "../../demos";
 import { NextMoves } from "../../next-moves";
@@ -16,6 +16,7 @@ export function generateStaticParams() {
 // next?" with the demos not yet watched first, then the two ways forward.
 export default async function DemoDonePage({ params }: { params: Promise<{ demo: string }> }) {
   if (!TOUR_ENABLED) notFound();
+  if (IS_DEMO_SITE && process.env.NODE_ENV === "production") redirect(REAL_SITE_URL + "/tour");
   const { demo } = await params;
   const d = findDemo(demo);
   if (!d) redirect("/tour");

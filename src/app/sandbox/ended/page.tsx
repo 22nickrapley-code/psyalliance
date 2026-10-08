@@ -1,5 +1,6 @@
 import "../../premium.css";
 import { PublicNav, PublicFooter } from "../../_public/chrome";
+import { REAL_SITE_URL, TOUR_URL } from "@/lib/env";
 
 export const metadata = { title: "Sandbox session ended", robots: { index: false, follow: false } };
 
@@ -17,11 +18,11 @@ export default function SandboxEndedPage() {
               <div className="eyebrow">Your sandbox</div>
               <h2 style={{ marginTop: 6 }}>This device isn&rsquo;t signed in to your sandbox.</h2>
               <p>
-                Open your personal sandbox link again and you&rsquo;ll carry on where you left off, on this device or another. Links last 7 days.
+                Sign in to PsyAlliance and open your sandbox from your account. You&rsquo;ll carry on where you left off, on this device or another.
               </p>
               <div className="row wrap" style={{ gap: 10, marginTop: 8 }}>
-                <a className="btn" href="/sandbox/request">My link has expired</a>
-                <a className="btn secondary" href="/tour">Watch the demos</a>
+                <a className="btn" href={`${REAL_SITE_URL}/auth/sign-in`}>Sign in to PsyAlliance</a>
+                <a className="btn secondary" href={TOUR_URL}>Watch the demos</a>
               </div>
             </div>
           </div>

@@ -44,10 +44,17 @@ export default async function ProfilePage(props: {
   const ranked = (selectedRows || []).filter((r: any) => typeof r.rank === "number").length;
   const ready = !!(profile?.full_name && profile?.qualification_level && profile?.primary_state && ranked >= 3);
   const editing = !!(sp.edit || sp.error || sp.avatar_error) || !ready;
+  // A new account has no profile yet: start from what they gave at sign-up.
+  const meta: any = user?.user_metadata || {};
+  const starting = profile || {
+    full_name: meta.full_name || "",
+    qualification_level: ["PhD", "PsyD", "EdD", "MD", "DO"].includes(meta.qualification) ? meta.qualification : null,
+    primary_state: Array.isArray(meta.states) && meta.states.length ? meta.states[0] : null,
+  };
   return (
     <ProfileView
       sp={sp}
-      profile={profile}
+      profile={starting}
       lookups={lookups}
       selectedRows={selectedRows}
       licenceCount={licenceCount}

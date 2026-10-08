@@ -1,5 +1,7 @@
 import type { NeedOptions } from "@/lib/need-options";
 import { libraryHref } from "@/lib/library";
+import { stateName, stateList } from "@/lib/open-states";
+import { openSandboxAction } from "./sandbox/actions";
 import { Banner, Status } from "./_components/ui";
 import { reconfirmAvailability } from "./availability/actions";
 import { HomeTiles } from "./home-client";
@@ -40,6 +42,8 @@ export type HomeData = {
   steps: NextStep[];
   gettingStarted: { label: string; done: boolean; href: string; waiting?: boolean }[] | null;
   awaitingVerification?: boolean;
+  access?: { verified: boolean; openStates: string[]; waitlist: { state: string; position: number; waiting: number }[] } | null;
+  error?: string | null;
   availability: {
     referrals: string;
     cover: string;
@@ -172,7 +176,9 @@ const WHILE_REVIEW: [string, string, string][] = [
 export function HomeView({ d }: { d: HomeData }) {
   const n = d.steps.length;
   const urgent = d.steps.filter((s) => s.urgent).length;
-  const summary = d.gettingStarted
+  const summary = d.access?.verified
+    ? "You're verified. Your state opens as colleagues join."
+    : d.gettingStarted
     ? "A few steps and you're in the network."
     : n === 0
       ? d.sandbox
@@ -189,14 +195,16 @@ export function HomeView({ d }: { d: HomeData }) {
         <h1>{d.greeting || "Welcome back"}, {d.firstName}.</h1>
         <p>{summary}</p>
       </header>
-      <Banner ok={d.notice} />
+      <Banner ok={d.notice} error={d.error} />
 
       {d.gettingStarted && (
         <section className="card getting-started">
           <div className="card-title"><h3>Getting started</h3></div>
           <p className="small">
-            {d.awaitingVerification
-              ? "Referrals, cover, consults and messages open once your credentials are verified. Here's what gets you there."
+            {d.access?.verified
+              ? "You're verified. Referrals, cover, consults and messages open when PsyAlliance opens in your state; meanwhile, try them all in your sandbox."
+              : d.awaitingVerification
+              ? "Referrals, cover, consults and messages open once your license is verified. Here's what gets you there."
               : "A few steps make the network useful to you from day one."}
           </p>
           {d.gettingStarted.map((g, i) => (
@@ -212,13 +220,37 @@ export function HomeView({ d }: { d: HomeData }) {
         </section>
       )}
 
-      {d.awaitingVerification && (
-        <section className="card while-review">
+      {d.access && (
+        <section className="card while-review" id="explore">
           <div className="card-title">
-            <h3>While we review your license</h3>
-            <a className="text-arrow" href="/dashboard/documents">Practice Library &rarr;</a>
+            <h3>{d.access.verified ? "While your state opens" : "While we check your license"}</h3>
           </div>
-          <p className="small">The Practice Library is open to you now. Three templates members start with:</p>
+          {d.access.waitlist.length > 0 && (
+            <div className="waitlist-note">
+              {d.access.waitlist.map((w) => (
+                <p key={w.state}>
+                  PsyAlliance opens in <b>{stateName(w.state)}</b> when enough colleagues join. You&rsquo;re number <b>{w.position}</b> of {w.waiting} on the{" "}
+                  {stateName(w.state)} list.
+                </p>
+              ))}
+              {d.access.openStates.length > 0 && <p className="micro-note">Open now in {stateList(d.access.openStates)}.</p>}
+            </div>
+          )}
+          <div className="explore-grid">
+            <div className="explore-item">
+              <b>Try it with fictional colleagues</b>
+              <small>Your own sandbox: cover, referrals, consults and messages with invented clinicians. Nothing reaches the real network.</small>
+              <form action={openSandboxAction}>
+                <button type="submit" className="btn small-btn">Open your sandbox</button>
+              </form>
+            </div>
+            <div className="explore-item">
+              <b>Watch the demos</b>
+              <small>Six short walk-throughs of the real screens, a minute or two each.</small>
+              <a className="btn secondary small-btn" href="/tour">Watch the demos</a>
+            </div>
+          </div>
+          <p className="small" style={{ margin: "16px 0 0" }}>The Practice Library is open to you now. Three templates members start with:</p>
           <ul className="while-review-list">
             {WHILE_REVIEW.map(([code, title, line]) => (
               <li key={code}>
