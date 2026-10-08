@@ -102,7 +102,14 @@ export function Live() {
       if (a.target && a.target !== "_self") return;
       if (a.hasAttribute("download") || a.dataset.reload !== undefined) return;
       const href = a.getAttribute("href");
-      if (!href || href.startsWith("#") || /^(mailto|tel|javascript|data|blob):/i.test(href)) return;
+      if (href && href.startsWith("#")) {
+        // A link to a folded section opens it.
+        const el = document.getElementById(decodeURIComponent(href.slice(1)));
+        const fold = el?.closest("details") as HTMLDetailsElement | null;
+        if (fold && !fold.open) fold.open = true;
+        return;
+      }
+      if (!href || /^(mailto|tel|javascript|data|blob):/i.test(href)) return;
       const url = new URL(a.href, window.location.href);
       if (url.origin !== window.location.origin) return;
       if (NOT_PAGES.some((r) => r.test(url.pathname))) return;

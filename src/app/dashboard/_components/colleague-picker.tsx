@@ -44,7 +44,7 @@ export function ColleaguePicker({
   mode = "single",
   initial = [],
   label = "To",
-  placeholder = "Search by name, or pick someone below",
+  placeholder = "Search by name",
   limitPerGroup = 4,
   clearable = false,
 }: {
@@ -62,6 +62,9 @@ export function ColleaguePicker({
   const [remote, setRemote] = useState<Suggestion[]>([]);
   const [searching, setSearching] = useState(false);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  // Start small: search, plus a handful of the most likely people. The full
+  // grouped list is one tap away.
+  const [showAll, setShowAll] = useState(false);
   const [browsing, setBrowsing] = useState(mode === "multi" || picked.length === 0);
   const seq = useRef(0);
 
@@ -157,7 +160,39 @@ export function ColleaguePicker({
                 {q.trim().length >= 2 && !searching ? "No one in the verified network matches that name." : "Your circle is empty so far. Type a name to search the verified network."}
               </p>
             )}
-            {GROUPS.map((g) => {
+            {!q.trim() && !showAll && list.length > 0 && (() => {
+              const order = (s: Suggestion) => GROUPS.findIndex((g) => g.key === s.group);
+              const top = [...list].filter((s) => s.group !== "network").sort((a, b) => order(a) - order(b)).slice(0, 5);
+              const rest = list.length - top.length;
+              return (
+                <div className="picker-group">
+                  <div className="picker-group-title"><span>{top.length ? "Suggested" : "Search to find a colleague"}</span></div>
+                  {top.map((s) => (
+                    <button
+                      key={s.id}
+                      type="button"
+                      role="option"
+                      aria-selected={isPicked(s.id)}
+                      className={`picker-row${isPicked(s.id) ? " on" : ""}`}
+                      onClick={() => choose(s)}
+                    >
+                      <Face s={s} />
+                      <span className="picker-text">
+                        <b>{s.name}</b>
+                        <small>{[s.reason, s.where].filter(Boolean).join(" · ")}</small>
+                      </span>
+                      <span className="picker-tick" aria-hidden="true">{isPicked(s.id) ? "✓" : mode === "multi" ? "+" : ""}</span>
+                    </button>
+                  ))}
+                  {rest > 0 && (
+                    <button type="button" className="picker-more" onClick={() => setShowAll(true)}>
+                      Show more colleagues ({rest})
+                    </button>
+                  )}
+                </div>
+              );
+            })()}
+            {(q.trim() || showAll) && GROUPS.map((g) => {
               const items = list.filter((s) => s.group === g.key);
               if (!items.length) return null;
               const all = !!q.trim() || expanded[g.key];

@@ -1,4 +1,6 @@
 import { shortDate } from "@/lib/dates";
+import { TOUR_URL } from "@/lib/env";
+import { FirstVisit } from "../_components/first-visit";
 import type { ReactNode } from "react";
 import type { Match } from "@/lib/match-engine";
 import type { NeedOptions } from "@/lib/need-options";
@@ -342,23 +344,30 @@ export function ReferIndexView({
         eyebrow="Refer"
         title="Refer"
         lead="Hand a client to someone you trust, and see referrals that fit your practice."
-        actions={<a className="btn" href="/dashboard/refer/new">New referral</a>}
+      />
+      <FirstVisit
+        id="refer"
+        line="Describe the need and the state, see colleagues who fit with the reasons, then choose who receives it. No client details, and nothing is sent until you review."
+        startHref="#start-referral"
+        startLabel="Start a referral"
+        exampleHref={`${TOUR_URL}/refer`}
       />
       <Banner ok={ok} error={error} />
-      <form className="quick-search" method="get" action="/dashboard/refer/new">
+      <form className="quick-search" method="get" action="/dashboard/refer/new" id="start-referral">
         <input type="hidden" name="step" value="shortlist" />
-        <h3>Quick referral search</h3>
+        <h3>Start a referral</h3>
         <NeedFields options={options} compact />
-        <div className="row" style={{ marginTop: 14 }}>
-          <button type="submit" className="btn">Search colleagues</button>
-          <span className="small" style={{ color: "#cfe0d4" }}>No client details. Nothing is sent until you review.</span>
+        <div className="row wrap" style={{ marginTop: 14, gap: 12 }}>
+          <button type="submit" className="btn">Find colleagues</button>
+          <a className="quick-more" href="/dashboard/refer/new">Add age, setting or language</a>
         </div>
+        <p className="small" style={{ color: "#cfe0d4", margin: "10px 0 0" }}>No client details. Nothing is sent until you review.</p>
       </form>
       <div className="split equal" style={{ marginTop: 20 }}>
         <section className="card">
           <div className="card-title"><h3>Your referrals</h3><span className="micro-note">{mine.length} total</span></div>
           {mine.length === 0 ? (
-            <QuietEmpty title="No referrals yet." body="When you can't take a client, start here: describe the need and PsyAlliance shortlists the right colleagues." action={<a className="btn secondary small-btn" href="/dashboard/refer/new">Make a referral</a>} />
+            <QuietEmpty title="No referrals yet." body="When you can't take a client, start here: describe the need and PsyAlliance shortlists the right colleagues." action={<a className="btn secondary small-btn" href="#start-referral">Start a referral</a>} />
           ) : (
             mine.map((r) => {
               const s = referralStatus(r);

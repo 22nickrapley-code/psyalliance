@@ -45,13 +45,6 @@ export function SettingsView({ sp, email, me, prefs, profile, emergency, exclude
         lead="Nothing on this page is visible to anyone else."
       />
       <Banner error={sp.error} ok={okMsg} />
-      <nav className="chip-row" aria-label="Sections" style={{ marginBottom: 18 }}>
-        <a className="chip" href="#account">Account</a>
-        <a className="chip" href="#notifications">Notifications</a>
-        <a className="chip" href="#privacy">Privacy</a>
-        <a className="chip" href="#cover-contact">Emergency cover contact</a>
-        <a className="chip" href="#data">Your data</a>
-      </nav>
 
       <div className="split">
         <div className="stack">
@@ -72,8 +65,11 @@ export function SettingsView({ sp, email, me, prefs, profile, emergency, exclude
             )}
           </section>
 
-          <form action={saveNotificationPreferences} className="card" id="notifications">
-            <h3>Notifications</h3>
+          <details className="card settings-group" id="notifications">
+            <summary>
+              <span><h3>Notifications</h3><small>Always in the app; choose what also comes by email</small></span>
+            </summary>
+          <form action={saveNotificationPreferences}>
             <p className="small">Everything always shows in-app and on Home. Choose what also comes by email.</p>
             {TRIGGERS.map((t) => (
               <label key={t.key} className="item row between" style={{ cursor: "pointer" }}>
@@ -102,9 +98,12 @@ export function SettingsView({ sp, email, me, prefs, profile, emergency, exclude
               <button type="submit" className="btn small-btn">Save notification settings</button>
             </div>
           </form>
+          </details>
 
-          <section className="card" id="privacy">
-            <h3>Privacy</h3>
+          <details className="card settings-group" id="privacy">
+            <summary>
+              <span><h3>Privacy</h3><small>{listed ? "Listed for verified members" : "Hidden from the directory"} &middot; excluded and blocked members</small></span>
+            </summary>
             <form action={savePrivacyAction} className="item">
               <strong>Who can see your profile</strong>
               <p>Only verified, signed-in members. Never the public, and never search engines.</p>
@@ -158,17 +157,8 @@ export function SettingsView({ sp, email, me, prefs, profile, emergency, exclude
               )}
             </div>
             <p className="micro-note" style={{ marginBottom: 0 }}>Saved colleagues, Exclude, Block and your private &ldquo;would work with again&rdquo; answers are never visible to the other person.</p>
-          </section>
+          </details>
 
-          <section className="card" id="cover-contact">
-            <h3>Your backup</h3>
-            <p className="small">
-              The colleague who would look after your clients and records if you couldn&rsquo;t practice now lives in your continuity plan, with
-              what they should do and a PDF to sign.
-              {emergency ? ` You'd named ${nameOf(emergency.contact)} here before; name them in the plan so they're asked to agree.` : ""}
-            </p>
-            <a className="btn secondary small-btn" href="/dashboard/continuity#backup">Open your continuity plan</a>
-          </section>
 
           {/* The in-production demo view is retired: the demo lives on its own
               site now. Anyone still switched on can switch it off. */}
@@ -208,6 +198,7 @@ export function SettingsView({ sp, email, me, prefs, profile, emergency, exclude
               <li><span>Availability</span><strong><a href="/dashboard/availability">Update</a></strong></li>
               <li><span>Profile</span><strong><a href="/dashboard/profile">Edit</a></strong></li>
               <li><span>Licenses</span><strong><a href="/dashboard/credentials">Credentials</a></strong></li>
+              <li><span>Your backup</span><strong><a href="/dashboard/continuity">Continuity plan</a></strong></li>
             </ul>
           </section>
         </aside>

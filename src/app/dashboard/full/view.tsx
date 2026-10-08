@@ -61,7 +61,7 @@ export function FullView({
           <section className="card full-page-card">
             <div className="row between wrap" style={{ gap: 10 }}>
               <h3 style={{ margin: 0 }}>Your page</h3>
-              <Status tone={page?.enabled ? "" : "neutral"}>{page?.enabled ? "Live" : "Off"}</Status>
+              <Status tone={page?.enabled ? "" : "neutral"}>{!page ? "Not set up yet" : page.enabled ? "Published" : "Draft: only you can see it"}</Status>
             </div>
             {page?.enabled && url && (
               <div style={{ marginTop: 12 }}>
@@ -70,7 +70,11 @@ export function FullView({
             )}
             <form action={saveOverflowPage} className="stack" style={{ gap: 14, marginTop: 16 }}>
               <label className="checkline">
-                <input type="checkbox" name="enabled" value="1" defaultChecked={page?.enabled ?? true} /> Page is live
+                <input type="checkbox" name="enabled" value="1" defaultChecked={page?.enabled ?? false} />
+                <span>
+                  Publish this page
+                  <small className="micro-note" style={{ display: "block" }}>Until it&rsquo;s published, the address shows nothing and only you see the preview below.</small>
+                </span>
               </label>
               <label className="field">
                 Web address
@@ -86,6 +90,21 @@ export function FullView({
               </label>
               <div><button type="submit" className="btn">Save your page</button></div>
             </form>
+          </section>
+
+          <section className="card full-preview" aria-label="What visitors see">
+            <div className="eyebrow">Preview: what visitors see</div>
+            <p className="full-preview-message">{page?.message || DEFAULT_MESSAGE}</p>
+            {shown.length > 0 ? (
+              <ul className="full-preview-list">
+                {shown.slice(0, 6).map((c) => (
+                  <li key={c.profile_id}><b>{nameOf(c)}</b><small>{where(c)}</small></li>
+                ))}
+              </ul>
+            ) : (
+              <p className="small">No colleagues would be listed yet. Only trusted colleagues who are taking referrals and have agreed to be listed appear.</p>
+            )}
+            <p className="micro-note">In an emergency: 911 for immediate danger or a medical emergency; 988 for a mental health, suicide or substance use crisis.</p>
           </section>
 
           <section className="card" id="colleagues">

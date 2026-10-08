@@ -4,7 +4,6 @@ import { Orbit, type CircleNode } from "../_components/orbit";
 import { respondToConnection, sendConnectionRequest, saveClinicianAction, removeSavedClinicianAction } from "./actions";
 import { roleLabel } from "@/lib/profession";
 import { US_STATES } from "@/lib/us-states";
-import { JOIN_URL } from "@/lib/env";
 
 // Network (Product Spec v1): your group practice, built from people you
 // choose and work you've actually done together. Layout and card follow
@@ -31,15 +30,19 @@ export type Person = {
 
 export type Invitation = { id: number; name: string; profileId: string; where: string; avatarUrl: string | null };
 
-export type NetworkTab = "directory" | "trusted" | "saved" | "worked" | "suggested";
+export type NetworkTab = "directory" | "mine" | "trusted" | "saved" | "worked" | "suggested";
 
-const TABS: [NetworkTab, string][] = [
-  ["directory", "Directory"],
-  ["trusted", "Trusted colleagues"],
-  ["saved", "Saved"],
-  ["worked", "Worked with before"],
-  ["suggested", "Suggested"],
+// Three places to look: everyone, the people you know, and people you've
+// saved. Finer distinctions are filters inside them.
+const TABS: [NetworkTab, string, NetworkTab[]][] = [
+  ["directory", "Find colleagues", ["directory", "suggested"]],
+  ["mine", "Your colleagues", ["mine", "trusted", "worked"]],
+  ["saved", "Saved", ["saved"]],
 ];
+const SUBTABS: Partial<Record<NetworkTab, [NetworkTab, string][]>> = {
+  directory: [["directory", "Everyone"], ["suggested", "Suggested for you"]],
+  mine: [["mine", "All"], ["trusted", "Trusted colleagues"], ["worked", "Worked with before"]],
+};
 
 const REL_LABEL: Record<Person["relationship"], string> = {
   trusted: "Trusted colleague",
@@ -169,7 +172,7 @@ export function NetworkView({
   const to = Math.min(total, page * pageSize);
   const filtered = !!(filters.q || filters.focus || filters.state || filters.available || filters.profession || filters.insurance || filters.age || filters.language || filters.modality || filters.session || filters.psypact);
   const scope = [filters.focus, filters.state ? stateName(filters.state) : null].filter(Boolean).join(" in ");
-  const inviteHref = `mailto:?subject=${encodeURIComponent("Join me on PsyAlliance")}&body=${encodeURIComponent(`I use PsyAlliance for cover, referrals and consultation with colleagues I trust. You can create an account here: ${JOIN_URL}`)}`;
+  const inviteHref = "/dashboard/invite";
 
   return (
     <>
@@ -251,13 +254,28 @@ export function NetworkView({
           </form>
 
           <nav className="tabs" aria-label="Relationship" style={{ marginTop: 20 }}>
-            {TABS.map(([k, label]) => (
-              <a key={k} className={`tab${tab === k ? " active" : ""}`} href={`/dashboard/network?tab=${k}`}>
+            {TABS.map(([k, label, members]) => (
+              <a key={k} className={`tab${members.includes(tab) ? " active" : ""}`} href={`/dashboard/network?tab=${k}`}>
                 {label}
-                {k !== "suggested" && counts[k] > 0 && <span className="micro-note"> {counts[k].toLocaleString()}</span>}
+                {counts[k] > 0 && <span className="micro-note"> {counts[k].toLocaleString()}</span>}
               </a>
             ))}
           </nav>
+          {(() => {
+            const group = TABS.find(([, , members]) => members.includes(tab));
+            const subs = group ? SUBTABS[group[0]] : undefined;
+            if (!subs) return null;
+            return (
+              <div className="chip-row subtabs" aria-label="Show">
+                {subs.map(([k, label]) => (
+                  <a key={k} className={`chip${tab === k ? " selected" : ""}`} href={`/dashboard/network?tab=${k}`}>
+                    {label}
+                    {k !== "suggested" && k !== "directory" && counts[k] > 0 ? ` ${counts[k]}` : ""}
+                  </a>
+                ))}
+              </div>
+            );
+          })()}
 
           {tab !== "suggested" && total > 0 && (
             <div className="results-line">
@@ -303,7 +321,7 @@ export function NetworkView({
               <Empty
                 symbol={"◎"}
                 title="The founding circle is forming."
-                body="Verified members appear here as they join, a few states at a time. Know a psychologist or psychiatrist who should be here? Invite them to ask to join."
+                body="Verified members appear here as they join, a few states at a time. Know a psychologist or psychiatrist who should be here? Send them your invitation link and you&rsquo;ll be connected once they&rsquo;re verified."
                 action={<a className="btn secondary small-btn" href={inviteHref}>Invite a colleague</a>}
               />
             </div>
@@ -312,8 +330,8 @@ export function NetworkView({
               <Empty
                 title={tab === "directory" ? "No one matches these filters." : "No one here yet."}
                 body={
-                  tab === "trusted"
-                    ? "Trusted colleagues are people you'd call your own group-practice colleagues. Invite people you already work with."
+                  tab === "trusted" || tab === "mine"
+                    ? "Trusted colleagues are people you'd call your own group-practice colleagues. Invite people you already work with: they join your circle automatically."
                     : tab === "saved"
                       ? "Save clinicians you'd refer to or call on. Saving is private; they aren't told."
                       : tab === "worked"

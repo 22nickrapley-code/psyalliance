@@ -32,10 +32,11 @@ export async function signUp(formData: FormData) {
   const fullName = String(formData.get("fullName") || "").trim().slice(0, 120);
   const qualification = String(formData.get("qualification") || "");
   const invite = String(formData.get("invite") || "").trim();
+  const connect = String(formData.get("connect") || "").replace(/[^a-f0-9]/gi, "").slice(0, 64);
   const source = String(formData.get("source") || "").replace(/[^a-z0-9-]/gi, "").slice(0, 60);
   const valid = new Set(US_STATES.map((s) => s.code));
   const states = Array.from(new Set(formData.getAll("state").map((v) => String(v).toUpperCase()).filter((c) => valid.has(c))));
-  const keep = `${invite ? `&invite=${encodeURIComponent(invite)}` : ""}${source ? `&from=${source}` : ""}`;
+  const keep = `${invite ? `&invite=${encodeURIComponent(invite)}` : ""}${connect ? `&connect=${connect}` : ""}${source ? `&from=${source}` : ""}`;
   const back = (msg: string) => redirect(`/auth/sign-up?error=${encodeURIComponent(msg)}${keep}`);
 
   if (qualification === "other") redirect(`/auth/sign-up?ineligible=1${keep}`);
@@ -49,7 +50,7 @@ export async function signUp(formData: FormData) {
     email,
     password,
     options: {
-      data: { full_name: fullName, qualification, states, source: source || null, invite: invite || null },
+      data: { full_name: fullName, qualification, states, source: source || null, invite: invite || null, connect: connect || null },
       emailRedirectTo: `${await siteOrigin()}/auth/callback?next=${encodeURIComponent("/dashboard/profile")}`,
     },
   });
@@ -73,13 +74,17 @@ export async function signIn(formData: FormData) {
   const email = String(formData.get("email") || "");
   const password = String(formData.get("password") || "");
 
+  // Where to go after signing in: only our own pages (an invitation link or the workspace).
+  const nextRaw = String(formData.get("next") || "");
+  const next = /^\/(i\/[a-f0-9]{8,64}|dashboard(\/[\w\-/?=&%.]*)?)$/i.test(nextRaw) ? nextRaw : "/dashboard";
+
   const { error } = await supabase.auth.signInWithPassword({ email, password });
 
   if (error) {
-    redirect(`/auth/sign-in?error=${encodeURIComponent(error.message)}`);
+    redirect(`/auth/sign-in?error=${encodeURIComponent(error.message)}${next !== "/dashboard" ? `&next=${encodeURIComponent(next)}` : ""}`);
   }
 
-  redirect("/dashboard");
+  redirect(next);
 }
 
 export async function signOutAction() {

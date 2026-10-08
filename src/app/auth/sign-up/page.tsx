@@ -7,6 +7,7 @@ import { US_STATES } from "@/lib/us-states";
 import { loadOpenStates, stateList } from "@/lib/open-states";
 import { PublicNav, PublicFooter } from "../../_public/chrome";
 import { DegreeField } from "./degree-field";
+import { clinicianName } from "@/lib/profession";
 
 export const metadata = {
   title: "Create your account",
@@ -18,17 +19,20 @@ const NORTHEAST = ["NY", "MA", "NJ", "CT", "RI", "VT", "NH", "ME", "PA"];
 // The one way in. Anyone with a doctoral degree can create an account; a
 // person checks the license; the network opens state by state.
 export default async function SignUpPage(props: {
-  searchParams: Promise<{ error?: string; invite?: string; from?: string; ineligible?: string }>;
+  searchParams: Promise<{ error?: string; invite?: string; from?: string; ineligible?: string; connect?: string }>;
 }) {
   if (IS_DEMO_SITE) redirect(JOIN_URL);
   const sp = await props.searchParams;
   const invite = (sp.invite || "").trim();
   const source = String(sp.from || "").replace(/[^a-z0-9-]/gi, "").slice(0, 60);
   const supabase = await createClient();
-  const [open, { data: inv }] = await Promise.all([
+  const connect = String(sp.connect || "").replace(/[^a-f0-9]/gi, "").slice(0, 64);
+  const [open, { data: inv }, { data: inviter }] = await Promise.all([
     loadOpenStates(supabase),
     invite ? supabase.rpc("invitation_status", { p_token: invite }).maybeSingle<any>() : Promise.resolve({ data: null as any }),
+    connect ? supabase.rpc("member_invite_info", { p_token: connect }) : Promise.resolve({ data: null as any }),
   ]);
+  const inviterName = inviter ? clinicianName((inviter as any).full_name, (inviter as any).qualification_level, (inviter as any).credential_prefix) : null;
   const openText = stateList(open);
   const first = [...open, ...NORTHEAST.filter((c) => !open.includes(c))];
 
@@ -39,6 +43,11 @@ export default async function SignUpPage(props: {
         <section className="public-section join-page">
           <div className="section-inner join-layout">
             <div className="join-intro">
+              {inviterName && (
+                <p className="invite-promise" style={{ marginTop: 0 }}>
+                  <b>{inviterName}</b> invited you. Create your account and you&rsquo;ll be in each other&rsquo;s trusted circle once you&rsquo;re verified.
+                </p>
+              )}
               <div className="eyebrow">Founding members never pay</div>
               <h1>Create your account.</h1>
               <p className="lead">
@@ -78,6 +87,7 @@ export default async function SignUpPage(props: {
             ) : (
               <form action={signUp} className="card join-card join-form">
                 {invite && <input type="hidden" name="invite" value={invite} />}
+                {inviterName && <input type="hidden" name="connect" value={connect} />}
                 {source && <input type="hidden" name="source" value={source} />}
                 {sp.error && <div className="banner error" role="alert">{sp.error}</div>}
                 <DegreeField />

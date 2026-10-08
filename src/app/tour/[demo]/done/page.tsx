@@ -2,7 +2,7 @@ import "../../../premium.css";
 import { notFound, redirect } from "next/navigation";
 import { TOUR_ENABLED, IS_DEMO_SITE, REAL_SITE_URL } from "@/lib/env";
 import { PublicNav, PublicFooter } from "../../../_public/chrome";
-import { DEMOS, findDemo } from "../../demos";
+import { DEMOS, CLOSER_LOOKS, findDemo } from "../../demos";
 import { NextMoves } from "../../next-moves";
 import { DemoGrid, MarkDone } from "../../demo-progress";
 
@@ -34,10 +34,13 @@ export default async function DemoDonePage({ params }: { params: Promise<{ demo:
                 {d.learned.map((l) => <li key={l}>{l}</li>)}
               </ul>
             </div>
-            <h2 className="serif-title demo-next-title">What would you like to see next?</h2>
-            <DemoGrid demos={DEMOS.map(({ key, title, blurb, minutes, steps }) => ({ key, title, blurb, minutes, screens: steps.length }))} current={d.key} />
-            <h2 className="serif-title demo-next-title">Or take the next step</h2>
+            <h2 className="serif-title demo-next-title">Ready when you are</h2>
             <NextMoves />
+            <h2 className="serif-title demo-next-title">{d.key === "overview" ? "Or take a closer look" : "Another closer look"}</h2>
+            <DemoGrid
+              demos={DEMOS.filter((x) => CLOSER_LOOKS.includes(x.key) && x.key !== d.key).map(({ key, title, blurb, minutes, steps }) => ({ key, title, blurb, minutes, screens: steps.length }))}
+              current={d.key}
+            />
           </div>
         </section>
       </main>

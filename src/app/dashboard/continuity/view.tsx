@@ -35,6 +35,14 @@ export function ContinuityView({
 }) {
   const hasBackup = !!backup || !!(answers.backup_outside || "").trim();
   const progress = planProgress(answers, hasBackup);
+  // One section at a time: the next unfinished one after the one just
+  // saved, or the first unfinished one.
+  const keys = CONTINUITY_SECTIONS.map((x) => x.key);
+  const after = sp.saved && keys.includes(sp.saved) ? keys.indexOf(sp.saved) + 1 : 0;
+  const openKey =
+    CONTINUITY_SECTIONS.slice(after).find((x) => !sectionDone(x, answers))?.key ??
+    CONTINUITY_SECTIONS.find((x) => !sectionDone(x, answers))?.key ??
+    null;
   const savedTitle =
     sp.saved === "backup" ? "Your backup" : CONTINUITY_SECTIONS.find((s) => s.key === sp.saved)?.title;
   const reviewDue = reviewedAt ? Date.now() - new Date(reviewedAt).getTime() > 365 * 86_400_000 : false;
@@ -129,15 +137,18 @@ export function ContinuityView({
 
           {CONTINUITY_SECTIONS.map((s, i) => {
             const done = sectionDone(s, answers);
+            const isOpen = s.key === openKey;
             return (
-              <section key={s.key} className="card continuity-section" id={s.key}>
-                <div className="continuity-section-head">
+              <details key={s.key} className="card continuity-section" id={s.key} open={isOpen} data-just-added={isOpen && sp.saved ? "" : undefined}>
+                <summary className="continuity-section-head">
                   <span className={`continuity-num${done ? " done" : ""}`}>{done ? "✓" : i + 2}</span>
                   <div>
                     <h3>{s.title}</h3>
-                    <p className="small">{s.why}</p>
+                    <p className="small">{done ? "Done. Open to change it." : s.why}</p>
                   </div>
-                </div>
+                  <span className="continuity-chevron" aria-hidden="true" />
+                </summary>
+                {done && <p className="small continuity-why">{s.why}</p>}
                 <form action={saveContinuitySection} className="continuity-form">
                   <input type="hidden" name="section" value={s.key} />
                   {s.fields.map((f) => {
@@ -162,10 +173,11 @@ export function ContinuityView({
                     );
                   })}
                   <div className="continuity-save">
-                    <button type="submit" className="btn">Save</button>
+                    <button type="submit" className="btn">{i < CONTINUITY_SECTIONS.length - 1 ? "Save and continue" : "Save"}</button>
+                    <span className="micro-note">Saved as you go. Come back any time.</span>
                   </div>
                 </form>
-              </section>
+              </details>
             );
           })}
         </div>

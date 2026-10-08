@@ -17,7 +17,7 @@ export default async function NetworkPage(props: {
   searchParams: Promise<{ tab?: string; q?: string; focus?: string; state?: string; available?: string; profession?: string; insurance?: string; age?: string; language?: string; modality?: string; session?: string; psypact?: string; page?: string; connected?: string; declined?: string }>;
 }) {
   const sp = await props.searchParams;
-  const tab = (["directory", "trusted", "saved", "worked", "suggested"].includes(sp.tab || "") ? sp.tab : "directory") as NetworkTab;
+  const tab = (["directory", "mine", "trusted", "saved", "worked", "suggested"].includes(sp.tab || "") ? sp.tab : "directory") as NetworkTab;
   const filters = {
     q: (sp.q || "").trim(),
     focus: sp.focus || "",
@@ -89,7 +89,7 @@ export default async function NetworkPage(props: {
 
   // One database call returns this page of people, the total and the
   // filter options, however large the network grows.
-  const only = tab === "trusted" ? [...trusted] : tab === "saved" ? [...saved] : tab === "worked" ? [...worked] : undefined;
+  const only = tab === "mine" ? Array.from(new Set([...trusted, ...worked])) : tab === "trusted" ? [...trusted] : tab === "saved" ? [...saved] : tab === "worked" ? [...worked] : undefined;
   const { data: result } = await supabase.rpc("network_directory", {
     p: {
       ...filters,
@@ -208,7 +208,7 @@ export default async function NetworkPage(props: {
       focusOptions={opts.focus || []}
       moreOptions={{ insurance: opts.insurance || [], age: opts.age || [], language: opts.language || [], modality: opts.modality || [], session: opts.session || [] }}
       states={states}
-      counts={{ directory: Number(res.all) || 0, trusted: trusted.size, worked: worked.size, saved: saved.size, suggested: 0 }}
+      counts={{ directory: Number(res.all) || 0, mine: new Set([...trusted, ...worked]).size, trusted: trusted.size, worked: worked.size, saved: saved.size, suggested: 0 }}
       networkSize={Number(res.all) || 0}
       circle={{ nodes: circleNodes, me: { initials: myInitials || "You", avatarUrl: urls.get(myProfile?.avatar_path || "") || null } }}
       why={

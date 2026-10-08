@@ -1862,3 +1862,46 @@
 .pa .mobile-menu svg{width:20px;min-width:20px;height:20px;display:block;margin:auto}
 .pa .aud-summary .aud-all{flex:1 1 100%;min-width:0}
 .pa .aud-summary .aud-all p{min-width:0;font-size:13px;color:var(--muted)}
+.pa .plain-steps{margin:8px 0 10px;padding-left:20px;font-size:14px;color:var(--ink)}
+.pa .plain-steps li{margin:6px 0}
+.pa .invite-hero{max-width:640px;margin:0 auto}
+.pa .invite-from{display:flex;align-items:center;gap:14px;margin:18px 0}
+.pa .invite-promise{border-left:3px solid var(--brass);background:var(--brass-soft);padding:10px 14px;border-radius:0 8px 8px 0;color:var(--ink);font-size:14px}
+.pa .demo-more{margin-top:14px;color:var(--muted)}
+.pa .demo-more a{color:var(--forest);font-weight:600}
+.pa .demo-hub-head .btn.lg{margin-top:6px}
+.pa .first-visit{border:1px solid #d9c3a1;background:var(--brass-soft);border-radius:10px;padding:14px 16px;margin:0 0 18px}
+.pa .first-visit p{margin:0 0 10px;color:var(--ink);font-size:14px}
+.pa .first-visit-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.pa .first-visit-actions .plain-button{margin-left:auto;color:var(--muted)}
+.pa .first-visit-link{margin:-8px 0 14px;font-size:13px;text-align:right}
+.pa .first-visit-link a{color:var(--forest);font-weight:600}
+.pa .quick-search .quick-more{color:#e2c49c;font-size:13px;font-weight:600;text-decoration:underline;text-underline-offset:3px}
+/* Cover plan: fields follow the kind of cover chosen. */
+.pa .cover-plan-form .when-close{display:none}
+.pa .cover-plan-form:has(input[name="absence_type"][value="closing_practice"]:checked) .return-date{display:none}
+.pa .cover-plan-form:has(input[name="absence_type"][value="closing_practice"]:checked) .when-start{display:none}
+.pa .cover-plan-form:has(input[name="absence_type"][value="closing_practice"]:checked) .when-close{display:inline}
+.pa .full-preview{background:#fbfaf6;border-style:dashed}
+.pa .full-preview-message{font-family:var(--display);font-size:19px;line-height:1.4;color:var(--ink);margin:8px 0 12px}
+.pa .full-preview-list{list-style:none;margin:0 0 10px;padding:0;display:grid;gap:8px}
+.pa .full-preview-list li{display:grid;padding:8px 10px;background:#fff;border:1px solid var(--line);border-radius:7px}
+.pa .full-preview-list small{color:var(--muted)}
+.pa .subtabs{margin:10px 0 4px}
+.pa .subtabs .chip{font-size:12px}
+/* Continuity: one section open at a time. */
+.pa details.continuity-section > summary{list-style:none;cursor:pointer;margin-bottom:0}
+.pa details.continuity-section > summary::-webkit-details-marker{display:none}
+.pa details.continuity-section[open] > summary{margin-bottom:16px}
+.pa .continuity-section-head > div{flex:1;min-width:0}
+.pa .continuity-chevron{width:10px;height:10px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg);margin-top:10px;flex:none;transition:transform .15s}
+.pa details.continuity-section[open] .continuity-chevron{transform:rotate(-135deg);margin-top:14px}
+.pa .continuity-why{margin:-6px 0 14px}
+/* Settings: long sections fold away. */
+.pa details.settings-group > summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.pa details.settings-group > summary::-webkit-details-marker{display:none}
+.pa details.settings-group > summary h3{margin:0}
+.pa details.settings-group > summary small{display:block;color:var(--muted);font-size:13px;margin-top:2px}
+.pa details.settings-group > summary::after{content:"";width:9px;height:9px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg);flex:none}
+.pa details.settings-group[open] > summary{margin-bottom:12px}
+.pa details.settings-group[open] > summary::after{transform:rotate(-135deg)}

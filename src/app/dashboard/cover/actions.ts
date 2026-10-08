@@ -46,14 +46,15 @@ export async function createPlanAction(formData: FormData) {
   const idErr = identifierError(title);
   if (idErr) back("/dashboard/cover/new", idErr);
   if (!state) back("/dashboard/cover/new", "Choose the state your clients are in.");
-  if (startsOn && endsOn && endsOn < startsOn) back("/dashboard/cover/new", "The return date is before the first day.");
+  if (absence !== "closing_practice" && startsOn && endsOn && endsOn < startsOn) back("/dashboard/cover/new", "The return date is before the first day.");
 
   const { planId, error } = await createCoveragePlan(supabase, userId, {
     title,
     planType: absence === "extended_leave" ? "extended_leave" : absence === "reciprocal" ? "reciprocal" : "ad_hoc",
     track: absence === "closing_practice" ? "refer_out" : undefined,
     startsOn,
-    endsOn,
+    // Closing a practice has no return date.
+    endsOn: absence === "closing_practice" ? undefined : endsOn,
   });
   if (error || !planId) back("/dashboard/cover/new", error || "Couldn't create the plan.");
   await supabase.from("coverage_plans").update({ absence_type: absence, jurisdiction_state: state }).eq("id", planId);

@@ -36,7 +36,7 @@ export async function saveContinuitySection(formData: FormData) {
   const { error } = await supabase.from("continuity_plans").upsert(row, { onConflict: "profile_id" });
   if (error) back(`?error=${encodeURIComponent(error.message)}#${sectionKey}`);
   revalidatePath("/dashboard/continuity");
-  back(`?saved=${sectionKey}#${sectionKey}`);
+  back(`?saved=${sectionKey}`);
 }
 
 export async function markContinuityReviewed() {

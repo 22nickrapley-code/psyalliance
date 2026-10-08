@@ -5,7 +5,7 @@ import { IS_DEMO_SITE, JOIN_URL, JOIN_HREF } from "@/lib/env";
 // Member sign-in. One side says what PsyAlliance is; the other is the
 // form. On the demo site, prospects are pointed to the tour and the real
 // site's join form instead: only sandbox passes and admins sign in here.
-export default async function SignInPage(props: { searchParams: Promise<{ error?: string; message?: string }> }) {
+export default async function SignInPage(props: { searchParams: Promise<{ error?: string; message?: string; next?: string }> }) {
   const sp = await props.searchParams;
   return (
     <div className="pa">
@@ -28,6 +28,7 @@ export default async function SignInPage(props: { searchParams: Promise<{ error?
             {sp.error && <div className="banner error" role="alert">{sp.error}</div>}
             {sp.message && <div className="banner ok" role="status">{sp.message}</div>}
             <form action={signIn} className="stack" style={{ gap: 14 }}>
+              {sp.next && <input type="hidden" name="next" value={sp.next} />}
               <label className="field">
                 Email
                 <input name="email" type="email" required autoComplete="email" />

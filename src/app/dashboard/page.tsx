@@ -25,8 +25,8 @@ const AVAIL = {
 
 const nameOf = (p: any) => (p ? clinicianName(p.full_name, p.qualification_level, p.credential_prefix) : "A colleague");
 
-export default async function HomePage(props: { searchParams: Promise<{ reconfirmed?: string; welcome?: string; sandbox_error?: string }> }) {
-  const { reconfirmed, welcome, sandbox_error } = await props.searchParams;
+export default async function HomePage(props: { searchParams: Promise<{ reconfirmed?: string; welcome?: string; sandbox_error?: string; invite?: string }> }) {
+  const { reconfirmed, welcome, sandbox_error, invite } = await props.searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -243,6 +243,15 @@ export default async function HomePage(props: { searchParams: Promise<{ reconfir
   if (activeLicences.length > 0 && !activeLicences.some((l: any) => l.reviewed_at) && profile.verification_status === "verified") {
     statusLine = "Your license is with a reviewer. You'll be listed and matched as soon as it's checked; nothing for you to do.";
   }
+  // Colleagues whose invitation this member accepted, waiting to connect.
+  if (!IS_DEMO_SITE) {
+    const { data: invs } = await supabase.rpc("my_invitations");
+    const waitingFor = (((invs as any)?.waiting as any[]) || []).map((w) => clinicianName(w.name, w.qualification_level, w.credential_prefix));
+    if (waitingFor.length) {
+      const line = `You'll be in ${waitingFor.length === 1 ? `${waitingFor[0]}'s` : `${waitingFor.length} colleagues'`} trusted circle as soon as you're verified.`;
+      statusLine = statusLine ? `${statusLine} ${line}` : line;
+    }
+  }
   if (activeLicences.length === 0 && profile.verification_status === "verified") {
     steps.push({ key: "lic-none", title: "Add your license", detail: "Members are only listed and matched with an active license on record", href: "/dashboard/credentials", action: "Add", rank: 1 });
   }
@@ -364,7 +373,9 @@ export default async function HomePage(props: { searchParams: Promise<{ reconfir
     ledgerYear: ledger.year,
     sandbox: IS_DEMO_SITE,
     options,
-    notice: reconfirmed
+    notice: invite === "waiting"
+      ? "Invitation accepted. You'll be connected as soon as both of you are verified."
+      : reconfirmed
       ? "Availability reconfirmed. Colleagues will see it as current."
       : welcome === "reset"
         ? "Your sandbox is back to the start. Everything you did has been cleared; colleagues will start getting in touch again in a minute or two."

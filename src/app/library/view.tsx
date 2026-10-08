@@ -7,7 +7,7 @@ import { LeadForm } from "./lead-form";
 // whether it has been independently reviewed. Provisional templates are
 // always labelled "In review"; only reviewed ones can be downloaded.
 
-const DEMO_HREF = `${TOUR_URL}/cover`;
+const DEMO_HREF = `${TOUR_URL}/overview`;
 
 export const joinFrom = (code: string) => `${JOIN_HREF}?from=library-${code}`;
 

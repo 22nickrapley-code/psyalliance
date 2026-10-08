@@ -268,7 +268,7 @@ const LIB_LEAVE: LibraryResource[] = [
 ];
 
 // ---------------------------------------------------------------------------
-export const DEMOS: Demo[] = [
+const DETAIL: Demo[] = [
   {
     key: "cover",
     title: "Cover your time away",
@@ -688,7 +688,7 @@ export const DEMOS: Demo[] = [
             filters={{ q: "", focus: "", state: "NY", available: false, profession: "" }}
             focusOptions={options.focus.map((f) => f.value)}
             states={options.states}
-            counts={{ directory: 1199, trusted: 7, saved: 5, worked: 3, suggested: 0 }}
+            counts={{ directory: 1199, mine: 9, trusted: 7, saved: 5, worked: 3, suggested: 0 }}
             networkSize={1199}
             why="Showing your state first. Trusted colleagues and people you've worked with come first, then members who confirmed their availability in the last 30 days."
           />
@@ -856,6 +856,43 @@ export const DEMOS: Demo[] = [
     ],
   },
 ];
+
+// The 90-second overview: one coherent story told with screens from the
+// closer looks. The problem, the match, Alex's control, the result, then a
+// glimpse of referring and asking, and how verification works.
+const pick = (demo: string, slug: string, over: Partial<DemoStep>): DemoStep => {
+  const base = DETAIL.find((d) => d.key === demo)!.steps.find((x) => x.slug === slug)!;
+  return { ...base, ...over, slug: over.slug || `${demo}-${slug}` };
+};
+
+const OVERVIEW: Demo = {
+  key: "overview",
+  title: "See PsyAlliance in 90 seconds",
+  blurb: "One story: Alex needs six weeks away, colleagues cover every client. Plus a glimpse of referring and asking colleagues.",
+  minutes: "90 seconds",
+  outcome: "Six weeks away, every client covered, by colleagues Alex chose.",
+  learned: [
+    "Matches come with reasons: a reviewed license, the right focus and fresh availability.",
+    "You choose who is asked before anything is sent.",
+    "Referrals and questions work the same way: the right colleagues, chosen by you.",
+    "A person checks every license before anyone can see you.",
+  ],
+  steps: [
+    pick("cover", "plan", { slug: "problem", title: "Alex needs six weeks away", what: "Parental leave is coming, and three clients need cover. In private practice that usually means a week of phone calls. Here it starts with the dates and the state.", focusNote: "Next, PsyAlliance finds colleagues for each client." }),
+    pick("cover", "matches", { slug: "match", title: "The right colleagues, with reasons", what: "For each client, colleagues with a reviewed New York license, the right focus and recently confirmed availability. Trusted colleagues come first, and every match says why.", focusNote: "Alex ticks who to ask. Next, a final check." }),
+    pick("cover", "invite", { slug: "control", title: "Alex decides who is asked", what: "Nothing is sent until Alex has seen exactly who receives each request, and in what order. No client names ever enter PsyAlliance.", focusNote: "Send. A few days later, the replies are in." }),
+    pick("cover", "covered", { slug: "result", title: "Every client covered", what: "Colleagues accept, and the plan shows it. A client only counts as covered once someone has said yes.", focusNote: "Next, a glimpse of referrals." }),
+    pick("refer", "shortlist", { slug: "refer", title: "Referrals work the same way", what: "An inquiry Alex can't take becomes a shortlist of colleagues who fit, each with the reason, instead of a list of names from memory.", focusNote: "Alex checks who receives it before sending." }),
+    pick("consult", "replies", { slug: "consult", title: "And questions go to people Alex trusts", what: "A focused practice question, shared only with the colleagues Alex chooses, answered by people Alex knows.", focusNote: "Last, how members are checked." }),
+    pick("verified", "credentials", { slug: "verified", title: "Everyone here is checked", what: "A person checks each license against the state board before anyone is listed. The Practice Library has templates for leave, referrals and consent, beside the work they support.", focus: undefined, focusNote: undefined }),
+  ],
+};
+
+export const DEMOS: Demo[] = [OVERVIEW, ...DETAIL];
+// The three closer looks offered after the overview; the rest stay
+// reachable as supporting detail.
+export const CLOSER_LOOKS = ["cover", "refer", "consult"];
+export const MORE_DETAIL = ["circle", "verified", "library"];
 
 export function findDemo(key: string) {
   return DEMOS.find((d) => d.key === key) || null;

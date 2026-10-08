@@ -5,6 +5,8 @@ import { ReportContent } from "../_components/report-content";
 import type { ReactNode } from "react";
 import type { Match } from "@/lib/match-engine";
 import { PageHead, Banner, Empty, Status, PersonAvatar, MatchCard } from "../_components/ui";
+import { FirstVisit } from "../_components/first-visit";
+import { TOUR_URL } from "@/lib/env";
 import {
   draftConsultAction,
   publishConsultAction,
@@ -127,6 +129,13 @@ export function ConsultIndexView({
         title="Consult"
         lead="Discuss practice questions with a chosen audience. Keep client information out of the conversation."
         actions={<a className="btn" href={newHref}>{tab === "supervision" ? "Request supervision" : "Ask a question"}</a>}
+      />
+      <FirstVisit
+        id="consult"
+        line="Ask one focused practice question, add context if it helps, and choose exactly who sees it: your trusted circle, a few colleagues, your group or the network."
+        startHref="/dashboard/consult/new"
+        startLabel="Ask a question"
+        exampleHref={`${TOUR_URL}/consult`}
       />
       <Banner error={error} />
       <nav className="tabs" style={{ marginBottom: 18 }}>

@@ -110,7 +110,7 @@ export default async function HomePage() {
             </p>
             <div className="hero-actions">
               <a className="btn lg" href="/auth/sign-up">Create your account</a>
-              <a className="btn secondary lg" href={DEMO("/cover")}>Try the guided demo &rarr;</a>
+              <a className="btn secondary lg" href={DEMO("/overview")}>See it in 90 seconds &rarr;</a>
             </div>
             <p className="hero-free">Founding members never pay.</p>
             <ul className="hero-trust" aria-label="Who it's for">
@@ -173,7 +173,7 @@ export default async function HomePage() {
               ))}
             </div>
             <p className="section-more">
-              <a className="text-arrow" href={DEMO()}>See each one in a short demo &rarr;</a>
+              <a className="text-arrow" href={DEMO()}>See how each one works &rarr;</a>
             </p>
           </div>
         </section>

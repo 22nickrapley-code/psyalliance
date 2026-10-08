@@ -4,6 +4,8 @@ import type { ReactNode } from "react";
 import { SearchableSelect } from "../_components/searchable-select";
 import type { Match } from "@/lib/match-engine";
 import type { NeedOptions } from "@/lib/need-options";
+import { FirstVisit } from "../_components/first-visit";
+import { TOUR_URL } from "@/lib/env";
 import { QuietEmpty, PageHead, Banner, Progress, Empty, Status, MatchCard, SummaryList, PersonAvatar, HANDOFF_RULE } from "../_components/ui";
 import {
   createPlanAction,
@@ -243,6 +245,13 @@ export function CoverIndexView({
         lead="Plan cover for one client or your whole caseload, and answer colleagues who need cover."
         actions={<a className="btn" href="/dashboard/cover/new">Plan cover</a>}
       />
+      <FirstVisit
+        id="cover"
+        line="Plan time away, describe the clients who need cover by need, then choose which colleagues are asked. Nothing is sent until you confirm."
+        startHref="/dashboard/cover/new"
+        startLabel="Start your plan"
+        exampleHref={`${TOUR_URL}/cover`}
+      />
       <Banner ok={ok} error={error} />
       {incoming.length > 0 && (
         <>
@@ -337,7 +346,7 @@ export function CoverPlanStepView({
       <PageHead eyebrow="Cover / new plan" title="Start with the time away." lead="Choose the kind of cover and the dates. Describe each client&rsquo;s needs next, without identifiers." actions={<a className="btn secondary" href="/dashboard/cover">Cancel</a>} />
       <Progress steps={STEPS} current={0} />
       <Banner error={error} />
-      <form className="split" action={createPlanAction}>
+      <form className="split cover-plan-form" action={createPlanAction}>
         <section className="card">
           <div className="eyebrow">Step 1 &middot; Plan</div>
           <h2>What kind of cover do you need?</h2>
@@ -356,12 +365,16 @@ export function CoverPlanStepView({
               <input name="title" required maxLength={80} placeholder="e.g. October leave" defaultValue={preset?.title} />
               <small>For your own reference. Never a client name.</small>
             </label>
-            <label className="field">First day<input type="date" name="starts_on" defaultValue={preset?.starts} /></label>
-            <label className="field">Return date<input type="date" name="ends_on" defaultValue={preset?.ends} /></label>
+            <label className="field">
+              <span className="when-start">First day</span>
+              <span className="when-close">Last day of practice</span>
+              <input type="date" name="starts_on" defaultValue={preset?.starts} />
+            </label>
+            <label className="field return-date">Return date<input type="date" name="ends_on" defaultValue={preset?.ends} /></label>
             <label className="field full">
-              Jurisdiction
+              State your clients are in
               <select name="state" required defaultValue={options.homeState || ""}>
-                <option value="">State your clients are in</option>
+                <option value="">Choose a state</option>
                 {options.states.map((s) => <option key={s.code} value={s.code}>{s.name}</option>)}
               </select>
             </label>

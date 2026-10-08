@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { InviteLanding } from "../../../i/[token]/view";
 import { ContinuityView } from "../../../dashboard/continuity/view";
 import { PlanDocument } from "../../../dashboard/continuity/document";
 import { FullView } from "../../../dashboard/full/view";
@@ -110,7 +111,11 @@ const PICK: Suggestion[] = [
   { id: "l", name: "Lena Park, PsyD", avatarUrl: null, where: "Queens, NY", group: "saved", reason: "Saved", focus: ["Couples", "Perinatal"] },
 ];
 
+const INVITER = { full_name: "Maya Chen", credential_prefix: "Dr.", qualification_level: "PsyD", city: "Brooklyn", state: "NY" };
+
 export const previewScreens: Record<string, () => ReactNode> = {
+  "invite-landing": () => <InviteLanding who={INVITER} token="abc123" signedIn={false} />,
+  "invite-landing-member": () => <InviteLanding who={INVITER} token="abc123" signedIn />,
   home: () => (
     <HomeView
       d={{
@@ -215,7 +220,7 @@ export const previewScreens: Record<string, () => ReactNode> = {
       filters={{ q: "", focus: "", state: "", available: false, profession: "" }}
       focusOptions={["Anxiety", "Depression", "Trauma / PTSD"]}
       states={US_STATES}
-      counts={{ directory: 2, trusted: 1, saved: 1, worked: 0, suggested: 0 }}
+      counts={{ directory: 2, mine: 1, trusted: 1, saved: 1, worked: 0, suggested: 0 }}
     />
   ),
   consult: () => (

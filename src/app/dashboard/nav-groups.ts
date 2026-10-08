@@ -59,7 +59,7 @@ export function buildNavGroups(opts: {
         { href: "/dashboard", label: "Home", glyph: "home" },
         { href: "/dashboard/cover", label: "Cover", glyph: "cover", badge: opts.pendingCoverRequests },
         { href: "/dashboard/refer", label: "Refer", glyph: "refer", badge: opts.pendingReferrals },
-        { href: "/dashboard/network", label: "Network", glyph: "network", matches: ["/dashboard/people"] },
+        { href: "/dashboard/network", label: "Network", glyph: "network", matches: ["/dashboard/people", "/dashboard/invite"] },
         { href: "/dashboard/consult", label: "Consult", glyph: "consult" },
         { href: "/dashboard/messages", label: "Messages", glyph: "messages", badge: opts.unreadMessages },
       ],
