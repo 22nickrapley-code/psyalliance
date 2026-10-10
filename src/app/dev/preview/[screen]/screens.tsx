@@ -16,6 +16,7 @@ import { US_STATES } from "@/lib/us-states";
 import { HomeView } from "../../../dashboard/home-view";
 import { ReferShortlistView, ReferReviewView, ReferIndexView, ReferTrackView } from "../../../dashboard/refer/views";
 import { NetworkView } from "../../../dashboard/network/views";
+import { CliniciansView } from "../../../dashboard/clinicians/views";
 import { ConsultIndexView, ConsultComposeView, ConsultDetailView } from "../../../dashboard/consult/views";
 import { ConversationList, MessagesShell } from "../../../dashboard/messages/views";
 import { LibraryView, MyLibraryView, ResourceDetailView } from "../../../dashboard/documents/views";
@@ -123,13 +124,13 @@ export const previewScreens: Record<string, () => ReactNode> = {
         steps: [
           { key: "1", title: "October leave has 1 unresolved need", detail: "2 of 4 covered", href: "#", action: "Review plan" },
           { key: "2", title: "2 colleagues replied to your referral", detail: "Trauma / PTSD", href: "#", action: "Review replies" },
-          { key: "3", title: "Dr. Imani Brooks invited you to their trusted circle", detail: "A relationship request is waiting for your decision", href: "#", action: "Review" },
+          { key: "3", title: "Dr. Imani Brooks added you as a trusted colleague", detail: "Add them back to put them first in your matches", href: "#", action: "Review" },
           { key: "4", title: "Confirm your availability", detail: "Last confirmed 34 days ago. Colleagues see it as stale", href: "#", action: "Update" },
         ],
         gettingStarted: null,
         availability: { referrals: "Selected referrals", cover: "Limited, ask me", consult: "Open to consult", confirmedLabel: "Last confirmed 34 days ago. Reconfirm to stay in suggestions", stale: true, canReconfirm: true },
         relevant: [
-          { key: "r1", title: "Referral: Anxiety", detail: "From Dr. Eli Ramirez · NY", why: "From your trusted circle", href: "#" },
+          { key: "r1", title: "Referral: Anxiety", detail: "From Dr. Eli Ramirez · NY", why: "From a trusted colleague", href: "#" },
           { key: "r2", title: "Cover request: Depression", detail: "From Dr. Maya Chen", why: "Sent to you", href: "#" },
         ],
         circle: { trusted: 12, saved: 5, workedWith: 7, newThisMonth: 2, recentlyAvailable: ["Dr. Maya Chen", "Dr. Eli Ramirez"] },
@@ -224,45 +225,49 @@ export const previewScreens: Record<string, () => ReactNode> = {
       }}
     />
   ),
-  "network-saved": () => (
-    <NetworkView
-      tab="directory"
-      savedNote="saved"
+  clinicians: () => (
+    <CliniciansView
       people={[
-        { id: "a", name: "Maya Chen, PsyD", qualification: "PsyD", city: "Brooklyn", state: "NY", licenceStates: ["NY"], topFocus: ["Trauma / PTSD", "Anxiety"], availability: "Accepting referrals", fresh: true, confirmedDaysAgo: 2, psypact: false, avatarUrl: null, relationship: "saved", saved: true },
+        { id: "a", name: "Maya Chen, PsyD", qualification: "PsyD", city: "Brooklyn", state: "NY", licenceStates: ["NY"], topFocus: ["Trauma / PTSD", "Anxiety"], availability: "Accepting referrals", fresh: true, confirmedDaysAgo: 2, psypact: false, avatarUrl: null, relationship: "trusted" },
+        { id: "b", name: "Eli Ramirez, MD", qualification: "MD", city: "Manhattan", state: "NY", licenceStates: ["NY", "NJ"], topFocus: ["Depression"], availability: "Selected referrals", fresh: false, confirmedDaysAgo: 41, psypact: false, avatarUrl: null, relationship: "worked_with" },
+        { id: "c", name: "Rachel Rodorigo, PsyD", qualification: "PsyD", city: "Rochester", state: "MI", licenceStates: ["MA"], topFocus: ["Developmental Disabilities"], availability: "Accepting referrals", fresh: true, confirmedDaysAgo: 0, psypact: false, avatarUrl: null, relationship: "none" },
       ]}
-      suggested={[]}
-      suggestedAvatars={{}}
-      invitations={[]}
-      sentCount={0}
-      filters={{ q: "Maya", focus: "", state: "NY", available: true, profession: "", insurance: "Aetna" }}
+      total={3}
+      filters={{ q: "", focus: "", state: "", available: false, profession: "" }}
       focusOptions={["Anxiety", "Depression", "Trauma / PTSD"]}
       states={US_STATES}
-      counts={{ directory: 1, mine: 0, trusted: 0, saved: 1, worked: 0, suggested: 0 }}
+      note="Added as a trusted colleague. They come first in your matches, and they've been told."
     />
   ),
   network: () => (
     <NetworkView
-      tab="directory"
-      people={[
-        { id: "a", name: "Maya Chen, PsyD", qualification: "PsyD", city: "Brooklyn", state: "NY", licenceStates: ["NY"], topFocus: ["Trauma / PTSD", "Anxiety"], availability: "Accepting referrals", fresh: true, confirmedDaysAgo: 2, psypact: false, avatarUrl: null, relationship: "trusted", saved: false },
-        { id: "b", name: "Eli Ramirez, MD", qualification: "MD", city: "Manhattan", state: "NY", licenceStates: ["NY", "NJ"], topFocus: ["Depression"], availability: "Selected referrals", fresh: false, confirmedDaysAgo: 41, psypact: false, avatarUrl: null, relationship: "none", saved: true },
+      trusted={[
+        { id: "a", name: "Maya Chen, PsyD", where: "Brooklyn, NY", avatarUrl: null, why: "Trusted · worked together", trusted: true },
+        { id: "d", name: "Samuel Okafor, PhD", where: "Brooklyn, NY", avatarUrl: null, why: "Trusted colleague", trusted: true },
       ]}
-      suggested={[]}
-      suggestedAvatars={{}}
-      invitations={[{ id: 1, name: "Imani Brooks, PhD", profileId: "c", where: "Queens, NY", avatarUrl: null }]}
-      sentCount={1}
-      filters={{ q: "", focus: "", state: "", available: false, profession: "" }}
-      focusOptions={["Anxiety", "Depression", "Trauma / PTSD"]}
-      states={US_STATES}
-      counts={{ directory: 2, mine: 1, trusted: 1, saved: 1, worked: 0, suggested: 0 }}
+      worked={[
+        { id: "a", name: "Maya Chen, PsyD", where: "Brooklyn, NY", avatarUrl: null, why: "3 referrals, cover or consults together", trusted: true },
+        { id: "b", name: "Eli Ramirez, MD", where: "Manhattan, NY", avatarUrl: null, why: "1 referral, cover or consult together", trusted: false },
+      ]}
+      suggested={[
+        { id: "e", name: "Imani Brooks, PhD", where: "Queens, NY", avatarUrl: null, why: "Added you as a trusted colleague", trusted: false },
+        { id: "f", name: "Lena Park, PsyD", where: "Albany, NY", avatarUrl: null, why: "Anxiety is their top specialty", trusted: false },
+      ]}
+      nodes={[
+        { id: "a", name: "Maya Chen, PsyD", kind: "trusted", avatarUrl: null },
+        { id: "d", name: "Samuel Okafor, PhD", kind: "trusted", avatarUrl: null },
+        { id: "b", name: "Eli Ramirez, MD", kind: "worked", avatarUrl: null },
+        { id: "e", name: "Imani Brooks, PhD", kind: "suggested", avatarUrl: null },
+        { id: "f", name: "Lena Park, PsyD", kind: "suggested", avatarUrl: null },
+      ]}
+      me={{ initials: "AR", avatarUrl: null }}
     />
   ),
   consult: () => (
     <ConsultIndexView
       tab="discussions"
       posts={[
-        { id: 1, kind: "question", question: "How are you structuring a transition to a new covering clinician?", context: "A planned leave is approaching. I would welcome approaches to transition communication and clear role boundaries.", tags: ["Private practice"], audienceLabel: "Trusted colleagues", authorName: "Dr. Maya Chen", createdAt: new Date().toISOString(), replies: 3, status: "open", mine: false, why: "From your trusted circle" },
+        { id: 1, kind: "question", question: "How are you structuring a transition to a new covering clinician?", context: "A planned leave is approaching. I would welcome approaches to transition communication and clear role boundaries.", tags: ["Private practice"], audienceLabel: "Trusted colleagues", authorName: "Dr. Maya Chen", createdAt: new Date().toISOString(), replies: 3, status: "open", mine: false, why: "From a trusted colleague" },
         { id: 2, kind: "question", question: "What helps your peer consultation group stay clinically focused?", context: null, tags: ["Supervision"], audienceLabel: "Verified network", authorName: "Dr. Imani Brooks", createdAt: new Date(Date.now() - 86400000).toISOString(), replies: 6, status: "resolved", mine: false },
       ]}
       tags={["Anxiety", "Trauma / PTSD", "Private practice", "Supervision"]}
@@ -463,6 +468,55 @@ export const previewScreens: Record<string, () => ReactNode> = {
       licenceCount={1}
       avatarUrl={null}
       me="me"
+    />
+  ),
+  "profile-new": () => (
+    <ProfileView
+      sp={{}}
+      profile={{ full_name: "Rena Pazienza", qualification_level: "PhD", primary_state: "TX", avatar_path: null }}
+      lookups={lookups}
+      selectedRows={[]}
+      licenceCount={0}
+      avatarUrl={null}
+      me="me"
+      back="/dashboard"
+    />
+  ),
+  "profile-view": () => (
+    <ProfileView
+      sp={{ saved: "1" }}
+      profile={{ full_name: "Alex Rivers", credential_prefix: "Dr.", qualification_level: "PsyD", primary_practice_city: "Brooklyn", primary_state: "NY", bio: "Adults and adolescents with anxiety and trauma.", avatar_path: null }}
+      lookups={lookups}
+      selectedRows={[{ lookup_value_id: 102, rank: 1 }, { lookup_value_id: 100, rank: 2 }]}
+      licenceCount={1}
+      avatarUrl={null}
+      me="me"
+      editing={false}
+      licenses={[{ state: "NY", reviewed: true }]}
+    />
+  ),
+  "home-setup-done": () => (
+    <HomeView
+      d={{
+        firstName: "Rena",
+        steps: [],
+        gettingStarted: null,
+        setupNote: "Well done for completing your set-up. We're reviewing your credentials and will be in touch shortly.",
+        availability: { referrals: "Accepting", cover: "Available", consult: "Open to consult", confirmedLabel: "Confirmed today", stale: false, canReconfirm: true },
+        options,
+      }}
+    />
+  ),
+  "home-verified": () => (
+    <HomeView
+      d={{
+        firstName: "Rena",
+        steps: [],
+        gettingStarted: null,
+        justVerified: "2026-10-10T11:10:12.000Z",
+        availability: { referrals: "Accepting", cover: "Available", consult: "Open to consult", confirmedLabel: "Confirmed today", stale: false, canReconfirm: true },
+        options,
+      }}
     />
   ),
   settings: () => (

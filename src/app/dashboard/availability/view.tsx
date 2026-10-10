@@ -1,6 +1,8 @@
 import { confirmAvailability, reconfirmAvailability } from "./actions";
 import { APP_TIME_ZONE } from "@/lib/dates";
 import { PageHead, Banner, Status, SummaryList } from "../_components/ui";
+import { ProfileTabs } from "../_components/profile-tabs";
+import { BackLink, BackField } from "../_components/back-link";
 // Availability (Product Spec v1): three separate signals, each with its
 // own status, plus approximate spaces, a pause-until date and the date
 // last confirmed, which colleagues see. A never-confirmed status is never
@@ -70,7 +72,7 @@ export type AvailabilityData = {
   availability_paused_until: string | null;
 } | null;
 
-export function AvailabilityView({ p, sp }: { p: AvailabilityData; sp: { confirmed?: string; reconfirmed?: string; error?: string } }) {
+export function AvailabilityView({ p, sp, back }: { p: AvailabilityData; sp: { confirmed?: string; reconfirmed?: string; error?: string }; back?: string | null }) {
   const confirmedAt = p?.availability_confirmed_at ? new Date(p.availability_confirmed_at) : null;
   const age = confirmedAt ? Math.floor((Date.now() - confirmedAt.getTime()) / 86_400_000) : null;
   const stale = age === null || age > 30;
@@ -82,6 +84,8 @@ export function AvailabilityView({ p, sp }: { p: AvailabilityData; sp: { confirm
 
   return (
     <>
+      <BackLink back={back} />
+      <ProfileTabs active="availability" back={back} />
       <PageHead
         eyebrow="Your availability"
         title="Availability"
@@ -98,6 +102,7 @@ export function AvailabilityView({ p, sp }: { p: AvailabilityData; sp: { confirm
       <Banner error={sp.error} ok={sp.confirmed ? "Availability saved and confirmed." : sp.reconfirmed ? "Reconfirmed. Colleagues will see today's date." : null} />
       <div className="split">
         <form action={confirmAvailability} className="card">
+          <BackField back={back} />
           <div className="eyebrow">What colleagues see</div>
           <h2 style={{ marginTop: 8 }}>Choose your capacity.</h2>
           {!preselect && (
@@ -116,7 +121,7 @@ export function AvailabilityView({ p, sp }: { p: AvailabilityData; sp: { confirm
           <Signal
             name="coverage_availability"
             title="Cover"
-            help="Seeing a colleague's clients while they're away, for days or months."
+            help="Seeing a colleague's clients while they're away."
             options={COVER}
             value={p?.coverage_availability}
             preselect={preselect}

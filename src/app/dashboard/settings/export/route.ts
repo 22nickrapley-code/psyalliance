@@ -28,7 +28,7 @@ export async function GET() {
       q("consultations", "author_profile_id"),
       q("consultation_responses", "responder_profile_id"),
       q("conversation_messages", "author_id", "conversation_id, body, created_at, edited_at"),
-      q("saved_clinicians", "profile_id"),
+      q("trusted_colleagues", "profile_id"),
       q("do_not_work_with", "profile_id"),
       q("blocked_members", "profile_id"),
       q("collaboration_ratings", "rater_profile_id"),

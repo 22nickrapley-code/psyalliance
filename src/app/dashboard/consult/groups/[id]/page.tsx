@@ -49,10 +49,9 @@ export default async function ConsultationGroupPage(props: { params: Promise<{ i
       .order("created_at", { ascending: false }),
     isCreator
       ? supabase
-          .from("connections")
-          .select("requester_id, addressee_id, requester:requester_id(full_name, credential_prefix, qualification_level), addressee:addressee_id(full_name, credential_prefix, qualification_level)")
-          .eq("status", "accepted")
-          .or(`requester_id.eq.${me},addressee_id.eq.${me}`)
+          .from("trusted_colleagues")
+          .select("colleague_id, colleague:colleague_id(full_name, credential_prefix, qualification_level)")
+          .eq("profile_id", me)
       : Promise.resolve({ data: [] as any[] }),
   ]);
   if (!isCreator && !mine) redirect("/dashboard/consult/groups?error=" + encodeURIComponent("That group isn't available."));
@@ -61,7 +60,7 @@ export default async function ConsultationGroupPage(props: { params: Promise<{ i
   const nameOf = (p: any) => (p ? clinicianName(p?.full_name, p?.qualification_level, p?.credential_prefix) : "Member");
   const existing = new Set((members || []).map((m: any) => m.profile_id).filter(Boolean));
   const candidates = (conns || [])
-    .map((c: any) => (c.requester_id === me ? { id: c.addressee_id, ...c.addressee } : { id: c.requester_id, ...c.requester }))
+    .map((c: any) => ({ id: c.colleague_id, ...c.colleague }))
     .filter((c: any) => c.id && !existing.has(c.id));
   const activeMembers = (members || []).filter((m: any) => ["joined", "invited"].includes(m.status));
 

@@ -6,6 +6,7 @@ import { clinicianName, roleLabel, professionFor } from "@/lib/profession";
 import { US_STATES } from "@/lib/us-states";
 import { ClinicianProfileView, type ClinicianProfile } from "./view";
 import { PageHead, Empty } from "../../_components/ui";
+import { safeBack } from "@/lib/back";
 
 export const metadata = { title: "Colleague" };
 
@@ -29,9 +30,9 @@ const AVAIL = {
   consult: { yes: "Open to consult", limited: "Consult: limited", no: "Not consulting now" } as Record<string, string>,
 };
 
-export default async function PersonPage(props: { params: Promise<{ id: string }>; searchParams: Promise<{ error?: string; connected?: string; declined?: string }> }) {
+export default async function PersonPage(props: { params: Promise<{ id: string }>; searchParams: Promise<{ error?: string; trusted?: string; untrusted?: string; back?: string }> }) {
   const { id } = await props.params;
-  const { error, connected, declined } = await props.searchParams;
+  const { error, trusted: justTrusted, untrusted, back } = await props.searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -44,16 +45,14 @@ export default async function PersonPage(props: { params: Promise<{ id: string }
     .select("bio, approx_spaces, availability_paused_until")
     .eq("id", id)
     .maybeSingle();
-  const [{ data: rows }, { data: licenceRows }, { data: connection }, { data: savedRow }, { data: excludedRow }, { data: track }, { data: workedWithMe }] =
+  const [{ data: rows }, { data: licenceRows }, { data: trustRows }, { data: excludedRow }, { data: track }, { data: workedWithMe }] =
     await Promise.all([
       supabase.from("public_directory").select("*").eq("id", id),
       supabase.rpc("network_licence_states").eq("profile_id", id),
       supabase
-        .from("connections")
-        .select("*")
-        .or(`and(requester_id.eq.${myself},addressee_id.eq.${id}),and(requester_id.eq.${id},addressee_id.eq.${myself})`)
-        .maybeSingle(),
-      supabase.from("saved_clinicians").select("id").eq("profile_id", myself).eq("clinician_id", id).maybeSingle(),
+        .from("trusted_colleagues")
+        .select("profile_id, colleague_id, created_at")
+        .or(`and(profile_id.eq.${myself},colleague_id.eq.${id}),and(profile_id.eq.${id},colleague_id.eq.${myself})`),
       supabase.from("do_not_work_with").select("blocked_profile_id").eq("profile_id", myself).eq("blocked_profile_id", id).maybeSingle(),
       supabase.rpc("member_track_record", { target: id }).maybeSingle<any>(),
       supabase.from("worked_with_before").select("interaction_count").eq("profile_id", myself).eq("colleague_id", id).maybeSingle(),
@@ -63,7 +62,7 @@ export default async function PersonPage(props: { params: Promise<{ id: string }
     return (
       <>
         <PageHead eyebrow="Network" title="Profile not available" />
-        <Empty title="This colleague isn't listed." body="Only verified members with an active license on record appear in the network." action={<a className="btn secondary" href="/dashboard/network">Back to Network</a>} />
+        <Empty title="This colleague isn't listed." body="Only verified members with an active license on record appear in the network." action={<a className="btn secondary" href="/dashboard/clinicians">Back to Clinicians</a>} />
       </>
     );
   }
@@ -81,16 +80,9 @@ export default async function PersonPage(props: { params: Promise<{ id: string }
   const age = p.availability_confirmed_at ? Math.floor((Date.now() - new Date(p.availability_confirmed_at).getTime()) / 86_400_000) : null;
   const confirmed = age === null ? "Availability not confirmed" : age === 0 ? "Confirmed today" : `Confirmed ${age} day${age === 1 ? "" : "s"} ago`;
 
-  const status =
-    connection?.status === "accepted"
-      ? "trusted"
-      : connection?.status === "pending"
-        ? connection.requester_id === myself
-          ? "pending_out"
-          : "pending_in"
-        : null;
-  const relationship =
-    status === "trusted" ? "Trusted colleague" : workedWithMe ? "Worked with before" : savedRow ? "Saved" : status === "pending_out" ? "Invitation sent" : status === "pending_in" ? "Wants to connect" : "Verified network";
+  const mine = (trustRows || []).find((t: any) => t.profile_id === myself);
+  const trustsMe = (trustRows || []).some((t: any) => t.profile_id === id);
+  const relationship = mine ? "Trusted colleague" : workedWithMe ? "Worked with before" : "Verified network";
 
   // Counts only, from member_track_record (individual events are private).
   const worked = Number(track?.colleagues_worked_with || 0);
@@ -144,13 +136,10 @@ export default async function PersonPage(props: { params: Promise<{ id: string }
     confirmed,
     specialties,
     relationship,
-    status: status as ClinicianProfile["status"],
-    connectionId: connection?.id ?? null,
-    since: connection?.status === "accepted" && (connection?.responded_at || connection?.created_at)
-      ? new Date(connection.responded_at || connection.created_at).toLocaleDateString("en-US", { month: "long", year: "numeric", timeZone: "America/New_York" })
-      : null,
+    trusted: !!mine,
+    trustsMe,
+    since: mine?.created_at ? new Date(mine.created_at).toLocaleDateString("en-US", { month: "long", year: "numeric", timeZone: "America/New_York" }) : null,
     workedWith: !!workedWithMe,
-    saved: !!savedRow,
     excluded: !!excludedRow,
     collaborations: Number(workedWithMe?.interaction_count || 0),
     signals,
@@ -159,5 +148,6 @@ export default async function PersonPage(props: { params: Promise<{ id: string }
   void AVAIL.referral;
   void AVAIL.cover;
 
-  return <ClinicianProfileView p={view} error={error} connected={connected} declined={!!declined} />;
+  const note = justTrusted ? `${view.firstName} is now one of your trusted colleagues, and has been told.` : untrusted ? `Removed from your trusted colleagues. ${view.firstName} isn't told.` : null;
+  return <ClinicianProfileView p={view} error={error} note={note} back={safeBack(back)} />;
 }

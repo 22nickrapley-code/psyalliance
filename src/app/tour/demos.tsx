@@ -8,7 +8,8 @@ import { ConsultComposeView, ConsultDetailView } from "../dashboard/consult/view
 import { ConversationList, MessagesShell } from "../dashboard/messages/views";
 import { HomeView } from "../dashboard/home-view";
 import { MessageReactions } from "../dashboard/messages/reactions";
-import { NetworkView, type Person } from "../dashboard/network/views";
+import { CliniciansView, type Person } from "../dashboard/clinicians/views";
+import { NetworkView } from "../dashboard/network/views";
 import { ClinicianProfileView, type ClinicianProfile } from "../dashboard/people/[id]/view";
 import { CredentialsView } from "../dashboard/credentials/view";
 import { AvailabilityView } from "../dashboard/availability/view";
@@ -142,27 +143,27 @@ const ALEX_CIRCLE = {
     { id: "t6", name: "Adrian Ramirez, PsyD", kind: "trusted", avatarUrl: null },
     { id: "t7", name: "Aaron Quinn, PsyD", kind: "trusted", avatarUrl: null },
     { id: "eli", name: "Eli Ramirez, MD", kind: "worked", avatarUrl: AV.eli },
-    { id: "lena", name: "Lena Park, PsyD", kind: "saved", avatarUrl: AV.lena },
-    { id: "noah", name: "Noah Patel, PsyD", kind: "saved", avatarUrl: AV.noah },
-  ] as { id: string; name: string; kind: "trusted" | "worked" | "saved"; avatarUrl: string | null }[],
+    { id: "lena", name: "Lena Park, PsyD", kind: "suggested", avatarUrl: AV.lena },
+    { id: "noah", name: "Noah Patel, PsyD", kind: "suggested", avatarUrl: AV.noah },
+  ] as { id: string; name: string; kind: "trusted" | "worked" | "suggested"; avatarUrl: string | null }[],
 };
 const ALEX_SUGGESTIONS = ALEX_CIRCLE.nodes.map((n) => ({
   id: n.id,
   name: n.name,
   avatarUrl: n.avatarUrl,
   where: n.id === "maya" ? "Brooklyn, NY" : "New York",
-  group: (n.kind === "trusted" ? "trusted" : n.kind) as "trusted" | "worked" | "saved",
-  reason: n.kind === "trusted" ? "Trusted colleague" : n.kind === "worked" ? "Worked with before" : "Saved",
+  group: (n.kind === "trusted" ? "trusted" : n.kind === "worked" ? "worked" : "network") as "trusted" | "worked" | "network",
+  reason: n.kind === "trusted" ? "Trusted colleague" : n.kind === "worked" ? "Worked with before" : "Fits your practice",
   focus: [] as string[],
   trusted: n.kind === "trusted",
 }));
 const people: Person[] = [
-  { id: "maya", name: "Maya Chen, PsyD", qualification: "PsyD", city: "Brooklyn", state: "NY", licenceStates: ["NY"], topFocus: ["Trauma/PTSD", "Anxiety/Panic Disorders"], modalities: ["EMDR"], availability: "Accepting referrals", fresh: true, confirmedDaysAgo: 3, psypact: false, avatarUrl: AV.maya, relationship: "trusted", saved: false },
-  { id: "sam", name: "Samuel Okafor, PhD", qualification: "PhD", city: "Brooklyn", state: "NY", licenceStates: ["NY"], topFocus: ["Obsessive/Compulsive Disorder", "Anxiety/Panic Disorders"], modalities: ["Exposure and Response Prevention"], availability: "Accepting referrals", fresh: true, confirmedDaysAgo: 8, psypact: false, avatarUrl: AV.samuel, relationship: "trusted", saved: false },
-  { id: "eli", name: "Eli Ramirez, MD", qualification: "MD", city: "Manhattan", state: "NY", licenceStates: ["NY", "NJ"], topFocus: ["Depression", "Bipolar Disorder"], modalities: ["Medication management"], availability: "Selected referrals", fresh: true, confirmedDaysAgo: 6, psypact: false, avatarUrl: AV.eli, relationship: "worked_with", saved: false },
-  { id: "imani", name: "Imani Brooks, PhD", qualification: "PhD", city: "Queens", state: "NY", licenceStates: ["NY"], topFocus: ["Pregnancy/Childbirth", "Anxiety/Panic Disorders"], modalities: ["CBT"], availability: "Accepting referrals", fresh: true, confirmedDaysAgo: 1, psypact: false, avatarUrl: AV.imani, relationship: "pending_in", saved: false },
-  { id: "lena", name: "Lena Park, PsyD", qualification: "PsyD", city: "Albany", state: "NY", licenceStates: ["NY"], topFocus: ["Obsessive/Compulsive Disorder", "Anxiety/Panic Disorders"], modalities: ["ERP"], availability: "Selected referrals", fresh: true, confirmedDaysAgo: 12, psypact: false, avatarUrl: AV.lena, relationship: "saved", saved: true },
-  { id: "noah", name: "Noah Patel, PsyD", qualification: "PsyD", city: "Princeton", state: "NJ", licenceStates: ["NJ"], topFocus: ["Obsessive/Compulsive Disorder", "Depression"], modalities: ["ERP"], availability: "Accepting referrals", fresh: true, confirmedDaysAgo: 9, psypact: true, avatarUrl: AV.noah, relationship: "saved", saved: true },
+  { id: "maya", name: "Maya Chen, PsyD", qualification: "PsyD", city: "Brooklyn", state: "NY", licenceStates: ["NY"], topFocus: ["Trauma/PTSD", "Anxiety/Panic Disorders"], modalities: ["EMDR"], availability: "Accepting referrals", fresh: true, confirmedDaysAgo: 3, psypact: false, avatarUrl: AV.maya, relationship: "trusted" },
+  { id: "sam", name: "Samuel Okafor, PhD", qualification: "PhD", city: "Brooklyn", state: "NY", licenceStates: ["NY"], topFocus: ["Obsessive/Compulsive Disorder", "Anxiety/Panic Disorders"], modalities: ["Exposure and Response Prevention"], availability: "Accepting referrals", fresh: true, confirmedDaysAgo: 8, psypact: false, avatarUrl: AV.samuel, relationship: "trusted" },
+  { id: "eli", name: "Eli Ramirez, MD", qualification: "MD", city: "Manhattan", state: "NY", licenceStates: ["NY", "NJ"], topFocus: ["Depression", "Bipolar Disorder"], modalities: ["Medication management"], availability: "Selected referrals", fresh: true, confirmedDaysAgo: 6, psypact: false, avatarUrl: AV.eli, relationship: "worked_with" },
+  { id: "imani", name: "Imani Brooks, PhD", qualification: "PhD", city: "Queens", state: "NY", licenceStates: ["NY"], topFocus: ["Pregnancy/Childbirth", "Anxiety/Panic Disorders"], modalities: ["CBT"], availability: "Accepting referrals", fresh: true, confirmedDaysAgo: 1, psypact: false, avatarUrl: AV.imani, relationship: "none" },
+  { id: "lena", name: "Lena Park, PsyD", qualification: "PsyD", city: "Albany", state: "NY", licenceStates: ["NY"], topFocus: ["Obsessive/Compulsive Disorder", "Anxiety/Panic Disorders"], modalities: ["ERP"], availability: "Selected referrals", fresh: true, confirmedDaysAgo: 12, psypact: false, avatarUrl: AV.lena, relationship: "none" },
+  { id: "noah", name: "Noah Patel, PsyD", qualification: "PsyD", city: "Princeton", state: "NJ", licenceStates: ["NJ"], topFocus: ["Obsessive/Compulsive Disorder", "Depression"], modalities: ["ERP"], availability: "Accepting referrals", fresh: true, confirmedDaysAgo: 9, psypact: true, avatarUrl: AV.noah, relationship: "none" },
 ];
 
 const profileBase = {
@@ -171,8 +172,6 @@ const profileBase = {
   boardCertified: false,
   availabilityFresh: true,
   specialties: [] as string[],
-  connectionId: 1,
-  saved: false,
   excluded: false,
   primaryState: "NY",
 };
@@ -201,7 +200,9 @@ const mayaProfile: ClinicianProfile = {
   ],
   confirmed: "Confirmed 3 days ago",
   relationship: "Trusted colleague",
-  status: "trusted",
+  trusted: true,
+  trustsMe: true,
+  since: "March 2026",
   collaborations: 3,
   signals: ["Worked with you 3 times", "Covered for colleagues twice", "Typically replies within a day"],
 };
@@ -233,8 +234,8 @@ const alexProfile: ClinicianProfile = {
   ],
   confirmed: "Confirmed today",
   relationship: "Verified network",
-  status: null,
-  connectionId: null,
+  trusted: false,
+  trustsMe: false,
   collaborations: 0,
   signals: [],
 };
@@ -636,7 +637,7 @@ const DETAIL: Demo[] = [
         slug: "home",
         perspective: "alex",
         title: "Alex's morning",
-        what: "Home asks one question: what would you like to do? Four jobs, and a fifth tile that counts what's waiting for Alex and opens the list in place. Underneath: what colleagues see of Alex's availability, and who in the trusted circle is open today.",
+        what: "Home asks one question: what would you like to do? Four jobs, and a fifth tile that counts what's waiting for Alex and opens the list in place. Underneath: what colleagues see of Alex's availability, and which of Alex's trusted colleagues are open today.",
         focus: "Find a clinician",
         focusNote: "Next, find a colleague in the network.",
         render: () => (
@@ -649,7 +650,7 @@ const DETAIL: Demo[] = [
                 { key: "cover-1", title: "Aaron Garcia, DO asked you to cover 2 clients", detail: "Anxiety/Panic Disorders and Trauma/PTSD · Unexpected absence · NY · this week", href: "#", action: "Review request", urgent: true, person: { id: "t3", name: "Aaron Garcia, DO" } },
                 { key: "ref-1", title: "Your Obsessive/Compulsive Disorder referral is ready to choose", detail: "Everyone you asked has replied. 2 interested", href: "#", action: "Choose a colleague" },
                 { key: "offers", title: "3 referrals are waiting for your reply", detail: "Trauma/PTSD from Maya Chen · Anxiety/Panic Disorders from Eli Ramirez · Anxiety/Panic Disorders from Aaron Quinn", href: "#", action: "Review referrals" },
-                { key: "invs", title: "2 colleagues invited you to their trusted circle", detail: "Imani Brooks, Adrian Turner", href: "#", action: "Review" },
+                { key: "invs", title: "2 colleagues added you as a trusted colleague", detail: "Imani Brooks, Adrian Turner", href: "#", action: "Review" },
                 { key: "msgs", title: "1 unread conversation", detail: "Messages from colleagues", href: "#", action: "Read" },
               ],
               gettingStarted: null,
@@ -669,28 +670,17 @@ const DETAIL: Demo[] = [
         slug: "network",
         perspective: "alex",
         title: "Find colleagues by need",
-        what: "1,200 fictional clinicians in six states. The network opens on Alex's state, trusted colleagues first, with license, focus and availability on every card.",
+        what: "Clinicians lists all 1,200 fictional members in six states, Alex's trusted colleagues first, with license, focus and availability on every card. One button on each: Add as Trusted Colleague.",
         focus: "Maya Chen",
         focusNote: "Open a colleague's profile.",
         render: () => (
-          <NetworkView
-            circle={ALEX_CIRCLE}
-            tab="directory"
+          <CliniciansView
             people={people}
-            total={people.length}
-            suggested={[]}
-            suggestedAvatars={{}}
-            invitations={[
-              { id: 1, name: "Imani Brooks, PhD", profileId: "imani", where: "Queens, NY", avatarUrl: AV.imani },
-              { id: 2, name: "Adrian Turner, PhD", profileId: "at", where: "Cherry Hill, NJ", avatarUrl: null },
-            ]}
-            sentCount={1}
-            filters={{ q: "", focus: "", state: "NY", available: false, profession: "" }}
+            total={1199}
+            filters={{ q: "", focus: "", state: "", available: false, profession: "" }}
             focusOptions={options.focus.map((f) => f.value)}
             states={options.states}
-            counts={{ directory: 1199, mine: 9, trusted: 7, saved: 5, worked: 3, suggested: 0 }}
             networkSize={1199}
-            why="Showing your state first. Trusted colleagues and people you've worked with come first, then members who confirmed their availability in the last 30 days."
           />
         ),
       },
@@ -868,7 +858,7 @@ const pick = (demo: string, slug: string, over: Partial<DemoStep>): DemoStep => 
 const OVERVIEW: Demo = {
   key: "overview",
   title: "See PsyAlliance in 90 seconds",
-  blurb: "One story: Alex needs six weeks away, colleagues cover every client. Plus a glimpse of referring and asking colleagues.",
+  blurb: "Step through the story yourself: Alex needs six weeks away, colleagues cover every client. Plus a glimpse of referring and asking colleagues.",
   minutes: "90 seconds",
   outcome: "Six weeks away, every client covered, by colleagues Alex chose.",
   learned: [
@@ -878,7 +868,8 @@ const OVERVIEW: Demo = {
     "A person checks every license before anyone can see you.",
   ],
   steps: [
-    pick("cover", "plan", { slug: "problem", title: "Alex needs six weeks away", what: "Parental leave is coming, and three clients need cover. In private practice that usually means a week of phone calls. Here it starts with the dates and the state.", focusNote: "Next, PsyAlliance finds colleagues for each client." }),
+    pick("cover", "plan", { slug: "problem", title: "Alex needs six weeks away", what: "Parental leave is coming, and three clients need cover. In private practice that usually means a week of phone calls. Here it starts with the dates and the state.", focusNote: "Next, Alex describes each client by need." }),
+    pick("cover", "clients", { slug: "need", title: "Each client, described by need", what: "Alex adds the three clients by what they need: focus, age group and setting. Never a name or anything that identifies them.", focusNote: "Next, PsyAlliance finds colleagues for each client." }),
     pick("cover", "matches", { slug: "match", title: "The right colleagues, with reasons", what: "For each client, colleagues with a reviewed New York license, the right focus and recently confirmed availability. Trusted colleagues come first, and every match says why.", focusNote: "Alex ticks who to ask. Next, a final check." }),
     pick("cover", "invite", { slug: "control", title: "Alex decides who is asked", what: "Nothing is sent until Alex has seen exactly who receives each request, and in what order. No client names ever enter PsyAlliance.", focusNote: "Send. A few days later, the replies are in." }),
     pick("cover", "covered", { slug: "result", title: "Every client covered", what: "Colleagues accept, and the plan shows it. A client only counts as covered once someone has said yes.", focusNote: "Next, a glimpse of referrals." }),

@@ -7,6 +7,7 @@ import { US_STATES } from "@/lib/us-states";
 import { loadOpenStates, stateList } from "@/lib/open-states";
 import { PublicNav, PublicFooter } from "../../_public/chrome";
 import { DegreeField } from "./degree-field";
+import { PasswordField } from "../../_public/password-field";
 import { clinicianName } from "@/lib/profession";
 
 export const metadata = {
@@ -45,7 +46,7 @@ export default async function SignUpPage(props: {
             <div className="join-intro">
               {inviterName && (
                 <p className="invite-promise" style={{ marginTop: 0 }}>
-                  <b>{inviterName}</b> invited you. Create your account and you&rsquo;ll be in each other&rsquo;s trusted circle once you&rsquo;re verified.
+                  <b>{inviterName}</b> invited you. Create your account and you&rsquo;ll be each other&rsquo;s trusted colleagues once you&rsquo;re verified.
                 </p>
               )}
               <div className="eyebrow">Founding members never pay</div>
@@ -102,8 +103,12 @@ export default async function SignUpPage(props: {
                 </label>
                 <label className="field">
                   Password
-                  <input name="password" type="password" required minLength={8} autoComplete="new-password" />
+                  <PasswordField name="password" minLength={8} autoComplete="new-password" />
                   <small>At least 8 characters.</small>
+                </label>
+                <label className="field">
+                  Type it again
+                  <PasswordField name="password_confirm" minLength={8} autoComplete="new-password" matches="password" />
                 </label>
                 <fieldset className="state-pick">
                   <legend>States where you&rsquo;re licensed</legend>

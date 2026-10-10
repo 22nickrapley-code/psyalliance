@@ -12,6 +12,8 @@ import {
   saveMalpracticeAction,
 } from "./actions";
 import { PageHead, Banner, Status } from "../_components/ui";
+import { ProfileTabs } from "../_components/profile-tabs";
+import { BackLink, BackField } from "../_components/back-link";
 import { US_STATES } from "@/lib/us-states";
 
 // Credentials (Product Spec v1): verification evidence first (identity,
@@ -62,7 +64,7 @@ const ACCOUNT_STATE: Record<string, { label: string; tone: "" | "warn" | "danger
   },
 };
 
-export function CredentialsView({ sp, profile, licenses, ce, panels, npiChecks }: { sp: { saved?: string; added?: string; error?: string }; profile: any; licenses: any[] | null; ce: any[] | null; panels: any[] | null; npiChecks: any[] | null }) {
+export function CredentialsView({ sp, profile, licenses, ce, panels, npiChecks, back }: { sp: { saved?: string; added?: string; error?: string }; profile: any; licenses: any[] | null; ce: any[] | null; panels: any[] | null; npiChecks: any[] | null; back?: string | null }) {
   const status = profile?.account_status === "suspended" ? "suspended" : profile?.verification_status || "pending";
   const account =
     status === "suspended"
@@ -81,6 +83,8 @@ export function CredentialsView({ sp, profile, licenses, ce, panels, npiChecks }
 
   return (
     <>
+      <BackLink back={back} />
+      <ProfileTabs active="credentials" back={back} />
       <PageHead
         eyebrow="Credentials"
         title="Credentials"
@@ -149,6 +153,7 @@ export function CredentialsView({ sp, profile, licenses, ce, panels, npiChecks }
             <details style={{ marginTop: 16 }} open={lic.length === 0}>
               <summary className="small" style={{ cursor: "pointer", fontWeight: 650 }}>Add a license</summary>
               <form action={addLicense} style={{ marginTop: 12 }}>
+                <BackField back={back} />
                 <div className="fields">
                   <label className="field">
                     State
@@ -219,6 +224,7 @@ export function CredentialsView({ sp, profile, licenses, ce, panels, npiChecks }
                 <DueTag days={daysUntil(profile?.malpractice_expires || null)} soon={60} />
               </div>
               <form action={saveMalpracticeAction} className="fields three" style={{ marginTop: 10, alignItems: "end" }}>
+                <BackField back={back} />
                 <label className="field">Carrier<input name="malpractice_carrier" defaultValue={profile?.malpractice_carrier || ""} /></label>
                 <label className="field">Policy renews<input type="date" name="malpractice_expires" defaultValue={profile?.malpractice_expires || ""} /></label>
                 <div style={{ paddingBottom: 4 }}><button type="submit" className="btn secondary small-btn">Save</button></div>
@@ -231,6 +237,7 @@ export function CredentialsView({ sp, profile, licenses, ce, panels, npiChecks }
                 {npi && <span className="micro-note">Last pre-check: {npi.matched ? "matched the registry" : "needs a human look"}</span>}
               </div>
               <form action={saveNpiNumber} className="row wrap" style={{ gap: 8, marginTop: 10 }}>
+                <BackField back={back} />
                 <input name="npi_number" maxLength={10} inputMode="numeric" defaultValue={profile?.npi_number || ""} placeholder="10-digit NPI" aria-label="NPI number" className="compact-input" />
                 <button type="submit" className="btn secondary small-btn">Save</button>
               </form>
@@ -249,6 +256,7 @@ export function CredentialsView({ sp, profile, licenses, ce, panels, npiChecks }
               </div>
               {caqhDue && <p>Last attested {fmt(profile!.caqh_last_attested_date)}, next due {fmt(caqhDue)} (every 120 days).</p>}
               <form action={saveCaqhInfo} className="fields three" style={{ marginTop: 10, alignItems: "end" }}>
+                <BackField back={back} />
                 <label className="field">CAQH provider ID<input name="caqh_provider_id" defaultValue={profile?.caqh_provider_id || ""} /></label>
                 <label className="field">Last attested<input type="date" name="caqh_last_attested_date" defaultValue={profile?.caqh_last_attested_date || ""} /></label>
                 <div style={{ paddingBottom: 4 }}><button type="submit" className="btn secondary small-btn">Save</button></div>

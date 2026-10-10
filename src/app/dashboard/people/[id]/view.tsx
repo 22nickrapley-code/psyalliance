@@ -1,8 +1,8 @@
-import { sendConnectionRequest, respondToConnection, removeConnection, saveClinicianAction, removeSavedClinicianAction } from "../../network/actions";
+import { addTrustedAction, removeTrustedAction } from "../../network/actions";
 import { startConversation } from "../../messages/actions";
 import { addToBlocklist, removeFromBlocklist, blockMemberAction } from "../../settings/actions";
 import { fileReportAction } from "../../moderation-actions";
-import { Banner, PersonAvatar, ConnectedNote } from "../../_components/ui";
+import { Banner, PersonAvatar } from "../../_components/ui";
 
 // A colleague's profile, laid out as the design concept: who they are on
 // a dark hero, their practice at a glance, the facts PsyAlliance holds
@@ -26,89 +26,64 @@ export type ClinicianProfile = {
   confirmed: string;
   specialties: string[];
   relationship: string;
-  status: "trusted" | "pending_out" | "pending_in" | null;
-  connectionId: number | null;
+  trusted: boolean;
+  trustsMe: boolean;
   since?: string | null;
   workedWith?: boolean;
-  saved: boolean;
   excluded: boolean;
   collaborations: number;
   signals: string[];
   primaryState: string | null;
 };
 
+function AddTrusted({ id, label = "Add as Trusted Colleague", cls = "btn secondary small-btn" }: { id: string; label?: string; cls?: string }) {
+  return (
+    <form action={addTrustedAction} className="inline">
+      <input type="hidden" name="colleague_id" value={id} />
+      <input type="hidden" name="back" value={`/dashboard/people/${id}`} />
+      <button type="submit" className={cls}>{label}</button>
+    </form>
+  );
+}
+
 // Your relationship with this colleague, said plainly at the top of their
 // profile: what it is, what it means, and the one thing you can do next.
 function RelationshipBand({ p }: { p: ClinicianProfile }) {
   const first = p.firstName;
-  if (p.status === "pending_in" && p.connectionId) {
-    return (
-      <div className="rel-band rel-invite">
-        <span className="rel-icon" aria-hidden="true">&#9993;</span>
-        <span className="rel-copy">
-          <b>{first} invited you to their trusted circle</b>
-          <small>Trusted colleagues come first in each other&rsquo;s matches. It&rsquo;s mutual, and you can change it any time.</small>
-        </span>
-        <span className="rel-actions">
-          <form action={respondToConnection} className="inline">
-            <input type="hidden" name="id" value={p.connectionId} />
-            <input type="hidden" name="decision" value="accepted" />
-            <input type="hidden" name="return_to" value={`/dashboard/people/${p.id}`} />
-            <button type="submit" className="btn small-btn">Accept</button>
-          </form>
-          <form action={respondToConnection} className="inline">
-            <input type="hidden" name="id" value={p.connectionId} />
-            <input type="hidden" name="decision" value="declined" />
-            <input type="hidden" name="return_to" value={`/dashboard/people/${p.id}`} />
-            <button type="submit" className="btn ghost small-btn">Decline</button>
-          </form>
-        </span>
-      </div>
-    );
-  }
-  if (p.status === "trusted") {
+  if (p.trusted) {
     return (
       <div className="rel-band rel-trusted">
         <span className="rel-icon" aria-hidden="true">&#10003;</span>
         <span className="rel-copy">
           <b>Trusted colleague</b>
           <small>
-            In each other&rsquo;s circle{p.since ? ` since ${p.since}` : ""}. {first} comes first in your matches, and you in theirs.
+            Since {p.since || "recently"}. {first} comes first in your matches{p.trustsMe ? ", and has added you too" : ""}.
           </small>
         </span>
       </div>
     );
   }
-  if (p.status === "pending_out") {
+  if (p.trustsMe) {
     return (
-      <div className="rel-band rel-pending">
-        <span className="rel-icon" aria-hidden="true">&#8987;</span>
+      <div className="rel-band rel-invite">
+        <span className="rel-icon" aria-hidden="true">&#9733;</span>
         <span className="rel-copy">
-          <b>Invitation sent</b>
-          <small>Waiting for {first} to accept. You&rsquo;ll get a notification when they do.</small>
+          <b>{first} added you as a trusted colleague</b>
+          <small>You come first in {first}&rsquo;s matches. Add {first} back to do the same.</small>
         </span>
+        <span className="rel-actions"><AddTrusted id={p.id} cls="btn small-btn" /></span>
       </div>
     );
   }
-  if (p.workedWith || p.saved) {
+  if (p.workedWith) {
     return (
-      <div className={`rel-band ${p.workedWith ? "rel-worked" : "rel-saved"}`}>
-        <span className="rel-icon" aria-hidden="true">{p.workedWith ? "↔" : "★"}</span>
+      <div className="rel-band rel-worked">
+        <span className="rel-icon" aria-hidden="true">&#8596;</span>
         <span className="rel-copy">
-          <b>{p.workedWith ? "Worked with before" : "Saved"}</b>
-          <small>
-            {p.workedWith
-              ? `${p.collaborations > 0 ? `${p.collaborations} collaboration${p.collaborations === 1 ? "" : "s"} together. ` : ""}Invite ${first} to your trusted circle to rank each other first.`
-              : `Only you can see this. Invite ${first} to your trusted circle to rank each other first.`}
-          </small>
+          <b>Worked with before</b>
+          <small>{p.collaborations > 0 ? `${p.collaborations} collaboration${p.collaborations === 1 ? "" : "s"} together. ` : ""}Add {first} as a trusted colleague to put them first in your matches.</small>
         </span>
-        <span className="rel-actions">
-          <form action={sendConnectionRequest}>
-            <input type="hidden" name="addressee_id" value={p.id} />
-            <input type="hidden" name="tier" value="trusted_colleague" />
-            <button type="submit" className="btn secondary small-btn">Invite to trusted circle</button>
-          </form>
-        </span>
+        <span className="rel-actions"><AddTrusted id={p.id} /></span>
       </div>
     );
   }
@@ -116,31 +91,25 @@ function RelationshipBand({ p }: { p: ClinicianProfile }) {
     <div className="rel-band rel-none">
       <span className="rel-icon" aria-hidden="true">&#9675;</span>
       <span className="rel-copy">
-        <b>Verified member, not yet in your circle</b>
-        <small>You can message, refer or ask {first} for cover. Inviting them makes it mutual.</small>
+        <b>Verified member</b>
+        <small>You can message, refer or ask {first} for cover. Add {first} as a trusted colleague to put them first in your matches.</small>
       </span>
-      <span className="rel-actions">
-        <form action={sendConnectionRequest}>
-          <input type="hidden" name="addressee_id" value={p.id} />
-          <input type="hidden" name="tier" value="trusted_colleague" />
-          <button type="submit" className="btn secondary small-btn">Invite to trusted circle</button>
-        </form>
-      </span>
+      <span className="rel-actions"><AddTrusted id={p.id} /></span>
     </div>
   );
 }
 
-export function ClinicianProfileView({ p, error, connected, declined }: { p: ClinicianProfile; error?: string; connected?: string; declined?: boolean }) {
+export function ClinicianProfileView({ p, error, note, back }: { p: ClinicianProfile; error?: string; note?: string | null; back?: string | null }) {
+  const backHref = back || "/dashboard/clinicians";
+  const backLabel = back?.startsWith("/dashboard/network") ? "Your network" : back && !back.startsWith("/dashboard/clinicians") ? "Back" : "Clinicians";
   return (
     <>
-      <a href="/dashboard/network" className="text-arrow">&larr; Network</a>
+      <a href={backHref} className="text-arrow">&larr; {backLabel}</a>
       <div style={{ height: 14 }} />
-      <Banner error={error} />
-      {connected && p.status === "trusted" && <ConnectedNote name={p.name} profileId={p.id} />}
-      {declined && <Banner ok="Invitation declined. They aren't told why." />}
+      <Banner error={error} ok={note} />
       <RelationshipBand p={p} />
 
-      <section className={`profile-hero rel-${p.status || (p.workedWith ? "worked" : p.saved ? "saved" : "none")}`}>
+      <section className={`profile-hero rel-${p.trusted ? "trusted" : p.workedWith ? "worked" : "none"}`}>
         <PersonAvatar name={p.name} url={p.avatarUrl} size={84} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <div className="eyebrow">Clinician profile</div>
@@ -157,10 +126,11 @@ export function ClinicianProfileView({ p, error, connected, declined }: { p: Cli
         </div>
         <div className="actions hero-actions">
           <div className="row" style={{ gap: 8 }}>
-            <form action={p.saved ? removeSavedClinicianAction : saveClinicianAction}>
-              <input type="hidden" name="clinician_id" value={p.id} />
-              <button type="submit" className="btn on-dark">{p.saved ? "Saved ✓" : "Save clinician"}</button>
-            </form>
+            {p.trusted ? (
+              <span className="btn on-dark is-static">Trusted colleague &#10003;</span>
+            ) : (
+              <AddTrusted id={p.id} cls="btn on-dark" />
+            )}
             <form action={startConversation} data-deidentify="">
               <input type="hidden" name="participant_ids" value={p.id} />
               <input type="hidden" name="title" value="" />
@@ -217,26 +187,13 @@ export function ClinicianProfileView({ p, error, connected, declined }: { p: Cli
                 <p className="small" style={{ margin: "4px 0 0" }}>
                   {p.collaborations > 0
                     ? `${p.collaborations} collaboration${p.collaborations === 1 ? "" : "s"} together on PsyAlliance.`
-                    : p.status === "trusted"
-                      ? "A mutual relationship. They rank first in your matches."
+                    : p.trusted
+                      ? "Your trusted colleague. They rank first in your matches."
                       : "A member relationship, separate from credential review."}
                 </p>
               </div>
               <div className="row wrap" style={{ gap: 8 }}>
-                {p.status === "trusted" && p.connectionId ? (
-                  <>
-                    <span className="btn secondary small-btn is-static">Trusted &#10003;</span>
-                    <a className="btn secondary small-btn" href="/dashboard/cover/new">Invite to coverage</a>
-                  </>
-                ) : p.status === "pending_out" ? (
-                  <span className="btn secondary small-btn is-static">Invitation sent</span>
-                ) : p.status === null ? (
-                  <form action={sendConnectionRequest}>
-                    <input type="hidden" name="addressee_id" value={p.id} />
-                    <input type="hidden" name="tier" value="trusted_colleague" />
-                    <button type="submit" className="btn secondary small-btn">Invite to trusted colleagues</button>
-                  </form>
-                ) : null}
+                {p.trusted ? <span className="btn secondary small-btn is-static">Trusted &#10003;</span> : <AddTrusted id={p.id} />}
               </div>
             </div>
             {p.signals.length > 0 && (
@@ -269,9 +226,10 @@ export function ClinicianProfileView({ p, error, connected, declined }: { p: Cli
                 <input type="hidden" name="blocked_profile_id" value={p.id} />
                 <button type="submit" className="btn secondary block">{p.excluded ? "Include in suggestions again" : "Exclude from suggestions"}</button>
               </form>
-              {p.status === "trusted" && p.connectionId && (
-                <form action={removeConnection}>
-                  <input type="hidden" name="id" value={p.connectionId} />
+              {p.trusted && (
+                <form action={removeTrustedAction}>
+                  <input type="hidden" name="colleague_id" value={p.id} />
+                  <input type="hidden" name="back" value={`/dashboard/people/${p.id}`} />
                   <button type="submit" className="btn secondary block">Remove from trusted colleagues</button>
                 </form>
               )}

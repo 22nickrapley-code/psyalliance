@@ -55,9 +55,8 @@ export default async function HomePage(props: { searchParams: Promise<{ reconfir
     { data: myReferrals },
     { data: visibleReferrals },
     { data: myResponses },
-    { data: pendingInvites },
-    { data: connections },
-    { data: savedRows },
+    { data: trustedRows },
+    { data: trustedByRows },
     { data: worked },
     { data: myLicences },
     { data: myFocusRows },
@@ -84,17 +83,12 @@ export default async function HomePage(props: { searchParams: Promise<{ reconfir
       .order("created_at", { ascending: false })
       .limit(40),
     supabase.from("referral_responses").select("referral_request_id").eq("responding_profile_id", myself),
+    supabase.from("trusted_colleagues").select("colleague_id").eq("profile_id", myself),
     supabase
-      .from("connections")
-      .select("id, requester_id, requester:requester_id(full_name, credential_prefix, qualification_level)")
-      .eq("addressee_id", myself)
-      .eq("status", "pending"),
-    supabase
-      .from("connections")
-      .select("requester_id, addressee_id, tier, responded_at, created_at")
-      .eq("status", "accepted")
-      .or(`requester_id.eq.${myself},addressee_id.eq.${myself}`),
-    supabase.from("saved_clinicians").select("clinician_id").eq("profile_id", myself),
+      .from("trusted_colleagues")
+      .select("profile_id, created_at, adder:profile_id(full_name, credential_prefix, qualification_level)")
+      .eq("colleague_id", myself)
+      .gte("created_at", monthAgo),
     supabase.from("worked_with_before").select("colleague_id").eq("profile_id", myself),
     supabase.from("licenses").select("state, status, expiration_date, reviewed_at").eq("profile_id", myself),
     supabase
@@ -197,11 +191,14 @@ export default async function HomePage(props: { searchParams: Promise<{ reconfir
       rank: 3,
     });
   }
-  if ((pendingInvites || []).length === 1) {
-    const c: any = (pendingInvites || [])[0];
-    steps.push({ key: `inv-${c.id}`, title: `${nameOf(c.requester)} invited you to their trusted circle`, detail: "A relationship request is waiting for your decision", href: `/dashboard/people/${c.requester_id}`, action: "Review", rank: 4, person: { id: c.requester_id, name: nameOf(c.requester) } });
-  } else if ((pendingInvites || []).length > 1) {
-    steps.push({ key: "invs", title: `${(pendingInvites || []).length} colleagues invited you to their trusted circle`, detail: (pendingInvites || []).map((c: any) => nameOf(c.requester).split(",")[0]).join(", "), href: "/dashboard/network", action: "Review", rank: 4 });
+  // Colleagues who added you as trusted lately, and you haven't added back.
+  const myTrusted = new Set((trustedRows || []).map((t: any) => t.colleague_id as string));
+  const addedYou = (trustedByRows || []).filter((t: any) => !myTrusted.has(t.profile_id));
+  if (addedYou.length === 1) {
+    const t: any = addedYou[0];
+    steps.push({ key: `added-${t.profile_id}`, title: `${nameOf(t.adder)} added you as a trusted colleague`, detail: "Add them back to put them first in your matches", href: `/dashboard/people/${t.profile_id}`, action: "View", rank: 4, person: { id: t.profile_id, name: nameOf(t.adder) } });
+  } else if (addedYou.length > 1) {
+    steps.push({ key: "added", title: `${addedYou.length} colleagues added you as a trusted colleague`, detail: addedYou.map((t: any) => nameOf(t.adder).split(",")[0]).join(", "), href: "/dashboard/network#suggested", action: "Review", rank: 4 });
   }
   const unread = (conversationRows || []).filter((r: any) => r.conversation && new Date(r.conversation.last_message_at) > new Date(r.last_read_at)).length;
   // Colleagues who named you as their continuity backup.
@@ -228,7 +225,7 @@ export default async function HomePage(props: { searchParams: Promise<{ reconfir
       key: "avail",
       title: age === null ? "Set your availability" : "Confirm your availability",
       detail: age === null ? "Colleagues can't see whether you're taking referrals or cover" : `Last confirmed ${age} days ago. Colleagues see it as stale`,
-      href: "/dashboard/availability",
+      href: "/dashboard/availability?back=%2Fdashboard",
       action: age === null ? "Set" : "Update",
       rank: 6,
     });
@@ -236,7 +233,7 @@ export default async function HomePage(props: { searchParams: Promise<{ reconfir
   const expiring = activeLicences.filter((l: any) => l.expiration_date && l.expiration_date <= in90);
   for (const l of expiring) {
     const days = Math.ceil((new Date(l.expiration_date).getTime() - Date.now()) / 86_400_000);
-    steps.push({ key: `lic-${l.state}`, title: `Your ${l.state} license expires in ${days} day${days === 1 ? "" : "s"}`, detail: "Renew it and update Credentials to stay listed", href: "/dashboard/credentials", action: "Open", urgent: days <= 7, rank: 6 });
+    steps.push({ key: `lic-${l.state}`, title: `Your ${l.state} license expires in ${days} day${days === 1 ? "" : "s"}`, detail: "Renew it and update Credentials to stay listed", href: "/dashboard/credentials?back=%2Fdashboard", action: "Open", urgent: days <= 7, rank: 6 });
   }
   // Waiting on PsyAlliance, not on the member: a status line, not a task.
   let statusLine: string | undefined;
@@ -248,12 +245,12 @@ export default async function HomePage(props: { searchParams: Promise<{ reconfir
     const { data: invs } = await supabase.rpc("my_invitations");
     const waitingFor = (((invs as any)?.waiting as any[]) || []).map((w) => clinicianName(w.name, w.qualification_level, w.credential_prefix));
     if (waitingFor.length) {
-      const line = `You'll be in ${waitingFor.length === 1 ? `${waitingFor[0]}'s` : `${waitingFor.length} colleagues'`} trusted circle as soon as you're verified.`;
+      const line = `You'll be ${waitingFor.length === 1 ? `${waitingFor[0]}'s` : `${waitingFor.length} colleagues'`} trusted colleague as soon as you're verified.`;
       statusLine = statusLine ? `${statusLine} ${line}` : line;
     }
   }
   if (activeLicences.length === 0 && profile.verification_status === "verified") {
-    steps.push({ key: "lic-none", title: "Add your license", detail: "Members are only listed and matched with an active license on record", href: "/dashboard/credentials", action: "Add", rank: 1 });
+    steps.push({ key: "lic-none", title: "Add your license", detail: "Members are only listed and matched with an active license on record", href: "/dashboard/credentials?back=%2Fdashboard", action: "Add", rank: 1 });
   }
   steps.sort((a, b) => Number(!!b.urgent) - Number(!!a.urgent) || (a.rank ?? 9) - (b.rank ?? 9));
 
@@ -273,11 +270,7 @@ export default async function HomePage(props: { searchParams: Promise<{ reconfir
 
 
   // ---- Circle (counted for getting started; drawn on Network) ----
-  const trustedIds: string[] = [];
-  for (const c of connections || []) {
-    const other = c.requester_id === myself ? c.addressee_id : c.requester_id;
-    if (c.tier === "trusted_colleague" || c.tier === "partner") trustedIds.push(other);
-  }
+  const trustedIds: string[] = [...myTrusted];
 
   // ---- Circle snapshot: who in the trusted circle is open right now ----
   const { data: circlePeople } = trustedIds.length
@@ -311,15 +304,27 @@ export default async function HomePage(props: { searchParams: Promise<{ reconfir
   const access = (accessRaw as any) || null;
   const verifiedWaiting = awaitingVerification && profile.verification_status === "verified" && !!status?.has_reviewed_licence;
   let gettingStarted: { label: string; done: boolean; href: string; waiting?: boolean }[] | null = null;
+  // Each set-up task returns here when it's saved, so the list carries on.
+  const HOME = "%2Fdashboard";
+  let setupNote: string | null = null;
   if (awaitingVerification) {
-    gettingStarted = [
-      { label: "Complete your profile: specialties and practice state", done: myFocus.size > 0 && !!profile.primary_state, href: "/dashboard/profile" },
-      { label: "Add your license so we can review it", done: (licenceCount || 0) > 0, href: "/dashboard/credentials" },
-      { label: "Set your availability", done: age !== null, href: "/dashboard/availability" },
-      { label: "We check your license against the state board", done: verifiedWaiting, href: "/dashboard/credentials", waiting: true },
+    const tasks = [
+      { label: "Complete your profile: specialties and practice state", done: myFocus.size > 0 && !!profile.primary_state, href: `/dashboard/profile?edit=1&back=${HOME}` },
+      { label: "Add your license so we can review it", done: (licenceCount || 0) > 0, href: `/dashboard/credentials?back=${HOME}` },
+      { label: "Set your availability", done: age !== null, href: `/dashboard/availability?back=${HOME}` },
     ];
-    if (verifiedWaiting) {
-      gettingStarted.push({ label: `PsyAlliance opens in your state`, done: false, href: "/dashboard", waiting: true });
+    if (tasks.every((t) => t.done)) {
+      // Everything the member can do is done: back to the regular Home,
+      // with a word on what happens next.
+      setupNote = verifiedWaiting
+        ? "Well done for completing your set-up. Your credentials are reviewed and verified; PsyAlliance opens in your state as colleagues join, and we'll let you know."
+        : "Well done for completing your set-up. We're reviewing your credentials and will be in touch shortly.";
+    } else {
+      gettingStarted = [
+        ...tasks,
+        { label: "We check your license against the state board", done: verifiedWaiting, href: "/dashboard", waiting: true },
+        ...(verifiedWaiting ? [{ label: `PsyAlliance opens in your state`, done: false, href: "/dashboard", waiting: true }] : []),
+      ];
     }
   } else if (trustedIds.length === 0 && age === null) {
     // A continuity plan counts once it's started, or once they've saved a
@@ -329,12 +334,15 @@ export default async function HomePage(props: { searchParams: Promise<{ reconfir
       supabase.from("continuity_plans").select("updated_at").eq("profile_id", myself).maybeSingle(),
     ]);
     gettingStarted = [
-      { label: "Complete your profile", done: myFocus.size > 0 && !!profile.primary_state, href: "/dashboard/profile" },
-      { label: "Confirm your availability", done: age !== null, href: "/dashboard/availability" },
-      { label: "Invite three colleagues you already trust", done: trustedIds.length >= 3, href: "/dashboard/network" },
-      { label: "Make your continuity plan", done: (pa03Copies || 0) > 0 || !!plan, href: "/dashboard/continuity" },
+      { label: "Complete your profile", done: myFocus.size > 0 && !!profile.primary_state, href: `/dashboard/profile?edit=1&back=${HOME}` },
+      { label: "Confirm your availability", done: age !== null, href: `/dashboard/availability?back=${HOME}` },
+      { label: "Add three trusted colleagues", done: trustedIds.length >= 3, href: "/dashboard/clinicians" },
+      { label: "Make your continuity plan", done: (pa03Copies || 0) > 0 || !!plan, href: `/dashboard/continuity?back=${HOME}` },
     ];
   }
+  // Verified in the last fortnight: say so plainly on Home (once).
+  const verifiedAt = profile.verified_at as string | null;
+  const justVerified = !awaitingVerification && !IS_DEMO_SITE && profile.verification_status === "verified" && !!verifiedAt && Date.now() - new Date(verifiedAt).getTime() < 14 * 86_400_000;
 
   const ledger = await loadLedger(supabase, myself);
 
@@ -345,6 +353,8 @@ export default async function HomePage(props: { searchParams: Promise<{ reconfir
     today: new Date().toLocaleDateString("en-US", { timeZone: "America/New_York", weekday: "long", month: "long", day: "numeric" }),
     greeting: greetingFor(new Date()),
     gettingStarted,
+    setupNote,
+    justVerified: justVerified ? verifiedAt : null,
     awaitingVerification,
     access: awaitingVerification
       ? {

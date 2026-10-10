@@ -2,10 +2,11 @@ import { createClient } from "@/lib/supabase/server";
 import { clinicianName } from "@/lib/profession";
 import { loadColleagueSuggestions } from "@/lib/colleague-suggestions";
 import { ContinuityView } from "./view";
+import { safeBack } from "@/lib/back";
 
 export const metadata = { title: "Continuity plan" };
 
-export default async function ContinuityPage(props: { searchParams: Promise<{ saved?: string; error?: string; reviewed?: string }> }) {
+export default async function ContinuityPage(props: { searchParams: Promise<{ saved?: string; error?: string; reviewed?: string; back?: string }> }) {
   const sp = await props.searchParams;
   const supabase = await createClient();
   const {
@@ -42,6 +43,7 @@ export default async function ContinuityPage(props: { searchParams: Promise<{ sa
       dutiesWaiting={((duties as any[]) || []).filter((d) => d.status === "invited").length}
       dutiesTotal={((duties as any[]) || []).length}
       known={known}
+      back={safeBack(sp.back)}
     />
   );
 }

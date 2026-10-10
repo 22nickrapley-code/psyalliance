@@ -239,18 +239,12 @@ export function CoverIndexView({
   const past = plans.filter((p) => p.status === "completed" || p.status === "cancelled");
   return (
     <>
+      <FirstVisit id="cover" what="Cover" exampleHref={`${TOUR_URL}/cover`} />
       <PageHead
         eyebrow="Cover"
         title="Cover"
-        lead="Plan cover for one client or your whole caseload, and answer colleagues who need cover."
+        lead="Plan time away, describe the clients who need cover by need, then choose which colleagues are asked. Nothing is sent until you confirm. You'll also answer colleagues who need cover here."
         actions={<a className="btn" href="/dashboard/cover/new">Plan cover</a>}
-      />
-      <FirstVisit
-        id="cover"
-        line="Plan time away, describe the clients who need cover by need, then choose which colleagues are asked. Nothing is sent until you confirm."
-        startHref="/dashboard/cover/new"
-        startLabel="Start your plan"
-        exampleHref={`${TOUR_URL}/cover`}
       />
       <Banner ok={ok} error={error} />
       {incoming.length > 0 && (

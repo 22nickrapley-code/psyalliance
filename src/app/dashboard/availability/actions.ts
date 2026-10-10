@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { safeBack, backWith } from "@/lib/back";
 
 // Master Brief #32: "Make this a seconds-long interaction." One update,
 // one confirmation timestamp - no service-layer indirection needed for
@@ -24,8 +25,10 @@ export async function confirmAvailability(formData: FormData) {
   const spaces = spacesRaw === "" ? null : Math.max(0, Math.min(99, Math.round(Number(spacesRaw))));
   const pauseRaw = String(formData.get("paused_until") || "").trim();
   const today = new Date().toISOString().slice(0, 10);
+  const back = safeBack(formData.get("back"));
+  const here = back ? `/dashboard/availability?back=${encodeURIComponent(back)}` : "/dashboard/availability";
   if (pauseRaw && !/^\d{4}-\d{2}-\d{2}$/.test(pauseRaw)) {
-    redirect(`/dashboard/availability?error=${encodeURIComponent("Pause-until needs a valid date")}`);
+    redirect(backWith(here, { error: "Pause-until needs a valid date" }));
   }
   const pausedUntil = pauseRaw && pauseRaw >= today ? pauseRaw : null;
 
@@ -49,7 +52,7 @@ export async function confirmAvailability(formData: FormData) {
       accepting_referrals: referralAvailability === "yes" && !pausedUntil,
     })
     .eq("id", user.id);
-  if (error) redirect(`/dashboard/availability?error=${encodeURIComponent(error.message)}`);
+  if (error) redirect(backWith(here, { error: error.message }));
 
   revalidatePath("/dashboard/availability");
   revalidatePath("/dashboard/profile");
@@ -57,7 +60,9 @@ export async function confirmAvailability(formData: FormData) {
   revalidatePath(`/dashboard/people/${user.id}`);
   revalidatePath("/dashboard/network");
   revalidatePath("/refer");
-  redirect("/dashboard/profile?availability_saved=1");
+  revalidatePath("/dashboard/clinicians");
+  // Back to wherever the member came from; otherwise stay here.
+  redirect(back ? backWith(back, { saved: "availability" }) : "/dashboard/availability?confirmed=1");
 }
 
 // One-tap "nothing's changed" reconfirmation from Home (Product Spec v1,

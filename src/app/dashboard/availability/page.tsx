@@ -1,9 +1,10 @@
 import { createClient } from "@/lib/supabase/server";
 import { AvailabilityView } from "./view";
+import { safeBack } from "@/lib/back";
 
 export const metadata = { title: "Availability" };
 
-export default async function AvailabilityPage(props: { searchParams: Promise<{ confirmed?: string; reconfirmed?: string; error?: string }> }) {
+export default async function AvailabilityPage(props: { searchParams: Promise<{ confirmed?: string; reconfirmed?: string; error?: string; back?: string }> }) {
   const sp = await props.searchParams;
   const supabase = await createClient();
   const {
@@ -14,5 +15,5 @@ export default async function AvailabilityPage(props: { searchParams: Promise<{ 
     .select("referral_availability, coverage_availability, consultation_availability, availability_confirmed_at, approx_spaces, availability_paused_until")
     .eq("id", user!.id)
     .maybeSingle();
-  return <AvailabilityView p={p} sp={sp} />;
+  return <AvailabilityView p={p} sp={sp} back={safeBack(sp.back)} />;
 }

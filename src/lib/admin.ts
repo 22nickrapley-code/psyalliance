@@ -51,6 +51,16 @@ export async function setVerificationStatus(
       body: "You're now part of the network in the states where your license has been reviewed: listed, matched for referrals and cover, and able to consult with colleagues.",
       createdBy: adminId,
     });
+    // And on the bell, so it isn't missed.
+    const { raiseNotification } = await import("@/lib/notifications-v2");
+    await raiseNotification(supabase, {
+      eventType: "system_notice",
+      recipientProfileIds: [profileId],
+      actorProfileId: adminId,
+      actorType: "system",
+      summary: "Your credentials are verified. Welcome to PsyAlliance: referrals, cover, consults and messages are open.",
+      deepLink: "/dashboard",
+    });
   }
   return { error: null };
 }

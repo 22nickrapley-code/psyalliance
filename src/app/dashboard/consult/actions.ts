@@ -104,13 +104,8 @@ export async function publishConsultAction(formData: FormData) {
   } else if (c.audience_type === "selected") {
     recipients = c.audience_profile_ids || [];
   } else if (c.audience_type === "trusted") {
-    const { data: conns } = await supabase
-      .from("connections")
-      .select("requester_id, addressee_id")
-      .eq("status", "accepted")
-      .eq("tier", "trusted_colleague")
-      .or(`requester_id.eq.${userId},addressee_id.eq.${userId}`);
-    recipients = (conns || []).map((x: any) => (x.requester_id === userId ? x.addressee_id : x.requester_id));
+    const { data: conns } = await supabase.from("trusted_colleagues").select("colleague_id").eq("profile_id", userId);
+    recipients = (conns || []).map((x: any) => x.colleague_id);
   }
   if (recipients.length) {
     await raiseNotification(supabase, {

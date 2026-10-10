@@ -110,19 +110,13 @@ export async function findMatches(
   // partition, reviewed license, blocks): one call, whatever the network size.
   const [
     { data: pool },
-    { data: connectionRows },
-    { data: savedRows },
+    { data: trustedRows },
     { data: workedRows },
     { data: ratingRows },
     { data: blockRows },
   ] = await Promise.all([
     supabase.rpc("match_pool", { p_state: needState, p_focus: focusIds, p_telehealth: allowsTelehealth }),
-    supabase
-      .from("connections")
-      .select("requester_id, addressee_id, tier")
-      .eq("status", "accepted")
-      .or(`requester_id.eq.${requesterId},addressee_id.eq.${requesterId}`),
-    supabase.from("saved_clinicians").select("clinician_id").eq("profile_id", requesterId),
+    supabase.from("trusted_colleagues").select("colleague_id").eq("profile_id", requesterId),
     supabase.from("worked_with_before").select("colleague_id, interaction_count").eq("profile_id", requesterId),
     supabase.from("collaboration_ratings").select("colleague_profile_id, would_work_again").eq("rater_profile_id", requesterId),
     supabase.from("do_not_work_with").select("blocked_profile_id").eq("profile_id", requesterId),
@@ -134,13 +128,9 @@ export async function findMatches(
 
   const excluded = new Set<string>([...(opts.exclude || []), ...((blockRows || []).map((b: any) => b.blocked_profile_id))]);
 
-  const trusted = new Set<string>();
-  const saved = new Set<string>((savedRows || []).map((s: any) => s.clinician_id));
-  for (const c of connectionRows || []) {
-    const other = c.requester_id === requesterId ? c.addressee_id : c.requester_id;
-    if (c.tier === "trusted_colleague" || c.tier === "partner") trusted.add(other);
-    else if (c.tier === "bench") saved.add(other); // Bench is Saved, same weight
-  }
+  // Trusted colleagues are the people this member chose (migration 0107).
+  const trusted = new Set<string>((trustedRows || []).map((t: any) => t.colleague_id));
+  const saved = new Set<string>();
   const worked = new Map<string, number>((workedRows || []).map((w: any) => [w.colleague_id, Number(w.interaction_count) || 0]));
   const wouldWorkAgain = new Map<string, boolean>();
   for (const r of ratingRows || []) {

@@ -70,10 +70,10 @@ function ActionRow({ s }: { s: NextStep }) {
 }
 
 const JOBS: { href: string; icon: string; title: string; sub: string; accent: string }[] = [
-  { href: "/dashboard/cover/new", icon: "cover", title: "Find cover", sub: "Plan time away and who sees your clients", accent: "forest" },
-  { href: "/dashboard/refer/new", icon: "refer", title: "Refer a client", sub: "Find the right colleague for a client", accent: "brass" },
-  { href: "/dashboard/consult/new", icon: "consult", title: "Ask colleagues", sub: "A second opinion, de-identified", accent: "blue" },
-  { href: "/dashboard/network", icon: "network", title: "Find a clinician", sub: "Search the verified network", accent: "sage" },
+  { href: "/dashboard/cover/new", icon: "cover", title: "Find Cover", sub: "Plan time away and caseload coverage", accent: "forest" },
+  { href: "/dashboard/refer/new", icon: "refer", title: "Refer a Client", sub: "Find the right colleague for a single client", accent: "brass" },
+  { href: "/dashboard/consult/new", icon: "consult", title: "Ask Colleagues", sub: "A second opinion on a question you're unsure about", accent: "blue" },
+  { href: "/dashboard/clinicians", icon: "network", title: "Find a Clinician", sub: "Search the verified network", accent: "sage" },
 ];
 
 // The four jobs, and a fifth tile for anything waiting. Actions opens its

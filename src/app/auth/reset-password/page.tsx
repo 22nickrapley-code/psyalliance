@@ -1,4 +1,5 @@
 import { resetPassword } from "../actions";
+import { PasswordField } from "../../_public/password-field";
 
 export default async function ResetPasswordPage(
   props: {
@@ -17,11 +18,11 @@ export default async function ResetPasswordPage(
           <h2>Set a new password</h2>
           <div className="field">
             <label htmlFor="password">New password</label>
-            <input id="password" name="password" type="password" minLength={8} required />
+            <PasswordField id="password" name="password" minLength={8} autoComplete="new-password" />
           </div>
           <div className="field">
             <label htmlFor="confirmPassword">Confirm new password</label>
-            <input id="confirmPassword" name="confirmPassword" type="password" minLength={8} required />
+            <PasswordField id="confirmPassword" name="confirmPassword" minLength={8} autoComplete="new-password" matches="password" />
           </div>
           <button type="submit" style={{ width: "100%" }}>Update password</button>
         </form>

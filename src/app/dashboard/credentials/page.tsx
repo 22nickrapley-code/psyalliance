@@ -1,10 +1,11 @@
 import { createClient } from "@/lib/supabase/server";
 import { CredentialsView } from "./view";
+import { safeBack } from "@/lib/back";
 import { PageHead } from "../_components/ui";
 
 export const metadata = { title: "Credentials" };
 
-export default async function CredentialsPage(props: { searchParams: Promise<{ saved?: string; added?: string; error?: string }> }) {
+export default async function CredentialsPage(props: { searchParams: Promise<{ saved?: string; added?: string; error?: string; back?: string }> }) {
   const sp = await props.searchParams;
   const supabase = await createClient();
   const {
@@ -36,5 +37,5 @@ export default async function CredentialsPage(props: { searchParams: Promise<{ s
       </>
     );
   }
-  return <CredentialsView sp={sp} profile={profile} licenses={licenses} ce={ce} panels={panels} npiChecks={npiChecks} />;
+  return <CredentialsView sp={sp} profile={profile} licenses={licenses} ce={ce} panels={panels} npiChecks={npiChecks} back={safeBack(sp.back)} />;
 }

@@ -2,55 +2,35 @@
 
 import { useEffect, useState } from "react";
 
-// Help offered, not imposed: the first time someone opens Cover, Refer or
-// Consult, one line on what it does, a way to start and a short example.
-// Once dismissed it shrinks to a quiet "See an example" link, remembered in
-// this browser.
-export function FirstVisit({
-  id,
-  line,
-  startHref,
-  startLabel,
-  exampleHref,
-}: {
-  id: string;
-  line: string;
-  startHref: string;
-  startLabel: string;
-  exampleHref: string;
-}) {
+// The first time someone opens Cover, Refer or Consult: a one-time note
+// above the page offering a short example. It's only about the example;
+// the page itself says what to do. Closing it (or opening the example)
+// means it doesn't come back in this browser.
+export function FirstVisit({ id, what, exampleHref }: { id: string; what: string; exampleHref: string }) {
   const key = `pa-help-${id}`;
-  const [state, setState] = useState<"unknown" | "open" | "closed">("unknown");
+  const [show, setShow] = useState(false);
   useEffect(() => {
     let closed = false;
     try {
       closed = window.localStorage.getItem(key) === "closed";
     } catch {}
-    setState(closed ? "closed" : "open");
+    setShow(!closed);
   }, [key]);
   const close = () => {
     try {
       window.localStorage.setItem(key, "closed");
     } catch {}
-    setState("closed");
+    setShow(false);
   };
 
-  if (state === "unknown") return null;
-  if (state === "closed") {
-    return (
-      <p className="first-visit-link">
-        <a href={exampleHref} target="_blank" rel="noopener">See a 30-second example &rarr;</a>
-      </p>
-    );
-  }
+  if (!show) return null;
   return (
-    <section className="first-visit" aria-label="How this works">
-      <p>{line}</p>
-      <div className="first-visit-actions">
-        <a className="btn small-btn" href={startHref} onClick={close}>{startLabel}</a>
-        <a className="btn secondary small-btn" href={exampleHref} target="_blank" rel="noopener">See a 30-second example</a>
-        <button type="button" className="plain-button small" onClick={close}>Got it</button>
-      </div>
-    </section>
+    <aside className="first-visit" aria-label="See an example">
+      <span className="first-visit-icon" aria-hidden="true">&#9654;</span>
+      <a className="first-visit-text" href={exampleHref} target="_blank" rel="noopener" onClick={close}>
+        <b>New to {what}?</b> See a 30-second example of how it works <span aria-hidden="true">&rarr;</span>
+      </a>
+      <button type="button" className="first-visit-close" aria-label="Close" onClick={close}>&times;</button>
+    </aside>
   );
 }

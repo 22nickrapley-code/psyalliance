@@ -72,7 +72,7 @@ export default async function NotificationsPage() {
     // showed up here. Same signals Home already computes, reused so "All
     // caught up" only appears when it's actually true across the app, not
     // just true of this one pipeline.
-    supabase.from("connections").select("id", { count: "exact", head: true }).eq("addressee_id", myself).eq("status", "pending"),
+    Promise.resolve({ count: 0 }),
     supabase
       .from("conversation_participants")
       .select("last_read_at, conversation:conversation_id(last_message_at)")
@@ -97,7 +97,6 @@ export default async function NotificationsPage() {
   }).length;
   const otherPendingItems = [
     unreadMessageCount > 0 && { count: unreadMessageCount, label: `unread conversation${unreadMessageCount === 1 ? "" : "s"}`, href: "/dashboard/messages" },
-    (pendingConnectionCount ?? 0) > 0 && { count: pendingConnectionCount ?? 0, label: `pending connection${pendingConnectionCount === 1 ? "" : "s"}`, href: "/dashboard/network" },
     (pendingCoverageRequests || []).length > 0 && { count: (pendingCoverageRequests || []).length, label: `coverage request${(pendingCoverageRequests || []).length === 1 ? "" : "s"} waiting on you`, href: "/dashboard/requests" },
     (myConsultationsWithReplies || []).length > 0 && { count: (myConsultationsWithReplies || []).length, label: `consultation${(myConsultationsWithReplies || []).length === 1 ? "" : "s"} with new replies`, href: "/dashboard/consult" },
   ].filter(Boolean) as { count: number; label: string; href: string }[];
@@ -145,12 +144,11 @@ export default async function NotificationsPage() {
             return (
               <div
                 key={d.id}
-                className="person-row"
-                style={{ borderBottom: "1px solid var(--border)", paddingBottom: "0.6rem", marginBottom: "0.6rem" }}
+                className={`person-row notif-row${unread ? " is-unread" : ""}`}
               >
                 <span className="person-row-info">
                   <span className="tag">{label}</span>{" "}
-                  {unread && <span className="tag" style={{ marginLeft: "0.2rem" }}>Unread</span>}
+                  {unread && <span className="new-pill">New</span>}
                   <div style={{ fontWeight: unread ? 600 : 400, marginTop: "0.2rem" }}>
                     {event.actor?.full_name && (
                       <>

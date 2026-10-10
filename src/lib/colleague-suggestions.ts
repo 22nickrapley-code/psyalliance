@@ -22,15 +22,15 @@ export type Suggestion = {
 const shortDate = (d: string) => new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "America/New_York" });
 
 // The people a member is most likely to want, in the order they'd look:
-// whoever they've been talking to, their trusted circle, colleagues they've
-// worked with, then people they saved. Each person appears once, under the
+// whoever they've been talking to, their trusted colleagues, then
+// colleagues they've worked with. Each person appears once, under the
 // strongest reason.
 export async function loadColleagueSuggestions(supabase: Supabase, myself: string, include?: string | null): Promise<Suggestion[]> {
   const [{ data: parts }, { data: conns }, { data: worked }, { data: saved }] = await Promise.all([
     supabase.from("conversation_participants").select("conversation_id, conversation:conversation_id(last_message_at)").eq("profile_id", myself),
-    supabase.from("connections").select("requester_id, addressee_id").eq("status", "accepted").or(`requester_id.eq.${myself},addressee_id.eq.${myself}`),
+    supabase.from("trusted_colleagues").select("colleague_id").eq("profile_id", myself),
     supabase.from("worked_with_before").select("colleague_id").eq("profile_id", myself),
-    supabase.from("saved_clinicians").select("clinician_id").eq("profile_id", myself),
+    Promise.resolve({ data: [] as any[] }),
   ]);
 
   // Recent: the other person in my latest one-to-one conversations.
@@ -50,7 +50,7 @@ export async function loadColleagueSuggestions(supabase: Supabase, myself: strin
     if (people.length === 1 && !recent.has(people[0])) recent.set(people[0], lastAt.get(id) || "");
   }
 
-  const trusted = new Set((conns || []).map((c: any) => (c.requester_id === myself ? c.addressee_id : c.requester_id)));
+  const trusted = new Set((conns || []).map((c: any) => c.colleague_id as string));
   const workedSet = new Set((worked || []).map((w: any) => w.colleague_id as string));
   const savedSet = new Set((saved || []).map((s: any) => s.clinician_id as string));
   const ids = Array.from(new Set([...recent.keys(), ...trusted, ...workedSet, ...savedSet, ...(include ? [include] : [])])).slice(0, 80);

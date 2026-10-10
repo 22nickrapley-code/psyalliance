@@ -102,15 +102,15 @@ export default async function HomePage() {
           <div>
             <div className="eyebrow">For doctoral psychologists and psychiatrists in private practice</div>
             <h1>
-              Independent practice works, until you need <em>a colleague.</em>
+              Your own practice, <em>with a group behind you.</em>
             </h1>
             <p className="lead">
-              PsyAlliance is a private network of verified psychologists and psychiatrists. Get your clients covered when you&rsquo;re away, refer the ones
-              you can&rsquo;t take, and talk a hard decision through with peers you trust.
+              PsyAlliance gives independent psychologists and psychiatrists the best of group practice: colleagues who cover your clients when you&rsquo;re away,
+              take the referrals you can&rsquo;t, and talk a hard decision through with you. Every member is verified.
             </p>
             <div className="hero-actions">
               <a className="btn lg" href="/auth/sign-up">Create your account</a>
-              <a className="btn secondary lg" href={DEMO("/overview")}>See it in 90 seconds &rarr;</a>
+              <a className="btn secondary lg" href={DEMO()}>See it in 90 seconds &rarr;</a>
             </div>
             <p className="hero-free">Founding members never pay.</p>
             <ul className="hero-trust" aria-label="Who it's for">

@@ -44,13 +44,8 @@ export default async function ConsultDetailPage(props: { params: Promise<{ id: s
         const { data: members } = await supabase.from("consultation_group_members").select("profile_id").eq("group_id", c.group_id).eq("status", "joined");
         ids = (members || []).map((m: any) => m.profile_id).filter((id: string) => id && id !== myself);
       } else if (c.audience_type === "trusted") {
-        const { data: links } = await supabase
-          .from("connections")
-          .select("requester_id, addressee_id")
-          .eq("status", "accepted")
-          .eq("tier", "trusted_colleague")
-          .or(`requester_id.eq.${myself},addressee_id.eq.${myself}`);
-        ids = (links || []).map((l: any) => (l.requester_id === myself ? l.addressee_id : l.requester_id));
+        const { data: links } = await supabase.from("trusted_colleagues").select("colleague_id").eq("profile_id", myself);
+        ids = (links || []).map((l: any) => l.colleague_id);
       }
       if (!ids.length) return { data: [] as any[] };
       return supabase.from("profiles").select("full_name, credential_prefix, qualification_level").in("id", ids);

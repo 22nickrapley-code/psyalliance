@@ -5,10 +5,11 @@ import { clinicianName } from "@/lib/profession";
 import { OverflowPublicView, type OverflowData } from "./view";
 
 
+// Retired with "When you're full" (10 Oct): public pages no longer show.
 async function load(slug: string) {
-  const supabase = await createClient();
-  const { data } = await supabase.rpc("overflow_page", { p_slug: slug });
-  return data as OverflowData | null;
+  void slug;
+  void createClient;
+  return null as OverflowData | null;
 }
 
 export async function generateMetadata(props: { params: Promise<{ slug: string }> }) {

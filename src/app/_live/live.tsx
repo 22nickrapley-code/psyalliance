@@ -18,7 +18,17 @@ const NOT_PAGES = [/^\/auth\/callback/, /^\/sandbox\/resume/, /^\/api\//, /\/csv
 
 // Query keys that only carry a one-off message: a page that differs only by
 // these is the same page.
-const TRANSIENT = new Set(["error", "copied", "uploaded", "completed", "refreshed", "current", "reviewed", "saved", "unsaved", "added", "removed", "ok", "sent", "responded", "closed", "rated", "updated", "deleted", "done", "confirmed", "accepted", "declined", "joined", "left", "posted", "resolved", "reopened", "archived", "invited", "connected", "msg", "notice", "t"]);
+const TRANSIENT = new Set(["error", "copied", "uploaded", "completed", "refreshed", "current", "reviewed", "saved", "unsaved", "added", "removed", "ok", "sent", "responded", "closed", "rated", "updated", "deleted", "done", "confirmed", "accepted", "declined", "joined", "left", "posted", "resolved", "reopened", "archived", "invited", "connected", "msg", "notice", "t", "trusted", "untrusted", "back"]);
+
+// After a save that returns you somewhere else, a short word on what saved.
+const SAVED_TEXT: Record<string, string> = {
+  availability: "Availability saved.",
+  profile: "Profile saved.",
+  license: "License saved.",
+  credentials: "Saved.",
+  continuity: "Continuity plan saved.",
+  photo: "Photo updated.",
+};
 
 type Place = { view: string; y: number; anchor: string; top: number; at: number };
 type Note = { text: string; tone: "ok" | "error"; id: number };
@@ -255,9 +265,31 @@ export function Live() {
     };
   }, []);
 
+  // 2b. The menu, badges and notices around the page stay current: moving
+  // between pages refreshes them if they're more than a minute old (a
+  // verification or a new message may have arrived meanwhile).
+  const fresh = useRef(Date.now());
+  useEffect(() => {
+    const maybeRefresh = () => {
+      if (Date.now() - fresh.current > 60_000) {
+        fresh.current = Date.now();
+        routerRef.current?.refresh();
+      }
+    };
+    maybeRefresh();
+    const onVisible = () => document.visibilityState === "visible" && maybeRefresh();
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, [pathname]);
+
   // 3. When the address changes after a save, stay on the same spot if it's
   // the same page; a different page starts at the top as usual.
   const searchStr = search?.toString() || "";
+  useEffect(() => {
+    const k = search?.get("saved");
+    if (k && SAVED_TEXT[k] && !document.querySelector(".banner.ok")) setNote({ text: SAVED_TEXT[k], tone: "ok", id: Date.now() });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchStr]);
   useEffect(() => {
     const p = pending;
     if (!p) return;

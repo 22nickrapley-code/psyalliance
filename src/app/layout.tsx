@@ -38,7 +38,7 @@ export const metadata = {
     "clinician referral network",
   ],
   openGraph: {
-    title: "PsyAlliance: independent practice, stronger together",
+    title: "PsyAlliance: your own practice, with a group behind you",
     description:
       "A closed, credential-reviewed network for doctoral-level psychologists and psychiatrists: cover for time away, considered referrals and peer consultation.",
     url: siteUrl,

@@ -8,6 +8,9 @@ import BioImportBox from "./bio-import";
 import { AvatarPicker } from "./avatar-picker";
 import { HashOpener } from "./hash-opener";
 import { PageHead, Banner, PersonAvatar, Status } from "../_components/ui";
+import { ProfileTabs } from "../_components/profile-tabs";
+import { BackLink, BackField } from "../_components/back-link";
+import { DeleteAccount } from "./delete-account";
 
 // Profile (Product Spec v1): the facts every match is computed against.
 // Profession, specialties ranked 1 to 5, populations and age bands,
@@ -63,9 +66,11 @@ export function ProfileView({
   editing = true,
   licenses = [],
   ledger = [],
+  back,
 }: {
   ledger?: string[];
-  sp: { saved?: string; availability_saved?: string; avatar_saved?: string; avatar_error?: string; error?: string };
+  back?: string | null;
+  sp: { saved?: string; availability_saved?: string; avatar_saved?: string; avatar_error?: string; error?: string; photo?: string };
   profile: any;
   lookups: { id: number; category: string; value: string }[] | null;
   selectedRows: { lookup_value_id: number; rank: number | null }[] | null;
@@ -98,9 +103,11 @@ export function ProfileView({
     { label: "Insurance", done: pick("insurance").length > 0, href: "#insurance" },
     { label: "Languages", done: pick("language").length > 0, href: "#languages" },
     { label: "Session types", done: pick("session_type").length > 0, href: "#populations" },
-    { label: "License in Credentials", done: (licenceCount || 0) > 0, href: "/dashboard/credentials" },
-    { label: "Availability confirmed", done: !!profile?.availability_confirmed_at, href: "/dashboard/availability" },
+    { label: "License in Credentials", done: (licenceCount || 0) > 0, href: "/dashboard/credentials?back=%2Fdashboard%2Fprofile" },
+    { label: "Availability confirmed", done: !!profile?.availability_confirmed_at, href: "/dashboard/availability?back=%2Fdashboard%2Fprofile" },
   ];
+  // What's left comes first, in its own colour.
+  checks.sort((a, b) => Number(a.done) - Number(b.done));
   const basicsDone = !!(profile?.full_name && profile?.qualification_level && profile?.primary_state && profile?.primary_practice_city);
   const doneCount = checks.filter((c) => c.done).length;
   const pct = Math.round((doneCount / checks.length) * 100);
@@ -127,13 +134,15 @@ export function ProfileView({
     ];
     return (
       <>
+        <BackLink back={back} />
+        <ProfileTabs active="profile" back={back} />
         <PageHead
           eyebrow="Your account"
           title="Your profile"
           lead="What colleagues see about your practice. PsyAlliance also uses it to suggest you for the right referrals and cover."
           actions={<a className="btn lg" href="/dashboard/profile?edit=1">Edit profile</a>}
         />
-        <Banner ok={sp.availability_saved ? "Availability saved and confirmed as of today. This is what colleagues now see." : sp.saved ? "Profile saved." : sp.avatar_saved ? "Photo updated." : null} />
+        <Banner ok={sp.availability_saved ? "Availability saved and confirmed as of today. This is what colleagues now see." : sp.saved ? (sp.photo === "imported" ? "Profile saved, with the photo from your imported profile." : "Profile saved.") : sp.avatar_saved ? "Photo updated." : null} />
         <div className="split">
           <section className="card roomy">
             <div className="row" style={{ gap: 18, alignItems: "center" }}>
@@ -164,19 +173,27 @@ export function ProfileView({
               <div className="meter" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label="Profile completeness">
                 <span style={{ width: `${pct}%` }} />
               </div>
-              <p className="small" style={{ marginTop: 10, marginBottom: 0 }}>
-                {pct === 100
-                  ? `Every field matching uses is filled in, and your availability is current. ${reviewed.length > 0 ? "Your license is reviewed, so colleagues can find you." : "You'll be matched once an admin has reviewed your license."}`
-                  : `Still to add: ${checks.filter((c) => !c.done).map((c) => c.label.toLowerCase()).join(", ")}.`}
-              </p>
+              {pct === 100 ? (
+                <p className="small" style={{ marginTop: 10, marginBottom: 0 }}>
+                  Every field matching uses is filled in, and your availability is current. {reviewed.length > 0 ? "Your license is reviewed, so colleagues can find you." : "You'll be matched once an admin has reviewed your license."}
+                </p>
+              ) : (
+                <ul className="summary-list completeness" style={{ marginTop: 10 }}>
+                  {checks.map((c) => (
+                    <li key={c.label} className={c.done ? "is-done" : "is-todo"}>
+                      <span>{c.done ? "✓ " : ""}{c.label}</span>
+                      <strong>{c.done ? "Done" : <a href={c.href.startsWith("#") ? `/dashboard/profile?edit=1${c.href}` : c.href}>Add</a>}</strong>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </section>
             <section className="card roomy">
-              <h2 className="serif-title" style={{ fontSize: 24, marginTop: 0 }}>Manage your account</h2>
+              <h2 className="serif-title" style={{ fontSize: 24, marginTop: 0 }}>Your account</h2>
               <div className="control-stack">
-                <a className="btn secondary block" href="/dashboard/credentials">Credentials</a>
-                <a className="btn secondary block" href="/dashboard/availability">Availability</a>
                 <a className="btn secondary block" href="/dashboard/settings">Privacy and settings</a>
               </div>
+              <DeleteAccount />
             </section>
           </aside>
         </div>
@@ -186,13 +203,15 @@ export function ProfileView({
 
   return (
     <>
+      <BackLink back={back} />
+      <ProfileTabs active="profile" back={back} />
       <PageHead
         eyebrow="Your profile"
         title="Edit your profile"
         lead="Every referral and cover suggestion is computed from these facts. No client information lives here."
         actions={
           <>
-            <a className="btn secondary" href="/dashboard/profile">Cancel</a>
+            <a className="btn secondary" href={back || "/dashboard/profile"}>Cancel</a>
             <button type="submit" form="profile-form" className="btn">Save profile</button>
           </>
         }
@@ -204,18 +223,19 @@ export function ProfileView({
       <HashOpener />
       <div className="split">
         <div className="stack">
-          <BioImportBox />
+          <BioImportBox prominent={pct < 70} />
 
           <section className="card" id="photo">
             <div className="card-title"><h3>Photo</h3>{profile?.avatar_path ? <Status>Done</Status> : <Status tone="warn">To do</Status>}</div>
             <p className="small">A professional headshot. Only verified, signed-in members see it.</p>
             <div className="row wrap" style={{ gap: 16, alignItems: "center" }}>
-              <PersonAvatar name={name} url={avatarUrl} size={72} />
+              <span data-self-avatar="" data-size="72"><PersonAvatar name={name} url={avatarUrl} size={72} /></span>
               <AvatarPicker action={uploadAvatar} hasPhoto={!!avatarUrl} />
             </div>
           </section>
 
           <form action={saveProfile} id="profile-form" className="stack">
+            <BackField back={back} />
             <Section title="The basics" id="basics" done={basicsDone} open={!basicsDone}>
               <div className="fields">
                 <label className="field">
@@ -257,7 +277,7 @@ export function ProfileView({
                 </label>
                 <label className="field full">
                   Short professional bio
-                  <textarea name="bio" rows={4} maxLength={700} defaultValue={profile?.bio || ""} placeholder="Who you work with and how, in two or three sentences." />
+                  <textarea id="bio" name="bio" rows={4} maxLength={700} defaultValue={profile?.bio || ""} placeholder="Who you work with and how, in two or three sentences." />
                   <small>Up to 700 characters. Colleagues see this on your profile.</small>
                 </label>
               </div>
@@ -284,8 +304,14 @@ export function ProfileView({
               id="specialties"
               done={ranked.length >= 3}
               open={ranked.length < 3}
-              help="Rank your top five. Rank 1 counts most in matching. Tick anything else you treat below."
+              help="Tick every area you work with. Then rank your top five beneath: rank 1 counts most in matching."
             >
+              <p className="label-line">Areas you cover</p>
+              <CheckGrid items={specs} selected={selected} />
+              <p className="label-line" style={{ marginTop: 18 }}>Your top five, in order</p>
+              <p id="rank-confirm" className="notice-line" hidden>
+                We ranked these from your profile. Is this the right order? Change any you&rsquo;d put differently, then save.
+              </p>
               <div className="rank-list">
                 {[1, 2, 3, 4, 5].map((n) => (
                   <label key={n}>
@@ -299,12 +325,6 @@ export function ProfileView({
                   </label>
                 ))}
               </div>
-              <details style={{ marginTop: 14 }}>
-                <summary className="small" style={{ cursor: "pointer" }}>Other specialties you treat ({pick("treatment_specialism").filter((lv) => typeof selected.get(lv.id) !== "number").length})</summary>
-                <div style={{ marginTop: 10 }}>
-                  <CheckGrid items={specs} selected={selected} />
-                </div>
-              </details>
             </Section>
 
             <Section title="Who you see" id="populations" done={pick("age_group_specialism").length > 0 && pick("session_type").length > 0} help="Age groups and session types are used in matching; populations are shown on your profile.">
@@ -420,9 +440,9 @@ export function ProfileView({
             <div className="meter" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label="Profile completeness">
               <span style={{ width: `${pct}%` }} />
             </div>
-            <ul className="summary-list" style={{ marginTop: 10 }}>
+            <ul className="summary-list completeness" style={{ marginTop: 10 }}>
               {checks.map((c) => (
-                <li key={c.label}>
+                <li key={c.label} className={c.done ? "is-done" : "is-todo"}>
                   <span>{c.done ? "✓ " : ""}{c.label}</span>
                   <strong>{c.done ? "Done" : <a href={c.href}>Add</a>}</strong>
                 </li>
@@ -433,9 +453,9 @@ export function ProfileView({
             <div className="eyebrow">How colleagues see you</div>
             <div className="preview-frame" style={{ marginTop: 10 }}>
               <div className="row" style={{ alignItems: "flex-start", gap: 12 }}>
-                <PersonAvatar name={name} url={avatarUrl} size={48} />
+                <span data-self-avatar="" data-size="48"><PersonAvatar name={name} url={avatarUrl} size={48} /></span>
                 <div style={{ minWidth: 0 }}>
-                  <strong>{display}</strong>
+                  <strong data-self-name="">{display}</strong>
                   <p className="small" style={{ margin: "2px 0 0" }}>
                     {professionLabel(professionFor(profile?.qualification_level))}
                     {where ? ` · ${where}` : ""}
@@ -450,14 +470,6 @@ export function ProfileView({
               {profile?.bio && <p className="small" style={{ margin: "10px 0 0" }}>{profile.bio.length > 180 ? profile.bio.slice(0, 180) + "..." : profile.bio}</p>}
             </div>
             <p className="micro-note" style={{ margin: "10px 0 0" }}>Colleagues also see your reviewed license states, availability dates and activity on PsyAlliance.</p>
-          </section>
-          <section className="card">
-            <div className="eyebrow">Elsewhere</div>
-            <ul className="summary-list">
-              <li><span>Licenses and renewals</span><strong><a href="/dashboard/credentials">Credentials</a></strong></li>
-              <li><span>Referrals, cover, consult</span><strong><a href="/dashboard/availability">Availability</a></strong></li>
-              <li><span>Who can see you</span><strong><a href="/dashboard/settings">Settings</a></strong></li>
-            </ul>
           </section>
         </aside>
       </div>

@@ -1,127 +1,100 @@
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { resolveAvatarUrls } from "@/lib/avatars";
 import { findMatches } from "@/lib/match-engine";
-import { US_STATES } from "@/lib/us-states";
-import { effectiveReferral } from "@/lib/availability";
 import { clinicianName } from "@/lib/profession";
-import { IS_DEMO_SITE } from "@/lib/env";
-import { loadNeedOptions } from "@/lib/need-options";
-import { NetworkView, type NetworkTab, type Person, type Invitation } from "./views";
+import { getTrustedIds, getTrustedByIds } from "@/lib/trusted";
+import { cliniciansHref } from "../clinicians/views";
+import { NetworkView, type Colleague } from "./views";
 import type { CircleNode } from "../_components/orbit";
 
-export const metadata = { title: "Network" };
+export const metadata = { title: "Your network" };
 
-const PAGE_SIZE = 20;
+const SEARCH_KEYS = ["q", "focus", "state", "available", "profession", "insurance", "age", "language", "modality", "session", "psypact", "page"];
 
-export default async function NetworkPage(props: {
-  searchParams: Promise<{ tab?: string; q?: string; focus?: string; state?: string; available?: string; profession?: string; insurance?: string; age?: string; language?: string; modality?: string; session?: string; psypact?: string; page?: string; connected?: string; declined?: string; saved?: string; unsaved?: string }>;
-}) {
+// Your network: the people you've chosen as trusted colleagues, the ones
+// you've worked with, and the colleagues PsyAlliance suggests, drawn as a
+// circle around you. Searching everyone lives in Clinicians.
+export default async function NetworkPage(props: { searchParams: Promise<Record<string, string | undefined>> }) {
   const sp = await props.searchParams;
-  const tab = (["directory", "mine", "trusted", "saved", "worked", "suggested"].includes(sp.tab || "") ? sp.tab : "directory") as NetworkTab;
-  const filters = {
-    q: (sp.q || "").trim(),
-    focus: sp.focus || "",
-    state: sp.state || "",
-    available: sp.available === "1",
-    profession: sp.profession || "",
-    insurance: sp.insurance || "",
-    age: sp.age || "",
-    language: sp.language || "",
-    modality: sp.modality || "",
-    session: sp.session || "",
-    psypact: sp.psypact === "1",
-  };
-  const page = Math.max(1, Number(sp.page) || 1);
+  // Older links to a Network search open the same search in Clinicians.
+  if (SEARCH_KEYS.some((k) => sp[k] !== undefined) || sp.tab === "directory") {
+    const f: Record<string, string> = {};
+    for (const k of SEARCH_KEYS) if (sp[k] && k !== "page") f[k] = sp[k]!;
+    redirect(cliniciansHref(f as any, Number(sp.page) || 1));
+  }
+
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  const myself = user!.id;
+  const me = user!.id;
 
-  const [{ data: connections }, { data: savedRows }, { data: workedRows }, { data: excludedRows }, { data: myProfile }, { data: myFocusRows }] =
-    await Promise.all([
-      supabase
-        .from("connections")
-        .select("id, requester_id, addressee_id, tier, status, requester:requester_id(full_name, credential_prefix, qualification_level, primary_practice_city, primary_state, avatar_path)")
-        .or(`requester_id.eq.${myself},addressee_id.eq.${myself}`),
-      supabase.from("saved_clinicians").select("clinician_id").eq("profile_id", myself),
-      supabase.from("worked_with_before").select("colleague_id").eq("profile_id", myself),
-      supabase.from("do_not_work_with").select("blocked_profile_id").eq("profile_id", myself),
-      supabase.rpc("my_profile").select("primary_state, full_name, avatar_path").maybeSingle<any>(),
-      supabase
-        .from("profile_lookup_values")
-        .select("lookup_value_id, rank, lookup_values!inner(category)")
-        .eq("profile_id", myself)
-        .eq("lookup_values.category", "treatment_specialism")
-        .order("rank"),
-    ]);
-
-  const saved = new Set((savedRows || []).map((s: any) => s.clinician_id as string));
-  const worked = new Set((workedRows || []).map((w: any) => w.colleague_id as string));
-  const excluded = (excludedRows || []).map((e: any) => e.blocked_profile_id as string);
-  // Lead with the member's own state: with no state chosen yet, the
-  // directory opens on colleagues where they practise ("All states" is an
-  // explicit choice and is kept).
-  const homeDefault = tab === "directory" && sp.state === undefined && !!myProfile?.primary_state;
-  if (homeDefault) filters.state = myProfile!.primary_state;
-  const trusted = new Set<string>();
-  const pendingOut = new Set<string>();
-  const pendingIn = new Set<string>();
-  const invites: (Omit<Invitation, "avatarUrl"> & { avatarPath: string | null })[] = [];
-  for (const c of connections || []) {
-    const other = c.requester_id === myself ? c.addressee_id : c.requester_id;
-    if (c.status === "accepted") trusted.add(other);
-    else if (c.status === "pending") {
-      if (c.requester_id === myself) pendingOut.add(other);
-      else {
-        pendingIn.add(other);
-        const r: any = (c as any).requester;
-        invites.push({
-          id: c.id,
-          profileId: other,
-          name: clinicianName(r?.full_name, r?.qualification_level, r?.credential_prefix),
-          where: [r?.primary_practice_city, r?.primary_state].filter(Boolean).join(", "),
-          avatarPath: r?.avatar_path || null,
-        });
-      }
-    }
-  }
-
-  // One database call returns this page of people, the total and the
-  // filter options, however large the network grows.
-  const only = tab === "mine" ? Array.from(new Set([...trusted, ...worked])) : tab === "trusted" ? [...trusted] : tab === "saved" ? [...saved] : tab === "worked" ? [...worked] : undefined;
-  const { data: result } = await supabase.rpc("network_directory", {
-    p: {
-      ...filters,
-      exclude: excluded,
-      ...(only ? { only } : {}),
-      first: [...trusted, ...worked],
-      limit: PAGE_SIZE,
-      offset: (page - 1) * PAGE_SIZE,
-      with_options: true,
-    },
-  });
-  const res = (result as any) || { total: 0, all: 0, people: [], options: {} };
-  const rows: any[] = res.people || [];
-  // The member's circle, drawn as rings: trusted closest, then worked with
-  // before and saved.
-  const kindOf = (pid: string): CircleNode["kind"] => (trusted.has(pid) ? "trusted" : worked.has(pid) ? "worked" : "saved");
-  const circleIds = [...trusted, ...[...worked].filter((x) => !trusted.has(x)), ...[...saved].filter((x) => !trusted.has(x) && !worked.has(x))].slice(0, 18);
-  const { data: circlePeople } = circleIds.length
-    ? await supabase.from("profiles").select("id, full_name, credential_prefix, qualification_level, avatar_path").in("id", circleIds)
-    : { data: [] as any[] };
-  const urls = await resolveAvatarUrls(supabase, [
-    ...rows.map((p) => p.avatar_path),
-    ...invites.map((i) => i.avatarPath),
-    ...(circlePeople || []).map((p: any) => p.avatar_path),
-    myProfile?.avatar_path,
+  const [trusted, trustedBy, { data: workedRows }, { data: myProfile }, { data: myFocusRows }] = await Promise.all([
+    getTrustedIds(supabase, me),
+    getTrustedByIds(supabase, me),
+    supabase.from("worked_with_before").select("colleague_id, interaction_count").eq("profile_id", me),
+    supabase.rpc("my_profile").select("primary_state, full_name, avatar_path").maybeSingle<any>(),
+    supabase
+      .from("profile_lookup_values")
+      .select("lookup_value_id, rank, lookup_values!inner(category)")
+      .eq("profile_id", me)
+      .eq("lookup_values.category", "treatment_specialism")
+      .order("rank"),
   ]);
-  const circleNodes: CircleNode[] = (circlePeople || []).map((p: any) => ({
-    id: p.id,
-    name: clinicianName(p.full_name, p.qualification_level, p.credential_prefix),
-    kind: kindOf(p.id),
-    avatarUrl: urls.get(p.avatar_path || "") || null,
-  }));
+  const worked = new Map<string, number>((workedRows || []).map((w: any) => [w.colleague_id as string, Number(w.interaction_count) || 1]));
+
+  // Suggested: people who added you first, then the best matches for your
+  // practice that aren't already trusted.
+  const addedYou = [...trustedBy].filter((id) => !trusted.has(id));
+  const { matches } = await findMatches(
+    supabase,
+    me,
+    { kind: "discovery", focusIds: (myFocusRows || []).slice(0, 3).map((r: any) => Number(r.lookup_value_id)), state: myProfile?.primary_state || null },
+    { exclude: [...trusted, ...addedYou], limit: 10 }
+  );
+
+  const ids = Array.from(new Set([...trusted, ...worked.keys(), ...addedYou]));
+  const { data: people } = ids.length
+    ? await supabase.from("profiles").select("id, full_name, credential_prefix, qualification_level, primary_practice_city, primary_state, avatar_path").in("id", ids)
+    : { data: [] as any[] };
+  const byId = new Map((people || []).map((p: any) => [p.id as string, p]));
+  const urls = await resolveAvatarUrls(supabase, [...(people || []).map((p: any) => p.avatar_path), ...matches.map((m) => m.avatarPath), myProfile?.avatar_path]);
+
+  const toColleague = (id: string, why: string): Colleague | null => {
+    const p: any = byId.get(id);
+    if (!p) return null;
+    return {
+      id,
+      name: clinicianName(p.full_name, p.qualification_level, p.credential_prefix),
+      where: [p.primary_practice_city, p.primary_state].filter(Boolean).join(", "),
+      avatarUrl: urls.get(p.avatar_path || "") || null,
+      why,
+      trusted: trusted.has(id),
+    };
+  };
+  const trustedList = [...trusted].map((id) => toColleague(id, worked.has(id) ? "Trusted · worked together" : "Trusted colleague")).filter(Boolean) as Colleague[];
+  const workedList = [...worked.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .map(([id, n]) => toColleague(id, `${n} referral${n === 1 ? "" : "s"}, cover or consult${n === 1 ? "" : "s"} together`))
+    .filter(Boolean) as Colleague[];
+  const suggestedList: Colleague[] = [
+    ...(addedYou.map((id) => toColleague(id, "Added you as a trusted colleague")).filter(Boolean) as Colleague[]),
+    ...matches.map((m) => ({
+      id: m.profileId,
+      name: clinicianName(m.fullName, m.qualification, m.credentialPrefix),
+      where: [m.city, m.state].filter(Boolean).join(", "),
+      avatarUrl: urls.get(m.avatarPath || "") || null,
+      why: m.reasons.filter((r) => r !== "Worked together before").slice(0, 2).join(" · ") || "Fits your practice",
+      trusted: false,
+    })),
+  ].slice(0, 10);
+
+  const nodes: CircleNode[] = [
+    ...trustedList.map((c) => ({ id: c.id, name: c.name, kind: "trusted" as const, avatarUrl: c.avatarUrl })),
+    ...workedList.filter((c) => !c.trusted).map((c) => ({ id: c.id, name: c.name, kind: "worked" as const, avatarUrl: c.avatarUrl })),
+    ...suggestedList.map((c) => ({ id: c.id, name: c.name, kind: "suggested" as const, avatarUrl: c.avatarUrl })),
+  ];
   const myInitials = String(myProfile?.full_name || "")
     .split(/\s+/)
     .filter(Boolean)
@@ -129,94 +102,15 @@ export default async function NetworkPage(props: {
     .map((w: string) => w[0]?.toUpperCase())
     .join("");
 
-  const people: Person[] = rows.map((p) => {
-    const age = p.confirmed_at ? Math.floor((Date.now() - new Date(p.confirmed_at).getTime()) / 86_400_000) : null;
-    const rel: Person["relationship"] = trusted.has(p.id)
-      ? "trusted"
-      : pendingIn.has(p.id)
-        ? "pending_in"
-        : pendingOut.has(p.id)
-          ? "pending_out"
-          : worked.has(p.id)
-            ? "worked_with"
-            : saved.has(p.id)
-              ? "saved"
-              : "none";
-    return {
-      id: p.id,
-      name: clinicianName(p.full_name, p.qualification_level, p.credential_prefix),
-      qualification: p.qualification_level,
-      city: p.city,
-      state: p.state,
-      licenceStates: p.lic_states || [],
-      // When filtering by a specialty, the card leads with it, so a correct
-      // result also looks correct.
-      topFocus: (() => {
-        const all: string[] = p.focus || [];
-        const hit = filters.focus ? all.find((f) => f.toLowerCase() === filters.focus.toLowerCase()) : undefined;
-        return hit ? [hit, ...all.filter((f) => f !== hit)].slice(0, 2) : all.slice(0, 2);
-      })(),
-      modalities: p.modalities || [],
-      availability: effectiveReferral(p.referral_availability, p.confirmed_at, p.paused_until).label,
-      fresh: !!p.fresh,
-      confirmedDaysAgo: age,
-      psypact: !!p.psypact,
-      avatarUrl: urls.get(p.avatar_path || "") || null,
-      relationship: rel,
-      saved: saved.has(p.id),
-    };
-  });
-
-  let suggested: any[] = [];
-  let suggestedAvatars: Record<string, string | null> = {};
-  if (tab === "suggested") {
-    const { matches } = await findMatches(
-      supabase,
-      myself,
-      { kind: "discovery", focusIds: (myFocusRows || []).slice(0, 3).map((r: any) => Number(r.lookup_value_id)), state: myProfile?.primary_state || null },
-      { exclude: [...trusted, ...saved, ...pendingOut], limit: 12 }
-    );
-    suggested = matches;
-    const u = await resolveAvatarUrls(supabase, matches.map((m) => m.avatarPath));
-    suggestedAvatars = Object.fromEntries(matches.map((m) => [m.profileId, u.get(m.avatarPath || "") || null]));
-  }
-
-  const opts = res.options || {};
-  // On the demo, only offer focus areas every state covers well, so no
-  // search comes back empty.
-  if (IS_DEMO_SITE) {
-    const covered = new Set((await loadNeedOptions(supabase)).focus.map((f) => f.value));
-    if (covered.size) opts.focus = (opts.focus || []).filter((f: string) => covered.has(f));
-  }
-  const stateCodes: string[] = opts.states || [];
-  const states = stateCodes.length ? US_STATES.filter((s) => stateCodes.includes(s.code)) : US_STATES;
-
   return (
     <NetworkView
-      connected={sp.connected}
-      declined={!!sp.declined}
-      savedNote={sp.saved ? "saved" : sp.unsaved ? "unsaved" : undefined}
-      tab={tab}
-      people={people}
-      total={Number(res.total) || 0}
-      page={page}
-      pageSize={PAGE_SIZE}
-      suggested={suggested}
-      suggestedAvatars={suggestedAvatars}
-      invitations={invites.map(({ avatarPath, ...i }) => ({ ...i, avatarUrl: urls.get(avatarPath || "") || null }))}
-      sentCount={pendingOut.size}
-      filters={filters}
-      focusOptions={opts.focus || []}
-      moreOptions={{ insurance: opts.insurance || [], age: opts.age || [], language: opts.language || [], modality: opts.modality || [], session: opts.session || [] }}
-      states={states}
-      counts={{ directory: Number(res.all) || 0, mine: new Set([...trusted, ...worked]).size, trusted: trusted.size, worked: worked.size, saved: saved.size, suggested: 0 }}
-      networkSize={Number(res.all) || 0}
-      circle={{ nodes: circleNodes, me: { initials: myInitials || "You", avatarUrl: urls.get(myProfile?.avatar_path || "") || null } }}
-      why={
-        tab === "directory"
-          ? `${homeDefault ? "Showing your state first. " : ""}Trusted colleagues and people you've worked with come first, then members who confirmed their availability in the last 30 days.`
-          : undefined
-      }
+      trusted={trustedList}
+      worked={workedList}
+      suggested={suggestedList}
+      nodes={nodes}
+      me={{ initials: myInitials || "You", avatarUrl: urls.get(myProfile?.avatar_path || "") || null }}
+      note={sp.trusted ? "Added as a trusted colleague. They've been told, and they come first in your matches." : sp.untrusted ? "Removed from your trusted colleagues. They aren't told." : null}
+      error={sp.error || null}
     />
   );
 }

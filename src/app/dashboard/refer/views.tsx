@@ -150,7 +150,7 @@ export function ReferShortlistView({
             {matches.length === 0 ? (
               <Empty
                 title="No verified colleague fits all of this yet."
-                body="Widen one criterion below, or send it to your trusted circle or the verified network on the next step."
+                body="Widen one criterion below, or send it to your trusted colleagues or the verified network on the next step."
               />
             ) : (
               <>
@@ -345,34 +345,27 @@ export function ReferIndexView({
 }) {
   return (
     <>
+      <FirstVisit id="refer" what="Refer" exampleHref={`${TOUR_URL}/refer`} />
       <PageHead
         eyebrow="Refer"
         title="Refer"
-        lead="Hand a client to someone you trust, and see referrals that fit your practice."
-      />
-      <FirstVisit
-        id="refer"
-        line="Describe the need and the state, see colleagues who fit with the reasons, then choose who receives it. No client details, and nothing is sent until you review."
-        startHref="#start-referral"
-        startLabel="Start a referral"
-        exampleHref={`${TOUR_URL}/refer`}
+        lead="Describe the need and the state, see colleagues who fit and why, then choose who receives it. No client details, and nothing is sent until you review."
       />
       <Banner ok={ok} error={error} />
       <form className="quick-search" method="get" action="/dashboard/refer/new" id="start-referral">
         <input type="hidden" name="step" value="shortlist" />
         <h3>Start a referral</h3>
-        <NeedFields options={options} compact />
+        <NeedFields options={options} compact refineInline />
         <div className="row wrap" style={{ marginTop: 14, gap: 12 }}>
           <button type="submit" className="btn">Find colleagues</button>
-          <a className="quick-more" href="/dashboard/refer/new">Add age, setting or language</a>
         </div>
         <p className="small" style={{ color: "#cfe0d4", margin: "10px 0 0" }}>No client details. Nothing is sent until you review.</p>
       </form>
       <div className="split equal" style={{ marginTop: 20 }}>
         <section className="card">
-          <div className="card-title"><h3>Your referrals</h3><span className="micro-note">{mine.length} total</span></div>
+          <div className="card-title"><h3>Referrals You&rsquo;ve Sent Out</h3><span className="micro-note">{mine.length} total</span></div>
           {mine.length === 0 ? (
-            <QuietEmpty title="No referrals yet." body="When you can't take a client, start here: describe the need and PsyAlliance shortlists the right colleagues." action={<a className="btn secondary small-btn" href="#start-referral">Start a referral</a>} />
+            <QuietEmpty title="No referrals yet." body="When you can't take a client, start above: describe the need and PsyAlliance shortlists the right colleagues." />
           ) : (
             mine.map((r) => {
               const s = referralStatus(r);
@@ -396,9 +389,9 @@ export function ReferIndexView({
           )}
         </section>
         <section className="card">
-          <div className="card-title"><h3>Offered to you</h3><span className="micro-note">Matched to your practice</span></div>
+          <div className="card-title"><h3>Referrals You&rsquo;ve Received</h3><span className="micro-note">Matched to your practice</span></div>
           {offered.length === 0 ? (
-            <QuietEmpty title="Nothing waiting for you." body="Referrals that fit your profile and availability appear here. Keeping your availability current helps colleagues find you." action={<a className="btn secondary small-btn" href="/dashboard/availability">Update availability</a>} />
+            <QuietEmpty title="Nothing waiting for you." body="Referrals that fit your profile and availability, sent to you by colleagues, appear here. Keeping your availability current helps colleagues find you." action={<a className="btn secondary small-btn" href="/dashboard/availability?back=%2Fdashboard%2Frefer">Update availability</a>} />
           ) : (
             offered.map((r) => (
               <a key={r.id} className="list-row" href={`/dashboard/refer/${r.id}`} style={{ textDecoration: "none", color: "inherit" }}>

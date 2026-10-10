@@ -49,7 +49,7 @@ export function AudiencePicker({
     {
       value: "trusted",
       icon: "network",
-      title: "Your trusted circle",
+      title: "Your trusted colleagues",
       who: trusted.length ? `${trusted.length} colleague${trusted.length === 1 ? "" : "s"}` : "No one yet",
       why: "People you know and trust. Usually the right place to start.",
       disabled: trusted.length === 0,

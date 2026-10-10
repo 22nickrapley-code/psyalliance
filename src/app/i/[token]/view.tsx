@@ -33,7 +33,7 @@ export function InviteLanding({ who, token, signedIn, error }: { who: InviteWho;
                   colleague for a referral, and peers to think a case through with.
                 </p>
                 <p className="invite-promise">
-                  Accepting adds each of you to the other&rsquo;s <b>trusted circle</b>. Trusted colleagues come first in each other&rsquo;s matches. You&rsquo;re
+                  Accepting makes you each other&rsquo;s <b>trusted colleagues</b>. Trusted colleagues come first in each other&rsquo;s matches. You&rsquo;re
                   connected once both of you are verified.
                 </p>
                 {error && <div className="banner error" role="alert">{error}</div>}

@@ -2,12 +2,13 @@ import { createClient } from "@/lib/supabase/server";
 import { loadLedger, ledgerItems } from "@/lib/ledger";
 import { resolveAvatarUrl } from "@/lib/avatars";
 import { ProfileView } from "./view";
+import { safeBack } from "@/lib/back";
 import { PageHead } from "../_components/ui";
 
 export const metadata = { title: "Your profile" };
 
 export default async function ProfilePage(props: {
-  searchParams: Promise<{ saved?: string; availability_saved?: string; avatar_saved?: string; avatar_error?: string; error?: string; edit?: string }>;
+  searchParams: Promise<{ saved?: string; availability_saved?: string; avatar_saved?: string; avatar_error?: string; error?: string; edit?: string; back?: string; photo?: string }>;
 }) {
   const sp = await props.searchParams;
   const supabase = await createClient();
@@ -63,6 +64,7 @@ export default async function ProfilePage(props: {
       editing={editing}
       licenses={licenses}
       ledger={ledgerItems(await loadLedger(supabase, me))}
+      back={safeBack(sp.back)}
     />
   );
 }

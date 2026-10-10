@@ -1,4 +1,5 @@
 import "../../premium.css";
+import { PasswordField } from "../../_public/password-field";
 import { signIn } from "../actions";
 import { IS_DEMO_SITE, JOIN_URL, JOIN_HREF } from "@/lib/env";
 
@@ -35,7 +36,7 @@ export default async function SignInPage(props: { searchParams: Promise<{ error?
               </label>
               <label className="field">
                 Password
-                <input name="password" type="password" required autoComplete="current-password" />
+                <PasswordField name="password" autoComplete="current-password" />
               </label>
               <button type="submit" className="btn lg block">Sign in</button>
               <a className="text-arrow" href="/auth/forgot-password" style={{ justifySelf: "center" }}>Forgot your password?</a>

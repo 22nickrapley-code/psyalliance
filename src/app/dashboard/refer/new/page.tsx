@@ -48,12 +48,7 @@ export default async function NewReferralPage(props: { searchParams: Promise<SP>
       picks.length
         ? supabase.from("profiles").select("id, full_name, credential_prefix").in("id", picks)
         : Promise.resolve({ data: [] as any[] }),
-      supabase
-        .from("connections")
-        .select("id", { count: "exact", head: true })
-        .eq("status", "accepted")
-        .eq("tier", "trusted_colleague")
-        .or(`requester_id.eq.${myself},addressee_id.eq.${myself}`),
+      supabase.from("trusted_colleagues").select("colleague_id", { count: "exact", head: true }).eq("profile_id", myself),
       supabase.rpc("eligible_network_count"),
     ]);
     const picked = (pickedRows || []).map((p: any) => ({

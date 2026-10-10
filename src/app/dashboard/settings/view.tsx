@@ -16,7 +16,7 @@ const TRIGGERS: { key: string; label: string; when: string; col: string; always?
   { key: "n_cover_request", label: "A colleague asks you for cover", when: "Straight away. Urgent absences get a reminder after 24 hours.", col: "email_on_coverage_request" },
   { key: "n_referral_match", label: "A referral matches your practice", when: "Straight away", col: "email_on_referral_request" },
   { key: "n_replies", label: "Replies to your referral, cover request or question", when: "Straight away", col: "email_on_referral_response" },
-  { key: "n_invitations", label: "Invitations to a trusted circle or group", when: "Straight away", col: "email_on_trusted_invitation" },
+  { key: "n_invitations", label: "A colleague adds you as trusted, or invites you to a group", when: "Straight away", col: "email_on_trusted_invitation" },
   { key: "n_messages", label: "New messages", when: "Only if still unread after an hour", col: "email_on_message" },
   { key: "n_availability", label: "Monthly availability check", when: "Once a month, answer in one click", col: "email_on_availability_reminder" },
   { key: "n_credentials", label: "License and renewal reminders", when: "90, 30 and 7 days before", col: "email_on_credential_reminder" },
@@ -195,10 +195,10 @@ export function SettingsView({ sp, email, me, prefs, profile, emergency, exclude
           <section className="card">
             <div className="eyebrow">Elsewhere</div>
             <ul className="summary-list">
-              <li><span>Availability</span><strong><a href="/dashboard/availability">Update</a></strong></li>
-              <li><span>Profile</span><strong><a href="/dashboard/profile">Edit</a></strong></li>
-              <li><span>Licenses</span><strong><a href="/dashboard/credentials">Credentials</a></strong></li>
-              <li><span>Your backup</span><strong><a href="/dashboard/continuity">Continuity plan</a></strong></li>
+              <li><span>Availability</span><strong><a href="/dashboard/availability?back=%2Fdashboard%2Fsettings">Update</a></strong></li>
+              <li><span>Profile</span><strong><a href="/dashboard/profile?edit=1&back=%2Fdashboard%2Fsettings">Edit</a></strong></li>
+              <li><span>Licenses</span><strong><a href="/dashboard/credentials?back=%2Fdashboard%2Fsettings">Credentials</a></strong></li>
+              <li><span>Your backup</span><strong><a href="/dashboard/continuity?back=%2Fdashboard%2Fsettings">Continuity plan</a></strong></li>
             </ul>
           </section>
         </aside>

@@ -43,6 +43,7 @@ export async function signUp(formData: FormData) {
   if (fullName.length < 2) back("Add your full name.");
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) back("Add a valid email address.");
   if (password.length < 8) back("Choose a password of at least 8 characters.");
+  if (formData.has("password_confirm") && String(formData.get("password_confirm") || "") !== password) back("The two passwords don't match. Type the same password twice.");
   if (!DEGREES.has(qualification)) back("Choose your doctoral degree.");
   if (states.length === 0) back("Choose at least one state where you're licensed.");
 

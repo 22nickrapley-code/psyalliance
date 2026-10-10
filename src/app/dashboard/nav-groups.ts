@@ -5,9 +5,9 @@ import { IS_DEMO_SITE } from "@/lib/env";
 // shell as a prop (importing a helper from a "use client" file into server
 // code breaks under production bundling).
 //
-// Six product tabs, then "Your practice". There is no Legacy group:
-// Income, Capacity, Caseload, Planner and the old Referrals/Coverage pages
-// are retired, and Town Hall and Supervision move into Consult.
+// Workspace: the four jobs and Clinicians (search). Your practice: Profile
+// (with availability, credentials and the continuity plan inside it),
+// Messages, Network (your circle), the Library and Settings (Nick, 10 Oct).
 
 export type NavItem = {
   href: string;
@@ -59,19 +59,16 @@ export function buildNavGroups(opts: {
         { href: "/dashboard", label: "Home", glyph: "home" },
         { href: "/dashboard/cover", label: "Cover", glyph: "cover", badge: opts.pendingCoverRequests },
         { href: "/dashboard/refer", label: "Refer", glyph: "refer", badge: opts.pendingReferrals },
-        { href: "/dashboard/network", label: "Network", glyph: "network", matches: ["/dashboard/people", "/dashboard/invite"] },
         { href: "/dashboard/consult", label: "Consult", glyph: "consult" },
-        { href: "/dashboard/messages", label: "Messages", glyph: "messages", badge: opts.unreadMessages },
+        { href: "/dashboard/clinicians", label: "Clinicians", glyph: "members", matches: ["/dashboard/people"] },
       ],
     },
     {
       label: "Your practice",
       items: [
-        { href: "/dashboard/profile", label: "Profile", glyph: "profile" },
-        { href: "/dashboard/availability", label: "Availability", glyph: "availability" },
-        { href: "/dashboard/continuity", label: "Continuity plan", glyph: "continuity" },
-        { href: "/dashboard/full", label: "When you're full", glyph: "overflow" },
-        { href: "/dashboard/credentials", label: "Credentials", glyph: "credentials" },
+        { href: "/dashboard/profile", label: "Profile", glyph: "profile", matches: ["/dashboard/availability", "/dashboard/credentials", "/dashboard/continuity"] },
+        { href: "/dashboard/messages", label: "Messages", glyph: "messages", badge: opts.unreadMessages },
+        { href: "/dashboard/network", label: "Network", glyph: "network", matches: ["/dashboard/invite"] },
         { href: "/dashboard/documents", label: "Practice Library", glyph: "library" },
         { href: "/dashboard/settings", label: "Settings", glyph: "settings" },
       ],

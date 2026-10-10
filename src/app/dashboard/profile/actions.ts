@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { safeBack, backWith } from "@/lib/back";
 import { extractStructuredData, AiNotConfiguredError } from "@/lib/ai/anthropic";
 
 // A plain `throw` inside a server action wired to a bare <form action={fn}>
@@ -10,8 +11,49 @@ import { extractStructuredData, AiNotConfiguredError } from "@/lib/ai/anthropic"
 // anything useful. Every validation/DB-error path in this file routes through
 // this instead, so a bad input or a failed insert sends the user back to this
 // same page with an inline banner rather than taking the page down.
-function profileError(message: string): never {
-  redirect(`/dashboard/profile?error=${encodeURIComponent(message)}`);
+function profileError(message: string, back?: string | null): never {
+  redirect(`/dashboard/profile?edit=1&error=${encodeURIComponent(message)}${back ? `&back=${encodeURIComponent(back)}` : ""}`);
+}
+
+// A photo found in an imported profile (a picture pasted or dropped, or the
+// headshot in pasted Psychology Today text) becomes the profile photo when
+// the profile is saved. Only https images, up to 5 MB.
+async function importAvatar(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+  source: { file?: File | null; url?: string | null }
+): Promise<boolean> {
+  try {
+    let bytes: ArrayBuffer | null = null;
+    let type = "";
+    if (source.file && source.file.size > 0) {
+      if (!ALLOWED_AVATAR_TYPES.has(source.file.type) || source.file.size > MAX_AVATAR_BYTES) return false;
+      bytes = await source.file.arrayBuffer();
+      type = source.file.type;
+    } else if (source.url && /^https:\/\//i.test(source.url)) {
+      const res = await fetch(source.url, { signal: AbortSignal.timeout(8000), redirect: "follow" });
+      type = (res.headers.get("content-type") || "").split(";")[0].trim().toLowerCase();
+      if (!res.ok || !ALLOWED_AVATAR_TYPES.has(type)) return false;
+      const buf = await res.arrayBuffer();
+      if (buf.byteLength === 0 || buf.byteLength > MAX_AVATAR_BYTES) return false;
+      bytes = buf;
+    }
+    if (!bytes) return false;
+    const ext = type === "image/png" ? "png" : type === "image/webp" ? "webp" : "jpg";
+    const path = `${userId}/avatar-${Date.now()}.${ext}`;
+    const { data: before } = await supabase.from("profiles").select("avatar_path").eq("id", userId).maybeSingle();
+    const { error: upErr } = await supabase.storage.from("avatars").upload(path, new Blob([bytes], { type }), { contentType: type, upsert: false });
+    if (upErr) return false;
+    const { error: setErr } = await supabase.from("profiles").update({ avatar_path: path }).eq("id", userId);
+    if (setErr) {
+      await supabase.storage.from("avatars").remove([path]);
+      return false;
+    }
+    if (before?.avatar_path && before.avatar_path !== path) await supabase.storage.from("avatars").remove([before.avatar_path]);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 // Categories the AI import is allowed to auto-check from a pasted bio. The
@@ -47,6 +89,7 @@ export async function saveProfile(formData: FormData) {
   const prevStates: string[] = existing?.states_qualified || [];
   const statesQualified = primaryState ? [primaryState, ...prevStates.filter((s) => s !== primaryState)] : prevStates;
   const bio = String(formData.get("bio") || "").trim().slice(0, 700);
+  const back = safeBack(formData.get("back"));
 
   const profileRow = {
     id: user.id,
@@ -70,7 +113,7 @@ export async function saveProfile(formData: FormData) {
     psypact_participating: formData.get("psypact_participating") === "on",
     updated_at: new Date().toISOString(),
   };
-  if (!profileRow.full_name) profileError("Add your full name");
+  if (!profileRow.full_name) profileError("Add your full name", back);
 
   // Update when the row exists, insert on first save. (An upsert would
   // need read access to private columns, which members don't have
@@ -80,7 +123,7 @@ export async function saveProfile(formData: FormData) {
     ? await supabase.from("profiles").update(profileRow).eq("id", user.id)
     : await supabase.from("profiles").insert(profileRow);
   if (saveError) {
-    profileError(saveError.message);
+    profileError(saveError.message, back);
   }
 
   // Rebuild the profile's lookup-value associations from scratch each save -
@@ -129,13 +172,21 @@ export async function saveProfile(formData: FormData) {
   if (rows.length > 0) {
     const { error: insertError } = await supabase.from("profile_lookup_values").insert(rows);
     if (insertError) {
-      profileError(insertError.message);
+      profileError(insertError.message, back);
     }
   }
 
+  const importFile = formData.get("avatar_import_file");
+  const importUrl = String(formData.get("avatar_import_url") || "").trim();
+  const photoImported =
+    (importFile instanceof File && importFile.size > 0) || importUrl
+      ? await importAvatar(supabase, user.id, { file: importFile instanceof File ? importFile : null, url: importUrl || null })
+      : false;
+
   revalidatePath("/dashboard/profile");
   revalidatePath("/dashboard");
-  redirect("/dashboard/profile?saved=1");
+  if (back) redirect(backWith(back, { saved: "profile" }));
+  redirect(`/dashboard/profile?saved=1${photoImported ? "&photo=imported" : ""}`);
 }
 
 // The three "Open to" flags shown on the profile view, keyed to their exact
@@ -213,9 +264,11 @@ export async function parseProfileBio(bioText: string): Promise<{
     practice_website: string | null;
     contact_phone: string | null;
     contact_email: string | null;
+    bio: string | null;
   };
   matchedLookupIds?: number[];
   matchedLabels?: string[];
+  rankedSpecialtyIds?: number[];
   error?: string;
 }> {
   const trimmed = bioText.trim();
@@ -248,6 +301,8 @@ export async function parseProfileBio(bioText: string): Promise<{
       practice_website?: string;
       contact_phone?: string;
       contact_email?: string;
+      bio?: string;
+      top_specialties?: string[];
       matched_options?: { category: string; value: string }[];
     }>({
       system:
@@ -267,6 +322,17 @@ export async function parseProfileBio(bioText: string): Promise<{
           practice_website: { type: "string" },
           contact_phone: { type: "string" },
           contact_email: { type: "string" },
+          bio: {
+            type: "string",
+            description:
+              "The practitioner's own short description of who they work with and how, taken from their text (keep their words; trim to two or three sentences, under 600 characters). Omit if there isn't one.",
+          },
+          top_specialties: {
+            type: "array",
+            items: { type: "string" },
+            description:
+              "Up to five treatment_specialism values from the allowed list, in the order the text presents as most important (for example a 'Top Specialties' list first, then the order they're described). Only values clearly supported by the text.",
+          },
           matched_options: {
             type: "array",
             items: {
@@ -288,6 +354,11 @@ export async function parseProfileBio(bioText: string): Promise<{
       .in("category", AI_MATCHABLE_CATEGORIES);
     const idByCategoryValue = new Map((allLookups || []).map((lv) => [`${lv.category}::${lv.value}`, lv.id]));
 
+    const rankedSpecialtyIds: number[] = [];
+    for (const v of result.top_specialties || []) {
+      const id = idByCategoryValue.get(`treatment_specialism::${v}`);
+      if (id && !rankedSpecialtyIds.includes(id) && rankedSpecialtyIds.length < 5) rankedSpecialtyIds.push(id);
+    }
     const matchedLookupIds: number[] = [];
     const matchedLabels: string[] = [];
     for (const m of result.matched_options || []) {
@@ -309,9 +380,12 @@ export async function parseProfileBio(bioText: string): Promise<{
         practice_website: result.practice_website || null,
         contact_phone: result.contact_phone || null,
         contact_email: result.contact_email || null,
+        bio: result.bio ? result.bio.trim().slice(0, 700) : null,
       },
-      matchedLookupIds,
+      // Ranked specialties are also covered areas.
+      matchedLookupIds: Array.from(new Set([...matchedLookupIds, ...rankedSpecialtyIds])),
       matchedLabels,
+      rankedSpecialtyIds,
     };
   } catch (err) {
     if (err instanceof AiNotConfiguredError) return { error: err.message };
@@ -384,7 +458,7 @@ export async function uploadAvatar(formData: FormData) {
 
   revalidatePath("/dashboard/profile");
   revalidatePath("/dashboard");
-  redirect("/dashboard/profile?avatar_saved=1");
+  redirect("/dashboard/profile?edit=1&avatar_saved=1#photo");
 }
 
 export async function submitCredentialVerification(formData: FormData) {
@@ -403,4 +477,19 @@ export async function submitCredentialVerification(formData: FormData) {
   if (error) profileError(error.message);
 
   revalidatePath("/dashboard/profile");
+}
+
+// A member deletes their own account (migration 0108, delete_my_account).
+export async function deleteAccountAction(formData: FormData) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/auth/sign-in");
+  const confirm = String(formData.get("confirm") || "").trim();
+  if (confirm !== "DELETE") redirect(`/dashboard/profile?error=${encodeURIComponent("Type DELETE in capitals to confirm.")}`);
+  const { error } = await supabase.rpc("delete_my_account", { p_confirm: confirm });
+  if (error) redirect(`/dashboard/profile?error=${encodeURIComponent(error.code === "P0001" ? error.message : "We couldn't delete your account just now. Please try again, or email hello@psyalliance.org.")}`);
+  await supabase.auth.signOut();
+  redirect("/goodbye");
 }

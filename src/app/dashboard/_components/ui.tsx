@@ -197,11 +197,13 @@ export function NeedFields({
   values = {},
   compact,
   showPrescribing,
+  refineInline,
 }: {
   options: NeedOptions;
   values?: NeedValues;
   compact?: boolean;
   showPrescribing?: boolean;
+  refineInline?: boolean;
 }) {
   const f = values.focusIds || [];
   const focusOptions = options.focus.map((o) => ({ value: String(o.id), label: o.value }));
@@ -248,17 +250,70 @@ export function NeedFields({
       </select>
     </label>
   );
+  const refined = !!(f[1] || values.city || values.ageBand || values.languageId || values.prescribing);
+  const refineFields = (
+    <div className="fields">
+      <label className="field">
+        Also (optional)
+        <select name="focus" defaultValue={f[1] ? String(f[1]) : ""}>
+          <option value="">None</option>
+          {options.focus.map((o) => (
+            <option key={o.id} value={o.id}>{o.value}</option>
+          ))}
+        </select>
+      </label>
+      <label className="field">
+        City (optional)
+        <input name="city" defaultValue={values.city || ""} placeholder="e.g. Brooklyn" autoComplete="off" />
+      </label>
+      <label className="field">
+        Age band
+        <select name="age" defaultValue={values.ageBand || ""}>
+          <option value="">Any</option>
+          {options.ageBands.map((a) => (
+            <option key={a} value={a}>{a}</option>
+          ))}
+        </select>
+      </label>
+      <label className="field">
+        Language
+        <select name="language" defaultValue={values.languageId ? String(values.languageId) : ""}>
+          <option value="">Any</option>
+          {options.language.map((o) => (
+            <option key={o.id} value={o.id}>{o.value}</option>
+          ))}
+        </select>
+      </label>
+      {showPrescribing && (
+        <label className="checkline full">
+          <input type="checkbox" name="prescribing" value="1" defaultChecked={values.prescribing} />
+          Prescribing needed (suggests psychiatrists only)
+        </label>
+      )}
+    </div>
+  );
   if (compact) {
     return (
-      <div className="fields four">
-        {mainFocus}
-        {stateSelect}
-        {insuranceSelect}
-        {settingSelect}
-      </div>
+      <>
+        <div className="fields four">
+          {mainFocus}
+          {stateSelect}
+          {insuranceSelect}
+          {settingSelect}
+        </div>
+        {refineInline && (
+          // More detail opens inside the same card, not on a new page.
+          <details className="refine-fit quick-refine" open={refined}>
+            <summary>
+              <span>Add age, city, second focus or language</span>
+              <small>Optional</small>
+            </summary>
+            {refineFields}
+          </details>
+        )}
+      </>
     );
   }
-  const refined = !!(f[1] || values.city || values.ageBand || values.languageId || values.prescribing);
   return (
     <div className="need-fields">
       <div className="fields">
@@ -272,45 +327,7 @@ export function NeedFields({
           <span>Refine fit</span>
           <small>Second focus, city, age band, language{showPrescribing ? ", prescribing" : ""}. Optional.</small>
         </summary>
-        <div className="fields">
-          <label className="field">
-            Also (optional)
-            <select name="focus" defaultValue={f[1] ? String(f[1]) : ""}>
-              <option value="">None</option>
-              {options.focus.map((o) => (
-                <option key={o.id} value={o.id}>{o.value}</option>
-              ))}
-            </select>
-          </label>
-          <label className="field">
-            City (optional)
-            <input name="city" defaultValue={values.city || ""} placeholder="e.g. Brooklyn" autoComplete="off" />
-          </label>
-          <label className="field">
-            Age band
-            <select name="age" defaultValue={values.ageBand || ""}>
-              <option value="">Any</option>
-              {options.ageBands.map((a) => (
-                <option key={a} value={a}>{a}</option>
-              ))}
-            </select>
-          </label>
-          <label className="field">
-            Language
-            <select name="language" defaultValue={values.languageId ? String(values.languageId) : ""}>
-              <option value="">Any</option>
-              {options.language.map((o) => (
-                <option key={o.id} value={o.id}>{o.value}</option>
-              ))}
-            </select>
-          </label>
-          {showPrescribing && (
-            <label className="checkline full">
-              <input type="checkbox" name="prescribing" value="1" defaultChecked={values.prescribing} />
-              Prescribing needed (suggests psychiatrists only)
-            </label>
-          )}
-        </div>
+        {refineFields}
       </details>
     </div>
   );
@@ -349,14 +366,14 @@ export function ConnectedNote({ name, profileId }: { name: string; profileId?: s
     <section className="connected-note" role="status">
       <span className="connected-seal" aria-hidden="true">&#10003;</span>
       <div>
-        <div className="eyebrow">Trusted circle</div>
+        <div className="eyebrow">Trusted colleagues</div>
         <h3>You and {first} are now trusted colleagues.</h3>
         <p>
           You&rsquo;ll each come first in the other&rsquo;s matches for referrals, cover and questions. We&rsquo;ve let {first} know.
         </p>
         <div className="connected-actions">
           {profileId && <a className="btn small-btn" href={`/dashboard/messages?to=${profileId}`}>Say hello</a>}
-          <a className="btn secondary small-btn" href="/dashboard/network?tab=trusted">See your circle</a>
+          <a className="btn secondary small-btn" href="/dashboard/network#trusted">See your network</a>
         </div>
       </div>
     </section>

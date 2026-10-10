@@ -28,16 +28,12 @@ export default async function ConsultPage(props: { searchParams: Promise<{ tab?:
       .eq("profile_id", myself)
       .eq("lookup_values.category", "treatment_specialism")
       .order("rank"),
-    supabase
-      .from("connections")
-      .select("requester_id, addressee_id")
-      .eq("status", "accepted")
-      .or(`requester_id.eq.${myself},addressee_id.eq.${myself}`),
+    supabase.from("trusted_colleagues").select("colleague_id").eq("profile_id", myself),
     supabase.from("profiles").select("primary_state").eq("id", myself).maybeSingle(),
   ]);
   const followed = (follows || []).map((f: any) => f.tag);
   const mySpecialties = (myFocus || []).map((r: any) => r.lookup_values.value as string);
-  const trusted = new Set((trustedRows || []).map((c: any) => (c.requester_id === myself ? c.addressee_id : c.requester_id)));
+  const trusted = new Set((trustedRows || []).map((c: any) => c.colleague_id as string));
   const interests = new Set([...followed, ...mySpecialties.slice(0, 5)]);
 
   let posts: PostItem[] = [];
@@ -82,7 +78,7 @@ export default async function ConsultPage(props: { searchParams: Promise<{ tab?:
       .filter((c: any) => c.author_profile_id === myself || !!c.author?.is_demo === viewerDemo)
       .map((c: any) => {
         const tagHit = (c.tags || []).find((t: string) => interests.has(t));
-        const why = trusted.has(c.author_profile_id) ? "From your trusted circle" : tagHit ? `Matches ${tagHit}` : undefined;
+        const why = trusted.has(c.author_profile_id) ? "From a trusted colleague" : tagHit ? `Matches ${tagHit}` : undefined;
         return {
           id: c.id,
           kind: c.kind,

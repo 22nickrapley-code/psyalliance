@@ -65,8 +65,8 @@ export default async function SandboxPage(props: { params: Promise<{ token: stri
                 <div className="eyebrow" style={{ marginBottom: 10 }}>A good order to explore</div>
                 <div className="chapter-list">
                   {[
-                    ["Look around", "Home starts quiet. Open your profile and the network; about a minute in, colleagues start getting in touch, one at a time."],
-                    ["Answer what arrives", "A message from Maya, a cover request for two clients, a referral from Eli, and invitations to a trusted circle and a consultation group."],
+                    ["Look around", "Home starts quiet. Open your profile and Clinicians; about a minute in, colleagues start getting in touch, one at a time."],
+                    ["Answer what arrives", "A message from Maya, a cover request for two clients, a referral from Eli, a colleague adding you as a trusted colleague, and an invitation to a consultation group."],
                     ["Plan your leave", "Cover: add your six weeks of parental leave, describe each client by need and invite colleagues in order."],
                     ["Find the right template", "Open the Practice Library and save the Extended Leave Pack PDF to My Library."],
                   ].map(([t, b], n) => (

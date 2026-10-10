@@ -31,7 +31,7 @@ export default async function InvitePage() {
       <PageHead
         eyebrow="Your professional circle"
         title="Invite a colleague"
-        lead="Your own link. Anyone who joins through it, or is already a member and accepts it, goes straight into your trusted circle, and you into theirs."
+        lead="Your own link. Anyone who joins through it, or is already a member and accepts it, becomes your trusted colleague, and you theirs."
       />
       <div className="split">
         <div className="stack">
@@ -85,7 +85,7 @@ export default async function InvitePage() {
             <ol className="plain-steps">
               <li>Your colleague opens your link and sees it&rsquo;s from you.</li>
               <li>They create an account, or sign in if they&rsquo;re already a member.</li>
-              <li>Once both of you are verified, you&rsquo;re in each other&rsquo;s trusted circle. No searching, no second invitation.</li>
+              <li>Once both of you are verified, you&rsquo;re each other&rsquo;s trusted colleagues. No searching, no second invitation.</li>
             </ol>
             <p className="micro-note">Trusted colleagues come first in each other&rsquo;s matches for cover and referrals.</p>
           </section>

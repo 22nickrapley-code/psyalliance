@@ -5,7 +5,14 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { CONTINUITY_SECTIONS } from "@/lib/continuity";
 
-const back = (q: string) => redirect(`/dashboard/continuity${q}`);
+import { safeBack } from "@/lib/back";
+
+// Keeps the way back (?back=) across section saves.
+const back = (q: string, keep = ""): never => {
+  const [query, hash] = q.split("#");
+  const sep = query ? "&" : "?";
+  redirect(`/dashboard/continuity${query}${keep ? `${sep}back=${encodeURIComponent(keep)}` : ""}${hash ? `#${hash}` : ""}`);
+};
 
 // Saves one section of the plan. Answers merge into what's already there.
 export async function saveContinuitySection(formData: FormData) {
@@ -14,6 +21,8 @@ export async function saveContinuitySection(formData: FormData) {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect("/auth/sign-in");
+  const keep = safeBack(formData.get("back")) || "";
+  const to = (q: string) => back(q, keep);
   const sectionKey = String(formData.get("section") || "");
   const { data: existing } = await supabase.from("continuity_plans").select("answers, backup_profile_id, alternate_profile_id").eq("profile_id", user.id).maybeSingle();
   const answers: Record<string, string> = { ...((existing?.answers as any) || {}) };
@@ -22,21 +31,21 @@ export async function saveContinuitySection(formData: FormData) {
   if (sectionKey === "backup") {
     const backup = String(formData.get("backup_profile_id") || "") || null;
     const alternate = String(formData.get("alternate_profile_id") || "") || null;
-    if (backup && backup === alternate) back(`?error=${encodeURIComponent("Choose two different colleagues for backup and alternate.")}#backup`);
+    if (backup && backup === alternate) to(`?error=${encodeURIComponent("Choose two different colleagues for backup and alternate.")}#backup`);
     row.backup_profile_id = backup;
     row.alternate_profile_id = alternate;
     for (const k of ["backup_outside", "alternate_outside"]) answers[k] = String(formData.get(k) || "").trim().slice(0, 300);
   } else {
     const section = CONTINUITY_SECTIONS.find((s) => s.key === sectionKey);
-    if (!section) back("");
+    if (!section) to("");
     for (const f of section!.fields) answers[f.key] = String(formData.get(f.key) || "").trim().slice(0, 2000);
   }
   row.answers = answers;
 
   const { error } = await supabase.from("continuity_plans").upsert(row, { onConflict: "profile_id" });
-  if (error) back(`?error=${encodeURIComponent(error.message)}#${sectionKey}`);
+  if (error) to(`?error=${encodeURIComponent(error.message)}#${sectionKey}`);
   revalidatePath("/dashboard/continuity");
-  back(`?saved=${sectionKey}`);
+  to(`?saved=${sectionKey}`);
 }
 
 export async function markContinuityReviewed() {

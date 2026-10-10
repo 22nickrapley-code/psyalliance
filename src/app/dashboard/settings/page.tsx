@@ -19,12 +19,11 @@ export default async function SettingsPage(props: { searchParams: Promise<{ save
     supabase.from("blocked_members").select("blocked_profile_id, created_at").eq("profile_id", me),
     // The emergency-contact picker offers the member's own circle.
     supabase
-      .from("connections")
-      .select("requester_id, requester:requester_id(id, full_name, credential_prefix, qualification_level), addressee:addressee_id(id, full_name, credential_prefix, qualification_level)")
-      .eq("status", "accepted")
-      .or(`requester_id.eq.${me},addressee_id.eq.${me}`),
+      .from("trusted_colleagues")
+      .select("colleague:colleague_id(id, full_name, credential_prefix, qualification_level)")
+      .eq("profile_id", me),
   ]);
-  const circle = (circleRows || []).map((c: any) => (c.requester_id === me ? c.addressee : c.requester)).filter(Boolean);
+  const circle = (circleRows || []).map((c: any) => c.colleague).filter(Boolean);
 
   // Blocked members are hidden from each other everywhere, so their names
   // come from a function that only returns the blocker's own list.

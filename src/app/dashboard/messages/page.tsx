@@ -49,6 +49,29 @@ export default async function MessagesPage(props: { searchParams: Promise<{ erro
   return (
     <MessagesShell list={<ConversationList items={items} activeId={openId ?? undefined} composing={composing} />} view={composing ? "compose" : "index"}>
       <Banner error={sp.error} />
+      {(notices || []).length > 0 && (
+        <details className={`card notices-card${unreadNotices.length ? " has-new" : ""}`} style={{ marginBottom: 14 }} open={unreadNotices.length > 0}>
+          <summary>
+            <strong>Notices from PsyAlliance</strong>
+            {unreadNotices.length > 0 && <span className="new-pill">{unreadNotices.length} new</span>}
+          </summary>
+          {(notices || []).map((n: any) => (
+            <div key={n.id} className={`item notice-item${!n.read_at ? " unread" : ""}`}>
+              <strong>{!n.read_at && <span className="new-dot" aria-label="New" />}{n.title}</strong>
+              <p>{n.body}</p>
+              <span className="micro-note">{shortDate(n.created_at)}</span>
+              {!n.read_at && (
+                <form action={setNotificationReadState}>
+                  <input type="hidden" name="id" value={n.id} />
+                  <input type="hidden" name="state" value="read" />
+                  <input type="hidden" name="redirect_to" value="/dashboard/messages" />
+                  <button type="submit" className="plain-button small">Mark read</button>
+                </form>
+              )}
+            </div>
+          ))}
+        </details>
+      )}
       {openId ? (
         <div className="index-thread">
           <ThreadPanel id={openId} myself={myself} />
@@ -57,8 +80,8 @@ export default async function MessagesPage(props: { searchParams: Promise<{ erro
         <Empty
           symbol={"✉"}
           title="No conversations yet."
-          body="Messages start from a colleague's profile, a referral reply or a cover request, and stay attached to what they're about. Start by finding someone in Network."
-          action={<a className="btn secondary small-btn" href="/dashboard/network">Find a colleague</a>}
+          body="Messages start from a colleague's profile, a referral reply or a cover request, and stay attached to what they're about. Start by finding someone in Clinicians."
+          action={<a className="btn secondary small-btn" href="/dashboard/clinicians">Find a colleague</a>}
         />
       ) : (
       <section className="card compose-card">
@@ -98,25 +121,7 @@ export default async function MessagesPage(props: { searchParams: Promise<{ erro
         </section>
       )}
 
-      {(notices || []).length > 0 && (
-        <details className="card" style={{ marginTop: 14 }} open={unreadNotices.length > 0}>
-          <summary><strong>Notices from PsyAlliance</strong>{unreadNotices.length ? ` · ${unreadNotices.length} new` : ""}</summary>
-          {(notices || []).map((n: any) => (
-            <div key={n.id} className="item">
-              <strong>{n.title}</strong>
-              <p>{n.body}</p>
-              {!n.read_at && (
-                <form action={setNotificationReadState}>
-                  <input type="hidden" name="id" value={n.id} />
-                  <input type="hidden" name="state" value="read" />
-                  <input type="hidden" name="redirect_to" value="/dashboard/messages" />
-                  <button type="submit" className="plain-button small">Mark read</button>
-                </form>
-              )}
-            </div>
-          ))}
-        </details>
-      )}
+
     </MessagesShell>
   );
 }

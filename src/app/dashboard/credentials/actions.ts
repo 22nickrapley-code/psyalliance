@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { safeBack, backWith } from "@/lib/back";
 import { US_STATES } from "@/lib/us-states";
 
 function stateCode(raw: string): string | null {
@@ -19,8 +20,14 @@ function stateCode(raw: string): string | null {
 // Every validation/DB-error path in this file routes through this instead,
 // so a bad input or a failed insert sends the user back to this same page
 // with a friendly inline banner rather than taking the page down.
-function credentialsError(message: string): never {
-  redirect(`/dashboard/credentials?error=${encodeURIComponent(message)}`);
+function credentialsError(message: string, back?: string | null): never {
+  redirect(`/dashboard/credentials?error=${encodeURIComponent(message)}${back ? `&back=${encodeURIComponent(back)}` : ""}`);
+}
+
+// Saved from a link elsewhere (Home's set-up list, Profile): go back there.
+function done(formData: FormData, note: string, fallback: string): never {
+  const back = safeBack(formData.get("back"));
+  redirect(back ? backWith(back, { saved: note }) : fallback);
 }
 
 export async function addLicense(formData: FormData) {
@@ -30,10 +37,11 @@ export async function addLicense(formData: FormData) {
   } = await supabase.auth.getUser();
   if (!user) throw new Error("Not signed in");
 
+  const back = safeBack(formData.get("back"));
   const state = stateCode(String(formData.get("state") || ""));
-  if (!state) credentialsError("Choose the state the license was issued in");
+  if (!state) credentialsError("Choose the state the license was issued in", back);
   const licenseNumber = String(formData.get("license_number") || "").trim();
-  if (!licenseNumber) credentialsError("Add the license number");
+  if (!licenseNumber) credentialsError("Add the license number", back);
 
   const { error } = await supabase.from("licenses").insert({
     profile_id: user.id,
@@ -44,10 +52,11 @@ export async function addLicense(formData: FormData) {
     expiration_date: String(formData.get("expiration_date") || "") || null,
     notes: String(formData.get("notes") || "") || null,
   });
-  if (error) credentialsError(error.message);
+  if (error) credentialsError(error.message, back);
 
   revalidatePath("/dashboard/credentials");
-  redirect("/dashboard/credentials?added=license");
+  revalidatePath("/dashboard");
+  done(formData, "license", "/dashboard/credentials?added=license");
 }
 
 export async function deleteLicense(formData: FormData) {
@@ -142,7 +151,7 @@ export async function saveNpiNumber(formData: FormData) {
   if (error) credentialsError(error.message);
 
   revalidatePath("/dashboard/credentials");
-  redirect("/dashboard/credentials?saved=1");
+  done(formData, "credentials", "/dashboard/credentials?saved=1");
 }
 
 export async function saveCaqhInfo(formData: FormData) {
@@ -165,7 +174,7 @@ export async function saveCaqhInfo(formData: FormData) {
   if (error) credentialsError(error.message);
 
   revalidatePath("/dashboard/credentials");
-  redirect("/dashboard/credentials?saved=1");
+  done(formData, "credentials", "/dashboard/credentials?saved=1");
 }
 
 // Automated pre-check against the free, public NPPES NPI Registry - feeds
@@ -260,5 +269,5 @@ export async function saveMalpracticeAction(formData: FormData) {
     .eq("id", user.id);
   if (error) credentialsError(error.message);
   revalidatePath("/dashboard/credentials");
-  redirect("/dashboard/credentials?saved=1");
+  done(formData, "credentials", "/dashboard/credentials?saved=1");
 }

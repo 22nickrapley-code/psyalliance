@@ -5,6 +5,7 @@ import { openSandboxAction } from "./sandbox/actions";
 import { Banner, Status } from "./_components/ui";
 import { reconfirmAvailability } from "./availability/actions";
 import { HomeTiles } from "./home-client";
+import { OnceNote } from "./_components/once-note";
 import type { CircleNode } from "./_components/orbit";
 
 export type { CircleNode };
@@ -42,6 +43,8 @@ export type HomeData = {
   steps: NextStep[];
   statusLine?: string;
   gettingStarted: { label: string; done: boolean; href: string; waiting?: boolean }[] | null;
+  setupNote?: string | null;
+  justVerified?: string | null;
   awaitingVerification?: boolean;
   access?: { verified: boolean; openStates: string[]; waitlist: { state: string; position: number; waiting: number }[] } | null;
   error?: string | null;
@@ -114,7 +117,7 @@ function AvailabilityCard({ a }: { a: HomeData["availability"] }) {
             <button type="submit" className="btn secondary small-btn">Still accurate</button>
           </form>
         )}
-        <a className="btn ghost small-btn" href="/dashboard/availability">Update &rarr;</a>
+        <a className="btn ghost small-btn" href="/dashboard/availability?back=%2Fdashboard">Update &rarr;</a>
       </div>
     </section>
   );
@@ -124,11 +127,11 @@ function CircleCard({ c }: { c?: CircleSnapshot }) {
   if (!c || c.trusted === 0) {
     return (
       <section className="card home-card circle-snap empty" aria-labelledby="circle-title">
-        <div className="eyebrow">Your circle</div>
+        <div className="eyebrow">Your network</div>
         <h3 id="circle-title">Start with the colleagues you already trust</h3>
-        <p className="small">Trusted colleagues come first in every match, for referrals, cover and questions. Invite two or three to begin.</p>
+        <p className="small">Trusted colleagues come first in every match, for referrals, cover and questions. Add two or three to begin, the way you&rsquo;d count the colleagues in a group practice.</p>
         <div className="home-card-actions">
-          <a className="btn small-btn" href="/dashboard/network">Find colleagues</a>
+          <a className="btn small-btn" href="/dashboard/clinicians">Find clinicians</a>
         </div>
       </section>
     );
@@ -138,7 +141,7 @@ function CircleCard({ c }: { c?: CircleSnapshot }) {
     <section className="card home-card circle-snap" aria-labelledby="circle-title">
       <div className="home-card-head">
         <div>
-          <div className="eyebrow">Your circle today</div>
+          <div className="eyebrow">Your network today</div>
           <h3 id="circle-title">
             {c.trusted} trusted colleague{c.trusted === 1 ? "" : "s"}
           </h3>
@@ -162,7 +165,7 @@ function CircleCard({ c }: { c?: CircleSnapshot }) {
         <li><b>{c.cover}</b> open for cover</li>
       </ul>
       <div className="home-card-actions">
-        <a className="btn ghost small-btn" href="/dashboard/network?tab=trusted">See your circle &rarr;</a>
+        <a className="btn ghost small-btn" href="/dashboard/network">See your network &rarr;</a>
       </div>
     </section>
   );
@@ -177,7 +180,9 @@ const WHILE_REVIEW: [string, string, string][] = [
 export function HomeView({ d }: { d: HomeData }) {
   const n = d.steps.length;
   const urgent = d.steps.filter((s) => s.urgent).length;
-  const summary = d.access?.verified
+  const summary = d.setupNote
+    ? "Your set-up is complete."
+    : d.access?.verified
     ? "You're verified. Your state opens as colleagues join."
     : d.gettingStarted
     ? "A few steps and you're in the network."
@@ -197,6 +202,25 @@ export function HomeView({ d }: { d: HomeData }) {
         <p>{summary}</p>
       </header>
       <Banner ok={d.notice} error={d.error} />
+      {d.justVerified && (
+        <OnceNote
+          id={`verified-${d.justVerified}`}
+          eyebrow="Verified"
+          title="Well done for completing your set-up."
+          body="Your credentials have been reviewed and verified. You're now free to use PsyAlliance: referrals, cover, consults and messages are all open."
+          action={{ href: "/dashboard/clinicians", label: "Find your colleagues" }}
+        />
+      )}
+      {d.setupNote && (
+        <section className="once-note waiting" role="status">
+          <span className="once-seal" aria-hidden="true">&#10003;</span>
+          <div className="once-copy">
+            <div className="eyebrow">Set-up complete</div>
+            <h3>{d.setupNote.split(". ")[0]}.</h3>
+            <p>{d.setupNote.split(". ").slice(1).join(". ")}</p>
+          </div>
+        </section>
+      )}
 
       {d.gettingStarted && (
         <section className="card getting-started">

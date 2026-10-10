@@ -124,18 +124,12 @@ export function ConsultIndexView({
   const newHref = tab === "supervision" ? "/dashboard/consult/new?kind=supervision_request" : "/dashboard/consult/new";
   return (
     <>
+      <FirstVisit id="consult" what="Consult" exampleHref={`${TOUR_URL}/consult`} />
       <PageHead
         eyebrow="Consult / professional dialogue"
         title="Consult"
-        lead="Discuss practice questions with a chosen audience. Keep client information out of the conversation."
+        lead="Ask one focused practice question, add context if it helps, and choose exactly who sees it: your trusted colleagues, a few colleagues, your group or the network. Keep client information out of the conversation."
         actions={<a className="btn" href={newHref}>{tab === "supervision" ? "Request supervision" : "Ask a question"}</a>}
-      />
-      <FirstVisit
-        id="consult"
-        line="Ask one focused practice question, add context if it helps, and choose exactly who sees it: your trusted circle, a few colleagues, your group or the network."
-        startHref="/dashboard/consult/new"
-        startLabel="Ask a question"
-        exampleHref={`${TOUR_URL}/consult`}
       />
       <Banner error={error} />
       <nav className="tabs" style={{ marginBottom: 18 }}>

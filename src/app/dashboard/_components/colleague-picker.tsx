@@ -6,7 +6,7 @@ import { searchColleaguesAction } from "../colleague-actions";
 
 const GROUPS: { key: SuggestionGroup; title: string }[] = [
   { key: "recent", title: "Recent conversations" },
-  { key: "trusted", title: "Your trusted circle" },
+  { key: "trusted", title: "Your trusted colleagues" },
   { key: "worked", title: "Worked with before" },
   { key: "saved", title: "Saved" },
   { key: "network", title: "Elsewhere in the network" },

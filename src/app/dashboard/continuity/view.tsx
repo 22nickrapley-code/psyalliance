@@ -2,6 +2,8 @@ import type { Suggestion } from "@/lib/colleague-suggestions";
 import { CONTINUITY_SECTIONS, BACKUP_STATUS, planProgress, sectionDone, type ContinuityAnswers } from "@/lib/continuity";
 import { longDate } from "@/lib/dates";
 import { PageHead, Banner, Status } from "../_components/ui";
+import { ProfileTabs } from "../_components/profile-tabs";
+import { BackLink, BackField } from "../_components/back-link";
 import { ColleaguePicker } from "../_components/colleague-picker";
 import { saveContinuitySection, markContinuityReviewed } from "./actions";
 
@@ -21,7 +23,9 @@ export function ContinuityView({
   dutiesWaiting,
   dutiesTotal,
   known,
+  back,
 }: {
+  back?: string | null;
   sp: { saved?: string; error?: string; reviewed?: string };
   answers: ContinuityAnswers;
   backup: Named;
@@ -49,6 +53,8 @@ export function ContinuityView({
 
   return (
     <>
+      <BackLink back={back} />
+      <ProfileTabs active="continuity" back={back} />
       <PageHead
         eyebrow="Your practice"
         title="Continuity plan"
@@ -111,6 +117,7 @@ export function ContinuityView({
               </div>
             </div>
             <form action={saveContinuitySection} className="continuity-form">
+              <BackField back={back} />
               <input type="hidden" name="section" value="backup" />
               <div className="continuity-pick">
                 <ColleaguePicker suggestions={suggestions} name="backup_profile_id" mode="single" initial={backup ? [backup.id] : []} label="Backup" clearable placeholder="Search by name, or pick from your circle" limitPerGroup={3} />
@@ -150,6 +157,7 @@ export function ContinuityView({
                 </summary>
                 {done && <p className="small continuity-why">{s.why}</p>}
                 <form action={saveContinuitySection} className="continuity-form">
+              <BackField back={back} />
                   <input type="hidden" name="section" value={s.key} />
                   {s.fields.map((f) => {
                     const knownValue = f.key === "licenses" ? known?.licenses : f.key === "malpractice" ? known?.malpractice : "";

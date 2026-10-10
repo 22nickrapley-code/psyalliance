@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { assertIsAdmin, setVerificationStatus } from "@/lib/admin";
 import { notifyProfile } from "@/lib/notifications";
+import { raiseNotification } from "@/lib/notifications-v2";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
@@ -85,7 +86,23 @@ export async function reviewLicenceAction(formData: FormData) {
       body: "It's now on record. Once your profile is verified, you're listed and matched for referrals and cover in that state.",
       createdBy: user.id,
     });
+    await raiseNotification(supabase, {
+      eventType: "system_notice",
+      recipientProfileIds: [lic.profile_id],
+      actorProfileId: user.id,
+      actorType: "system",
+      summary: `Your ${lic.state} license has been reviewed.`,
+      deepLink: "/dashboard/credentials",
+    });
   } else {
+    await raiseNotification(supabase, {
+      eventType: "system_notice",
+      recipientProfileIds: [lic.profile_id],
+      actorProfileId: user.id,
+      actorType: "system",
+      summary: `We couldn't confirm your ${lic.state} license. Please check the details in Credentials.`,
+      deepLink: "/dashboard/credentials",
+    });
     await notifyProfile(supabase, {
       profileId: lic.profile_id,
       title: `We couldn't confirm your ${lic.state} license`,
