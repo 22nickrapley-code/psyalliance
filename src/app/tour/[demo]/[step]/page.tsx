@@ -12,8 +12,8 @@ export function generateStaticParams() {
 
 export default async function DemoStepPage({ params }: { params: Promise<{ demo: string; step: string }> }) {
   if (!TOUR_ENABLED) notFound();
-  if (IS_DEMO_SITE && process.env.NODE_ENV === "production") redirect(REAL_SITE_URL + "/tour");
   const { demo, step } = await params;
+  if (IS_DEMO_SITE && process.env.NODE_ENV === "production") redirect(`${REAL_SITE_URL}/tour/${encodeURIComponent(demo)}/${encodeURIComponent(step)}`);
   const d = findDemo(demo);
   if (!d) redirect("/tour");
   const i = d.steps.findIndex((s) => s.slug === step);

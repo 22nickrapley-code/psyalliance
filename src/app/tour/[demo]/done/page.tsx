@@ -5,6 +5,7 @@ import { PublicNav, PublicFooter } from "../../../_public/chrome";
 import { DEMOS, CLOSER_LOOKS, findDemo } from "../../demos";
 import { NextMoves } from "../../next-moves";
 import { DemoGrid, MarkDone } from "../../demo-progress";
+import { watchLength } from "../../story-reel";
 
 export const metadata = { title: "Demo complete", robots: { index: false, follow: false } };
 
@@ -16,8 +17,8 @@ export function generateStaticParams() {
 // next?" with the demos not yet watched first, then the two ways forward.
 export default async function DemoDonePage({ params }: { params: Promise<{ demo: string }> }) {
   if (!TOUR_ENABLED) notFound();
-  if (IS_DEMO_SITE && process.env.NODE_ENV === "production") redirect(REAL_SITE_URL + "/tour");
   const { demo } = await params;
+  if (IS_DEMO_SITE && process.env.NODE_ENV === "production") redirect(`${REAL_SITE_URL}/tour/${encodeURIComponent(demo)}/done`);
   const d = findDemo(demo);
   if (!d) redirect("/tour");
   return (
@@ -38,7 +39,7 @@ export default async function DemoDonePage({ params }: { params: Promise<{ demo:
             <NextMoves />
             <h2 className="serif-title demo-next-title">{d.key === "overview" ? "Or take a closer look" : "Another closer look"}</h2>
             <DemoGrid
-              demos={DEMOS.filter((x) => CLOSER_LOOKS.includes(x.key) && x.key !== d.key).map(({ key, title, blurb, minutes, steps }) => ({ key, title, blurb, minutes, screens: steps.length }))}
+              demos={DEMOS.filter((x) => CLOSER_LOOKS.includes(x.key) && x.key !== d.key).map((x) => ({ key: x.key, title: x.title, blurb: x.blurb, minutes: watchLength(x), screens: x.steps.length }))}
               current={d.key}
             />
           </div>

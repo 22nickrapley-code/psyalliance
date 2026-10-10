@@ -169,11 +169,14 @@ export default async function HomePage() {
                   <div className="n">{k}</div>
                   <h3>{t}</h3>
                   <p>{b}</p>
+                  <a className="text-arrow moment-watch" href={DEMO(`/${k.toLowerCase()}`)}>
+                    <span aria-hidden="true">&#9654;</span> Watch how {k} works
+                  </a>
                 </article>
               ))}
             </div>
             <p className="section-more">
-              <a className="text-arrow" href={DEMO()}>See how each one works &rarr;</a>
+              <a className="text-arrow" href={DEMO()}>Or watch the whole story in 90 seconds &rarr;</a>
             </p>
           </div>
         </section>

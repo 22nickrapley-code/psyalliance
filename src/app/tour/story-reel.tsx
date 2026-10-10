@@ -1,5 +1,5 @@
-import { findDemo, PEOPLE, type DemoStep } from "./demos";
-import { StoryPlayer, type Scene } from "./story-player";
+import { findDemo, PEOPLE, type Demo, type DemoStep } from "./demos";
+import { StoryPlayer, type Scene, type StoryEnd } from "./story-player";
 
 // The 90-second story, told on the real screens: covering time away and
 // referring out (an established practice), receiving referrals and using
@@ -107,6 +107,48 @@ export function StoryReel({ tryHref = "#try" }: { tryHref?: string }) {
     <StoryPlayer scenes={scenes} tryHref={tryHref}>
       {steps.map(({ beat, step }) => (
         <div key={`${beat.demo}-${beat.slug}`} className="sp-page">
+          {step.render()}
+        </div>
+      ))}
+    </StoryPlayer>
+  );
+}
+
+// One section's demo as a short film: every screen of that demo in
+// order, with the step's own title and explanation as the caption. Each
+// scene stays up long enough to read its caption.
+export function sceneSeconds(step: Pick<DemoStep, "title" | "what">) {
+  const words = `${step.title} ${step.what}`.split(/\s+/).length;
+  return Math.round(Math.max(8, Math.min(13, 4.5 + words / 3.4)) * 2) / 2;
+}
+
+export function watchLength(demo: Demo) {
+  const total = demo.steps.reduce((n, s) => n + sceneSeconds(s), 0);
+  if (total < 50) return `${Math.round(total / 5) * 5}-second video`;
+  const minutes = Math.round(total / 30) / 2;
+  return minutes <= 1 ? "1-minute video" : `${minutes.toString().replace(".5", "½")}-minute video`;
+}
+
+export function SectionReel({ demo, tryHref, embed = false }: { demo: Demo; tryHref: string; embed?: boolean }) {
+  const scenes: Scene[] = demo.steps.map((step) => {
+    const who = PEOPLE[step.perspective];
+    return {
+      chapter: demo.title,
+      caption: step.title,
+      sub: step.what,
+      seconds: sceneSeconds(step),
+      who: { name: who.name, initials: who.initials, colleague: who.colleague },
+      focus: step.focus,
+      focusIndex: step.focusIndex,
+    };
+  });
+  const end: StoryEnd = embed
+    ? { title: demo.outcome, text: "Your turn. The page behind this works the same way.", tryLabel: "Try it yourself" }
+    : { title: demo.outcome, text: "Now click through it yourself, on the same screens. Nothing is sent.", tryLabel: "Try it yourself" };
+  return (
+    <StoryPlayer scenes={scenes} tryHref={tryHref} label={`${demo.title}: an example`} end={end} embed={embed}>
+      {demo.steps.map((step) => (
+        <div key={step.slug} className="sp-page">
           {step.render()}
         </div>
       ))}

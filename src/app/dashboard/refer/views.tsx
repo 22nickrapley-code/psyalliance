@@ -345,7 +345,7 @@ export function ReferIndexView({
 }) {
   return (
     <>
-      <FirstVisit id="refer" what="Refer" exampleHref={`${TOUR_URL}/refer`} />
+      <FirstVisit id="refer" what="Refer" length="90-second" exampleHref={`${TOUR_URL}/refer`} />
       <PageHead
         eyebrow="Refer"
         title="Refer"

@@ -239,7 +239,7 @@ export function CoverIndexView({
   const past = plans.filter((p) => p.status === "completed" || p.status === "cancelled");
   return (
     <>
-      <FirstVisit id="cover" what="Cover" exampleHref={`${TOUR_URL}/cover`} />
+      <FirstVisit id="cover" what="Cover" length="90-second" exampleHref={`${TOUR_URL}/cover`} />
       <PageHead
         eyebrow="Cover"
         title="Cover"

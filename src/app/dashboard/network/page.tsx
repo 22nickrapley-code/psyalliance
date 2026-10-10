@@ -51,7 +51,7 @@ export default async function NetworkPage(props: { searchParams: Promise<Record<
     supabase,
     me,
     { kind: "discovery", focusIds: (myFocusRows || []).slice(0, 3).map((r: any) => Number(r.lookup_value_id)), state: myProfile?.primary_state || null },
-    { exclude: [...trusted, ...addedYou], limit: 10 }
+    { exclude: [...trusted, ...addedYou, ...worked.keys()], limit: 10 }
   );
 
   const ids = Array.from(new Set([...trusted, ...worked.keys(), ...addedYou]));
@@ -74,7 +74,10 @@ export default async function NetworkPage(props: { searchParams: Promise<Record<
     };
   };
   const trustedList = [...trusted].map((id) => toColleague(id, worked.has(id) ? "Trusted · worked together" : "Trusted colleague")).filter(Boolean) as Colleague[];
+  // Worked with before, apart from people already trusted (their row in
+  // Trusted says "worked together"), so nobody is listed twice.
   const workedList = [...worked.entries()]
+    .filter(([id]) => !trusted.has(id))
     .sort((a, b) => b[1] - a[1])
     .map(([id, n]) => toColleague(id, `${n} referral${n === 1 ? "" : "s"}, cover or consult${n === 1 ? "" : "s"} together`))
     .filter(Boolean) as Colleague[];
@@ -92,7 +95,7 @@ export default async function NetworkPage(props: { searchParams: Promise<Record<
 
   const nodes: CircleNode[] = [
     ...trustedList.map((c) => ({ id: c.id, name: c.name, kind: "trusted" as const, avatarUrl: c.avatarUrl })),
-    ...workedList.filter((c) => !c.trusted).map((c) => ({ id: c.id, name: c.name, kind: "worked" as const, avatarUrl: c.avatarUrl })),
+    ...workedList.map((c) => ({ id: c.id, name: c.name, kind: "worked" as const, avatarUrl: c.avatarUrl })),
     ...suggestedList.map((c) => ({ id: c.id, name: c.name, kind: "suggested" as const, avatarUrl: c.avatarUrl })),
   ];
   const myInitials = String(myProfile?.full_name || "")

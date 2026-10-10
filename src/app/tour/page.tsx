@@ -3,7 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { TOUR_ENABLED, IS_DEMO_SITE, REAL_SITE_URL } from "@/lib/env";
 import { PublicNav, PublicFooter } from "../_public/chrome";
 import { DEMOS, CLOSER_LOOKS, MORE_DETAIL, findDemo } from "./demos";
-import { StoryReel } from "./story-reel";
+import { StoryReel, watchLength } from "./story-reel";
 import { DemoGrid } from "./demo-progress";
 import { NextMoves } from "./next-moves";
 
@@ -34,10 +34,10 @@ export default function DemoLibraryPage() {
             <StoryReel tryHref="#try" />
             <h2 className="serif-title demo-next-title" id="try">Try it yourself</h2>
             <p className="small" style={{ marginTop: -6 }}>
-              Click through one job from start to finish, on the same screens. Prefer the whole story at your own pace?{" "}
-              <a href="/tour/overview">Step through it</a>.
+              Pick one job. Each plays as a short video first, then you click through it yourself on the same screens. Prefer the whole story at your own
+              pace? <a href={`/tour/overview/${findDemo("overview")!.steps[0].slug}`}>Step through it</a>.
             </p>
-            <DemoGrid demos={DEMOS.filter((d) => CLOSER_LOOKS.includes(d.key)).map(({ key, title, blurb, minutes, steps }) => ({ key, title, blurb, minutes, screens: steps.length }))} />
+            <DemoGrid demos={DEMOS.filter((d) => CLOSER_LOOKS.includes(d.key)).map((d) => ({ key: d.key, title: d.title, blurb: d.blurb, minutes: watchLength(d), screens: d.steps.length }))} />
             <p className="demo-more small">
               More detail:{" "}
               {MORE_DETAIL.map((k, i) => {

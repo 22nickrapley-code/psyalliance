@@ -11,15 +11,19 @@ export type Colleague = { id: string; name: string; where: string; avatarUrl: st
 
 const BACK = "/dashboard/network";
 
-function Row({ c, action }: { c: Colleague; action: React.ReactNode }) {
+// A colleague in one of the three lists. A button sits under the name so
+// the name and details keep the full width of the column.
+function Row({ c, action, below = false }: { c: Colleague; action: React.ReactNode; below?: boolean }) {
   return (
-    <div className="net-row">
+    <div className={`net-row${below ? " action-below" : ""}`}>
       <PersonAvatar name={c.name} url={c.avatarUrl} />
       <div className="net-row-text">
-        <a href={`/dashboard/people/${c.id}`}><strong>{c.name}</strong></a>
-        <small>{[c.where, c.why].filter(Boolean).join(" · ")}</small>
+        <a href={`/dashboard/people/${c.id}?back=${encodeURIComponent(BACK)}`}><strong>{c.name}</strong></a>
+        {c.where && <small>{c.where}</small>}
+        {c.why && <small className="net-why">{c.why}</small>}
+        {below && <div className="net-row-action">{action}</div>}
       </div>
-      <div className="net-row-action">{action}</div>
+      {!below && <div className="net-row-action">{action}</div>}
     </div>
   );
 }
@@ -92,11 +96,12 @@ export function NetworkView({
               <Row
                 key={c.id}
                 c={c}
+                below
                 action={
                   <form action={removeTrustedAction} className="inline">
                     <input type="hidden" name="colleague_id" value={c.id} />
                     <input type="hidden" name="back" value={`${BACK}#trusted`} />
-                    <button type="submit" className="plain-button small">Remove</button>
+                    <button type="submit" className="plain-button small net-remove">Remove from trusted</button>
                   </form>
                 }
               />
@@ -107,9 +112,12 @@ export function NetworkView({
         <section className="card" id="worked">
           <div className="card-title"><h3>Worked with before</h3><span className="micro-note">{worked.length}</span></div>
           {worked.length === 0 ? (
-            <p className="small">Colleagues appear here automatically after a referral, cover arrangement or consultation together.</p>
+            <p className="small">
+              Colleagues appear here automatically after a referral, cover arrangement or consultation together. Anyone you&rsquo;ve already added is listed
+              under Trusted colleagues.
+            </p>
           ) : (
-            worked.map((c) => <Row key={c.id} c={c} action={<TrustButton id={c.id} trusted={c.trusted} back={`${BACK}#worked`} />} />)
+            worked.map((c) => <Row key={c.id} c={c} below action={<TrustButton id={c.id} trusted={c.trusted} back={`${BACK}#worked`} />} />)
           )}
         </section>
 
@@ -118,7 +126,7 @@ export function NetworkView({
           {suggested.length === 0 ? (
             <p className="small">Suggestions come from your specialties, your state and who&rsquo;s active. <a href="/dashboard/profile?edit=1&back=%2Fdashboard%2Fnetwork#specialties">Rank your specialties</a> for better ones.</p>
           ) : (
-            suggested.map((c) => <Row key={c.id} c={c} action={<TrustButton id={c.id} trusted={c.trusted} back={`${BACK}#suggested`} />} />)
+            suggested.map((c) => <Row key={c.id} c={c} below action={<TrustButton id={c.id} trusted={c.trusted} back={`${BACK}#suggested`} />} />)
           )}
         </section>
       </div>

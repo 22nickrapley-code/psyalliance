@@ -124,7 +124,7 @@ export function ConsultIndexView({
   const newHref = tab === "supervision" ? "/dashboard/consult/new?kind=supervision_request" : "/dashboard/consult/new";
   return (
     <>
-      <FirstVisit id="consult" what="Consult" exampleHref={`${TOUR_URL}/consult`} />
+      <FirstVisit id="consult" what="Consult" length="40-second" exampleHref={`${TOUR_URL}/consult`} />
       <PageHead
         eyebrow="Consult / professional dialogue"
         title="Consult"

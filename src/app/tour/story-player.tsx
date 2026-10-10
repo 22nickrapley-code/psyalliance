@@ -30,7 +30,26 @@ function findFocus(root: HTMLElement, focus?: string, index = 0): HTMLElement | 
   return hits[index] || hits[0] || null;
 }
 
-export function StoryPlayer({ scenes, children, tryHref }: { scenes: Scene[]; children: ReactNode; tryHref: string }) {
+// What the closing card says. Inside the app the example opens over the
+// page itself, so "Try it yourself" closes it rather than going anywhere.
+export type StoryEnd = { title: string; text: string; tryLabel?: string };
+const DEFAULT_END: StoryEnd = { title: "That\u2019s PsyAlliance.", text: "Cover, referrals, questions and templates, with colleagues you trust." };
+
+export function StoryPlayer({
+  scenes,
+  children,
+  tryHref,
+  label = "PsyAlliance in 90 seconds",
+  end = DEFAULT_END,
+  embed = false,
+}: {
+  scenes: Scene[];
+  children: ReactNode;
+  tryHref: string;
+  label?: string;
+  end?: StoryEnd;
+  embed?: boolean;
+}) {
   const screens = Children.toArray(children);
   const [i, setI] = useState(0);
   const [playing, setPlaying] = useState(false);
@@ -175,6 +194,10 @@ export function StoryPlayer({ scenes, children, tryHref }: { scenes: Scene[]; ch
     setI(Math.max(0, Math.min(scenes.length - 1, n)));
     setStarted(true);
   };
+  const tryIt = () => {
+    if (embed && window.parent !== window) window.parent.postMessage({ type: "pa-example-done" }, "*");
+    else window.location.href = tryHref;
+  };
   const toggle = () => {
     if (ended) {
       go(0);
@@ -186,7 +209,8 @@ export function StoryPlayer({ scenes, children, tryHref }: { scenes: Scene[]; ch
   };
 
   return (
-    <section className="story-player" ref={box} aria-label="PsyAlliance in 90 seconds">
+    <section className={`story-player${embed ? " embedded" : ""}`} ref={box} aria-label={label}>
+      {chapters.length > 1 && (
       <div className="sp-chapters" role="tablist" aria-label="Chapters">
         {chapters.map((c) => {
           const on = s?.chapter === c.name;
@@ -197,11 +221,12 @@ export function StoryPlayer({ scenes, children, tryHref }: { scenes: Scene[]; ch
           );
         })}
       </div>
+      )}
       <div className="sp-stage">
         <div className="sp-caption" aria-live="polite">
           <span className={`sp-who${s?.who.colleague ? " colleague" : ""}`}>
             <span className="sp-initials" aria-hidden="true">{s?.who.initials}</span>
-            {s?.who.colleague ? `${s.who.name.split(",")[0]}'s view` : `${s?.who.name.split(",")[0]}'s practice`}
+            {s?.who.colleague ? `${s.who.name.split(" ")[0]}'s view` : `${s?.who.name.split(" ")[0]}'s practice`}
           </span>
           <h3 key={`c${i}`}>{s?.caption}</h3>
           <p key={`s${i}`}>{s?.sub}</p>
@@ -234,10 +259,14 @@ export function StoryPlayer({ scenes, children, tryHref }: { scenes: Scene[]; ch
             <span className={`sp-cursor${cursor.on ? " on" : ""}${cursor.click ? " click" : ""}`} style={{ left: cursor.x, top: cursor.y }} aria-hidden="true" />
             {ended && (
               <div className="sp-end">
-                <b>That&rsquo;s PsyAlliance.</b>
-                <span>Cover, referrals, questions and templates, with colleagues you trust.</span>
+                <b>{end.title}</b>
+                <span>{end.text}</span>
                 <div className="sp-end-actions">
-                  <a className="btn" href={tryHref}>Try it yourself &rarr;</a>
+                  {embed ? (
+                    <button type="button" className="btn" onClick={tryIt}>{end.tryLabel || "Try it yourself"} &rarr;</button>
+                  ) : (
+                    <a className="btn" href={tryHref}>{end.tryLabel || "Try it yourself"} &rarr;</a>
+                  )}
                   <button type="button" className="btn secondary" onClick={() => { go(0); setPlaying(true); }}>Watch again</button>
                 </div>
               </div>

@@ -246,12 +246,12 @@ export const previewScreens: Record<string, () => ReactNode> = {
         { id: "d", name: "Samuel Okafor, PhD", where: "Brooklyn, NY", avatarUrl: null, why: "Trusted colleague", trusted: true },
       ]}
       worked={[
-        { id: "a", name: "Maya Chen, PsyD", where: "Brooklyn, NY", avatarUrl: null, why: "3 referrals, cover or consults together", trusted: true },
-        { id: "b", name: "Eli Ramirez, MD", where: "Manhattan, NY", avatarUrl: null, why: "1 referral, cover or consult together", trusted: false },
+        { id: "b", name: "Eli Ramirez, MD", where: "Manhattan, NY", avatarUrl: null, why: "2 referrals, cover or consults together", trusted: false },
       ]}
       suggested={[
         { id: "e", name: "Imani Brooks, PhD", where: "Queens, NY", avatarUrl: null, why: "Added you as a trusted colleague", trusted: false },
-        { id: "f", name: "Lena Park, PsyD", where: "Albany, NY", avatarUrl: null, why: "Anxiety is their top specialty", trusted: false },
+        { id: "f", name: "Lena Park, PsyD", where: "Albany, NY", avatarUrl: null, why: "Obsessive/Compulsive Disorder is their top specialty · NY license reviewed", trusted: false },
+        { id: "g", name: "Fatima Jordan, PsyD", where: "Rochester, NY", avatarUrl: null, why: "Works with Trauma/PTSD · NY license reviewed", trusted: false },
       ]}
       nodes={[
         { id: "a", name: "Maya Chen, PsyD", kind: "trusted", avatarUrl: null },

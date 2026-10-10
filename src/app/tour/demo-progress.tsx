@@ -44,12 +44,12 @@ export function DemoGrid({ demos, current }: { demos: DemoCard[]; current?: stri
           <a key={d.key} href={`/tour/${d.key}`} className={`demo-card${watched ? " watched" : ""}`}>
             <span className="demo-n">{n}</span>
             <span className="demo-meta">
-              {d.minutes} &middot; {d.screens} screens
+              {d.minutes} &middot; then try {d.screens} screens
               {watched && <span className="demo-watched">Watched</span>}
             </span>
             <b>{d.title}</b>
             <span className="demo-blurb">{d.blurb}</span>
-            <span className="text-arrow">{watched ? "Explore again" : "Start the guided demo"} &rarr;</span>
+            <span className="text-arrow">{watched ? "Watch again" : "Watch, then try it"} &rarr;</span>
           </a>
         );
       })}

@@ -29,7 +29,8 @@ export function DemoStepScreen({ demo, index: i }: { demo: Demo; index: number }
   const s = demo.steps[i];
   const who = PEOPLE[s.perspective];
   const base = `/tour/${demo.key}`;
-  const prev = i === 0 ? "/tour" : `${base}/${demo.steps[i - 1].slug}`;
+  // Step one goes back to the video of this demo.
+  const prev = i === 0 ? (demo.key === "overview" ? "/tour" : base) : `${base}/${demo.steps[i - 1].slug}`;
   const next = i === demo.steps.length - 1 ? `${base}/done` : `${base}/${demo.steps[i + 1].slug}`;
   const last = i === demo.steps.length - 1;
   const colleague = who.colleague;
