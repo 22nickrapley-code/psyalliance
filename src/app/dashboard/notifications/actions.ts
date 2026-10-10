@@ -20,8 +20,8 @@ export async function markNotificationReadAction(formData: FormData) {
   const deliveryId = Number(formData.get("delivery_id"));
   await markNotificationRead(supabase, user.id, deliveryId);
 
-  revalidatePath("/dashboard/notifications");
-  redirect("/dashboard/notifications");
+  revalidatePath("/dashboard/messages");
+  redirect("/dashboard/messages?tab=notifications");
 }
 
 // Marks a notification read, then sends the member on to whatever it's
@@ -36,10 +36,12 @@ export async function openNotificationAction(formData: FormData) {
   if (!user) throw new Error("Not signed in");
 
   const deliveryId = Number(formData.get("delivery_id"));
-  const deepLink = String(formData.get("deep_link") || "") || "/dashboard/notifications";
+  const raw = String(formData.get("deep_link") || "");
+  // Only places inside the app; anything else returns to the list.
+  const deepLink = raw.startsWith("/") && !raw.startsWith("//") ? raw : "/dashboard/messages?tab=notifications";
   await markNotificationRead(supabase, user.id, deliveryId);
 
-  revalidatePath("/dashboard/notifications");
+  revalidatePath("/dashboard/messages");
   redirect(deepLink);
 }
 
@@ -51,7 +53,9 @@ export async function markAllNotificationsReadAction() {
   if (!user) throw new Error("Not signed in");
 
   await markAllNotificationsRead(supabase, user.id);
+  // Notices from PsyAlliance are read along with everything else.
+  await supabase.from("system_notifications").update({ read_at: new Date().toISOString() }).eq("profile_id", user.id).is("read_at", null);
 
-  revalidatePath("/dashboard/notifications");
-  redirect("/dashboard/notifications");
+  revalidatePath("/dashboard/messages");
+  redirect("/dashboard/messages?tab=notifications");
 }

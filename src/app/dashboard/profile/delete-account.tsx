@@ -2,7 +2,7 @@ import { deleteAccountAction } from "./actions";
 
 // Deleting your account: plain about what goes, and a typed confirmation so
 // it can't happen by accident.
-export function DeleteAccount() {
+export function DeleteAccount({ back = "/dashboard/profile" }: { back?: string }) {
   return (
     <details className="control-details delete-account">
       <summary className="btn ghost block">Delete your account</summary>
@@ -11,6 +11,7 @@ export function DeleteAccount() {
         Colleagues&rsquo; own records stay theirs.
       </p>
       <form action={deleteAccountAction} className="stack" style={{ gap: 8 }}>
+        <input type="hidden" name="back" value={back} />
         <label className="field">
           Type DELETE to confirm
           <input name="confirm" autoComplete="off" required pattern="DELETE" title="Type DELETE in capitals" />

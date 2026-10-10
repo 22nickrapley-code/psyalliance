@@ -2,7 +2,8 @@ import { shortDate } from "@/lib/dates";
 import { ColleaguePicker } from "../_components/colleague-picker";
 import { loadColleagueSuggestions } from "@/lib/colleague-suggestions";
 import { createClient } from "@/lib/supabase/server";
-import { startConversation, setNotificationReadState } from "./actions";
+import { startConversation } from "./actions";
+import { NotificationsPanel, countNewNotifications } from "../notifications/panel";
 import { acknowledgeProviderReferral, declineProviderReferral } from "../referrals/actions";
 import { loadConversations } from "./data";
 import { ConversationList, MessagesShell } from "./views";
@@ -13,11 +14,12 @@ export const metadata = { title: "Messages" };
 
 // Messages (Product Spec v1): the direct inbox for professional
 // conversation. Threads that started from a referral, cover request or
-// consult carry that context. Admin notices and physician-portal referrals
-// sit below the conversation list.
+// consult carry that context. Physician-portal referrals sit below.
+// Notifications have their own tab (?tab=notifications), which the bell
+// opens too.
 const composingFirst = (sp: { compose?: string; to?: string; error?: string }, n: number) => !!sp.compose || !!sp.to || !!sp.error || n === 0;
 
-export default async function MessagesPage(props: { searchParams: Promise<{ error?: string; compose?: string; to?: string; list?: string }> }) {
+export default async function MessagesPage(props: { searchParams: Promise<{ error?: string; compose?: string; to?: string; list?: string; tab?: string }> }) {
   const sp = await props.searchParams;
   const supabase = await createClient();
   const {
@@ -25,9 +27,17 @@ export default async function MessagesPage(props: { searchParams: Promise<{ erro
   } = await supabase.auth.getUser();
   const myself = user!.id;
 
-  const [items, { data: notices }, { data: providerReferrals }] = await Promise.all([
+  if (sp.tab === "notifications") {
+    return (
+      <MessagesShell list={null} tab="notifications" newNotifications={await countNewNotifications(supabase, myself)}>
+        <NotificationsPanel supabase={supabase} myself={myself} />
+      </MessagesShell>
+    );
+  }
+
+  const [items, newNotifications, { data: providerReferrals }] = await Promise.all([
     loadConversations(supabase, myself),
-    supabase.from("system_notifications").select("id, title, body, created_at, read_at").eq("profile_id", myself).order("created_at", { ascending: false }).limit(10),
+    countNewNotifications(supabase, myself),
     supabase
       .from("provider_referrals")
       .select("id, status, created_at, reason, referring_providers(full_name, practice_name)")
@@ -36,7 +46,6 @@ export default async function MessagesPage(props: { searchParams: Promise<{ erro
       .limit(10),
   ]);
   const suggestions = composingFirst(sp, items.length) ? await loadColleagueSuggestions(supabase, myself, sp.to || null) : [];
-  const unreadNotices = (notices || []).filter((n: any) => !n.read_at);
 
   // Messages opens on the latest conversation; "New" opens the composer.
   const composing = !!sp.compose || !!sp.to || !!sp.error || items.length === 0;
@@ -47,31 +56,12 @@ export default async function MessagesPage(props: { searchParams: Promise<{ erro
   }
 
   return (
-    <MessagesShell list={<ConversationList items={items} activeId={openId ?? undefined} composing={composing} />} view={composing ? "compose" : "index"}>
+    <MessagesShell
+      list={<ConversationList items={items} activeId={openId ?? undefined} composing={composing} />}
+      view={composing ? "compose" : "index"}
+      newNotifications={newNotifications}
+    >
       <Banner error={sp.error} />
-      {(notices || []).length > 0 && (
-        <details className={`card notices-card${unreadNotices.length ? " has-new" : ""}`} style={{ marginBottom: 14 }} open={unreadNotices.length > 0}>
-          <summary>
-            <strong>Notices from PsyAlliance</strong>
-            {unreadNotices.length > 0 && <span className="new-pill">{unreadNotices.length} new</span>}
-          </summary>
-          {(notices || []).map((n: any) => (
-            <div key={n.id} className={`item notice-item${!n.read_at ? " unread" : ""}`}>
-              <strong>{!n.read_at && <span className="new-dot" aria-label="New" />}{n.title}</strong>
-              <p>{n.body}</p>
-              <span className="micro-note">{shortDate(n.created_at)}</span>
-              {!n.read_at && (
-                <form action={setNotificationReadState}>
-                  <input type="hidden" name="id" value={n.id} />
-                  <input type="hidden" name="state" value="read" />
-                  <input type="hidden" name="redirect_to" value="/dashboard/messages" />
-                  <button type="submit" className="plain-button small">Mark read</button>
-                </form>
-              )}
-            </div>
-          ))}
-        </details>
-      )}
       {openId ? (
         <div className="index-thread">
           <ThreadPanel id={openId} myself={myself} />

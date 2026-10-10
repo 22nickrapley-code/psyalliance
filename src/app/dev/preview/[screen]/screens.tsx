@@ -16,6 +16,7 @@ import { US_STATES } from "@/lib/us-states";
 import { HomeView } from "../../../dashboard/home-view";
 import { ReferShortlistView, ReferReviewView, ReferIndexView, ReferTrackView } from "../../../dashboard/refer/views";
 import { NetworkView } from "../../../dashboard/network/views";
+import { NotificationsView } from "../../../dashboard/notifications/panel";
 import { CliniciansView } from "../../../dashboard/clinicians/views";
 import { ConsultIndexView, ConsultComposeView, ConsultDetailView } from "../../../dashboard/consult/views";
 import { ConversationList, MessagesShell } from "../../../dashboard/messages/views";
@@ -374,8 +375,22 @@ export const previewScreens: Record<string, () => ReactNode> = {
       c={{ id: 3, kind: "question", question: "Approaches to a stalled treatment with adolescent anxiety?", context: "Twelve sessions in, avoidance persists despite exposure work. Looking for ideas on engagement.", typeLabel: "Treatment impasse", tags: ["Anxiety"], status: "draft", mine: true, authorName: "You", createdAt: new Date().toISOString(), audienceLabel: "Selected colleagues", recipients: ["Dr. Maya Chen", "Dr. Eli Ramirez"], responses: [] }}
     />
   ),
+  "messages-notifications": () => (
+    <MessagesShell list={null} tab="notifications" newNotifications={3}>
+      <NotificationsView
+        items={[
+          { key: "a", at: "2026-10-10T10:40:00.000Z", unread: true, label: "PsyAlliance", title: "Your credentials have been reviewed and verified", body: "You're now free to use PsyAlliance. Welcome to the network.", markRead: { kind: "notice", id: 1 } },
+          { key: "b", at: "2026-10-10T09:10:00.000Z", unread: true, label: "Network", title: "Maya Chen, PsyD added you as a trusted colleague", body: null, open: { deliveryId: 2, href: "/dashboard/people/x" } },
+          { key: "c", at: "2026-10-09T16:00:00.000Z", unread: true, label: "Refer", title: "Samuel Okafor, PhD replied to your referral: interested", body: null, open: { deliveryId: 3, href: "/dashboard/refer" } },
+          { key: "d", at: "2026-10-07T12:00:00.000Z", unread: false, label: "Cover", title: "Eli Ramirez, MD accepted cover for one client", body: null, open: { deliveryId: 4, href: "/dashboard/cover" } },
+          { key: "e", at: "2026-10-02T12:00:00.000Z", unread: false, label: "Credentials", title: "Your New York license was reviewed", body: null },
+        ]}
+      />
+    </MessagesShell>
+  ),
   messages: () => (
     <MessagesShell
+      newNotifications={3}
       list={
         <ConversationList
           activeId={1}

@@ -172,8 +172,9 @@ export default function PremiumShell({
             </div>
             <div className="top-actions">
               <Link
-                href="/dashboard/notifications"
+                href="/dashboard/messages?tab=notifications"
                 className="icon-button"
+                data-bell=""
                 aria-label={unreadNotifications ? `Notifications, ${unreadNotifications} unread` : "Notifications"}
               >
                 <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">

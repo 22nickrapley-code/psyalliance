@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { PersonAvatar, Status } from "../_components/ui";
+import { NavIcon } from "../icons";
 import type { ConversationItem } from "./data";
 
 export function ConversationList({ items, activeId, composing }: { items: ConversationItem[]; activeId?: number; composing?: boolean }) {
@@ -29,18 +30,61 @@ export function ConversationList({ items, activeId, composing }: { items: Conver
   );
 }
 
-export function MessagesShell({ list, children, view = "thread" }: { list: ReactNode; children: ReactNode; view?: "index" | "thread" | "compose" }) {
+// Messages has two areas: conversations with colleagues, and every
+// notification (the bell opens the same list).
+function MessagesTabs({ tab, newNotifications }: { tab: "conversations" | "notifications"; newNotifications: number }) {
+  const tabs: [k: "conversations" | "notifications", label: string, href: string, hint: string, icon: string][] = [
+    ["conversations", "Conversations", "/dashboard/messages?list=1", "With colleagues", "messages"],
+    ["notifications", "Notifications", "/dashboard/messages?tab=notifications", "Everything flagged for you", "flag"],
+  ];
+  return (
+    <nav className="section-tabs two messages-tabs" aria-label="Messages">
+      {tabs.map(([k, label, href, hint, icon]) => (
+        <a key={k} href={href} className={`section-tab${tab === k ? " active" : ""}`} aria-current={tab === k ? "page" : undefined}>
+          <span className="st-icon" aria-hidden="true">
+            <NavIcon name={icon} size={18} />
+          </span>
+          <span className="st-text">
+            <b>
+              {label}
+              {k === "notifications" && newNotifications > 0 && <span className="new-pill">{newNotifications} new</span>}
+            </b>
+            <small>{hint}</small>
+          </span>
+        </a>
+      ))}
+    </nav>
+  );
+}
+
+export function MessagesShell({
+  list,
+  children,
+  view = "thread",
+  tab = "conversations",
+  newNotifications = 0,
+}: {
+  list: ReactNode;
+  children: ReactNode;
+  view?: "index" | "thread" | "compose";
+  tab?: "conversations" | "notifications";
+  newNotifications?: number;
+}) {
   return (
     <>
       <div className="page-head">
         <div>
-          <div className="eyebrow">Your conversations</div>
+          <div className="eyebrow">Your practice</div>
           <h1>Messages</h1>
-          <p>Professional conversation, connected to the request or discussion that started it.</p>
+          <p>Conversations with colleagues, connected to what started them, and every notification in one place.</p>
         </div>
       </div>
-      {/* Desktop: list and thread side by side. Phone: the list, or one
-          thread with a way back to it. */}
+      <MessagesTabs tab={tab} newNotifications={newNotifications} />
+      {tab === "notifications" ? (
+        <div className="notif-area">{children}</div>
+      ) : (
+      /* Desktop: list and thread side by side. Phone: the list, or one
+         thread with a way back to it. */
       <div className={`conversation-layout view-${view}`}>
         {list}
         <div className="conversation-main">
@@ -52,6 +96,7 @@ export function MessagesShell({ list, children, view = "thread" }: { list: React
           {children}
         </div>
       </div>
+      )}
     </>
   );
 }

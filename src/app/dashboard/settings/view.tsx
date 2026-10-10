@@ -1,4 +1,5 @@
 import { clinicianName } from "@/lib/profession";
+import { DeleteAccount } from "../profile/delete-account";
 import {
   saveNotificationPreferences,
   removeFromBlocklist,
@@ -176,8 +177,14 @@ export function SettingsView({ sp, email, me, prefs, profile, emergency, exclude
             <p className="small">Your profile and credentials are used to verify you and connect you with verified colleagues. Never sold, never used for advertising.</p>
             <div className="row wrap">
               <a className="btn secondary small-btn" href="/dashboard/settings/export">Download my data (JSON)</a>
-              <a className="plain-button small" href="mailto:hello@psyalliance.org?subject=Delete%20my%20account">Ask us to delete my account</a>
             </div>
+            {email.endsWith("@sandbox.psyalliance.test") ? (
+              <p className="small" style={{ marginTop: 14, marginBottom: 0 }}>A sandbox ends on its own when its link expires. To start again, use Reset in the sandbox bar.</p>
+            ) : (
+              <div style={{ marginTop: 14 }}>
+                <DeleteAccount back="/dashboard/settings" />
+              </div>
+            )}
           </section>
         </div>
 

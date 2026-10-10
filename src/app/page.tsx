@@ -186,6 +186,10 @@ export default async function HomePage() {
             <div className="section-intro">
               <div className="eyebrow">Practice Library</div>
               <h2>Templates for the hard moments of independent practice.</h2>
+              <p className="lead section-lead">
+                In a group practice, the leave plan, the referral letter and the professional will already exist. On your own, you write them yourself, usually
+                when time is shortest. Start from one of twenty templates instead, each beside the work it supports.
+              </p>
             </div>
             <div className="lib-grid">
               {LIBRARY_PICKS.map(([code, title, line]) => (

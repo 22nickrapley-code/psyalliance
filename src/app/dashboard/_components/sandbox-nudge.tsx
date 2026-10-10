@@ -51,7 +51,7 @@ export function SandboxNudge() {
   useEffect(() => {
     if (!event) return;
     const at = () => {
-      const bell = document.querySelector<HTMLElement>('.top-actions a[href="/dashboard/notifications"]');
+      const bell = document.querySelector<HTMLElement>(".top-actions a[data-bell]");
       const r = bell?.getBoundingClientRect();
       const right = window.innerWidth <= 760 ? 16 : 24;
       if (r && r.width > 0 && r.bottom > 0 && r.bottom < window.innerHeight / 2) {

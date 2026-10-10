@@ -487,9 +487,12 @@ export async function deleteAccountAction(formData: FormData) {
   } = await supabase.auth.getUser();
   if (!user) redirect("/auth/sign-in");
   const confirm = String(formData.get("confirm") || "").trim();
-  if (confirm !== "DELETE") redirect(`/dashboard/profile?error=${encodeURIComponent("Type DELETE in capitals to confirm.")}`);
+  // Errors go back to where the button was (Profile or Settings).
+  const from = String(formData.get("back") || "") === "/dashboard/settings" ? "/dashboard/settings" : "/dashboard/profile";
+  const fail = (msg: string) => redirect(`${from}?error=${encodeURIComponent(msg)}${from === "/dashboard/settings" ? "#data" : ""}`);
+  if (confirm !== "DELETE") fail("Type DELETE in capitals to confirm.");
   const { error } = await supabase.rpc("delete_my_account", { p_confirm: confirm });
-  if (error) redirect(`/dashboard/profile?error=${encodeURIComponent(error.code === "P0001" ? error.message : "We couldn't delete your account just now. Please try again, or email hello@psyalliance.org.")}`);
+  if (error) fail(error.code === "P0001" ? error.message : "We couldn't delete your account just now. Please try again, or email hello@psyalliance.org.");
   await supabase.auth.signOut();
   redirect("/goodbye");
 }

@@ -1917,7 +1917,7 @@
 /* The way back to where you came from */
 .pa .back-link{display:inline-block;margin:0 0 12px;font-size:14px}
 /* Profile holds availability, credentials and continuity as tabs */
-.pa .profile-tabs{margin:0 0 18px}
+
 /* One-time notes: verified, set-up complete */
 .pa .once-note{display:flex;gap:16px;align-items:flex-start;background:linear-gradient(135deg,#eef5ef 0%,#f8f4ea 100%);border:1px solid #c9dccf;border-radius:14px;padding:18px 20px;margin:0 0 20px}
 .pa .once-note.waiting{background:#f8f4ea;border-color:#e3d3b8}
@@ -2100,3 +2100,50 @@
 @media (max-width:640px){.pa .example-dialog{width:100vw;height:100dvh;border-radius:0}}
 .pa .moment-watch{display:inline-flex;align-items:center;gap:8px;margin-top:6px;font-size:14px}
 .pa .moment-watch span{width:22px;height:22px;border-radius:50%;background:var(--forest);color:#fff;display:inline-grid;place-items:center;font-size:8px}
+
+/* Home tiles: icon, title and line sit at the same height in every tile */
+.pa .home-tile{justify-content:flex-start}
+.pa .home-tile .symbol,.pa .home-tile .actions-top{margin-bottom:0}
+.pa .home-tile .actions-top{height:46px}
+.pa .home-tile b{margin-top:24px}
+@media (max-width:760px){.pa .home-tile .actions-top{height:auto}.pa .home-tile b{margin-top:14px}.pa .actions-tile b{margin-top:0}}
+
+/* Home page moments: the "Watch how" line sits at the foot of each card */
+.pa .problems .editorial-card{display:flex;flex-direction:column}
+.pa .problems .editorial-card p{margin-bottom:18px}
+.pa .problems .moment-watch{margin-top:auto}
+.pa .section-intro .section-lead{max-width:720px;margin:14px 0 0;color:var(--muted)}
+
+/* Messages: Conversations and Notifications */
+.pa .messages-tabs{margin:-12px 0 20px}
+.pa .notif-panel{max-width:900px}
+.pa .notif-panel .card-title{align-items:center}
+.pa .notif-list{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:8px}
+.pa .notif-item{display:grid;grid-template-columns:96px minmax(0,1fr) auto;gap:14px;align-items:start;padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:#fff}
+.pa .notif-item.unread{background:#fbf3e6;border-color:#ecd6b3}
+.pa .notif-tag{font:700 11px/1.2 var(--body);letter-spacing:.06em;text-transform:uppercase;color:#82572a;padding-top:3px}
+.pa .notif-body b{display:block;font-weight:600;color:var(--ink);line-height:1.4}
+.pa .notif-item:not(.unread) .notif-body b{font-weight:500}
+.pa .notif-body p{margin:4px 0 0;font-size:14px;color:var(--muted)}
+.pa .notif-body small{display:block;margin-top:4px;color:var(--muted);font-size:12.5px}
+.pa .notif-act{align-self:center}
+.pa .notif-empty{padding:18px 0 4px}
+@media (max-width:640px){.pa .notif-item{grid-template-columns:minmax(0,1fr);gap:6px}.pa .notif-act{align-self:start}.pa .messages-tabs{margin-top:-8px}}
+.pa .notif-act .plain-button{font-size:13px}
+
+/* Large tabs: the parts of Profile, and Conversations / Notifications */
+.pa .section-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:0 0 28px;border:0;overflow:visible}
+.pa .section-tabs.two{grid-template-columns:repeat(2,minmax(0,290px))}
+.pa .section-tab{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid #dbe1da;border-radius:12px;background:#fff;color:var(--ink);text-decoration:none;box-shadow:0 1px 2px rgba(16,35,29,.04);transition:border-color .15s,box-shadow .15s,transform .15s}
+.pa .section-tab:hover{border-color:#b6c9bb;box-shadow:0 6px 18px rgba(16,35,29,.08);transform:translateY(-1px)}
+.pa .section-tab .st-icon{width:38px;height:38px;border-radius:10px;background:#eaf2ec;color:var(--forest);display:grid;place-items:center;flex:0 0 auto;line-height:0}
+.pa .section-tab .st-text{min-width:0}
+.pa .section-tab b{display:block;font-size:15px;font-weight:650;line-height:1.25}
+.pa .section-tab small{display:block;font-size:12.5px;color:var(--muted);margin-top:2px;line-height:1.35}
+.pa .section-tab.active{background:var(--forest);border-color:var(--forest);color:#fff;box-shadow:0 8px 22px rgba(21,63,53,.2)}
+.pa .section-tab.active:hover{transform:none}
+.pa .section-tab.active .st-icon{background:rgba(255,255,255,.14);color:#fff}
+.pa .section-tab.active small{color:#cfe0d6}
+.pa .section-tab .new-pill{font-size:10.5px;padding:1px 8px}
+@media (max-width:980px){.pa .section-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}.pa .section-tabs.two{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:420px){.pa .section-tabs{gap:8px}.pa .section-tab{padding:10px;gap:9px}.pa .section-tab .st-icon{width:32px;height:32px}.pa .section-tab b{font-size:14px}.pa .section-tab small{font-size:11.5px}}

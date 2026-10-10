@@ -57,13 +57,14 @@ export function StoryPlayer({
   const [ended, setEnded] = useState(false);
   const [scale, setScale] = useState(0.6);
   const [screenW, setScreenW] = useState(DESKTOP_WIDTH);
-  const [pan, setPan] = useState({ x: 0, y: 0 });
-  const [cursor, setCursor] = useState<{ x: number; y: number; on: boolean; click: boolean }>({ x: 40, y: 40, on: false, click: false });
+  // The scroll and pointer belong to one scene, so a new scene never
+  // starts on the last one's position.
+  const [pan, setPan] = useState({ x: 0, y: 0, scene: -1 });
+  const [cursor, setCursor] = useState<{ x: number; y: number; on: boolean; click: boolean; scene: number }>({ x: 40, y: 40, on: false, click: false, scene: -1 });
   const [reduced, setReduced] = useState(false);
   const box = useRef<HTMLElement>(null);
   const viewport = useRef<HTMLDivElement>(null);
   const screenRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const timers = useRef<number[]>([]);
   // Time already spent on the current scene (kept across a pause).
   const spent = useRef({ scene: -1, ms: 0 });
   const startedAt = useRef(0);
@@ -71,11 +72,6 @@ export function StoryPlayer({
   const s = scenes[i];
   const duration = (s?.seconds || 8.5) * 1000;
   const chapters = scenes.reduce<{ name: string; first: number }[]>((acc, sc, n) => (acc.some((c) => c.name === sc.chapter) ? acc : [...acc, { name: sc.chapter, first: n }]), []);
-
-  const clear = () => {
-    timers.current.forEach((t) => window.clearTimeout(t));
-    timers.current = [];
-  };
 
   useEffect(() => {
     setReduced(window.matchMedia("(prefers-reduced-motion: reduce)").matches);
@@ -119,8 +115,14 @@ export function StoryPlayer({
     };
   }, [started]);
 
-  // Each scene: bring the moment that matters into view, point at it.
-  const stage = useCallback(() => {
+  // Each scene opens on the top of the screen while the caption is read.
+  // In its last few seconds the screen scrolls to the moment that matters,
+  // the pointer moves to it and clicks, and the next scene begins.
+  const plan = useRef({ x: 0, y: 0, cx: 0, cy: 0, target: false });
+  const reached = useRef(0); // 0 top of screen, 1 scrolled, 2 pointer shown, 3 clicked
+  const manual = useRef(false); // stepped with the arrows while paused
+
+  const measure = useCallback(() => {
     const vp = viewport.current;
     const screen = screenRefs.current[i];
     if (!vp || !screen) return;
@@ -148,47 +150,72 @@ export function StoryPlayer({
       cx = ox * scale - x;
       cy = oy * scale - y;
     }
-    setPan({ x: 0, y: 0 });
-    setCursor((c) => ({ ...c, on: false, click: false }));
-    clear();
-    if (reduced) {
-      setPan({ x, y });
-      return;
-    }
-    timers.current.push(window.setTimeout(() => setPan({ x, y }), 900));
-    if (target) {
-      timers.current.push(window.setTimeout(() => setCursor({ x: cx, y: cy, on: true, click: false }), 2600));
-      timers.current.push(window.setTimeout(() => setCursor({ x: cx, y: cy, on: true, click: true }), 4300));
-    }
+    plan.current = { x, y, cx, cy, target: !!target };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [i, scale, screenW, reduced]);
+  }, [i, scale, screenW]);
 
+  const reach = (n: number) => {
+    reached.current = Math.max(reached.current, n);
+    const p = plan.current;
+    const at = reached.current;
+    if (at >= 1) setPan({ x: p.x, y: p.y, scene: i });
+    if (at >= 2 && p.target && !reduced) setCursor({ x: p.cx, y: p.cy, on: true, click: at >= 3, scene: i });
+  };
+
+  // A new scene starts at the top, pointer hidden.
+  useEffect(() => {
+    reached.current = 0;
+    setPan({ x: 0, y: 0, scene: i });
+    setCursor((c) => ({ ...c, on: false, click: false }));
+  }, [i]);
+
+  // Measure where this scene's moment is (again after a resize). Reduced
+  // motion shows it straight away; stepping by hand while paused shows it
+  // after a beat, since nothing else would.
   useEffect(() => {
     if (!started) return;
-    stage();
-    return clear;
-  }, [stage, started]);
+    measure();
+    if (reduced) reach(1);
+    else if (reached.current > 0) reach(reached.current);
+    let t = 0;
+    if (manual.current && !playing && !reduced) t = window.setTimeout(() => reach(3), 900);
+    return () => window.clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [measure, started, reduced]);
 
-  // The clock: advance when a scene's time is up.
+  // The clock: the scroll, pointer and click come in the scene's last
+  // seconds, then the next scene. Pausing holds everything where it is.
   useEffect(() => {
     if (!playing || ended) return;
+    manual.current = false;
     if (spent.current.scene !== i) spent.current = { scene: i, ms: 0 };
     startedAt.current = performance.now();
-    const left = Math.max(400, duration - spent.current.ms);
-    const t = window.setTimeout(() => {
-      if (i + 1 < scenes.length) setI(i + 1);
-      else {
-        setEnded(true);
-        setPlaying(false);
-      }
-    }, left);
+    const elapsed = spent.current.ms;
+    const ts: number[] = [];
+    if (!reduced) {
+      const moments = [Math.max(1500, duration - 4400), Math.max(2600, duration - 2800), Math.max(3800, duration - 1400)];
+      moments.forEach((at, n) => {
+        if (reached.current < n + 1) ts.push(window.setTimeout(() => reach(n + 1), Math.max(0, at - elapsed)));
+      });
+    }
+    ts.push(
+      window.setTimeout(() => {
+        if (i + 1 < scenes.length) setI(i + 1);
+        else {
+          setEnded(true);
+          setPlaying(false);
+        }
+      }, Math.max(400, duration - elapsed))
+    );
     return () => {
-      window.clearTimeout(t);
+      ts.forEach((t) => window.clearTimeout(t));
       if (spent.current.scene === i) spent.current.ms += performance.now() - startedAt.current;
     };
-  }, [playing, i, ended, duration, scenes.length]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [playing, i, ended, duration, scenes.length, reduced]);
 
-  const go = (n: number) => {
+  const go = (n: number, byHand = true) => {
+    manual.current = byHand && !playing;
     spent.current = { scene: -1, ms: 0 };
     setEnded(false);
     setI(Math.max(0, Math.min(scenes.length - 1, n)));
@@ -200,7 +227,7 @@ export function StoryPlayer({
   };
   const toggle = () => {
     if (ended) {
-      go(0);
+      go(0, false);
       setPlaying(true);
       return;
     }
@@ -249,14 +276,14 @@ export function StoryPlayer({
                   screenRefs.current[n] = el;
                 }}
                 className={`sp-screen pa${n === i ? " on" : ""}${scenes[n]?.who.colleague ? " as-colleague" : ""}`}
-                style={{ width: screenW, transform: `translate(${-pan.x}px, ${n === i ? -pan.y : 0}px) scale(${scale})` }}
+                style={{ width: screenW, transform: n === i && pan.scene === i ? `translate(${-pan.x}px, ${-pan.y}px) scale(${scale})` : `translate(0px, 0px) scale(${scale})` }}
                 aria-hidden="true"
                 {...({ inert: true } as Record<string, boolean>)}
               >
                 {screen}
               </div>
             ))}
-            <span className={`sp-cursor${cursor.on ? " on" : ""}${cursor.click ? " click" : ""}`} style={{ left: cursor.x, top: cursor.y }} aria-hidden="true" />
+            <span className={`sp-cursor${cursor.on && cursor.scene === i ? " on" : ""}${cursor.click && cursor.scene === i ? " click" : ""}`} style={{ left: cursor.x, top: cursor.y }} aria-hidden="true" />
             {ended && (
               <div className="sp-end">
                 <b>{end.title}</b>
@@ -267,7 +294,7 @@ export function StoryPlayer({
                   ) : (
                     <a className="btn" href={tryHref}>{end.tryLabel || "Try it yourself"} &rarr;</a>
                   )}
-                  <button type="button" className="btn secondary" onClick={() => { go(0); setPlaying(true); }}>Watch again</button>
+                  <button type="button" className="btn secondary" onClick={() => { go(0, false); setPlaying(true); }}>Watch again</button>
                 </div>
               </div>
             )}
