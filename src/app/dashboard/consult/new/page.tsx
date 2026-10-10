@@ -4,17 +4,22 @@ import { ConsultComposeView } from "../views";
 
 export const metadata = { title: "Ask colleagues" };
 
-export default async function NewConsultPage(props: { searchParams: Promise<{ kind?: string; to?: string; group?: string; error?: string }> }) {
+export default async function NewConsultPage(props: { searchParams: Promise<{ kind?: string; to?: string; group?: string; error?: string; draft?: string }> }) {
   const sp = await props.searchParams;
-  const kind = (sp.kind === "supervision_request" || sp.kind === "supervision_offer" ? sp.kind : "question") as
-    | "question"
-    | "supervision_request"
-    | "supervision_offer";
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   const myself = user!.id;
+  // Editing a draft: start from what was written and chosen.
+  const { data: d } = sp.draft
+    ? await supabase.from("consultations").select("*").eq("id", Number(sp.draft)).eq("author_profile_id", myself).eq("status", "draft").maybeSingle<any>()
+    : { data: null as any };
+  const kindRaw = d?.kind || sp.kind;
+  const kind = (kindRaw === "supervision_request" || kindRaw === "supervision_offer" ? kindRaw : "question") as
+    | "question"
+    | "supervision_request"
+    | "supervision_offer";
 
   const [{ data: areas }, { data: memberships }, suggestions] = await Promise.all([
     supabase.from("lookup_values").select("value").eq("category", "treatment_specialism").order("value"),
@@ -37,6 +42,23 @@ export default async function NewConsultPage(props: { searchParams: Promise<{ ki
       preselect={sp.to}
       preselectGroup={sp.group ? Number(sp.group) : undefined}
       error={sp.error}
+      preset={d ? { question: d.question || "", context: d.context || "" } : undefined}
+      draft={
+        d
+          ? {
+              id: d.id,
+              audience: d.group_id
+                ? `group:${d.group_id}`
+                : d.audience_type === "selected"
+                  ? (d.audience_profile_ids || []).length === 1 ? "one" : "selected"
+                  : d.audience_type,
+              recipients: d.audience_profile_ids || [],
+              tagArea: (d.tags || []).find((t: string) => (areas || []).some((a: any) => a.value === t)) || "",
+              tagTopic: (d.tags || []).find((t: string) => !(areas || []).some((a: any) => a.value === t)) || "",
+              type: d.consultation_type || "practice_question",
+            }
+          : undefined
+      }
     />
   );
 }

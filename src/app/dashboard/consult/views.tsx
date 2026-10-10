@@ -256,6 +256,7 @@ export function ConsultComposeView({
   preselectGroup,
   error,
   preset,
+  draft,
 }: {
   kind: "question" | "supervision_request" | "supervision_offer";
   areas: string[];
@@ -265,14 +266,16 @@ export function ConsultComposeView({
   preselectGroup?: number;
   error?: string;
   preset?: { question: string; context: string };
+  draft?: { id: number; audience: string; recipients: string[]; tagArea: string; tagTopic: string; type: string };
 }) {
   const title = kind === "supervision_request" ? "Request supervision." : kind === "supervision_offer" ? "Offer supervision." : "Ask colleagues a question.";
   return (
     <>
       <PageHead eyebrow="Consult / new" title={title} lead="Your question and a little context. It goes to your trusted colleagues unless you change it, and you review it before anything is shared." actions={<a className="btn secondary" href="/dashboard/consult">Cancel</a>} />
       <Banner error={error} />
-      <form className="split" action={draftConsultAction}>
+      <form className="split" action={draftConsultAction} data-deidentify="">
         <input type="hidden" name="kind" value={kind} />
+        {draft && <input type="hidden" name="draft_id" value={draft.id} />}
         <section className="card">
           <label className="field">
             {kind === "question" ? "Your question, in one sentence" : "Summary, in one sentence"}
@@ -301,7 +304,14 @@ export function ConsultComposeView({
             </label>
           </details>
 
-          <AudiencePicker suggestions={suggestions} groups={groups} preselect={preselect} preselectGroup={preselectGroup} />
+          <AudiencePicker
+            suggestions={suggestions}
+            groups={groups}
+            preselect={preselect}
+            preselectGroup={preselectGroup}
+            initialAudience={draft?.audience}
+            initialRecipients={draft?.recipients}
+          />
 
           <details className="refine-fit">
             <summary>
@@ -312,21 +322,21 @@ export function ConsultComposeView({
               {kind === "question" && (
                 <label className="field">
                   Type
-                  <select name="consultation_type" defaultValue="practice_question">
+                  <select name="consultation_type" defaultValue={draft?.type || "practice_question"}>
                     {CONSULT_TYPES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
                   </select>
                 </label>
               )}
               <label className="field">
                 Treatment area tag
-                <select name="tag_area" defaultValue="">
+                <select name="tag_area" defaultValue={draft?.tagArea || ""}>
                   <option value="">None</option>
                   {areas.map((a) => <option key={a}>{a}</option>)}
                 </select>
               </label>
               <label className="field">
                 Practice topic tag
-                <select name="tag_topic" defaultValue={kind === "question" ? "" : "Supervision"}>
+                <select name="tag_topic" defaultValue={draft ? draft.tagTopic : kind === "question" ? "" : "Supervision"}>
                   <option value="">None</option>
                   {PRACTICE_TOPICS.map((t) => <option key={t}>{t}</option>)}
                 </select>
@@ -370,7 +380,7 @@ export type ConsultDetail = {
   createdAt: string;
   audienceLabel: string;
   recipients: string[];
-  responses: { id: number; name: string; body: string; type: string; useful: boolean; createdAt: string; avatarUrl: string | null }[];
+  responses: { id: number; name: string; body: string; type: string; useful: boolean; createdAt: string; avatarUrl: string | null; ownReply?: boolean }[];
 };
 
 export function ConsultDetailView({ c, ok, error, extra }: { c: ConsultDetail; ok?: string; error?: string; extra?: ReactNode }) {
@@ -406,6 +416,7 @@ export function ConsultDetailView({ c, ok, error, extra }: { c: ConsultDetail; o
                   <input type="hidden" name="consultation_id" value={c.id} />
                   <button type="submit" className="btn" style={{ background: "#f7f5f0", color: "var(--forest)" }}>Post it</button>
                 </form>
+                <a className="btn ghost" style={{ color: "#fff", borderColor: "rgba(255,255,255,.45)" }} href={`/dashboard/consult/new?draft=${c.id}`}>Edit</a>
                 <form action={discardDraftAction} className="inline">
                   <input type="hidden" name="consultation_id" value={c.id} />
                   <button type="submit" className="btn ghost" style={{ color: "#fff" }}>Discard</button>
@@ -436,7 +447,7 @@ export function ConsultDetailView({ c, ok, error, extra }: { c: ConsultDetail; o
                   <div style={{ flex: 1 }}>
                     <div className="row between">
                       <strong>{r.name}{r.type === "clarifying_question" ? " · asked a clarifying question" : ""}</strong>
-                      {c.mine && (
+                      {c.mine && !r.ownReply && (
                         <form action={setResponseUsefulAction} className="inline">
                           <input type="hidden" name="consultation_id" value={c.id} />
                           <input type="hidden" name="response_id" value={r.id} />
@@ -454,7 +465,7 @@ export function ConsultDetailView({ c, ok, error, extra }: { c: ConsultDetail; o
                 </div>
               ))}
               {c.status !== "resolved" && (
-                <form action={respondToConsultationAction} style={{ marginTop: 14 }}>
+                <form action={respondToConsultationAction} style={{ marginTop: 14 }} data-deidentify="">
                   <input type="hidden" name="consultation_id" value={c.id} />
                   <label className="field">
                     {c.mine ? "Add to the discussion" : "Your reply"}

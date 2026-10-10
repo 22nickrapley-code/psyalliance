@@ -127,7 +127,7 @@ export async function ThreadPanel({ id, myself, error, draft }: { id: number; my
           );
         })}
       </div>
-      <form action={sendMessage} className="message-compose">
+      <form action={sendMessage} className="message-compose" data-deidentify="">
         <input type="hidden" name="conversation_id" value={id} />
         <textarea name="body" required placeholder="Write a professional message..." aria-label="Message" defaultValue={(messages || []).length === 0 ? draft || "" : ""} />
         <button type="submit" className="btn lg">Send</button>

@@ -33,6 +33,13 @@ export async function updateSession(request: NextRequest) {
 
   if (!user && request.nextUrl.pathname.startsWith("/dashboard")) {
     const url = request.nextUrl.clone();
+    // A sandbox device whose session dropped: sign it back in with the
+    // personal link it already opened, and come back to this page.
+    if (process.env.NEXT_PUBLIC_APP_ENV === "demo" && request.cookies.get("pa_pass")?.value && !request.cookies.get("pa_resumed")?.value && request.method === "GET") {
+      url.pathname = "/sandbox/resume";
+      url.search = `?next=${encodeURIComponent(request.nextUrl.pathname + request.nextUrl.search)}`;
+      return NextResponse.redirect(url);
+    }
     // On the demo site a signed-out visitor is almost always a sandbox
     // guest, who has no password: explain, rather than show sign-in.
     url.pathname = process.env.NEXT_PUBLIC_APP_ENV === "demo" ? "/sandbox/ended" : "/auth/sign-in";

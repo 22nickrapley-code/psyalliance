@@ -50,9 +50,10 @@ export async function toggleOverflowColleague(formData: FormData) {
   if (!page) back(`?error=${encodeURIComponent("Save your page first.")}`);
   const hidden: string[] = page!.hidden || [];
   const next = hidden.includes(id) ? hidden.filter((x) => x !== id) : [...hidden, id];
-  await supabase.from("overflow_pages").update({ hidden: next, updated_at: new Date().toISOString() }).eq("profile_id", user.id);
+  const { error } = await supabase.from("overflow_pages").update({ hidden: next, updated_at: new Date().toISOString() }).eq("profile_id", user.id);
+  if (error) back(`?error=${encodeURIComponent("That change didn't save. Please try again.")}#colleagues`);
   revalidatePath("/dashboard/full");
-  back("#colleagues");
+  // Stays in place: the list updates where you are.
 }
 
 // Your consent to appear on trusted colleagues' pages, with the contact

@@ -81,6 +81,7 @@ export default async function ReferralDetailPage(props: {
     notes: r.notes,
     createdAt: r.created_at,
     requesterName: nameOf(r.requester),
+    requesterId: r.requesting_profile_id,
     rows: [
       ["Where", where],
       ["Setting", r.modality === "virtual" ? "Virtual" : r.modality === "in_person" ? "In person" : "Either"],

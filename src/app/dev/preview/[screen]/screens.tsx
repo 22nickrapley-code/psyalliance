@@ -206,6 +206,41 @@ export const previewScreens: Record<string, () => ReactNode> = {
       }}
     />
   ),
+  "refer-track-question": () => (
+    <ReferTrackView
+      r={{
+        id: 4, isMine: false, focus: "OCD", where: "Brooklyn, New York", status: "sent", audience: "selected", timeframe: "within_month", notes: null, createdAt: "2026-10-09", requesterName: "Dr. Eli Ramirez", requesterId: "b",
+        rows: [["Where", "Brooklyn, New York"], ["Setting", "Either"], ["Timeframe", "Within a month"]],
+        responses: [], myResponse: { status: "question", message: "Is evening telehealth possible?" }, chosen: null, rated: false,
+      }}
+    />
+  ),
+  "refer-track-closed-empty": () => (
+    <ReferTrackView
+      r={{
+        id: 5, isMine: true, focus: "Eating concerns", where: "New York", status: "closed", audience: "selected", timeframe: null, notes: null, createdAt: "2026-10-01", requesterName: "You",
+        rows: [["Where", "New York"], ["Audience", "Selected colleagues (2)"]],
+        responses: [], myResponse: null, chosen: null, rated: false, audienceCount: 2,
+      }}
+    />
+  ),
+  "network-saved": () => (
+    <NetworkView
+      tab="directory"
+      savedNote="saved"
+      people={[
+        { id: "a", name: "Maya Chen, PsyD", qualification: "PsyD", city: "Brooklyn", state: "NY", licenceStates: ["NY"], topFocus: ["Trauma / PTSD", "Anxiety"], availability: "Accepting referrals", fresh: true, confirmedDaysAgo: 2, psypact: false, avatarUrl: null, relationship: "saved", saved: true },
+      ]}
+      suggested={[]}
+      suggestedAvatars={{}}
+      invitations={[]}
+      sentCount={0}
+      filters={{ q: "Maya", focus: "", state: "NY", available: true, profession: "", insurance: "Aetna" }}
+      focusOptions={["Anxiety", "Depression", "Trauma / PTSD"]}
+      states={US_STATES}
+      counts={{ directory: 1, mine: 0, trusted: 0, saved: 1, worked: 0, suggested: 0 }}
+    />
+  ),
   network: () => (
     <NetworkView
       tab="directory"
@@ -239,6 +274,7 @@ export const previewScreens: Record<string, () => ReactNode> = {
     />
   ),
   "consult-new": () => <ConsultComposeView kind="question" areas={["Anxiety", "Depression"]} suggestions={[{ id: "a", name: "Maya Chen, PsyD", avatarUrl: null, where: "Brooklyn, NY", group: "trusted", reason: "Trusted colleague", focus: [], trusted: true }]} groups={[{ id: 1, name: "Thursday Circle", members: 6 }]} />,
+  "consult-new-draft": () => <ConsultComposeView kind="question" areas={["Anxiety", "Depression"]} suggestions={PICK} groups={[]} preset={{ question: "How do you pace ERP early on?", context: "Adult outpatient, mild avoidance." }} draft={{ id: 9, audience: "selected", recipients: [PICK[0].id], tagArea: "Anxiety", tagTopic: "", type: "" }} />,
   "consult-new-one": () => <ConsultComposeView kind="question" areas={["Anxiety", "Depression"]} suggestions={PICK} groups={[{ id: 1, name: "Thursday Circle", members: 5 }, { id: 2, name: "Hudson Child & Adolescent Peer Group", members: 4 }]} preselect="ag" />,
   "messages-compose": () => (
     <MessagesShell list={<ConversationList items={[]} composing />} view="compose">
@@ -382,6 +418,9 @@ export const previewScreens: Record<string, () => ReactNode> = {
   "cover-plan": () => <CoverPlanStepView options={options} />,
   "cover-candidates": () => <CoverCandidatesView plan={{ ...plan, counts: { total: 2, covered: 0, invited: 0, open: 2 } }} cases={cases.slice(2).map((c) => ({ ...c, status: "needs_cover" as const }))} suggestions={{ 3: matches, 4: matches.slice(0, 1) }} avatarUrls={{}} />,
   "cover-invite": () => <CoverInviteView plan={plan} rows={[{ caseId: 3, reference: "Client 3", focus: "Depression", picks: [{ id: "b", name: "Dr. Eli Ramirez" }, { id: "c", name: "Dr. Imani Brooks" }] }]} />,
+  "cover-plan-fix": () => <CoverPlanStepView options={options} error="That looks like it could identify a client. Use a general name." preset={{ absenceType: "extended_leave", title: "", starts: "2026-11-02", ends: "2026-12-14", state: "NY" }} fix="title" />,
+  "cover-invite-unverified": () => <CoverInviteView plan={plan} canSend={false} rows={[{ caseId: 3, reference: "Client 3", focus: "Depression", picks: [{ id: "b", name: "Dr. Eli Ramirez" }] }]} />,
+  "cover-track-empty": () => <CoverTrackView plan={{ ...plan, counts: { total: 0, covered: 0, invited: 0, open: 0 } }} cases={[]} nextSuggestion={{}} toRate={[]} />,
   "cover-track": () => <CoverTrackView plan={plan} cases={cases} nextSuggestion={{ 3: { id: "b", name: "Dr. Eli Ramirez" } }} toRate={[]} />,
   library: () => <LibraryView resources={resources} q="" category="" mineCount={2} />,
   "library-mine": () => (

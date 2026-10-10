@@ -33,7 +33,7 @@ export default async function ConsultDetailPage(props: { params: Promise<{ id: s
   const [{ data: responses }, { data: recipients }] = await Promise.all([
     supabase
       .from("consultation_responses")
-      .select("id, body, response_type, marked_useful, created_at, responder:responder_profile_id(full_name, credential_prefix, qualification_level, avatar_path)")
+      .select("id, body, response_type, marked_useful, created_at, responder_profile_id, responder:responder_profile_id(full_name, credential_prefix, qualification_level, avatar_path)")
       .eq("consultation_id", c.id)
       .order("created_at"),
     (async () => {
@@ -80,6 +80,7 @@ export default async function ConsultDetailPage(props: { params: Promise<{ id: s
           body: r.body,
           type: r.response_type,
           useful: !!r.marked_useful,
+          ownReply: r.responder_profile_id === myself,
           createdAt: r.created_at,
           avatarUrl: urls.get(r.responder?.avatar_path || "") || null,
         })),

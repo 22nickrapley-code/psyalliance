@@ -20,12 +20,13 @@ export default async function ContinuityPage(props: { searchParams: Promise<{ sa
       .maybeSingle<any>(),
     supabase.rpc("my_continuity_duties"),
     supabase.from("licenses").select("state, license_number").eq("profile_id", me).order("state"),
-    supabase.from("profiles").select("full_name, credential_prefix, qualification_level").eq("id", me).maybeSingle<any>(),
+    supabase.from("profiles").select("full_name, credential_prefix, qualification_level, malpractice_carrier, malpractice_expires").eq("id", me).maybeSingle<any>(),
   ]);
   // What PsyAlliance already knows, offered as a starting point.
   const known = {
     licenses: ((lic as any[]) || []).map((l) => `${l.state} ${l.license_number}`).join(", "),
     owner: prof ? clinicianName(prof.full_name, prof.qualification_level, prof.credential_prefix) : "",
+    malpractice: prof?.malpractice_carrier ? `${prof.malpractice_carrier}${prof.malpractice_expires ? `, renews ${prof.malpractice_expires}` : ""}` : "",
   };
   const suggestions = await loadColleagueSuggestions(supabase, me, plan?.backup_profile_id || plan?.alternate_profile_id || null);
   const nameOf = (p: any) => (p ? clinicianName(p.full_name, p.qualification_level, p.credential_prefix) : null);

@@ -1,4 +1,5 @@
 import { shortDate } from "@/lib/dates";
+import { startConversation } from "../messages/actions";
 import { TOUR_URL } from "@/lib/env";
 import { FirstVisit } from "../_components/first-visit";
 import type { ReactNode } from "react";
@@ -210,7 +211,7 @@ export function ReferReviewView({
       <PageHead eyebrow="Refer / new referral" title="Review before you reach out." lead="Choose exactly who receives this. Nothing is sent until you confirm." />
       <Progress steps={STEPS} current={2} />
       <Banner error={error} />
-      <form className="split" action={sendReferralAction}>
+      <form className="split" action={sendReferralAction} data-deidentify="">
         {need.focusIds.map((f) => <input key={f} type="hidden" name="focus" value={f} />)}
         {need.state && <input type="hidden" name="state" value={need.state} />}
         {need.city && <input type="hidden" name="city" value={need.city} />}
@@ -237,10 +238,14 @@ export function ReferReviewView({
             </span>
           </label>
           <label className="radio-card">
-            <input type="radio" name="audience" value="wider_network" defaultChecked={picked.length === 0 && trustedCount === 0} />
+            <input type="radio" name="audience" value="wider_network" defaultChecked={picked.length === 0 && trustedCount === 0 && networkCount > 0} disabled={networkCount === 0} />
             <span>
-              <b>The verified network ({networkCount})</b>
-              <span>Visible to all {networkCount} verified member{networkCount === 1 ? "" : "s"}; only those who match are notified.</span>
+              <b>The verified network{networkCount > 0 ? ` (${networkCount.toLocaleString()})` : ""}</b>
+              <span>
+                {networkCount > 0
+                  ? `Visible to the ${networkCount.toLocaleString()} verified member${networkCount === 1 ? "" : "s"} who can see referrals; only those who match are notified.`
+                  : "Not available yet: no other verified members can receive it. Choose colleagues from the shortlist instead."}
+              </span>
             </span>
           </label>
 
@@ -435,6 +440,7 @@ export type ReferralDetail = {
     avatarUrl: string | null;
   }[];
   myResponse: { status: string; message: string | null } | null;
+  requesterId?: string;
   chosen: { profileId: string; name: string } | null;
   rated: boolean;
   audienceCount?: number | null;
@@ -448,6 +454,24 @@ const RESPONSE_LABEL: Record<string, { label: string; tone: "" | "warn" | "neutr
   offered: { label: "Offered to help", tone: "" },
   declined: { label: "Declined", tone: "neutral" },
 };
+
+function ReplyForm({ id, current, heading }: { id: number; current: string; heading?: string }) {
+  return (
+    <form action={respondReferralAction} data-deidentify="">
+      <input type="hidden" name="referral_request_id" value={id} />
+      {heading && <h3>{heading}</h3>}
+      <label className="radio-card"><input type="radio" name="response" value="interested" defaultChecked={current === "interested"} /><span><b>Interested</b><span>I have capacity and this fits my practice.</span></span></label>
+      <label className="radio-card"><input type="radio" name="response" value="question" defaultChecked={current === "question"} /><span><b>I have a question</b><span>Ask before deciding.</span></span></label>
+      <label className="radio-card"><input type="radio" name="response" value="unavailable" defaultChecked={current === "unavailable"} /><span><b>Not available</b><span>No capacity right now.</span></span></label>
+      <label className="field" style={{ marginTop: 10 }}>
+        Message (optional)
+        <textarea name="message" maxLength={500} placeholder="e.g. I have two openings on Tuesday evenings." />
+        <small>No client-identifying details.</small>
+      </label>
+      <div className="step-actions"><span /><button type="submit" className="btn">Send reply</button></div>
+    </form>
+  );
+}
 
 export function ReferTrackView({ r, ok, error }: { r: ReferralDetail; ok?: string; error?: string }) {
   const s = referralStatus({
@@ -477,7 +501,11 @@ export function ReferTrackView({ r, ok, error }: { r: ReferralDetail; ok?: strin
                 <Status tone={s.tone}>{s.label}</Status>
               </div>
               {r.responses.length === 0 ? (
-                <Empty symbol={"✉"} title="No replies yet." body="Colleagues who receive this referral can reply Interested, Not available, or ask a question. You'll be notified." />
+                open ? (
+                  <Empty symbol={"✉"} title="No replies yet." body="Colleagues who receive this referral can reply Interested, Not available, or ask a question. You'll be notified." />
+                ) : (
+                  <Empty symbol={"✉"} title="Closed with no replies." body="No one replied before this referral was closed. Start a new referral if the client still needs someone." action={<a className="btn secondary small-btn" href="/dashboard/refer">Start a referral</a>} />
+                )
               ) : (
                 r.responses.map((resp) => {
                   const rl = RESPONSE_LABEL[resp.status] || { label: resp.status, tone: "neutral" as const };
@@ -492,6 +520,14 @@ export function ReferTrackView({ r, ok, error }: { r: ReferralDetail; ok?: strin
                         {resp.message && <p>&ldquo;{resp.message}&rdquo;</p>}
                         {open && (resp.status === "interested" || resp.status === "question") && (
                           <div className="actions">
+                            {resp.status === "question" && (
+                              <form action={startConversation} className="inline">
+                                <input type="hidden" name="participant_ids" value={resp.profileId} />
+                                <input type="hidden" name="title" value={threadTitle} />
+                                <input type="hidden" name="body" value="" />
+                                <button type="submit" className="btn secondary small-btn">Answer in Messages</button>
+                              </form>
+                            )}
                             <form action={chooseReferralColleagueAction} className="inline">
                               <input type="hidden" name="referral_request_id" value={r.id} />
                               <input type="hidden" name="responding_profile_id" value={resp.profileId} />
@@ -513,22 +549,32 @@ export function ReferTrackView({ r, ok, error }: { r: ReferralDetail; ok?: strin
                 <>
                   <h3>You replied: {(RESPONSE_LABEL[r.myResponse.status] || { label: r.myResponse.status }).label}</h3>
                   {r.myResponse.message && <p>&ldquo;{r.myResponse.message}&rdquo;</p>}
-                  {r.chosen && <p className="small">{r.requesterName} has chosen a colleague for this referral.</p>}
+                  {r.chosen ? (
+                    <p className="small">{r.requesterName} has chosen a colleague for this referral.</p>
+                  ) : open && r.myResponse.status === "question" ? (
+                    <div className="next-step-note">
+                      <p className="small">
+                        Your question is with {r.requesterName}. Talk it through in Messages, then come back here to say whether you can take the client.
+                      </p>
+                      {r.requesterId && (
+                        <form action={startConversation} className="inline">
+                          <input type="hidden" name="participant_ids" value={r.requesterId} />
+                          <input type="hidden" name="title" value={threadTitle} />
+                          <input type="hidden" name="body" value="" />
+                          <button type="submit" className="btn small-btn">Continue in Messages</button>
+                        </form>
+                      )}
+                    </div>
+                  ) : null}
+                  {open && !r.chosen && (
+                    <details className="change-reply" open={r.myResponse.status === "question"}>
+                      <summary>{r.myResponse.status === "question" ? "Give your answer" : "Change your reply"}</summary>
+                      <ReplyForm id={r.id} current={r.myResponse.status === "question" ? "interested" : r.myResponse.status} />
+                    </details>
+                  )}
                 </>
               ) : open ? (
-                <form action={respondReferralAction}>
-                  <input type="hidden" name="referral_request_id" value={r.id} />
-                  <h3>Can you take this referral?</h3>
-                  <label className="radio-card"><input type="radio" name="response" value="interested" defaultChecked /><span><b>Interested</b><span>I have capacity and this fits my practice.</span></span></label>
-                  <label className="radio-card"><input type="radio" name="response" value="question" /><span><b>I have a question</b><span>Ask before deciding.</span></span></label>
-                  <label className="radio-card"><input type="radio" name="response" value="unavailable" /><span><b>Not available</b><span>No capacity right now.</span></span></label>
-                  <label className="field" style={{ marginTop: 10 }}>
-                    Message (optional)
-                    <textarea name="message" maxLength={500} placeholder="e.g. I have two openings on Tuesday evenings." />
-                    <small>No client-identifying details.</small>
-                  </label>
-                  <div className="step-actions"><span /><button type="submit" className="btn">Send reply</button></div>
-                </form>
+                <ReplyForm id={r.id} current="interested" heading="Can you take this referral?" />
               ) : (
                 <p>This referral is no longer open.</p>
               )}

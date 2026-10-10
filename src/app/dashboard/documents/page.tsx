@@ -10,7 +10,7 @@ export const metadata = { title: "Practice Library" };
 const SIGNED_URL_TTL_SECONDS = 60 * 60;
 
 export default async function DocumentsPage(props: {
-  searchParams: Promise<{ tab?: string; q?: string; category?: string; folder?: string; uploaded?: string; copied?: string; error?: string }>;
+  searchParams: Promise<{ tab?: string; q?: string; category?: string; folder?: string; uploaded?: string; copied?: string; error?: string; done?: string }>;
 }) {
   const sp = await props.searchParams;
   const supabase = await createClient();
@@ -56,11 +56,20 @@ export default async function DocumentsPage(props: {
         };
       })
     );
-    const notice = sp.copied
-      ? `${/^PA-\d+$/.test(sp.copied) ? `The ${docName(sp.copied)}` : "The PDF"} is saved to My Library. Only you can see it.`
-      : sp.uploaded
-        ? "Uploaded. Only you can see it."
-        : null;
+    // One message for the last thing done; each action sets its own.
+    const DONE: Record<string, string> = {
+      folder: "Folder created.",
+      "folder-removed": "Folder removed. Its documents are still in My Library, under Unfiled.",
+      moved: "Moved.",
+      removed: "Removed from My Library.",
+    };
+    const notice = sp.done && DONE[sp.done]
+      ? DONE[sp.done]
+      : sp.copied
+        ? `${/^PA-\d+$/.test(sp.copied) ? `The ${docName(sp.copied)}` : "The PDF"} is saved to My Library. Only you can see it.`
+        : sp.uploaded
+          ? "Uploaded. Only you can see it."
+          : null;
     return (
       <MyLibraryView
         docs={docs}

@@ -58,6 +58,35 @@ export function TourFrame({
   const target = useRef<HTMLElement | null>(null);
   const [note, setNote] = useState<string | null>(null);
   const [callout, setCallout] = useState<{ top: number; left: number; side: "above" | "below" | "right" } | null>(null);
+  // On a wide screen the note sits bottom right, unless that would cover the
+  // pointer to the next button; then it moves to the top right.
+  const toastRef = useRef<HTMLDivElement>(null);
+  const [toastTop, setToastTop] = useState(false);
+  useEffect(() => {
+    if (!note) {
+      setToastTop(false);
+      return;
+    }
+    const place = () => {
+      const t = toastRef.current;
+      const c = document.getElementById("tour-callout");
+      if (!t || !c) return setToastTop(false);
+      const w = t.offsetWidth;
+      const h = t.offsetHeight;
+      const b = c.getBoundingClientRect();
+      const W = window.innerWidth;
+      const H = window.innerHeight;
+      const hits = (top: number) => W - 20 - w < b.right && W - 20 > b.left && top < b.bottom && top + h > b.top;
+      setToastTop(hits(H - 22 - h) && !hits(22));
+    };
+    place();
+    window.addEventListener("scroll", place, { passive: true });
+    window.addEventListener("resize", place);
+    return () => {
+      window.removeEventListener("scroll", place);
+      window.removeEventListener("resize", place);
+    };
+  }, [note, callout]);
 
   // Beside the action when there's room, otherwise above it (or below,
   // near the top of the screen), so it never hides what the step is about.
@@ -286,7 +315,7 @@ export function TourFrame({
         </div>
       )}
       {note && (
-        <div className="tour-toast" role="status">
+        <div ref={toastRef} className={`tour-toast${toastTop ? " at-top" : ""}`} role="status">
           <p style={{ margin: 0 }}>{note}</p>
           <div className="tour-toast-actions">
             {target.current ? (

@@ -41,12 +41,38 @@ export async function createPlanAction(formData: FormData) {
   const startsOn = String(formData.get("starts_on") || "") || undefined;
   const endsOn = String(formData.get("ends_on") || "") || undefined;
   const state = String(formData.get("state") || "") || null;
-  if (!ABSENCE_TYPES.includes(absence)) back("/dashboard/cover/new", "Choose the kind of cover you need.");
-  if (!title) back("/dashboard/cover/new", "Give the plan a short name, like \"October leave\".");
+  // On a problem, come back with everything already chosen (the name is
+  // left out only when it is the problem).
+  const keep = (withTitle = true) => {
+    const q = new URLSearchParams();
+    if (ABSENCE_TYPES.includes(absence)) q.set("absence", absence);
+    if (withTitle && title) q.set("title", title.slice(0, 80));
+    if (startsOn) q.set("starts", startsOn);
+    if (endsOn) q.set("ends", endsOn);
+    if (state) q.set("state", state);
+    return `/dashboard/cover/new?${q.toString()}`;
+  };
+  if (!ABSENCE_TYPES.includes(absence)) back(keep(), "Choose the kind of cover you need.");
+  if (!title) back(keep(), "Give the plan a short name, like \"October leave\".");
   const idErr = identifierError(title);
-  if (idErr) back("/dashboard/cover/new", idErr);
-  if (!state) back("/dashboard/cover/new", "Choose the state your clients are in.");
-  if (absence !== "closing_practice" && startsOn && endsOn && endsOn < startsOn) back("/dashboard/cover/new", "The return date is before the first day.");
+  if (idErr) back(`${keep(false)}&fix=title`, idErr);
+  if (!state) back(`${keep()}&fix=state`, "Choose the state your clients are in.");
+  if (absence !== "closing_practice" && startsOn && endsOn && endsOn < startsOn) back(`${keep()}&fix=ends`, "The return date is before the first day. Change either date.");
+
+  // A second press (or a retry after a lost connection) opens the plan
+  // already made rather than making another.
+  const since = new Date(Date.now() - 10 * 60_000).toISOString();
+  const { data: recent } = await supabase
+    .from("coverage_plans")
+    .select("id")
+    .eq("profile_id", userId)
+    .eq("title", title)
+    .gte("created_at", since)
+    .neq("status", "cancelled")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (recent?.id) redirect(`/dashboard/cover/${recent.id}?step=needs`);
 
   const { planId, error } = await createCoveragePlan(supabase, userId, {
     title,
@@ -56,7 +82,7 @@ export async function createPlanAction(formData: FormData) {
     // Closing a practice has no return date.
     endsOn: absence === "closing_practice" ? undefined : endsOn,
   });
-  if (error || !planId) back("/dashboard/cover/new", error || "Couldn't create the plan.");
+  if (error || !planId) back(keep(), error || "Couldn't create the plan. Your choices are kept; try again.");
   await supabase.from("coverage_plans").update({ absence_type: absence, jurisdiction_state: state }).eq("id", planId);
   redirect(`/dashboard/cover/${planId}?step=needs`);
 }

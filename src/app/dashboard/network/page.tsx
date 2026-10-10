@@ -14,7 +14,7 @@ export const metadata = { title: "Network" };
 const PAGE_SIZE = 20;
 
 export default async function NetworkPage(props: {
-  searchParams: Promise<{ tab?: string; q?: string; focus?: string; state?: string; available?: string; profession?: string; insurance?: string; age?: string; language?: string; modality?: string; session?: string; psypact?: string; page?: string; connected?: string; declined?: string }>;
+  searchParams: Promise<{ tab?: string; q?: string; focus?: string; state?: string; available?: string; profession?: string; insurance?: string; age?: string; language?: string; modality?: string; session?: string; psypact?: string; page?: string; connected?: string; declined?: string; saved?: string; unsaved?: string }>;
 }) {
   const sp = await props.searchParams;
   const tab = (["directory", "mine", "trusted", "saved", "worked", "suggested"].includes(sp.tab || "") ? sp.tab : "directory") as NetworkTab;
@@ -195,6 +195,7 @@ export default async function NetworkPage(props: {
     <NetworkView
       connected={sp.connected}
       declined={!!sp.declined}
+      savedNote={sp.saved ? "saved" : sp.unsaved ? "unsaved" : undefined}
       tab={tab}
       people={people}
       total={Number(res.total) || 0}

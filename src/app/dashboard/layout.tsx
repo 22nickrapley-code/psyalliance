@@ -6,6 +6,7 @@ import { resetSandboxAction } from "../sandbox/[token]/actions";
 import { createClient } from "@/lib/supabase/server";
 import { signOutAction } from "../auth/actions";
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import PremiumShell from "./premium-shell";
 import { buildNavGroups } from "./nav-groups";
 import "../premium.css";
@@ -24,6 +25,8 @@ export default async function DashboardLayout({
   } = await supabase.auth.getUser();
 
   if (!user) {
+    const jar = await cookies();
+    if (IS_DEMO_SITE && jar.get("pa_pass")?.value && !jar.get("pa_resumed")?.value) redirect("/sandbox/resume?next=/dashboard");
     redirect(IS_DEMO_SITE ? "/sandbox/ended" : "/auth/sign-in");
   }
 
@@ -80,8 +83,8 @@ export default async function DashboardLayout({
         ? `You're verified. PsyAlliance opens in ${stateList(queue.map((w) => w.state))} as colleagues join; you're number ${queue[0].position} on the ${stateName(queue[0].state)} list. Meanwhile, your sandbox and the Practice Library are open to you.`
         : "You're verified. PsyAlliance opens in your state as colleagues join. Meanwhile, your sandbox and the Practice Library are open to you."
       : (licenceCount || 0) === 0
-        ? "Add a license to be reviewed. Referrals, cover, consults and messages open once you're verified. Meanwhile, your sandbox and the Practice Library are open to you."
-        : "Your license is with us for review. Referrals, cover, consults and messages open once you're verified. Meanwhile, your sandbox and the Practice Library are open to you.";
+        ? "Add a license to be reviewed. You can prepare cover plans and your continuity plan now; sending to colleagues opens once you're verified. Your sandbox and the Practice Library are open too."
+        : "Your license is with us for review. You can prepare cover plans and your continuity plan now; sending to colleagues opens once you're verified. Your sandbox and the Practice Library are open too.";
 
   const { data: sandbox } = IS_DEMO_SITE ? await supabase.rpc("my_sandbox").maybeSingle<any>() : { data: null };
 

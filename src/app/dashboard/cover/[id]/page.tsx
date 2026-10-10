@@ -88,7 +88,8 @@ export default async function CoverPlanPage(props: { params: Promise<{ id: strin
       focus: c.focus,
       picks: all(`pick_${c.id}`).map((pid) => ({ id: pid, name: nameOf(pid), why: reasons.get(`${c.id}:${pid}`) || [] })),
     }));
-    return <CoverInviteView plan={summary} rows={rows} error={one("error")} mode={one("mode")} reviewed={one("reviewed") === "1"} fix={one("fix")} />;
+    const { data: netStatus } = await supabase.rpc("my_network_status").maybeSingle<any>();
+    return <CoverInviteView plan={summary} rows={rows} error={one("error")} mode={one("mode")} reviewed={one("reviewed") === "1"} fix={one("fix")} canSend={!!netStatus?.is_member} />;
   }
 
   if (step === "track") {

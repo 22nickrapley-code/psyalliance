@@ -12,7 +12,7 @@ export async function loadPlanForDocument(supabase: Supabase, owner: string) {
     .eq("profile_id", owner)
     .maybeSingle<any>();
   if (!plan) return null;
-  const { data: p } = await supabase.from("profiles").select("full_name, credential_prefix, qualification_level, primary_practice_city, primary_state").eq("id", owner).maybeSingle<any>();
+  const { data: p } = await supabase.from("profiles").select("full_name, credential_prefix, qualification_level, primary_practice_city, primary_state, malpractice_carrier, malpractice_expires").eq("id", owner).maybeSingle<any>();
   const answers = { ...((plan.answers || {}) as Record<string, string>) };
   // Fill gaps from what's already on file: license numbers and the name in
   // the suggested voicemail.
@@ -24,6 +24,9 @@ export async function loadPlanForDocument(supabase: Supabase, owner: string) {
   const nameOf = (x: any) => clinicianName(x.full_name, x.qualification_level, x.credential_prefix);
   const person = (member: any, status: string, outside: string) =>
     member ? { name: nameOf(member), status } : outside?.trim() ? { name: outside.trim() } : null;
+  if (!(answers.malpractice || "").trim() && p?.malpractice_carrier) {
+    answers.malpractice = `${p.malpractice_carrier}${p.malpractice_expires ? `, renews ${p.malpractice_expires}` : ""}`;
+  }
   if (p) for (const k of Object.keys(answers)) answers[k] = String(answers[k] ?? "").replace("Dr. [name]", nameOf(p));
   return {
     ownerName: p ? nameOf(p) : "Clinician",

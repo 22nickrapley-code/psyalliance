@@ -5,7 +5,7 @@ import { US_STATES } from "@/lib/us-states";
 
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { headers } from "next/headers";
+import { headers, cookies } from "next/headers";
 
 // Best-effort origin for building email redirect links. Prefers an explicit
 // env var (set this once the Cloudflare/GitHub domain is live) and falls
@@ -90,6 +90,8 @@ export async function signIn(formData: FormData) {
 export async function signOutAction() {
   const supabase = await createClient();
   await supabase.auth.signOut();
+  // A sandbox device that signs out on purpose stays signed out.
+  (await cookies()).delete("pa_pass");
   redirect("/auth/sign-in");
 }
 

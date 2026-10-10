@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { identifierError } from "@/lib/deidentify";
 
 // Makes every page behave like an app:
 // 1. Internal links change the page in place instead of reloading it.
@@ -13,11 +14,11 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 // Paths served by route handlers (files, sign-in callbacks): these need a
 // real browser request.
-const NOT_PAGES = [/^\/auth\/callback/, /^\/api\//, /\/csv(\/|$)/, /^\/dashboard\/settings\/export/, /\/not-fit(\/|$)/];
+const NOT_PAGES = [/^\/auth\/callback/, /^\/sandbox\/resume/, /^\/api\//, /\/csv(\/|$)/, /^\/dashboard\/settings\/export/, /\/not-fit(\/|$)/];
 
 // Query keys that only carry a one-off message: a page that differs only by
 // these is the same page.
-const TRANSIENT = new Set(["error", "saved", "added", "removed", "ok", "sent", "responded", "closed", "rated", "updated", "deleted", "done", "confirmed", "accepted", "declined", "joined", "left", "posted", "resolved", "reopened", "archived", "invited", "connected", "msg", "notice", "t"]);
+const TRANSIENT = new Set(["error", "copied", "uploaded", "completed", "refreshed", "current", "reviewed", "saved", "unsaved", "added", "removed", "ok", "sent", "responded", "closed", "rated", "updated", "deleted", "done", "confirmed", "accepted", "declined", "joined", "left", "posted", "resolved", "reopened", "archived", "invited", "connected", "msg", "notice", "t"]);
 
 type Place = { view: string; y: number; anchor: string; top: number; at: number };
 type Note = { text: string; tone: "ok" | "error"; id: number };
@@ -77,7 +78,7 @@ function restore(place: Place) {
     if (banner && showNote) {
       const r = banner.getBoundingClientRect();
       if (r.bottom < 0 || r.top > window.innerHeight) {
-        showNote({ text: (banner.textContent || "").trim(), tone: banner.classList.contains("error") ? "error" : "ok", id: Date.now() });
+        showNote({ text: (banner.dataset.note || banner.textContent || "").trim(), tone: banner.classList.contains("error") ? "error" : "ok", id: Date.now() });
       }
     }
   });
@@ -92,6 +93,48 @@ export function Live() {
   const routerRef = useRef(router);
   routerRef.current = router;
   showNote = setNote;
+
+  // 0. Client details are caught before anything is sent, so the rest of
+  // what was typed is never lost. The server still checks every save.
+  useEffect(() => {
+    const onSubmit = (e: SubmitEvent) => {
+      const form = e.target as HTMLFormElement;
+      if (!(form instanceof HTMLFormElement) || !form.hasAttribute("data-deidentify")) return;
+      const fields = Array.from(form.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>("textarea, input[type=text], input:not([type])")).filter(
+        (f) => f.name && !f.disabled && f.type !== "hidden"
+      );
+      form.querySelectorAll(".deid-error").forEach((n) => n.remove());
+      for (const f of fields) {
+        const err = identifierError(f.value);
+        if (!err) {
+          f.removeAttribute("aria-invalid");
+          continue;
+        }
+        e.preventDefault();
+        e.stopPropagation();
+        f.setAttribute("aria-invalid", "true");
+        f.classList.add("field-invalid");
+        const note = document.createElement("p");
+        note.className = "deid-error";
+        note.setAttribute("role", "alert");
+        note.textContent = `${err} Everything else you wrote is still here.`;
+        f.insertAdjacentElement("afterend", note);
+        f.focus();
+        f.scrollIntoView({ block: "center", behavior: "smooth" });
+        const clear = () => {
+          if (!identifierError(f.value)) {
+            note.remove();
+            f.classList.remove("field-invalid");
+            f.removeAttribute("aria-invalid");
+          }
+        };
+        f.addEventListener("input", clear);
+        return;
+      }
+    };
+    window.addEventListener("submit", onSubmit, true);
+    return () => window.removeEventListener("submit", onSubmit, true);
+  }, []);
 
   // 1. Internal links without a full reload.
   useEffect(() => {

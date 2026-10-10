@@ -31,14 +31,20 @@ export function AudiencePicker({
   groups,
   preselect,
   preselectGroup,
+  initialAudience,
+  initialRecipients,
 }: {
   suggestions: Suggestion[];
   groups: Group[];
   preselect?: string;
   preselectGroup?: number;
+  initialAudience?: string;
+  initialRecipients?: string[];
 }) {
   const trusted = suggestions.filter((s) => s.trusted);
-  const [audience, setAudience] = useState<string>(preselect ? "one" : preselectGroup ? `group:${preselectGroup}` : trusted.length ? "trusted" : "selected");
+  const [audience, setAudience] = useState<string>(
+    initialAudience || (preselect ? "one" : preselectGroup ? `group:${preselectGroup}` : trusted.length ? "trusted" : "selected")
+  );
   const options: { value: string; icon: string; title: string; who: string; why: string; disabled?: boolean }[] = [
     {
       value: "trusted",
@@ -131,7 +137,7 @@ export function AudiencePicker({
             suggestions={suggestions}
             name="recipients"
             mode={audience === "one" ? "single" : "multi"}
-            initial={preselect ? [preselect] : []}
+            initial={initialRecipients?.length ? initialRecipients : preselect ? [preselect] : []}
             label={audience === "one" ? "Ask" : "Ask these colleagues"}
             limitPerGroup={3}
           />

@@ -27,7 +27,8 @@ function back(path: string, message: string): never {
 export async function draftConsultAction(formData: FormData) {
   const { supabase, userId } = await me();
   const kind = (String(formData.get("kind") || "question") as "question" | "supervision_request" | "supervision_offer");
-  const composePath = `/dashboard/consult/new${kind !== "question" ? `?kind=${kind}` : ""}`;
+  const editing = Number(formData.get("draft_id")) || 0;
+  const composePath = editing ? `/dashboard/consult/new?draft=${editing}` : `/dashboard/consult/new${kind !== "question" ? `?kind=${kind}` : ""}`;
   const question = String(formData.get("question") || "").trim();
   const context = String(formData.get("context") || "").trim() || undefined;
   if (!question) back(composePath, "Write your question in one sentence.");
@@ -52,6 +53,26 @@ export async function draftConsultAction(formData: FormData) {
   }
 
   const tags = [String(formData.get("tag_area") || ""), String(formData.get("tag_topic") || "")].map((t) => t.trim()).filter(Boolean);
+  // Editing a draft updates it in place.
+  const draftId = Number(formData.get("draft_id")) || 0;
+  if (draftId) {
+    const { error: upErr } = await supabase
+      .from("consultations")
+      .update({
+        question,
+        context: context ?? null,
+        consultation_type: (String(formData.get("consultation_type") || "") || null) as ConsultationType | null,
+        audience_type: audienceType,
+        audience_profile_ids: audienceType === "selected" ? audienceProfileIds : [],
+        group_id: groupId ?? null,
+        tags,
+      })
+      .eq("id", draftId)
+      .eq("author_profile_id", userId)
+      .eq("status", "draft");
+    if (upErr) back(`/dashboard/consult/new?draft=${draftId}`, upErr.message);
+    redirect(`/dashboard/consult/${draftId}`);
+  }
   const { consultationId, error } = await createConsultation(supabase, userId, {
     question,
     context,

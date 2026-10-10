@@ -62,7 +62,7 @@ function confirmedLabel(days: number | null) {
   return `Confirmed ${days} days ago`;
 }
 
-function PersonCard({ p }: { p: Person }) {
+function PersonCard({ p, back }: { p: Person; back: string }) {
   const where = [p.city, p.state].filter(Boolean).join(", ");
   const license =
     p.licenceStates.length === 0
@@ -92,6 +92,7 @@ function PersonCard({ p }: { p: Person }) {
           <a className="text-arrow" href={`/dashboard/people/${p.id}`}>View profile &rarr;</a>
           <form action={p.saved ? removeSavedClinicianAction : saveClinicianAction} className="inline">
             <input type="hidden" name="clinician_id" value={p.id} />
+            <input type="hidden" name="back" value={back} />
             <button type="submit" className="btn secondary small-btn">{p.saved ? "Saved ✓" : "Save clinician"}</button>
           </form>
           {p.relationship === "trusted" ? (
@@ -146,6 +147,7 @@ export function NetworkView({
   circle,
   connected,
   declined,
+  savedNote,
 }: {
   tab: NetworkTab;
   people: Person[];
@@ -166,6 +168,7 @@ export function NetworkView({
   circle?: { nodes: CircleNode[]; me: { initials: string; avatarUrl: string | null } };
   connected?: string;
   declined?: boolean;
+  savedNote?: "saved" | "unsaved";
 }) {
   const pages = Math.max(1, Math.ceil(total / pageSize));
   const from = total === 0 ? 0 : (page - 1) * pageSize + 1;
@@ -173,6 +176,7 @@ export function NetworkView({
   const filtered = !!(filters.q || filters.focus || filters.state || filters.available || filters.profession || filters.insurance || filters.age || filters.language || filters.modality || filters.session || filters.psypact);
   const scope = [filters.focus, filters.state ? stateName(filters.state) : null].filter(Boolean).join(" in ");
   const inviteHref = "/dashboard/invite";
+  const here = pageHref(filters, tab, page);
 
   return (
     <>
@@ -184,6 +188,12 @@ export function NetworkView({
       />
       {connected && <ConnectedNote name={connected} />}
       {declined && <Banner ok="Invitation declined. They aren't told why." />}
+      {savedNote && (
+        <div className="banner ok" role="status" data-note={savedNote === "saved" ? "Saved. Only you can see your saved list." : "Removed from your saved list."}>
+          {savedNote === "saved" ? "Saved. Only you can see your saved list." : "Removed from your saved list."}{" "}
+          {tab !== "saved" && <a href="/dashboard/network?tab=saved">View saved</a>}
+        </div>
+      )}
       <div className="split">
         <div>
           <form method="get" action="/dashboard/network">
@@ -303,6 +313,7 @@ export function NetworkView({
                         <a className="text-arrow" href={`/dashboard/people/${m.profileId}`}>View profile &rarr;</a>
                         <form action={saveClinicianAction} className="inline">
                           <input type="hidden" name="clinician_id" value={m.profileId} />
+                          <input type="hidden" name="back" value={here} />
                           <button type="submit" className="btn secondary small-btn">Save clinician</button>
                         </form>
                         <form action={sendConnectionRequest} className="inline">
@@ -343,7 +354,7 @@ export function NetworkView({
             </div>
           ) : (
             <>
-              {people.map((p) => <PersonCard key={p.id} p={p} />)}
+              {people.map((p) => <PersonCard key={p.id} p={p} back={here} />)}
               {pages > 1 && (
                 <nav className="pager" aria-label="Pages">
                   {page > 1 ? <a className="btn secondary small-btn" href={pageHref(filters, tab, page - 1)}>&larr; Previous</a> : <span />}

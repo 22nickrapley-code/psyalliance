@@ -20,7 +20,7 @@ const FAQ: [string, string][] = [
   ["What does it cost?", "Nothing. Founding members never pay: membership stays free for as long as you remain a member. If a fee is ever introduced, it applies only to people who join after the founding period."],
   [
     "What's in the Practice Library?",
-    "Twenty templates for independent practice, from a professional will to a reciprocal cover agreement. Some are free to download; members get all of them, placed beside the work they support.",
+    "Twenty templates for independent practice, from a professional will to a reciprocal cover agreement. Members get all of them, placed beside the work they support. Each becomes a free download for everyone once it has been independently reviewed.",
   ],
   [
     "Do client details go into PsyAlliance?",

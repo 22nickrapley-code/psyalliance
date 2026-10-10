@@ -154,6 +154,7 @@ export async function deleteDocument(formData: FormData) {
   if (error) documentsError(error.message);
 
   revalidatePath("/dashboard/documents");
+  redirect("/dashboard/documents?tab=mine&done=removed");
 }
 
 // Flat, per-user folders for organizing personal documents. Folders belong
@@ -176,6 +177,7 @@ export async function createFolder(formData: FormData) {
   }
 
   revalidatePath("/dashboard/documents");
+  redirect("/dashboard/documents?tab=mine&done=folder");
 }
 
 export async function deleteFolder(formData: FormData) {
@@ -192,6 +194,7 @@ export async function deleteFolder(formData: FormData) {
   if (error) documentsError(error.message);
 
   revalidatePath("/dashboard/documents");
+  redirect("/dashboard/documents?tab=mine&done=folder-removed");
 }
 
 export async function moveDocumentToFolder(formData: FormData) {
@@ -225,6 +228,7 @@ export async function moveDocumentToFolder(formData: FormData) {
   if (error) documentsError(error.message);
 
   revalidatePath("/dashboard/documents");
+  redirect("/dashboard/documents?tab=mine&done=moved");
 }
 
 // "Save a working copy": copies a reviewed Library resource into the

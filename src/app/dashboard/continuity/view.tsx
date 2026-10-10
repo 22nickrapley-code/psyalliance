@@ -31,7 +31,7 @@ export function ContinuityView({
   suggestions: Suggestion[];
   dutiesWaiting: number;
   dutiesTotal: number;
-  known?: { licenses: string; owner: string };
+  known?: { licenses: string; owner: string; malpractice?: string };
 }) {
   const hasBackup = !!backup || !!(answers.backup_outside || "").trim();
   const progress = planProgress(answers, hasBackup);
@@ -152,9 +152,10 @@ export function ContinuityView({
                 <form action={saveContinuitySection} className="continuity-form">
                   <input type="hidden" name="section" value={s.key} />
                   {s.fields.map((f) => {
-                    const fromProfile = answers[f.key] === undefined && f.key === "licenses" && !!known?.licenses;
+                    const knownValue = f.key === "licenses" ? known?.licenses : f.key === "malpractice" ? known?.malpractice : "";
+                    const fromProfile = !(answers[f.key] || "").trim() && !!knownValue;
                     const preset = f.preset && known?.owner ? f.preset.replace("Dr. [name]", known.owner) : f.preset;
-                    const value = answers[f.key] ?? (fromProfile ? known!.licenses : preset) ?? "";
+                    const value = (answers[f.key] || "").trim() ? answers[f.key] : fromProfile ? knownValue! : (answers[f.key] ?? preset ?? "");
                     const suggested = answers[f.key] === undefined && !!f.preset;
                     return (
                       <label key={f.key} className="field">

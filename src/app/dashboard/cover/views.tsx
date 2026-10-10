@@ -336,17 +336,19 @@ export function CoverPlanStepView({
   options,
   error,
   preset,
+  fix,
 }: {
   options: NeedOptions;
   error?: string;
-  preset?: { absenceType: string; title: string; starts: string; ends: string };
+  preset?: { absenceType: string; title: string; starts: string; ends: string; state?: string };
+  fix?: string;
 }) {
   return (
     <>
       <PageHead eyebrow="Cover / new plan" title="Start with the time away." lead="Choose the kind of cover and the dates. Describe each client&rsquo;s needs next, without identifiers." actions={<a className="btn secondary" href="/dashboard/cover">Cancel</a>} />
       <Progress steps={STEPS} current={0} />
       <Banner error={error} />
-      <form className="split cover-plan-form" action={createPlanAction}>
+      <form className="split cover-plan-form" action={createPlanAction} data-deidentify="">
         <section className="card">
           <div className="eyebrow">Step 1 &middot; Plan</div>
           <h2>What kind of cover do you need?</h2>
@@ -362,7 +364,7 @@ export function CoverPlanStepView({
           <div className="fields">
             <label className="field full">
               Plan name
-              <input name="title" required maxLength={80} placeholder="e.g. October leave" defaultValue={preset?.title} />
+              <input name="title" required maxLength={80} placeholder="e.g. October leave" defaultValue={preset?.title} autoFocus={fix === "title"} className={fix === "title" ? "field-invalid" : undefined} />
               <small>For your own reference. Never a client name.</small>
             </label>
             <label className="field">
@@ -370,10 +372,10 @@ export function CoverPlanStepView({
               <span className="when-close">Last day of practice</span>
               <input type="date" name="starts_on" defaultValue={preset?.starts} />
             </label>
-            <label className="field return-date">Return date<input type="date" name="ends_on" defaultValue={preset?.ends} /></label>
+            <label className="field return-date">Return date<input type="date" name="ends_on" defaultValue={preset?.ends} autoFocus={fix === "ends"} className={fix === "ends" ? "field-invalid" : undefined} /></label>
             <label className="field full">
               State your clients are in
-              <select name="state" required defaultValue={options.homeState || ""}>
+              <select name="state" required defaultValue={preset?.state || options.homeState || ""} autoFocus={fix === "state"}>
                 <option value="">Choose a state</option>
                 {options.states.map((s) => <option key={s.code} value={s.code}>{s.name}</option>)}
               </select>
@@ -589,7 +591,9 @@ export function CoverInviteView({
   mode,
   reviewed,
   fix,
+  canSend = true,
 }: {
+  canSend?: boolean;
   plan: PlanSummary;
   rows: { caseId: number; reference: string; focus: string; picks: { id: string; name: string; why?: string[] }[] }[];
   error?: string;
@@ -603,7 +607,7 @@ export function CoverInviteView({
     <>
       <PlanHead plan={plan} step={3} lead="Know exactly who receives each request, and in what order, before anything is sent." />
       <Banner error={error} />
-      <form className="split" action={sendInvitesAction}>
+      <form className="split" action={sendInvitesAction} data-deidentify="">
         <input type="hidden" name="plan_id" value={plan.id} />
         <div className="stack">
           <section className="card">
@@ -667,12 +671,17 @@ export function CoverInviteView({
               />
               <small>{fix === "message" ? "Leave out names, initials, dates, phone numbers and addresses." : "No client-identifying details."}</small>
             </label>
+            {!canSend && (
+              <p className="next-step-note small" style={{ marginTop: 12 }}>
+                Your plan is saved. Sending requests to colleagues opens once your license has been reviewed; you&rsquo;ll be able to send from here.
+              </p>
+            )}
             <label className="checkline" style={{ marginTop: 12 }}>
               <input type="checkbox" name="reviewed" required defaultChecked={reviewed} autoFocus={fix === "reviewed"} /> I&rsquo;ve reviewed who receives each request.
             </label>
             <div className="step-actions">
               <a className="btn ghost" href={`/dashboard/cover/${plan.id}?step=candidates`}>&larr; Candidates</a>
-              <button type="submit" className="btn" disabled={total === 0}>Send cover requests</button>
+              <button type="submit" className="btn" disabled={total === 0 || !canSend}>Send cover requests</button>
             </div>
           </section>
         </div>
@@ -706,6 +715,14 @@ export function CoverTrackView({
       <Banner ok={ok} error={error} />
       <div className="split">
         <div className="stack">
+          {plan.counts.total === 0 && !done && (
+            <section className="card tint">
+              <div className="eyebrow">Next step</div>
+              <h3>Add the clients who need cover.</h3>
+              <p className="small">Describe each one by need. PsyAlliance then suggests colleagues for each.</p>
+              <a className="btn" href={`/dashboard/cover/${plan.id}?step=needs`}>Add a client need</a>
+            </section>
+          )}
           <section className="card">
             <div className="card-title">
               <div>
@@ -791,13 +808,19 @@ export function CoverTrackView({
           extra={
             !done ? (
               <section className="card">
-                <h3>When you&rsquo;re back</h3>
-                <p className="small">Complete the plan to hand clients back and record who covered for you.</p>
+                <h3>{plan.counts.total === 0 ? "Not going ahead?" : "When you’re back"}</h3>
+                <p className="small">
+                  {plan.counts.total === 0
+                    ? "Cancel the plan if you no longer need cover."
+                    : "Complete the plan to hand clients back and record who covered for you."}
+                </p>
                 <div className="row wrap">
-                  <form action={completePlanAction} className="inline">
-                    <input type="hidden" name="plan_id" value={plan.id} />
-                    <button type="submit" className="btn small-btn">Complete plan</button>
-                  </form>
+                  {plan.counts.total > 0 && (
+                    <form action={completePlanAction} className="inline">
+                      <input type="hidden" name="plan_id" value={plan.id} />
+                      <button type="submit" className="btn small-btn">Complete plan</button>
+                    </form>
+                  )}
                   <form action={cancelPlanAction} className="inline">
                     <input type="hidden" name="plan_id" value={plan.id} />
                     <button type="submit" className="btn ghost small-btn">Cancel plan</button>

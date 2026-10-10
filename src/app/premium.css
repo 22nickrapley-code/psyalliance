@@ -924,6 +924,7 @@
 .tour-callout b{display:block;color:#e2c49c;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;margin-bottom:2px}
 .tour-callout:after{content:"";position:absolute;left:22px;bottom:-6px;width:12px;height:12px;background:#173b31;transform:rotate(45deg)}
 .tour-callout.below:after{bottom:auto;top:-6px}
+.tour-toast.at-top{top:22px;bottom:auto}
 .tour-toast-actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin-top:9px}
 .tour-toast-btn{background:#e2c49c;color:#173b31;border:0;border-radius:6px;padding:7px 12px;font:600 12.5px Inter,Arial,sans-serif;cursor:pointer;text-decoration:none}
 .tour-toast-link{color:#e2c49c;font-weight:600;text-decoration:none}
@@ -1905,3 +1906,9 @@
 .pa details.settings-group > summary::after{content:"";width:9px;height:9px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg);flex:none}
 .pa details.settings-group[open] > summary{margin-bottom:12px}
 .pa details.settings-group[open] > summary::after{transform:rotate(-135deg)}
+.pa .deid-error{margin:6px 0 0;padding:8px 10px;border-radius:6px;background:var(--danger-soft);color:var(--danger);font-size:13px;font-weight:500;line-height:1.4}
+.pa .next-step-note{margin:10px 0 0;padding:10px 12px;border-left:3px solid var(--brass);background:var(--brass-soft);border-radius:0 8px 8px 0}
+.pa .next-step-note p{margin:0 0 8px;color:var(--ink)}
+.pa .change-reply{margin-top:14px;border-top:1px solid var(--line);padding-top:10px}
+.pa .change-reply > summary{cursor:pointer;font-weight:650;color:var(--forest)}
+.pa .change-reply[open] > summary{margin-bottom:10px}

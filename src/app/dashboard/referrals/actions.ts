@@ -10,7 +10,7 @@ import { redirect } from "next/navigation";
 // this instead, so a bad input or a failed insert sends the user back to this
 // same page with an inline banner rather than taking the page down.
 function referralsError(message: string): never {
-  redirect(`/dashboard/referrals?error=${encodeURIComponent(message)}`);
+  redirect(`/dashboard/refer?error=${encodeURIComponent(message)}`);
 }
 
 // Same idea as referralsError, for the three actions below that now run

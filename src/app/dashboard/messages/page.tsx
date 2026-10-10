@@ -64,7 +64,7 @@ export default async function MessagesPage(props: { searchParams: Promise<{ erro
       <section className="card compose-card">
         <div className="eyebrow">New message</div>
         <h2 className="serif-title" style={{ fontSize: 26, margin: "6px 0 14px" }}>Write to a colleague</h2>
-        <form action={startConversation}>
+        <form action={startConversation} data-deidentify="">
           <ColleaguePicker suggestions={suggestions} name="participant_ids" mode="single" initial={sp.to ? [sp.to] : []} />
           <label className="field grow" style={{ marginTop: 18 }}>
             Message

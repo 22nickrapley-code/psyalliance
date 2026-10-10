@@ -242,6 +242,20 @@ export async function removeConnection(formData: FormData) {
 // decline, no notice to the other person, thin wrappers over
 // src/lib/relationships.ts so Network and the People profile page share
 // the exact same logic.
+// Saving or unsaving from a list keeps you exactly where you were: same
+// tab, same search and filters, same page. Only Network or profile
+// addresses are accepted as the way back.
+function backTo(formData: FormData, note: string): string | null {
+  const back = String(formData.get("back") || "");
+  if (!/^\/dashboard\/(network|people\/)/.test(back) || back.startsWith("//")) return null;
+  const url = new URL(back, "http://x");
+  url.searchParams.delete("error");
+  url.searchParams.delete("saved");
+  url.searchParams.delete("unsaved");
+  url.searchParams.set(note, "1");
+  return `${url.pathname}?${url.searchParams.toString()}`;
+}
+
 export async function saveClinicianAction(formData: FormData) {
   const supabase = await createClient();
   const {
@@ -256,6 +270,8 @@ export async function saveClinicianAction(formData: FormData) {
 
   revalidatePath("/dashboard/network");
   revalidatePath("/dashboard/people/[id]", "page");
+  const back = backTo(formData, "saved");
+  if (back) redirect(back);
 }
 
 export async function removeSavedClinicianAction(formData: FormData) {
@@ -271,4 +287,6 @@ export async function removeSavedClinicianAction(formData: FormData) {
 
   revalidatePath("/dashboard/network");
   revalidatePath("/dashboard/people/[id]", "page");
+  const back = backTo(formData, "unsaved");
+  if (back) redirect(back);
 }

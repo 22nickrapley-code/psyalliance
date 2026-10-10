@@ -76,12 +76,26 @@ export async function respondToReferralRequest(
   response: "interested" | "unavailable" | "question",
   message?: string
 ) {
-  const { error } = await supabase.from("referral_responses").insert({
-    referral_request_id: referralRequestId,
-    responding_profile_id: respondingProfileId,
-    status: response,
-    message: message ?? null,
-  });
+  // A colleague can change their reply (for example from a question to
+  // Interested) until the referrer has chosen someone.
+  const { data: existing } = await supabase
+    .from("referral_responses")
+    .select("id, status")
+    .eq("referral_request_id", referralRequestId)
+    .eq("responding_profile_id", respondingProfileId)
+    .maybeSingle();
+  if (existing?.status === "accepted") return { error: "You've already been chosen for this referral." };
+  const { error } = existing
+    ? await supabase
+        .from("referral_responses")
+        .update({ status: response, message: message ?? null, responded_at: new Date().toISOString() })
+        .eq("id", existing.id)
+    : await supabase.from("referral_responses").insert({
+        referral_request_id: referralRequestId,
+        responding_profile_id: respondingProfileId,
+        status: response,
+        message: message ?? null,
+      });
   if (error) return { error: error.message };
 
   await logProfessionalEvent(supabase, {

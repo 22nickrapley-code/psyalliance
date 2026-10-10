@@ -161,7 +161,7 @@ export function ClinicianProfileView({ p, error, connected, declined }: { p: Cli
               <input type="hidden" name="clinician_id" value={p.id} />
               <button type="submit" className="btn on-dark">{p.saved ? "Saved ✓" : "Save clinician"}</button>
             </form>
-            <form action={startConversation}>
+            <form action={startConversation} data-deidentify="">
               <input type="hidden" name="participant_ids" value={p.id} />
               <input type="hidden" name="title" value="" />
               <input type="hidden" name="body" value="" />
