@@ -2,7 +2,8 @@ import type { CoveringItem } from "./views";
 import { createClient } from "@/lib/supabase/server";
 import { loadNeedOptions } from "@/lib/need-options";
 import { CoverIndexView } from "./views";
-import { summarise, focusLabel, caseDetails, clientRef } from "./data";
+import { summarise, focusLabel, caseDetails, clientRef, coverThreadTitle } from "./data";
+import { loadThread } from "@/lib/threads";
 import { ABSENCE, type IncomingPlan } from "./views";
 import { clinicianName, roleLabel } from "@/lib/profession";
 import { resolveAvatarUrls } from "@/lib/avatars";
@@ -55,11 +56,17 @@ export default async function CoverPage(props: { searchParams: Promise<{ ok?: st
   // One card per colleague's plan: how many patients they are asking you
   // to cover, where, when, and every detail they gave for each case.
   const byPlan = new Map<number, IncomingPlan>();
+  const statesByPlan = new Map<number, string[]>();
+  const nameOfState = (code: string | null) => (code ? US_STATES.find((s) => s.code === code)?.name || code : null);
   for (const r of rows as any[]) {
     const c = r.coverage_plan_cases;
     const p = c.coverage_plans;
     const owner = p.owner || {};
-    const stateName = US_STATES.find((s) => s.code === p.jurisdiction_state)?.name || p.jurisdiction_state;
+    // Each client can be in their own state; otherwise the plan's.
+    const clientState: string | null = c.jurisdiction_state || p.jurisdiction_state || null;
+    const stateName = nameOfState(p.jurisdiction_state);
+    const seen = statesByPlan.get(p.id) || [];
+    if (clientState && !seen.includes(clientState)) statesByPlan.set(p.id, [...seen, clientState]);
     if (!byPlan.has(p.id)) {
       byPlan.set(p.id, {
         planId: p.id,
@@ -81,10 +88,12 @@ export default async function CoverPage(props: { searchParams: Promise<{ ok?: st
     }
     byPlan.get(p.id)!.cases.push({
       requestId: r.id,
+      caseId: c.id,
       status: r.status,
       reference: clientRef(c.case_reference),
       focus: focusLabel(c.specialism_lookup_ids, options),
       details: [
+        ["Client location", nameOfState(clientState) || "Not stated"],
         ["Age band", c.age_band || "Not stated"],
         ["Setting", c.modality === "virtual" ? "Virtual" : c.modality === "in_person" ? "In person" : "Virtual or in person"],
         ["Insurance", c.insurance || "Not stated"],
@@ -94,6 +103,23 @@ export default async function CoverPage(props: { searchParams: Promise<{ ok?: st
       ],
     });
   }
+  // Clients in more than one state: say so on the card; each client shows
+  // their own. With one state, the card says it once.
+  for (const [planId, plan] of byPlan) {
+    const states = statesByPlan.get(planId) || [];
+    if (states.length > 1) plan.location = states.map((st) => nameOfState(st)).join(" and ");
+    else for (const k of plan.cases) k.details = k.details.filter(([label]) => label !== "Client location");
+  }
+  // A question already asked: the conversation shows under the client.
+  await Promise.all(
+    [...byPlan.values()].flatMap((plan) =>
+      plan.cases
+        .filter((k) => k.status === "discussing")
+        .map(async (k) => {
+          k.thread = await loadThread(supabase, myself, [plan.ownerId], coverThreadTitle(plan.planTitle, k.reference, k.focus));
+        })
+    )
+  );
   const incoming = [...byPlan.values()].sort((a, b) => Number(b.urgent) - Number(a.urgent));
 
   // What you've agreed to cover: by colleague, with dates and clients, until

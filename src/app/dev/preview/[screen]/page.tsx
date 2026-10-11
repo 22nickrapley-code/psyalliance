@@ -26,13 +26,13 @@ export default async function PreviewPage({ params, searchParams }: { params: Pr
   return (
     <PremiumShell
       groups={groups}
-      displayName="Alex Rivers, PsyD"
-      initials="AR"
+      displayName="Alex Thornvale, PsyD"
+      initials="AT"
       avatarUrl={null}
       verificationLabel="Verified"
       unreadNotifications={2}
       signOutAction={noopSignOut}
-      demoSite={sandbox ? { label: "Nick", expires: "Oct 17", who: "Alex Rivers, PsyD", role: "Clinical psychologist in Brooklyn" } : null}
+      demoSite={sandbox ? { label: "Nick", expires: "Oct 17", who: "Alex Thornvale, PsyD", role: "Clinical psychologist in Brooklyn" } : null}
       resetSandboxAction={sandbox ? noopReset : undefined}
     >
       {render()}

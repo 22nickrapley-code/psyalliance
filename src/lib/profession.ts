@@ -22,7 +22,7 @@ export function professionLabel(profession: Profession): string {
   return profession === "psychiatrist" ? "Psychiatrist" : "Psychologist";
 }
 
-// How a clinician is named across the product: "Maya Chen, PsyD". The
+// How a clinician is named across the product: "Maya Calderwick, PsyD". The
 // degree says more than a "Dr." prefix and reads the same for everyone.
 export function clinicianName(fullName: string | null | undefined, qualification?: string | null, prefix?: string | null): string {
   const name = String(fullName || "A colleague").replace(/^(dr\.?)\s+/i, "");

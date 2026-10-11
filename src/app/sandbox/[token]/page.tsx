@@ -53,7 +53,7 @@ export default async function SandboxPage(props: { params: Promise<{ token: stri
                     <p>Sandbox links last 7 days. Sign in to PsyAlliance and open a fresh sandbox from your account in one click.</p>
                     <div className="row wrap" style={{ gap: 10 }}>
                       <a className="btn lg" href={`${REAL_SITE_URL}/dashboard`}>Open a new sandbox &rarr;</a>
-                      <a className="btn secondary" href={TOUR_URL}>Explore the guided demos</a>
+                      <a className="btn secondary" href={TOUR_URL}>Watch the two-minute demo</a>
                     </div>
                   </div>
                 )}
@@ -77,7 +77,7 @@ export default async function SandboxPage(props: { params: Promise<{ token: stri
                   ))}
                 </div>
                 <p className="small" style={{ marginTop: 16 }}>
-                  Prefer a guided look first? <a href={TOUR_URL} target="_blank" rel="noopener">Explore the guided demos</a>: six short click-throughs, a minute or two each.
+                  Prefer to watch first? Once you&rsquo;re inside, Demos in the sandbox bar has a short step-by-step video for each part.
                 </p>
               </div>
             </div>

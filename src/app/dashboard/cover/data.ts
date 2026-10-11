@@ -2,6 +2,7 @@ import { clinicianName } from "@/lib/profession";
 import { createClient } from "@/lib/supabase/server";
 import type { NeedOptions } from "@/lib/need-options";
 import type { CaseItem, PlanSummary } from "./views";
+import { stateName } from "./labels";
 
 type Supabase = Awaited<ReturnType<typeof createClient>>;
 
@@ -13,8 +14,14 @@ export function clientRef(ref: string | null): string {
   return (ref || "").replace(/^case\s*(\d+)$/i, "Client $1");
 }
 
-export function caseDetails(c: any): string[] {
+export { coverThreadTitle, stateName } from "./labels";
+
+// The state a client is in: their own, or the plan's.
+export const caseState = (c: any, plan: any): string | null => c?.jurisdiction_state || plan?.jurisdiction_state || null;
+
+export function caseDetails(c: any, state?: string | null): string[] {
   const out: string[] = [];
+  if (state) out.push(stateName(state)!);
   if (c.age_band) out.push(c.age_band);
   out.push(c.modality === "virtual" ? "Virtual" : c.modality === "in_person" ? "In person" : "Virtual or in person");
   if (c.insurance) out.push(c.insurance);
@@ -28,7 +35,8 @@ export function focusLabel(ids: number[] | null, options: NeedOptions) {
   return names.length ? names.join(" + ") : "Any focus";
 }
 
-export function summarise(plan: any, cases: { status: string }[]): PlanSummary {
+export function summarise(plan: any, cases: { status: string; jurisdiction_state?: string | null }[]): PlanSummary {
+  const states = Array.from(new Set(cases.map((c) => c.jurisdiction_state || plan.jurisdiction_state).filter(Boolean))) as string[];
   const counts = {
     total: cases.length,
     covered: cases.filter((c) => c.status === "confirmed").length,
@@ -42,6 +50,7 @@ export function summarise(plan: any, cases: { status: string }[]): PlanSummary {
     starts: plan.starts_on,
     ends: plan.ends_on,
     state: plan.jurisdiction_state,
+    states: states.length ? states : plan.jurisdiction_state ? [plan.jurisdiction_state] : [],
     status: plan.status,
     counts,
   };
@@ -54,30 +63,31 @@ export async function loadPlan(supabase: Supabase, userId: string, planId: numbe
   if (!plan) return null;
   const { data: caseRows } = await supabase
     .from("coverage_plan_cases")
-    .select("*, assigned:assigned_clinician_id(full_name, credential_prefix, qualification_level), coverage_requests(requested_profile_id, status, sequence_order, requested:requested_profile_id(full_name, credential_prefix, qualification_level))")
+    .select("*, assigned:assigned_clinician_id(full_name, credential_prefix, qualification_level), coverage_requests(id, requested_profile_id, status, sequence_order, requested:requested_profile_id(full_name, credential_prefix, qualification_level))")
     .eq("coverage_plan_id", planId)
     .order("id");
   const cases: CaseItem[] = (caseRows || []).map((c: any) => ({
     id: c.id,
     reference: clientRef(c.case_reference),
     focus: focusLabel(c.specialism_lookup_ids, options),
-    details: caseDetails(c),
+    details: caseDetails(c, caseState(c, plan)),
+    state: caseState(c, plan),
     status: c.status,
     invited: (c.coverage_requests || [])
       .sort((a: any, b: any) => a.sequence_order - b.sequence_order)
-      .map((r: any) => ({ name: nameOf(r.requested), status: r.status })),
+      .map((r: any) => ({ name: nameOf(r.requested), status: r.status, profileId: r.requested_profile_id, requestId: r.id })),
     assignedName: c.assigned ? nameOf(c.assigned) : null,
     assignedId: c.assigned_clinician_id,
     queueCount: (c.outreach_queue || []).length,
   }));
-  return { plan, raw: caseRows || [], cases, summary: summarise(plan, cases) };
+  return { plan, raw: caseRows || [], cases, summary: summarise(plan, caseRows || []) };
 }
 
 export function caseNeed(c: any, plan: any) {
   return {
     kind: "cover" as const,
     focusIds: (c.specialism_lookup_ids || []).map(Number),
-    state: plan.jurisdiction_state,
+    state: caseState(c, plan),
     setting: (c.modality as any) || "either",
     insurance: c.insurance,
     ageBand: c.age_band,

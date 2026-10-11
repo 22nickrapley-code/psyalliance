@@ -203,20 +203,30 @@ export async function establishProfessionalConnection(
     return { error: "Choose a colleague who replied Interested." };
   }
 
+  // Who was chosen is recorded first (closing the referral credits Worked
+  // with before to them); the referral is marked connected only once that
+  // has saved, and the choice is undone if marking it fails.
+  const before = reply.status;
+  const { error: chooseErr } = await supabase
+    .from("referral_responses")
+    .update({ status: "accepted", responded_at: new Date().toISOString() })
+    .eq("referral_request_id", referralRequestId)
+    .eq("responding_profile_id", respondingProfileId);
+  if (chooseErr) return { error: "Your choice didn't save. Nothing was changed; try again." };
+
   const { error } = await supabase
     .from("referral_requests")
     .update({ status: "connected" })
     .eq("id", referralRequestId)
     .eq("requesting_profile_id", requestingProfileId);
-  if (error) return { error: error.message };
-
-  // Record who was chosen, so closing the referral can credit the
-  // relationship (Worked with before) to the right colleague.
-  await supabase
-    .from("referral_responses")
-    .update({ status: "accepted", responded_at: new Date().toISOString() })
-    .eq("referral_request_id", referralRequestId)
-    .eq("responding_profile_id", respondingProfileId);
+  if (error) {
+    await supabase
+      .from("referral_responses")
+      .update({ status: before })
+      .eq("referral_request_id", referralRequestId)
+      .eq("responding_profile_id", respondingProfileId);
+    return { error: "Your choice didn't save. Nothing was changed; try again." };
+  }
 
   await logProfessionalEvent(supabase, {
     eventType: "professional_relationship_created",

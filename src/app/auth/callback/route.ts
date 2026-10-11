@@ -4,13 +4,12 @@ import type { EmailOtpType } from "@supabase/supabase-js";
 
 // Where "confirm your email" and "reset your password" links land.
 //
-// Supabase has already confirmed the email by the time the browser gets
+// A fresh confirmation link has done its job by the time the browser gets
 // here with a `code`; the code then signs the member in, but only in the
 // browser that started sign-up (it needs a cookie from that browser). Open
-// the link in another browser or the mail app and the email is still
-// confirmed, so we say so and ask them to sign in, rather than calling the
-// link expired (Nick, 11 Oct: "it says this when you click the
-// verification link - but it still lets me log in").
+// the link in another browser or the mail app and we ask them to sign in,
+// without calling the link expired (Nick, 11 Oct) and without claiming the
+// email is confirmed, which this page can't know (release review R10).
 //
 // If the email template sends `token_hash` instead of the default link,
 // the link signs in from any browser or device.
@@ -42,8 +41,17 @@ export async function GET(request: Request) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) return NextResponse.redirect(`${origin}${next}`);
     if (reset) return forgot("Open the reset link in the same browser you asked for it from, or send yourself a new one below.");
-    // The email is confirmed; only the automatic sign-in didn't happen.
-    return signIn({ message: next.startsWith("/dashboard/profile") ? "Your email is confirmed. Sign in to carry on setting up your profile." : "Your email is confirmed. Sign in to carry on.", next });
+    // Opened in another browser or the mail app, a fresh link has still done
+    // its job, but this page can't tell a fresh link from a stale one, so it
+    // says neither. A link this browser started that fails is expired.
+    const otherBrowser = /code[ _]verifier|pkce/i.test(`${(error as any).code || ""} ${error.message}`);
+    if (!otherBrowser) return expired();
+    return signIn({
+      message: next.startsWith("/dashboard/profile")
+        ? "Sign in to carry on setting up your profile. Opened the link in a different browser or app? That's fine; sign in here."
+        : "Sign in to carry on. Opened the link in a different browser or app? That's fine; sign in here.",
+      next,
+    });
   }
 
   // Supabase sends errors (an expired or used link) as query parameters.

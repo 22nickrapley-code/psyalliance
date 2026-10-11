@@ -41,10 +41,13 @@ export async function createPlanAction(formData: FormData) {
   const startsOn = String(formData.get("starts_on") || "") || undefined;
   const endsOn = String(formData.get("ends_on") || "") || undefined;
   const state = String(formData.get("state") || "") || null;
+  // "Ask for cover" from a colleague's profile: that colleague is asked first.
+  const withId = /^[0-9a-f-]{36}$/i.test(String(formData.get("with") || "")) ? String(formData.get("with")) : null;
   // On a problem, come back with everything already chosen (the name is
   // left out only when it is the problem).
   const keep = (withTitle = true) => {
     const q = new URLSearchParams();
+    if (withId) q.set("with", withId);
     if (ABSENCE_TYPES.includes(absence)) q.set("absence", absence);
     if (withTitle && title) q.set("title", title.slice(0, 80));
     if (startsOn) q.set("starts", startsOn);
@@ -84,6 +87,7 @@ export async function createPlanAction(formData: FormData) {
   });
   if (error || !planId) back(keep(), error || "Couldn't create the plan. Your choices are kept; try again.");
   await supabase.from("coverage_plans").update({ absence_type: absence, jurisdiction_state: state }).eq("id", planId);
+  if (withId && withId !== userId) await supabase.from("coverage_plans").update({ preferred_profile_id: withId }).eq("id", planId);
   redirect(`/dashboard/cover/${planId}?step=needs`);
 }
 
@@ -97,7 +101,9 @@ export async function addCaseAction(formData: FormData) {
   if (focus.length === 0) back(path, "Choose a treatment focus for this client.");
   const { count } = await supabase.from("coverage_plan_cases").select("id", { count: "exact", head: true }).eq("coverage_plan_id", planId);
   const setting = String(formData.get("setting") || "either");
-  const { data: added, error } = await supabase.from("coverage_plan_cases").insert({
+  // Each client can be in a different state; blank means the plan's state.
+  const caseState = String(formData.get("client_state") || "").toUpperCase();
+  const row: Record<string, unknown> = {
     coverage_plan_id: planId,
     case_reference: `Client ${(count || 0) + 1}`,
     specialism_lookup_ids: Array.from(new Set(focus)).slice(0, 3),
@@ -106,7 +112,14 @@ export async function addCaseAction(formData: FormData) {
     insurance: String(formData.get("insurance") || "") || null,
     frequency: String(formData.get("frequency") || "") || null,
     prescribing_needed: formData.get("prescribing") === "1",
-  }).select("id").single();
+  };
+  if (/^[A-Z]{2}$/.test(caseState)) row.jurisdiction_state = caseState;
+  let { data: added, error } = await supabase.from("coverage_plan_cases").insert(row).select("id").single();
+  // Before the database has the per-client state, save the client without it.
+  if (error && "jurisdiction_state" in row && /jurisdiction_state/.test(error.message)) {
+    delete row.jurisdiction_state;
+    ({ data: added, error } = await supabase.from("coverage_plan_cases").insert(row).select("id").single());
+  }
   if (error) back(path, error.message);
   revalidatePath(`/dashboard/cover/${planId}`);
   redirect(`${path}&added=${added?.id ?? ""}`);
@@ -163,6 +176,8 @@ export async function sendInvitesAction(formData: FormData) {
     .eq("coverage_plan_id", planId)
     .in("status", ["needs_cover", "declined_all"]);
   let sent = 0;
+  // Any request that couldn't be sent is reported, not passed over.
+  const failed: string[] = [];
   for (const c of cases || []) {
     const picks = formData.getAll(`pick_${c.id}`).map(String).filter(Boolean);
     if (picks.length === 0) continue;
@@ -171,16 +186,21 @@ export async function sendInvitesAction(formData: FormData) {
     for (const pid of first) {
       const { error } = await sendCoverageRequest(supabase, userId, c.id, pid, order++, message);
       if (!error) sent++;
+      else failed.push(error);
     }
     await supabase
       .from("coverage_plan_cases")
       .update({ outreach_queue: mode === "sequential" ? picks.slice(1) : [] })
       .eq("id", c.id);
   }
-  if (sent === 0) back(invitePath, "Choose at least one colleague for a client before sending.");
-  await supabase.from("coverage_plans").update({ status: "active", outreach_mode: mode }).eq("id", planId);
+  if (sent === 0) back(invitePath, failed.length ? `Nothing was sent: ${failed[0]}` : "Choose at least one colleague for a client before sending.");
+  const { error: planErr } = await supabase.from("coverage_plans").update({ status: "active", outreach_mode: mode }).eq("id", planId);
   revalidatePath("/dashboard/cover");
-  redirect(`/dashboard/cover/${planId}?step=track&sent=${sent}`);
+  const problems = [
+    failed.length ? `${failed.length} request${failed.length === 1 ? "" : "s"} couldn't be sent (${failed[0]}). Use Ask on that client to try someone else.` : "",
+    planErr ? "The plan's status didn't update; refresh to check it." : "",
+  ].filter(Boolean).join(" ");
+  redirect(`/dashboard/cover/${planId}?step=track&sent=${sent}${problems ? `&error=${encodeURIComponent(problems)}` : ""}`);
 }
 
 export async function askColleagueAction(formData: FormData) {
@@ -214,12 +234,14 @@ export async function respondCoverAction(formData: FormData) {
   if (response === "discussing") {
     const { data: req } = await supabase
       .from("coverage_requests")
-      .select("coverage_plan_cases(coverage_plans(profile_id))")
+      .select("coverage_plan_case_id, coverage_plan_cases(coverage_plan_id, coverage_plans(profile_id))")
       .eq("id", requestId)
       .maybeSingle();
     const ownerId = (req as any)?.coverage_plan_cases?.coverage_plans?.profile_id as string | undefined;
+    const planId = (req as any)?.coverage_plan_cases?.coverage_plan_id;
     const title = String(formData.get("thread_title") || "Cover request");
-    const sent = ownerId ? await postToThread(supabase, userId, [ownerId], title, question) : null;
+    const link = planId ? `/dashboard/cover/${planId}?step=track#case-${(req as any).coverage_plan_case_id}` : undefined;
+    const sent = ownerId ? await postToThread(supabase, userId, [ownerId], title, question, link) : null;
     revalidatePath("/dashboard/messages");
     if (!sent || sent.error) back("/dashboard/cover", "Your reply is saved, but the question didn't reach Messages. Use Go to messages to send it there.");
   }
@@ -231,7 +253,7 @@ export async function respondCoverAction(formData: FormData) {
         ? "You've accepted. The colleague will be in touch about the handoff."
         : response === "declined"
           ? "Declined. Thanks for letting them know."
-          : `Question sent${ownerName ? ` to ${ownerName}` : ""}. It's in Messages.`
+          : `Question sent${ownerName ? ` to ${ownerName}` : ""}. Their reply appears here, under the client.`
     )}#request-${requestId}`
   );
 }

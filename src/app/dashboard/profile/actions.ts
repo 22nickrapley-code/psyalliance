@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { safeBack, backWith } from "@/lib/back";
+import { IS_DEMO_SITE } from "@/lib/env";
 import { extractStructuredData, AiNotConfiguredError } from "@/lib/ai/anthropic";
 
 // A plain `throw` inside a server action wired to a bare <form action={fn}>
@@ -13,6 +14,77 @@ import { extractStructuredData, AiNotConfiguredError } from "@/lib/ai/anthropic"
 // same page with an inline banner rather than taking the page down.
 function profileError(message: string, back?: string | null): never {
   redirect(`/dashboard/profile?edit=1&error=${encodeURIComponent(message)}${back ? `&back=${encodeURIComponent(back)}` : ""}`);
+}
+
+// A photo address found in pasted profile text is fetched with care:
+// public https addresses only (no IP addresses, local or internal names,
+// or unusual ports), every redirect checked the same way, at most three of
+// them, and the download stopped as soon as it passes 5 MB. The bytes must
+// really be a JPEG, PNG or WebP image.
+function publicHttpsUrl(raw: string): URL | null {
+  let u: URL;
+  try {
+    u = new URL(raw);
+  } catch {
+    return null;
+  }
+  if (u.protocol !== "https:" || u.username || u.password || (u.port && u.port !== "443")) return null;
+  const host = u.hostname.toLowerCase().replace(/\.$/, "");
+  if (!host.includes(".") || host.startsWith("[") || /^[\d.]+$/.test(host) || host.includes(":")) return null;
+  if (/(^|\.)(localhost|local|internal|intranet|lan|home|corp|localdomain)$/.test(host)) return null;
+  if (/(^|\.)(supabase\.co|supabase\.in|workers\.dev)$/.test(host)) return null;
+  return u;
+}
+
+function imageTypeOf(bytes: Uint8Array): string | null {
+  if (bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) return "image/jpeg";
+  if (bytes.length >= 8 && bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47) return "image/png";
+  if (bytes.length >= 12 && String.fromCharCode(...bytes.slice(0, 4)) === "RIFF" && String.fromCharCode(...bytes.slice(8, 12)) === "WEBP") return "image/webp";
+  return null;
+}
+
+async function fetchImageSafely(raw: string): Promise<{ bytes: ArrayBuffer; type: string } | null> {
+  let url = publicHttpsUrl(raw);
+  const deadline = AbortSignal.timeout(8000);
+  for (let hop = 0; url && hop <= 3; hop += 1) {
+    const res = await fetch(url.toString(), { signal: deadline, redirect: "manual", headers: { accept: "image/jpeg,image/png,image/webp" } });
+    if (res.status >= 300 && res.status < 400) {
+      const next = res.headers.get("location");
+      await res.body?.cancel();
+      url = next ? publicHttpsUrl(new URL(next, url).toString()) : null;
+      continue;
+    }
+    if (!res.ok || !res.body) return null;
+    const declared = Number(res.headers.get("content-length") || 0);
+    if (declared > MAX_AVATAR_BYTES) {
+      await res.body.cancel();
+      return null;
+    }
+    const reader = res.body.getReader();
+    const chunks: Uint8Array[] = [];
+    let total = 0;
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      total += value.byteLength;
+      if (total > MAX_AVATAR_BYTES) {
+        await reader.cancel();
+        return null;
+      }
+      chunks.push(value);
+    }
+    if (total === 0) return null;
+    const all = new Uint8Array(total);
+    let at = 0;
+    for (const c of chunks) {
+      all.set(c, at);
+      at += c.byteLength;
+    }
+    const type = imageTypeOf(all);
+    if (!type || !ALLOWED_AVATAR_TYPES.has(type)) return null;
+    return { bytes: all.buffer, type };
+  }
+  return null;
 }
 
 // A photo found in an imported profile (a picture pasted or dropped, or the
@@ -29,14 +101,13 @@ async function importAvatar(
     if (source.file && source.file.size > 0) {
       if (!ALLOWED_AVATAR_TYPES.has(source.file.type) || source.file.size > MAX_AVATAR_BYTES) return false;
       bytes = await source.file.arrayBuffer();
-      type = source.file.type;
-    } else if (source.url && /^https:\/\//i.test(source.url)) {
-      const res = await fetch(source.url, { signal: AbortSignal.timeout(8000), redirect: "follow" });
-      type = (res.headers.get("content-type") || "").split(";")[0].trim().toLowerCase();
-      if (!res.ok || !ALLOWED_AVATAR_TYPES.has(type)) return false;
-      const buf = await res.arrayBuffer();
-      if (buf.byteLength === 0 || buf.byteLength > MAX_AVATAR_BYTES) return false;
-      bytes = buf;
+      type = imageTypeOf(new Uint8Array(bytes)) || "";
+      if (!ALLOWED_AVATAR_TYPES.has(type)) return false;
+    } else if (source.url) {
+      const got = await fetchImageSafely(source.url);
+      if (!got) return false;
+      bytes = got.bytes;
+      type = got.type;
     }
     if (!bytes) return false;
     const ext = type === "image/png" ? "png" : type === "image/webp" ? "webp" : "jpg";
@@ -168,11 +239,21 @@ export async function saveProfile(formData: FormData) {
     rows.push({ profile_id: user.id, lookup_value_id: lv.id, rank });
   }
 
-  await supabase.from("profile_lookup_values").delete().eq("profile_id", user.id);
-  if (rows.length > 0) {
-    const { error: insertError } = await supabase.from("profile_lookup_values").insert(rows);
-    if (insertError) {
-      profileError(insertError.message, back);
+  // Replaced in one step (one database transaction), so a failure part-way
+  // never leaves a profile with its practice facts missing.
+  const { error: factsError } = await supabase.rpc("set_my_practice_facts", {
+    p_rows: rows.map((r) => ({ lookup_value_id: r.lookup_value_id, rank: r.rank })),
+  });
+  if (factsError) {
+    // Until the database has the one-step function, fall back to the old way.
+    if (factsError.code === "PGRST202" || /could not find the function/i.test(factsError.message)) {
+      await supabase.from("profile_lookup_values").delete().eq("profile_id", user.id);
+      if (rows.length > 0) {
+        const { error: insertError } = await supabase.from("profile_lookup_values").insert(rows);
+        if (insertError) profileError(insertError.message, back);
+      }
+    } else {
+      profileError("Your specialties and other practice details didn't save. Nothing was changed; try again.", back);
     }
   }
 
@@ -491,8 +572,57 @@ export async function deleteAccountAction(formData: FormData) {
   const from = String(formData.get("back") || "") === "/dashboard/settings" ? "/dashboard/settings" : "/dashboard/profile";
   const fail = (msg: string) => redirect(`${from}?error=${encodeURIComponent(msg)}${from === "/dashboard/settings" ? "#data" : ""}`);
   if (confirm !== "DELETE") fail("Type DELETE in capitals to confirm.");
+
+  // Who can't delete here is checked first, so nothing is removed for them.
+  const { data: me } = await supabase.rpc("my_profile").maybeSingle<any>();
+  if (me?.is_admin || me?.account_kind === "operator") fail("Admin accounts can't be deleted from here.");
+  if (IS_DEMO_SITE) fail("Sandbox accounts end on their own. Use Start the story again to begin afresh.");
+
+  // Stored files go first: the database rows that point at them are deleted
+  // with the account, and a file without its row could never be found again.
+  // If any file can't be removed, nothing is deleted and they can try again.
+  const failedFiles = await removeMyStoredFiles(supabase, user.id, me?.avatar_path || null);
+  if (failedFiles) fail("We couldn't remove your stored files, so nothing was deleted. Please try again in a minute.");
+
   const { error } = await supabase.rpc("delete_my_account", { p_confirm: confirm });
   if (error) fail(error.code === "P0001" ? error.message : "We couldn't delete your account just now. Please try again, or email hello@psyalliance.org.");
   await supabase.auth.signOut();
   redirect("/goodbye");
+}
+
+// Every file this member stored: their documents (by record, and anything
+// left in their own folder) and their profile photos. Returns true if any
+// removal failed.
+async function removeMyStoredFiles(supabase: Awaited<ReturnType<typeof createClient>>, userId: string, avatarPath: string | null): Promise<boolean> {
+  const docPaths = new Set<string>();
+  const { data: docs, error: docsErr } = await supabase.from("documents").select("storage_path").eq("uploaded_by", userId);
+  if (docsErr) return true;
+  for (const d of docs || []) if (d.storage_path) docPaths.add(String(d.storage_path));
+  const listAll = async (bucket: string, prefix: string) => {
+    const out: string[] = [];
+    for (let offset = 0; offset < 5000; offset += 100) {
+      const { data, error } = await supabase.storage.from(bucket).list(prefix, { limit: 100, offset });
+      if (error) return null;
+      for (const f of data || []) if (f.id) out.push(`${prefix}/${f.name}`);
+      if (!data || data.length < 100) break;
+    }
+    return out;
+  };
+  // Listing the member's own folders also catches files with no record; if
+  // listing isn't possible, the files on record are still removed.
+  const inFolder = (await listAll("documents", `personal/${userId}`)) || [];
+  const photos = (await listAll("avatars", userId)) || [];
+  inFolder.forEach((p) => docPaths.add(p));
+  const photoPaths = new Set(photos);
+  if (avatarPath) photoPaths.add(avatarPath);
+  const removeAll = async (bucket: string, paths: string[]) => {
+    for (let i = 0; i < paths.length; i += 100) {
+      const { error } = await supabase.storage.from(bucket).remove(paths.slice(i, i + 100));
+      if (error) return false;
+    }
+    return true;
+  };
+  const docsOk = await removeAll("documents", [...docPaths]);
+  const photosOk = await removeAll("avatars", [...photoPaths]);
+  return !(docsOk && photosOk);
 }

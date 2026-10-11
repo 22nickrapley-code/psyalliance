@@ -14,7 +14,7 @@ export function AvatarPicker({ action, hasPhoto }: { action: (fd: FormData) => v
   const tooBig = !!file && file.size > MAX;
   useEffect(() => () => { if (preview) URL.revokeObjectURL(preview); }, [preview]);
   return (
-    <form action={action} encType="multipart/form-data" className="avatar-picker">
+    <form action={action} className="avatar-picker">
       <input
         ref={input}
         id="avatar-file"

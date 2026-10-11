@@ -68,7 +68,7 @@ export default async function SignUpPage(props: {
                 </li>
               </ol>
               <p className="small">
-                Want to see it first? <a href={TOUR_URL}>Explore the guided demos</a>.
+                Want to see it first? <a href={TOUR_URL}>Watch the two-minute demo</a>.
               </p>
             </div>
 

@@ -17,7 +17,7 @@ export function PublicNav({ home = false }: { home?: boolean }) {
       <div className="links">
         <a className="text-link" href={`${base}#how`}>How it works</a>
         <a className="text-link" href={`${PUBLIC_BASE}/library`}>Library</a>
-        <a className="text-link keep" href={DEMOS_HREF}>Demos</a>
+        <a className="text-link keep" href={DEMOS_HREF}>Demo</a>
         <a className="btn secondary small-btn" href={SIGN_IN_HREF}>Sign in</a>
         <a className="btn small-btn" href={JOIN_HREF}><span className="label-full">Create your account</span><span className="label-short">Join</span></a>
       </div>
@@ -36,7 +36,7 @@ export function PublicFooter({ home = false }: { home?: boolean }) {
       <div className="foot-links">
         <a href={`${base}#how`}>How it works</a>
         <a href={`${PUBLIC_BASE}/library`}>Practice Library</a>
-        <a href={DEMOS_HREF}>Demos</a>
+        <a href={DEMOS_HREF}>Demo</a>
         <a href={`${PUBLIC_BASE}/verification`}>Verification</a>
         <a href={`${PUBLIC_BASE}/privacy`}>Privacy</a>
         <a href={`${PUBLIC_BASE}/terms`}>Terms</a>

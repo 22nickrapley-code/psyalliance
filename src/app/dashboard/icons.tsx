@@ -3,6 +3,12 @@
 
 const PATHS: Record<string, React.ReactNode> = {
   home: <path d="M4 11.2 12 4.5l8 6.7V19a1 1 0 0 1-1 1h-4.5v-5.5h-5V20H5a1 1 0 0 1-1-1z" />,
+  play: (
+    <>
+      <rect x="3.5" y="5" width="17" height="14" rx="2.5" />
+      <path d="M10.5 9.5v5l4-2.5z" />
+    </>
+  ),
   cover: (
     <>
       <path d="M12 3.5 19 6v5.6c0 4.2-2.9 7.5-7 8.9-4.1-1.4-7-4.7-7-8.9V6z" />

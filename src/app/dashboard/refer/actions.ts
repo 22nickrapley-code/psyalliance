@@ -45,7 +45,9 @@ export async function sendReferralAction(formData: FormData) {
   const audience = String(formData.get("audience") || "selected") as "selected" | "trusted" | "wider_network";
   const timeframe = String(formData.get("timeframe") || "flexible");
   const notes = String(formData.get("notes") || "").trim() || undefined;
-  const reviewPath = `/dashboard/refer/new?${needToQuery(need, { step: "review" })}${picks.map((p) => `&pick=${p}`).join("")}`;
+  // A referral to one colleague (from their profile) comes back to its own review.
+  const to = /^[0-9a-f-]{36}$/i.test(String(formData.get("to") || "")) ? String(formData.get("to")) : null;
+  const reviewPath = `/dashboard/refer/new?${needToQuery(need, { step: "review" })}${to ? `&to=${to}` : picks.map((p) => `&pick=${p}`).join("")}`;
 
   if (need.focusIds.length === 0 || !need.state) back(reviewPath, "Choose a treatment focus and a state.");
   if (formData.get("deidentified") !== "on") back(reviewPath, "Confirm the referral contains no client-identifying details.");
@@ -108,7 +110,7 @@ export async function respondReferralAction(formData: FormData) {
   if (response === "question" && message) {
     const { data: ref } = await supabase.from("referral_requests").select("requesting_profile_id").eq("id", id).maybeSingle();
     const title = String(formData.get("thread_title") || "").trim() || null;
-    const sent = ref?.requesting_profile_id ? await postToThread(supabase, userId, [ref.requesting_profile_id as string], title, message) : null;
+    const sent = ref?.requesting_profile_id ? await postToThread(supabase, userId, [ref.requesting_profile_id as string], title, message, `/dashboard/refer/${id}#resp-${userId}`) : null;
     revalidatePath("/dashboard/messages");
     if (!sent || sent.error) back(`/dashboard/refer/${id}`, "Your reply is saved, but the question didn't reach Messages. Use Go to messages to send it there.");
   }

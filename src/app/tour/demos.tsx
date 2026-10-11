@@ -53,9 +53,9 @@ export type Demo = {
 };
 
 export const PEOPLE: Record<Perspective, { name: string; initials: string; role: string; avatar: string | null; colleague: boolean }> = {
-  alex: { name: "Alex Rivers, PsyD", initials: "AR", role: "Clinical psychologist in Brooklyn", avatar: AV.alex, colleague: false },
-  maya: { name: "Maya Chen, PsyD", initials: "MC", role: "One of Alex's trusted colleagues", avatar: AV.maya, colleague: true },
-  samuel: { name: "Samuel Okafor, PhD", initials: "SO", role: "A colleague Alex has worked with before", avatar: AV.samuel, colleague: true },
+  alex: { name: "Alex Thornvale, PsyD", initials: "AT", role: "Clinical psychologist in Brooklyn", avatar: AV.alex, colleague: false },
+  maya: { name: "Maya Calderwick, PsyD", initials: "MC", role: "One of Alex's trusted colleagues", avatar: AV.maya, colleague: true },
+  samuel: { name: "Samuel Brindlemoor, PhD", initials: "SB", role: "A colleague Alex has worked with before", avatar: AV.samuel, colleague: true },
 };
 
 const leave = leaveDates();
@@ -106,9 +106,9 @@ const clientsOpen: CaseItem[] = [
   { id: 3, reference: "Client 3", focus: "Depression", details: ["Adults", "In person", "Every two weeks", "Prescribing needed"], status: "needs_cover", invited: [], assignedName: null, assignedId: null, queueCount: 0 },
 ];
 const clientsCovered: CaseItem[] = [
-  { ...clientsOpen[0], status: "confirmed", invited: [{ name: "Maya Chen, PsyD", status: "accepted" }], assignedName: "Maya Chen, PsyD", assignedId: "maya" },
-  { ...clientsOpen[1], status: "confirmed", invited: [{ name: "Maya Chen, PsyD", status: "accepted" }], assignedName: "Maya Chen, PsyD", assignedId: "maya" },
-  { ...clientsOpen[2], status: "confirmed", invited: [{ name: "Eli Ramirez, MD", status: "accepted" }], assignedName: "Eli Ramirez, MD", assignedId: "eli" },
+  { ...clientsOpen[0], status: "confirmed", invited: [{ name: "Maya Calderwick, PsyD", status: "accepted" }], assignedName: "Maya Calderwick, PsyD", assignedId: "maya" },
+  { ...clientsOpen[1], status: "confirmed", invited: [{ name: "Maya Calderwick, PsyD", status: "accepted" }], assignedName: "Maya Calderwick, PsyD", assignedId: "maya" },
+  { ...clientsOpen[2], status: "confirmed", invited: [{ name: "Eli Kestrelby, MD", status: "accepted" }], assignedName: "Eli Kestrelby, MD", assignedId: "eli" },
 ];
 
 const MAYA_TRAUMA = ["Trauma/PTSD is her top specialty", "NY license reviewed", "Sees adults, virtual or in person", "Open to cover, confirmed 3 days ago"];
@@ -117,17 +117,17 @@ const IMANI = ["Trauma/PTSD is her top specialty", "NY license reviewed", "Sees 
 const ELI = ["Psychiatrist: can prescribe", "Treats depression", "NY license reviewed", "Sees adults in person, Manhattan", "Open to cover, confirmed 6 days ago"];
 
 const coverSuggestions = {
-  1: [person("maya", "Maya Chen", "trusted", MAYA_TRAUMA), person("imani", "Imani Brooks", "none", IMANI, "PhD", "Queens", 19)],
-  2: [person("maya", "Maya Chen", "trusted", MAYA_ANX)],
-  3: [person("eli", "Eli Ramirez", "worked_with", ELI, "MD", "Manhattan", 6)],
+  1: [person("maya", "Maya Calderwick", "trusted", MAYA_TRAUMA), person("imani", "Imani Ambershaw", "none", IMANI, "PhD", "Queens", 19)],
+  2: [person("maya", "Maya Calderwick", "trusted", MAYA_ANX)],
+  3: [person("eli", "Eli Kestrelby", "worked_with", ELI, "MD", "Manhattan", 6)],
 };
 
 // ---- Refer fixtures ----
 const referNeed = { focusIds: [4], state: "NY", city: "Brooklyn", insurance: "Aetna", ageBand: "Adults", setting: "either", languageId: null, prescribing: false } as const;
 const referMatches: Match[] = [
-  { ...person("maya", "Maya Chen", "trusted", ["OCD is one of her top specialties", "NY license reviewed", "In network: Aetna", "Accepting referrals, confirmed 3 days ago"]), availabilityLabel: "Accepting referrals" },
-  { ...person("sam", "Samuel Okafor", "worked_with", ["Treats OCD with ERP", "NY license reviewed", "Evening telehealth", "Accepting referrals, confirmed 8 days ago"], "PhD", "Brooklyn", 8), availabilityLabel: "Accepting referrals" },
-  { ...person("lena", "Lena Park", "none", ["Works with OCD", "NY license reviewed", "In person in Albany, telehealth across New York", "Selected referrals only"], "PsyD", "Albany", 12), availabilityLabel: "Selected referrals" },
+  { ...person("maya", "Maya Calderwick", "trusted", ["OCD is one of her top specialties", "NY license reviewed", "In network: Aetna", "Accepting referrals, confirmed 3 days ago"]), availabilityLabel: "Accepting referrals" },
+  { ...person("sam", "Samuel Brindlemoor", "worked_with", ["Treats OCD with ERP", "NY license reviewed", "Evening telehealth", "Accepting referrals, confirmed 8 days ago"], "PhD", "Brooklyn", 8), availabilityLabel: "Accepting referrals" },
+  { ...person("lena", "Lena Larkhollow", "none", ["Works with OCD", "NY license reviewed", "In person in Albany, telehealth across New York", "Selected referrals only"], "PsyD", "Albany", 12), availabilityLabel: "Selected referrals" },
 ];
 const referralRows: [string, string][] = [
   ["Where", "Brooklyn, New York"],
@@ -140,20 +140,20 @@ const referralRows: [string, string][] = [
 
 // ---- Home and circle fixtures ----
 // The invite box as Alex sees it (her own link; display only in the demo).
-const DEMO_INVITE = { link: `${REAL_SITE_URL}/i/7d3e91c0a2b4`, mode: "member" as const, firstName: "Alex", fullName: "Alex Rivers, PsyD" };
+const DEMO_INVITE = { link: `${REAL_SITE_URL}/i/7d3e91c0a2b4`, mode: "member" as const, firstName: "Alex", fullName: "Alex Thornvale, PsyD" };
 const ALEX_CIRCLE = {
-  me: { initials: "AR", avatarUrl: AV.alex as string | null },
+  me: { initials: "AT", avatarUrl: AV.alex as string | null },
   nodes: [
-    { id: "maya", name: "Maya Chen, PsyD", kind: "trusted", avatarUrl: AV.maya },
-    { id: "sam", name: "Samuel Okafor, PhD", kind: "trusted", avatarUrl: AV.samuel },
-    { id: "t3", name: "Aaron Garcia, DO", kind: "trusted", avatarUrl: null },
-    { id: "t4", name: "Aaron Howard, PhD", kind: "trusted", avatarUrl: null },
-    { id: "t5", name: "Adrian Dalton, PsyD", kind: "trusted", avatarUrl: null },
-    { id: "t6", name: "Adrian Ramirez, PsyD", kind: "trusted", avatarUrl: null },
-    { id: "t7", name: "Aaron Quinn, PsyD", kind: "trusted", avatarUrl: null },
-    { id: "eli", name: "Eli Ramirez, MD", kind: "worked", avatarUrl: AV.eli },
-    { id: "lena", name: "Lena Park, PsyD", kind: "suggested", avatarUrl: AV.lena },
-    { id: "noah", name: "Noah Patel, PsyD", kind: "suggested", avatarUrl: AV.noah },
+    { id: "maya", name: "Maya Calderwick, PsyD", kind: "trusted", avatarUrl: AV.maya },
+    { id: "sam", name: "Samuel Brindlemoor, PhD", kind: "trusted", avatarUrl: AV.samuel },
+    { id: "t3", name: "Aaron Glenmarrow, DO", kind: "trusted", avatarUrl: null },
+    { id: "t4", name: "Aaron Hollisford, PhD", kind: "trusted", avatarUrl: null },
+    { id: "t5", name: "Adrian Ivorwick, PsyD", kind: "trusted", avatarUrl: null },
+    { id: "t6", name: "Adrian Kestrelby, PsyD", kind: "trusted", avatarUrl: null },
+    { id: "t7", name: "Aaron Kellingsby, PsyD", kind: "trusted", avatarUrl: null },
+    { id: "eli", name: "Eli Kestrelby, MD", kind: "worked", avatarUrl: AV.eli },
+    { id: "lena", name: "Lena Larkhollow, PsyD", kind: "suggested", avatarUrl: AV.lena },
+    { id: "noah", name: "Noah Wrenmoor, PsyD", kind: "suggested", avatarUrl: AV.noah },
   ] as { id: string; name: string; kind: "trusted" | "worked" | "suggested"; avatarUrl: string | null }[],
 };
 const ALEX_SUGGESTIONS = ALEX_CIRCLE.nodes.map((n) => ({
@@ -167,12 +167,12 @@ const ALEX_SUGGESTIONS = ALEX_CIRCLE.nodes.map((n) => ({
   trusted: n.kind === "trusted",
 }));
 const people: Person[] = [
-  { id: "maya", name: "Maya Chen, PsyD", qualification: "PsyD", city: "Brooklyn", state: "NY", licenceStates: ["NY"], topFocus: ["Trauma/PTSD", "Anxiety/Panic Disorders"], modalities: ["EMDR"], availability: "Accepting referrals", fresh: true, confirmedDaysAgo: 3, psypact: false, avatarUrl: AV.maya, relationship: "trusted" },
-  { id: "sam", name: "Samuel Okafor, PhD", qualification: "PhD", city: "Brooklyn", state: "NY", licenceStates: ["NY"], topFocus: ["Obsessive/Compulsive Disorder", "Anxiety/Panic Disorders"], modalities: ["Exposure and Response Prevention"], availability: "Accepting referrals", fresh: true, confirmedDaysAgo: 8, psypact: false, avatarUrl: AV.samuel, relationship: "trusted" },
-  { id: "eli", name: "Eli Ramirez, MD", qualification: "MD", city: "Manhattan", state: "NY", licenceStates: ["NY", "NJ"], topFocus: ["Depression", "Bipolar Disorder"], modalities: ["Medication management"], availability: "Selected referrals", fresh: true, confirmedDaysAgo: 6, psypact: false, avatarUrl: AV.eli, relationship: "worked_with" },
-  { id: "imani", name: "Imani Brooks, PhD", qualification: "PhD", city: "Queens", state: "NY", licenceStates: ["NY"], topFocus: ["Pregnancy/Childbirth", "Anxiety/Panic Disorders"], modalities: ["CBT"], availability: "Accepting referrals", fresh: true, confirmedDaysAgo: 1, psypact: false, avatarUrl: AV.imani, relationship: "none" },
-  { id: "lena", name: "Lena Park, PsyD", qualification: "PsyD", city: "Albany", state: "NY", licenceStates: ["NY"], topFocus: ["Obsessive/Compulsive Disorder", "Anxiety/Panic Disorders"], modalities: ["ERP"], availability: "Selected referrals", fresh: true, confirmedDaysAgo: 12, psypact: false, avatarUrl: AV.lena, relationship: "none" },
-  { id: "noah", name: "Noah Patel, PsyD", qualification: "PsyD", city: "Princeton", state: "NJ", licenceStates: ["NJ"], topFocus: ["Obsessive/Compulsive Disorder", "Depression"], modalities: ["ERP"], availability: "Accepting referrals", fresh: true, confirmedDaysAgo: 9, psypact: true, avatarUrl: AV.noah, relationship: "none" },
+  { id: "maya", name: "Maya Calderwick, PsyD", qualification: "PsyD", city: "Brooklyn", state: "NY", licenceStates: ["NY"], topFocus: ["Trauma/PTSD", "Anxiety/Panic Disorders"], modalities: ["EMDR"], availability: "Accepting referrals", fresh: true, confirmedDaysAgo: 3, psypact: false, avatarUrl: AV.maya, relationship: "trusted" },
+  { id: "sam", name: "Samuel Brindlemoor, PhD", qualification: "PhD", city: "Brooklyn", state: "NY", licenceStates: ["NY"], topFocus: ["Obsessive/Compulsive Disorder", "Anxiety/Panic Disorders"], modalities: ["Exposure and Response Prevention"], availability: "Accepting referrals", fresh: true, confirmedDaysAgo: 8, psypact: false, avatarUrl: AV.samuel, relationship: "trusted" },
+  { id: "eli", name: "Eli Kestrelby, MD", qualification: "MD", city: "Manhattan", state: "NY", licenceStates: ["NY", "NJ"], topFocus: ["Depression", "Bipolar Disorder"], modalities: ["Medication management"], availability: "Selected referrals", fresh: true, confirmedDaysAgo: 6, psypact: false, avatarUrl: AV.eli, relationship: "worked_with" },
+  { id: "imani", name: "Imani Ambershaw, PhD", qualification: "PhD", city: "Queens", state: "NY", licenceStates: ["NY"], topFocus: ["Pregnancy/Childbirth", "Anxiety/Panic Disorders"], modalities: ["CBT"], availability: "Accepting referrals", fresh: true, confirmedDaysAgo: 1, psypact: false, avatarUrl: AV.imani, relationship: "none" },
+  { id: "lena", name: "Lena Larkhollow, PsyD", qualification: "PsyD", city: "Albany", state: "NY", licenceStates: ["NY"], topFocus: ["Obsessive/Compulsive Disorder", "Anxiety/Panic Disorders"], modalities: ["ERP"], availability: "Selected referrals", fresh: true, confirmedDaysAgo: 12, psypact: false, avatarUrl: AV.lena, relationship: "none" },
+  { id: "noah", name: "Noah Wrenmoor, PsyD", qualification: "PsyD", city: "Princeton", state: "NJ", licenceStates: ["NJ"], topFocus: ["Obsessive/Compulsive Disorder", "Depression"], modalities: ["ERP"], availability: "Accepting referrals", fresh: true, confirmedDaysAgo: 9, psypact: true, avatarUrl: AV.noah, relationship: "none" },
 ];
 
 const profileBase = {
@@ -188,7 +188,7 @@ const profileBase = {
 const mayaProfile: ClinicianProfile = {
   ...profileBase,
   id: "maya",
-  name: "Maya Chen, PsyD",
+  name: "Maya Calderwick, PsyD",
   firstName: "Maya",
   role: "Clinical psychologist",
   where: "Brooklyn, NY",
@@ -261,12 +261,12 @@ const PROFILE_LOOKUPS = [
 const SETUP_TICKS = [700, 701, 702, 703, 704, 705, 720, 721, 722, 741, 743, 760, 761, 780, 781, 783, 801];
 const SETUP_RANKS: Record<number, number> = { 700: 1, 701: 2, 702: 3 };
 const SETUP_ROWS = SETUP_TICKS.map((id) => ({ lookup_value_id: id, rank: SETUP_RANKS[id] ?? null }));
-const ALEX_SIGNUP = { full_name: "Alex Rivers", qualification_level: "PsyD", primary_state: "NY", avatar_path: null };
+const ALEX_SIGNUP = { full_name: "Alex Thornvale", qualification_level: "PsyD", primary_state: "NY", avatar_path: null };
 const ALEX_BIO =
   "I work with adults and adolescents living with anxiety, trauma and OCD, using CBT, exposure and response prevention and EMDR. In person in Park Slope and by telehealth across New York and New Jersey.";
 const ALEX_FILLED = { ...ALEX_SIGNUP, credential_prefix: "Dr", primary_practice_city: "Brooklyn", bio: ALEX_BIO };
 // A profile page as Alex copies it (all invented; the numbers are fictional).
-const PASTED_PROFILE = `Alex Rivers
+const PASTED_PROFILE = `Alex Thornvale
 Psychologist, PsyD
 Brooklyn, NY 11215
 (718) 555-0136
@@ -347,9 +347,9 @@ const DETAIL: Demo[] = [
           <CoverInviteView
             plan={plan}
             rows={[
-              { caseId: 1, reference: "Client 1", focus: "Trauma/PTSD", picks: [{ id: "maya", name: "Maya Chen, PsyD", why: MAYA_TRAUMA }, { id: "imani", name: "Imani Brooks, PhD", why: IMANI }] },
-              { caseId: 2, reference: "Client 2", focus: "Anxiety/Panic Disorders", picks: [{ id: "maya", name: "Maya Chen, PsyD", why: MAYA_ANX }] },
-              { caseId: 3, reference: "Client 3", focus: "Depression", picks: [{ id: "eli", name: "Eli Ramirez, MD", why: ELI }] },
+              { caseId: 1, reference: "Client 1", focus: "Trauma/PTSD", picks: [{ id: "maya", name: "Maya Calderwick, PsyD", why: MAYA_TRAUMA }, { id: "imani", name: "Imani Ambershaw, PhD", why: IMANI }] },
+              { caseId: 2, reference: "Client 2", focus: "Anxiety/Panic Disorders", picks: [{ id: "maya", name: "Maya Calderwick, PsyD", why: MAYA_ANX }] },
+              { caseId: 3, reference: "Client 3", focus: "Depression", picks: [{ id: "eli", name: "Eli Kestrelby, MD", why: ELI }] },
             ]}
           />
         ),
@@ -368,7 +368,7 @@ const DETAIL: Demo[] = [
               {
                 planId: 1,
                 ownerId: "alex",
-                ownerName: "Alex Rivers, PsyD",
+                ownerName: "Alex Thornvale, PsyD",
                 ownerRole: "Clinical psychologist · Brooklyn, NY",
                 ownerAvatar: AV.alex,
                 absence: "Extended leave",
@@ -393,7 +393,7 @@ const DETAIL: Demo[] = [
         slug: "covered",
         perspective: "alex",
         title: "Back with Alex: every client covered",
-        what: "Maya accepted her two clients and Eli Ramirez, a psychiatrist, accepted the one who needs prescribing. The handoffs now happen between the clinicians, outside PsyAlliance.",
+        what: "Maya accepted her two clients and Eli Kestrelby, a psychiatrist, accepted the one who needs prescribing. The handoffs now happen between the clinicians, outside PsyAlliance.",
         focus: "Complete plan",
         focusNote: "When Alex is back, completing the plan records who covered.",
         render: () => <CoverTrackView plan={{ ...plan, counts: { total: 3, covered: 3, invited: 0, open: 0 } }} cases={clientsCovered} nextSuggestion={{}} toRate={[]} />,
@@ -453,9 +453,9 @@ const DETAIL: Demo[] = [
             options={options}
             need={referNeed as any}
             picked={[
-              { profileId: "maya", name: "Maya Chen, PsyD" },
-              { profileId: "sam", name: "Samuel Okafor, PhD" },
-              { profileId: "lena", name: "Lena Park, PsyD" },
+              { profileId: "maya", name: "Maya Calderwick, PsyD" },
+              { profileId: "sam", name: "Samuel Brindlemoor, PhD" },
+              { profileId: "lena", name: "Lena Larkhollow, PsyD" },
             ]}
             trustedCount={7}
             networkCount={1199}
@@ -486,7 +486,7 @@ const DETAIL: Demo[] = [
               timeframe: "within_month",
               notes: "Adult, ERP experience needed, evenings preferred.",
               createdAt: daysAgo(0.2),
-              requesterName: "Alex Rivers, PsyD",
+              requesterName: "Alex Thornvale, PsyD",
               rows: referralRows,
               responses: [],
               myResponse: null,
@@ -520,9 +520,9 @@ const DETAIL: Demo[] = [
               requesterName: "You",
               rows: [...referralRows.slice(0, 5), ["Audience", "Selected colleagues (3)"], ["Client details shared", "None"]],
               responses: [
-                { profileId: "maya", name: "Maya Chen, PsyD", status: "interested", message: "I have a Tuesday evening opening from next week.", avatarUrl: AV.maya },
-                { profileId: "sam", name: "Samuel Okafor, PhD", status: "interested", message: "Happy to. I run ERP weekly and can start in two weeks.", avatarUrl: AV.samuel },
-                { profileId: "lena", name: "Lena Park, PsyD", status: "unavailable", message: "Full until January, sorry.", avatarUrl: AV.lena },
+                { profileId: "maya", name: "Maya Calderwick, PsyD", status: "interested", message: "I have a Tuesday evening opening from next week.", avatarUrl: AV.maya },
+                { profileId: "sam", name: "Samuel Brindlemoor, PhD", status: "interested", message: "Happy to. I run ERP weekly and can start in two weeks.", avatarUrl: AV.samuel },
+                { profileId: "lena", name: "Lena Larkhollow, PsyD", status: "unavailable", message: "Full until January, sorry.", avatarUrl: AV.lena },
               ],
               myResponse: null,
               chosen: null,
@@ -554,12 +554,12 @@ const DETAIL: Demo[] = [
               requesterName: "You",
               rows: [...referralRows.slice(0, 5), ["Audience", "Selected colleagues (3)"], ["Client details shared", "None"]],
               responses: [
-                { profileId: "maya", name: "Maya Chen, PsyD", status: "interested", message: "I have a Tuesday evening opening from next week.", avatarUrl: AV.maya },
-                { profileId: "sam", name: "Samuel Okafor, PhD", status: "accepted", message: "Happy to. I run ERP weekly and can start in two weeks.", avatarUrl: AV.samuel },
-                { profileId: "lena", name: "Lena Park, PsyD", status: "unavailable", message: "Full until January, sorry.", avatarUrl: AV.lena },
+                { profileId: "maya", name: "Maya Calderwick, PsyD", status: "interested", message: "I have a Tuesday evening opening from next week.", avatarUrl: AV.maya },
+                { profileId: "sam", name: "Samuel Brindlemoor, PhD", status: "accepted", message: "Happy to. I run ERP weekly and can start in two weeks.", avatarUrl: AV.samuel },
+                { profileId: "lena", name: "Lena Larkhollow, PsyD", status: "unavailable", message: "Full until January, sorry.", avatarUrl: AV.lena },
               ],
               myResponse: null,
-              chosen: { profileId: "sam", name: "Samuel Okafor, PhD" },
+              chosen: { profileId: "sam", name: "Samuel Brindlemoor, PhD" },
               rated: false,
             }}
           />
@@ -625,7 +625,7 @@ const DETAIL: Demo[] = [
               authorName: "You",
               createdAt: daysAgo(0),
               audienceLabel: "Trusted colleagues",
-              recipients: ["Maya Chen, PsyD", "Samuel Okafor, PhD", "Aaron Garcia, DO", "Aaron Howard, PhD", "Adrian Dalton, PsyD", "Adrian Ramirez, PsyD", "Aaron Quinn, PsyD"],
+              recipients: ["Maya Calderwick, PsyD", "Samuel Brindlemoor, PhD", "Aaron Glenmarrow, DO", "Aaron Hollisford, PhD", "Adrian Ivorwick, PsyD", "Adrian Kestrelby, PsyD", "Aaron Kellingsby, PsyD"],
               responses: [],
             }}
           />
@@ -654,8 +654,8 @@ const DETAIL: Demo[] = [
               audienceLabel: "Trusted colleagues",
               recipients: [],
               responses: [
-                { id: 1, name: "Maya Chen, PsyD", body: "A 20-minute joint call before leave starts, then a written summary. The Extended Leave Pack has a checklist.", type: "reply", useful: true, createdAt: daysAgo(0.5), avatarUrl: AV.maya },
-                { id: 2, name: "Eli Ramirez, MD", body: "Tell clients in writing who to contact and when. It's the ambiguity that unsettles people.", type: "reply", useful: false, createdAt: daysAgo(0.3), avatarUrl: AV.eli },
+                { id: 1, name: "Maya Calderwick, PsyD", body: "A 20-minute joint call before leave starts, then a written summary. The Extended Leave Pack has a checklist.", type: "reply", useful: true, createdAt: daysAgo(0.5), avatarUrl: AV.maya },
+                { id: 2, name: "Eli Kestrelby, MD", body: "Tell clients in writing who to contact and when. It's the ambiguity that unsettles people.", type: "reply", useful: false, createdAt: daysAgo(0.3), avatarUrl: AV.eli },
               ],
             }}
           />
@@ -691,10 +691,10 @@ const DETAIL: Demo[] = [
               today: new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", timeZone: "America/New_York" }),
               greeting: "Good morning",
               steps: [
-                { key: "cover-1", title: "Aaron Garcia, DO asked you to cover 2 clients", detail: "Anxiety/Panic Disorders and Trauma/PTSD · Unexpected absence · NY · this week", href: "#", action: "Review request", urgent: true, person: { id: "t3", name: "Aaron Garcia, DO" } },
+                { key: "cover-1", title: "Aaron Glenmarrow, DO asked you to cover 2 clients", detail: "Anxiety/Panic Disorders and Trauma/PTSD · Unexpected absence · NY · this week", href: "#", action: "Review request", urgent: true, person: { id: "t3", name: "Aaron Glenmarrow, DO" } },
                 { key: "ref-1", title: "Your Obsessive/Compulsive Disorder referral is ready to choose", detail: "Everyone you asked has replied. 2 interested", href: "#", action: "Choose a colleague" },
-                { key: "offers", title: "3 referrals are waiting for your reply", detail: "Trauma/PTSD from Maya Chen · Anxiety/Panic Disorders from Eli Ramirez · Anxiety/Panic Disorders from Aaron Quinn", href: "#", action: "Review referrals" },
-                { key: "added", title: "2 colleagues added you as a trusted colleague", detail: "Imani Brooks, Adrian Turner", href: "#", action: "Review" },
+                { key: "offers", title: "3 referrals are waiting for your reply", detail: "Trauma/PTSD from Maya Calderwick · Anxiety/Panic Disorders from Eli Kestrelby · Anxiety/Panic Disorders from Aaron Kellingsby", href: "#", action: "Review referrals" },
+                { key: "added", title: "2 colleagues added you as a trusted colleague", detail: "Imani Ambershaw, Adrian Hazelwick", href: "#", action: "Review" },
                 { key: "msgs", title: "1 unread conversation", detail: "Messages from colleagues", href: "#", action: "Read" },
               ],
               gettingStarted: null,
@@ -715,7 +715,7 @@ const DETAIL: Demo[] = [
         perspective: "alex",
         title: "Find colleagues by need",
         what: "Clinicians lists all 1,200 fictional members in six states, Alex's trusted colleagues first, with license, focus and availability on every card. One button on each: Add as Trusted Colleague.",
-        focus: "Maya Chen",
+        focus: "Maya Calderwick",
         focusNote: "Open a colleague's profile.",
         render: () => (
           <CliniciansView
@@ -751,9 +751,9 @@ const DETAIL: Demo[] = [
               <ConversationList
                 activeId={1}
                 items={[
-                  { id: 1, title: "Maya Chen, PsyD", context: `Cover · ${PLAN_TITLE}`, preview: "A joint handoff call the week before works for me.", when: "9:14 AM", unread: false, avatarName: "Maya Chen", avatarUrl: AV.maya },
-                  { id: 2, title: "Samuel Okafor, PhD", context: "Referral · Obsessive/Compulsive Disorder · Brooklyn", preview: "Happy to. I run ERP weekly.", when: "Yesterday", unread: false, avatarName: "Samuel Okafor", avatarUrl: AV.samuel },
-                  { id: 3, title: "Eli Ramirez, MD", context: "Referral · Trauma/PTSD · Manhattan", preview: "Needs someone soon; current clinician is relocating.", when: "Mon", unread: true, avatarName: "Eli Ramirez", avatarUrl: AV.eli },
+                  { id: 1, title: "Maya Calderwick, PsyD", context: `Cover · ${PLAN_TITLE}`, preview: "A joint handoff call the week before works for me.", when: "9:14 AM", unread: false, avatarName: "Maya Calderwick", avatarUrl: AV.maya },
+                  { id: 2, title: "Samuel Brindlemoor, PhD", context: "Referral · Obsessive/Compulsive Disorder · Brooklyn", preview: "Happy to. I run ERP weekly.", when: "Yesterday", unread: false, avatarName: "Samuel Brindlemoor", avatarUrl: AV.samuel },
+                  { id: 3, title: "Eli Kestrelby, MD", context: "Referral · Trauma/PTSD · Manhattan", preview: "Needs someone soon; current clinician is relocating.", when: "Mon", unread: true, avatarName: "Eli Kestrelby", avatarUrl: AV.eli },
                 ]}
               />
             }
@@ -761,7 +761,7 @@ const DETAIL: Demo[] = [
             <section className="card message-area">
               <div className="context-head">
                 <div>
-                  <h3 style={{ margin: 0 }}>Maya Chen, PsyD</h3>
+                  <h3 style={{ margin: 0 }}>Maya Calderwick, PsyD</h3>
                   <span className="micro-note">Cover · {PLAN_TITLE} · View profile</span>
                 </div>
                 <a className="btn secondary small-btn" href="#">View context</a>

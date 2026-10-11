@@ -1,5 +1,5 @@
 "use client";
-import { TOUR_URL } from "@/lib/env";
+import { REAL_SITE_URL } from "@/lib/env";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -127,9 +127,14 @@ export default function PremiumShell({
                       {demoSite.role ? `${demoSite.role}. ` : ""}Everyone here is fictional and nothing is emailed.
                     </span>
                   </div>
+                  {demoSite.label && (
+                    <a className="band-leave" href={`${REAL_SITE_URL}/dashboard/profile`} title="Back to your own account on PsyAlliance. Your sandbox stays open, so you can come back to it.">
+                      Leave sandbox
+                    </a>
+                  )}
                 </div>
                 <div className="band-actions">
-                  <a className="btn" href={TOUR_URL} target="_blank" rel="noopener">Demos</a>
+                  <a className="btn" href="/dashboard/demos">Demos</a>
                   {resetSandboxAction && demoSite.label && (
                     <form action={resetSandboxAction}>
                       <button type="submit" className="btn outline" title="Clears everything you have done here and restores Alex's practice">
@@ -141,7 +146,7 @@ export default function PremiumShell({
                     <details className="band-more">
                       <summary>About</summary>
                       <div className="band-pop">
-                        <p>Colleagues reply to what you send within a minute or two. <b>Start the story again</b> clears everything you&rsquo;ve done and restores Alex&rsquo;s practice.</p>
+                        <p>Colleagues reply to what you send within a minute or two. <b>Start the story again</b> clears everything you&rsquo;ve done and restores Alex&rsquo;s practice. <b>Leave sandbox</b> takes you back to your own account; open the sandbox again from your Home page.</p>
                         {demoSite.expires && <p>Sandbox for {demoSite.label}, open until {demoSite.expires}.</p>}
                       </div>
                     </details>

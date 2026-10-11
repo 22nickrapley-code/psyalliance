@@ -137,12 +137,18 @@ export function MatchCard({
   select,
   actions,
   rank,
+  flag,
+  note,
 }: {
   m: Match;
   avatarUrl?: string | null;
-  select?: { name: string; checked?: boolean };
+  select?: { name: string; checked?: boolean; disabled?: boolean };
   actions?: ReactNode;
   rank?: number;
+  // A colleague the member chose themselves, pinned first.
+  flag?: string;
+  // Where they don't fit this need, said plainly.
+  note?: string[];
 }) {
   const where = [m.city, m.state].filter(Boolean).join(", ");
   const body = (
@@ -156,6 +162,7 @@ export function MatchCard({
           </h3>
           <Status tone={m.tier === "none" ? "neutral" : ""}>{TIER_LABEL[m.tier]}</Status>
         </div>
+        {flag && <span className="match-flag">{flag}</span>}
         <p>
           {roleLabel(m.qualification)}
           {where ? ` · ${where}` : ""}
@@ -165,19 +172,26 @@ export function MatchCard({
             <li key={r}>{r}</li>
           ))}
         </ul>
+        {note && note.length > 0 && (
+          <ul className="match-gaps" aria-label="Where they don't fit">
+            {note.map((g) => (
+              <li key={g}>{g}</li>
+            ))}
+          </ul>
+        )}
         {actions && <div className="actions">{actions}</div>}
       </div>
     </>
   );
   if (select) {
     return (
-      <label className="mini-person selectable">
-        <input type="checkbox" name={select.name} value={m.profileId} defaultChecked={select.checked} aria-label={`Select ${m.fullName}`} />
+      <label className={`mini-person selectable${flag ? " is-chosen" : ""}${select.disabled ? " is-disabled" : ""}`}>
+        <input type="checkbox" name={select.name} value={m.profileId} defaultChecked={select.checked && !select.disabled} disabled={select.disabled} aria-label={`Select ${m.fullName}`} />
         {body}
       </label>
     );
   }
-  return <div className="mini-person">{body}</div>;
+  return <div className={`mini-person${flag ? " is-chosen" : ""}`}>{body}</div>;
 }
 
 export type NeedValues = {

@@ -37,13 +37,16 @@ export type ClinicianProfile = {
   primaryState: string | null;
   // What you have in common, as reasons PsyAlliance would suggest them.
   why?: string[];
+  // This page with the list it was opened from, so actions come back here
+  // and "Back" still leads to that list.
+  selfHref?: string;
 };
 
-function AddTrusted({ id, label = "Add as Trusted Colleague", cls = "btn secondary small-btn" }: { id: string; label?: string; cls?: string }) {
+function AddTrusted({ id, label = "Add as Trusted Colleague", cls = "btn secondary small-btn", back }: { id: string; label?: string; cls?: string; back?: string }) {
   return (
     <form action={addTrustedAction} className="inline">
       <input type="hidden" name="colleague_id" value={id} />
-      <input type="hidden" name="back" value={`/dashboard/people/${id}`} />
+      <input type="hidden" name="back" value={back || `/dashboard/people/${id}`} />
       <button type="submit" className={cls}>{label}</button>
     </form>
   );
@@ -63,7 +66,7 @@ function RelationshipBand({ p }: { p: ClinicianProfile }) {
           <b>{first} added you as a trusted colleague</b>
           <small>You come first in {first}&rsquo;s matches. Add {first} back to do the same.</small>
         </span>
-        <span className="rel-actions"><AddTrusted id={p.id} cls="btn small-btn" /></span>
+        <span className="rel-actions"><AddTrusted id={p.id} cls="btn small-btn" back={p.selfHref} /></span>
       </div>
     );
   }
@@ -75,7 +78,7 @@ function RelationshipBand({ p }: { p: ClinicianProfile }) {
           <b>Worked with before</b>
           <small>{p.collaborations > 0 ? `${p.collaborations} collaboration${p.collaborations === 1 ? "" : "s"} together. ` : ""}{(p.why || []).filter((w) => !/^Added you/.test(w)).length ? `${(p.why || []).filter((w) => !/^Added you/.test(w)).join(" · ")}. ` : ""}Add {first} as a trusted colleague to put them first in your matches.</small>
         </span>
-        <span className="rel-actions"><AddTrusted id={p.id} /></span>
+        <span className="rel-actions"><AddTrusted id={p.id} back={p.selfHref} /></span>
       </div>
     );
   }
@@ -91,7 +94,7 @@ function RelationshipBand({ p }: { p: ClinicianProfile }) {
           <small>You can message, refer or ask {first} for cover. Add {first} as a trusted colleague to put them first in your matches.</small>
         )}
       </span>
-      <span className="rel-actions"><AddTrusted id={p.id} /></span>
+      <span className="rel-actions"><AddTrusted id={p.id} back={p.selfHref} /></span>
     </div>
   );
 }
@@ -148,11 +151,11 @@ export function ClinicianProfileView({ p, error, note, back }: { p: ClinicianPro
             </button>
           </form>
           <div className="hero-cta-row">
-            <a className="hero-btn" href={`/dashboard/refer/new?state=${p.primaryState || ""}`}>
+            <a className="hero-btn" href={`/dashboard/refer/new?to=${p.id}`}>
               <NavIcon name="refer" size={16} />
               Refer a client
             </a>
-            <a className="hero-btn" href="/dashboard/cover/new">
+            <a className="hero-btn" href={`/dashboard/cover/new?with=${p.id}`}>
               <NavIcon name="cover" size={16} />
               Ask for cover
             </a>
@@ -160,7 +163,7 @@ export function ClinicianProfileView({ p, error, note, back }: { p: ClinicianPro
           {!p.trusted && (
             <form action={addTrustedAction}>
               <input type="hidden" name="colleague_id" value={p.id} />
-              <input type="hidden" name="back" value={`/dashboard/people/${p.id}`} />
+              <input type="hidden" name="back" value={p.selfHref || `/dashboard/people/${p.id}`} />
               <button type="submit" className="hero-btn trust">
                 <span aria-hidden="true">+</span> Add as Trusted Colleague
               </button>
@@ -217,7 +220,7 @@ export function ClinicianProfileView({ p, error, note, back }: { p: ClinicianPro
                 </p>
               </div>
               <div className="row wrap" style={{ gap: 8 }}>
-                {p.trusted ? <span className="btn secondary small-btn is-static">Trusted &#10003;</span> : <AddTrusted id={p.id} />}
+                {p.trusted ? <span className="btn secondary small-btn is-static">Trusted &#10003;</span> : <AddTrusted id={p.id} back={p.selfHref} />}
               </div>
             </div>
             {p.signals.length > 0 && (
@@ -253,7 +256,7 @@ export function ClinicianProfileView({ p, error, note, back }: { p: ClinicianPro
               {p.trusted && (
                 <form action={removeTrustedAction}>
                   <input type="hidden" name="colleague_id" value={p.id} />
-                  <input type="hidden" name="back" value={`/dashboard/people/${p.id}`} />
+                  <input type="hidden" name="back" value={p.selfHref || `/dashboard/people/${p.id}`} />
                   <button type="submit" className="btn secondary block">Remove from trusted colleagues</button>
                 </form>
               )}

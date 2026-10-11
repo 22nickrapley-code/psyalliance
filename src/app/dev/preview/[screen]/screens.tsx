@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import DemosPage from "../../../dashboard/demos/page";
 import { InviteLanding } from "../../../i/[token]/view";
 import { ContinuityView } from "../../../dashboard/continuity/view";
 import { PlanDocument } from "../../../dashboard/continuity/document";
@@ -59,17 +60,17 @@ const m = (id: string, name: string, tier: Match["tier"], reasons: string[], q =
   reasons,
 });
 const matches: Match[] = [
-  m("a", "Maya Chen", "trusted", ["Trusted colleague", "Trauma / PTSD is their top specialty", "Practices in Brooklyn", "NY license reviewed", "In network: Aetna", "Accepting referrals, confirmed 3 days ago"]),
-  m("b", "Eli Ramirez", "worked_with", ["Worked together before", "Works with Trauma / PTSD", "NY license reviewed", "Accepting referrals, confirmed 5 days ago"], "MD", "Manhattan"),
-  m("c", "Imani Brooks", "none", ["Trauma / PTSD is their top specialty", "NY license reviewed", "Sees adults", "Selected referrals only, not recently confirmed"]),
+  m("a", "Maya Calderwick", "trusted", ["Trusted colleague", "Trauma / PTSD is their top specialty", "Practices in Brooklyn", "NY license reviewed", "In network: Aetna", "Accepting referrals, confirmed 3 days ago"]),
+  m("b", "Eli Kestrelby", "worked_with", ["Worked together before", "Works with Trauma / PTSD", "NY license reviewed", "Accepting referrals, confirmed 5 days ago"], "MD", "Manhattan"),
+  m("c", "Imani Ambershaw", "none", ["Trauma / PTSD is their top specialty", "NY license reviewed", "Sees adults", "Selected referrals only, not recently confirmed"]),
 ];
 const need = { focusIds: [2], state: "NY", city: "Brooklyn", insurance: "Aetna", ageBand: "Adults", setting: "either" as const, languageId: null, prescribing: false };
 const plan = { id: 7, title: "October leave", absenceType: "extended_leave", starts: "2026-10-12", ends: "2026-11-20", state: "NY", status: "active", counts: { total: 4, covered: 2, invited: 1, open: 1 } };
 const cases = [
-  { id: 1, reference: "Client 1", focus: "Trauma / PTSD", details: ["Adults", "Virtual or in person", "Weekly"], status: "confirmed" as const, invited: [{ name: "Dr. Maya Chen", status: "accepted" }], assignedName: "Dr. Maya Chen", assignedId: "a", queueCount: 0 },
-  { id: 2, reference: "Client 2", focus: "Anxiety", details: ["Adolescents", "Virtual", "Weekly"], status: "awaiting_response" as const, invited: [{ name: "Dr. Eli Ramirez", status: "sent" }], assignedName: null, assignedId: null, queueCount: 2 },
-  { id: 3, reference: "Client 3", focus: "Depression", details: ["Adults", "In person", "Every two weeks", "Prescribing needed"], status: "needs_cover" as const, invited: [{ name: "Dr. Imani Brooks", status: "declined" }], assignedName: null, assignedId: null, queueCount: 0 },
-  { id: 4, reference: "Client 4", focus: "ADHD", details: ["Children", "Virtual"], status: "confirmed" as const, invited: [{ name: "Dr. Maya Chen", status: "accepted" }], assignedName: "Dr. Maya Chen", assignedId: "a", queueCount: 0 },
+  { id: 1, reference: "Client 1", focus: "Trauma / PTSD", details: ["Adults", "Virtual or in person", "Weekly"], status: "confirmed" as const, invited: [{ name: "Dr. Maya Calderwick", status: "accepted" }], assignedName: "Dr. Maya Calderwick", assignedId: "a", queueCount: 0 },
+  { id: 2, reference: "Client 2", focus: "Anxiety", details: ["Adolescents", "Virtual", "Weekly"], status: "awaiting_response" as const, invited: [{ name: "Dr. Eli Kestrelby", status: "sent" }], assignedName: null, assignedId: null, queueCount: 2 },
+  { id: 3, reference: "Client 3", focus: "Depression", details: ["Adults", "In person", "Every two weeks", "Prescribing needed"], status: "needs_cover" as const, invited: [{ name: "Dr. Imani Ambershaw", status: "declined" }], assignedName: null, assignedId: null, queueCount: 0 },
+  { id: 4, reference: "Client 4", focus: "ADHD", details: ["Children", "Virtual"], status: "confirmed" as const, invited: [{ name: "Dr. Maya Calderwick", status: "accepted" }], assignedName: "Dr. Maya Calderwick", assignedId: "a", queueCount: 0 },
 ];
 
 
@@ -103,18 +104,18 @@ const lookups = [
 ];
 
 const PICK: Suggestion[] = [
-  { id: "m", name: "Maya Chen, PsyD", avatarUrl: null, where: "Brooklyn, NY", group: "recent", reason: "Trusted · Last message Oct 6 · Accepting referrals", focus: ["Trauma/PTSD", "Anxiety/Panic Disorders"], trusted: true },
-  { id: "ag", name: "Aaron Garcia, DO", avatarUrl: null, where: "White Plains, NY", group: "trusted", reason: "Trusted colleague · Accepting referrals", focus: ["Anxiety/Panic Disorders", "Bipolar Disorder"], trusted: true },
-  { id: "ah", name: "Aaron Howard, PhD", avatarUrl: null, where: "White Plains, NY", group: "trusted", reason: "Trusted colleague · Accepting referrals", focus: ["Life Transitions", "Sleep Disorders"], trusted: true },
-  { id: "ad", name: "Adrian Dalton, PsyD", avatarUrl: null, where: "Brooklyn, NY", group: "trusted", reason: "Trusted colleague · Accepting referrals", focus: ["Stress", "Violence"], trusted: true },
-  { id: "ar", name: "Adrian Ramirez, PsyD", avatarUrl: null, where: "Brooklyn, NY", group: "trusted", reason: "Trusted colleague · Selected referrals only", focus: ["HIV & AIDS", "Disability"], trusted: true },
-  { id: "aq", name: "Aaron Quinn-Whitfield, PsyD", avatarUrl: null, where: "Saratoga Springs, NY", group: "trusted", reason: "Trusted colleague · Selected referrals only", focus: ["Obsessive/Compulsive Disorder", "Eating Disorders"], trusted: true },
-  { id: "e", name: "Eli Ramirez, MD", avatarUrl: null, where: "Manhattan, NY", group: "worked", reason: "Worked with before · Accepting referrals", focus: ["Psychiatry", "Medication management"] },
-  { id: "l", name: "Lena Park, PsyD", avatarUrl: null, where: "Queens, NY", group: "saved", reason: "Saved", focus: ["Couples", "Perinatal"] },
+  { id: "m", name: "Maya Calderwick, PsyD", avatarUrl: null, where: "Brooklyn, NY", group: "recent", reason: "Trusted · Last message Oct 6 · Accepting referrals", focus: ["Trauma/PTSD", "Anxiety/Panic Disorders"], trusted: true },
+  { id: "ag", name: "Aaron Glenmarrow, DO", avatarUrl: null, where: "White Plains, NY", group: "trusted", reason: "Trusted colleague · Accepting referrals", focus: ["Anxiety/Panic Disorders", "Bipolar Disorder"], trusted: true },
+  { id: "ah", name: "Aaron Hollisford, PhD", avatarUrl: null, where: "White Plains, NY", group: "trusted", reason: "Trusted colleague · Accepting referrals", focus: ["Life Transitions", "Sleep Disorders"], trusted: true },
+  { id: "ad", name: "Adrian Ivorwick, PsyD", avatarUrl: null, where: "Brooklyn, NY", group: "trusted", reason: "Trusted colleague · Accepting referrals", focus: ["Stress", "Violence"], trusted: true },
+  { id: "ar", name: "Adrian Kestrelby, PsyD", avatarUrl: null, where: "Brooklyn, NY", group: "trusted", reason: "Trusted colleague · Selected referrals only", focus: ["HIV & AIDS", "Disability"], trusted: true },
+  { id: "aq", name: "Aaron Hollowmere, PsyD", avatarUrl: null, where: "Saratoga Springs, NY", group: "trusted", reason: "Trusted colleague · Selected referrals only", focus: ["Obsessive/Compulsive Disorder", "Eating Disorders"], trusted: true },
+  { id: "e", name: "Eli Kestrelby, MD", avatarUrl: null, where: "Manhattan, NY", group: "worked", reason: "Worked with before · Accepting referrals", focus: ["Psychiatry", "Medication management"] },
+  { id: "l", name: "Lena Larkhollow, PsyD", avatarUrl: null, where: "Queens, NY", group: "saved", reason: "Saved", focus: ["Couples", "Perinatal"] },
 ];
 
-const INVITER = { full_name: "Maya Chen", credential_prefix: "Dr.", qualification_level: "PsyD", city: "Brooklyn", state: "NY" };
-const INVITE = { link: "https://psyalliance.22nickrapley.workers.dev/i/3f9c2a7b41d0", mode: "member" as const, firstName: "Alex", fullName: "Alex Rivers, PsyD" };
+const INVITER = { full_name: "Maya Calderwick", credential_prefix: "Dr.", qualification_level: "PsyD", city: "Brooklyn", state: "NY" };
+const INVITE = { link: "https://psyalliance.22nickrapley.workers.dev/i/3f9c2a7b41d0", mode: "member" as const, firstName: "Alex", fullName: "Alex Thornvale, PsyD" };
 
 export const previewScreens: Record<string, () => ReactNode> = {
   "invite-landing": () => <InviteLanding who={INVITER} token="abc123" signedIn={false} />,
@@ -127,16 +128,16 @@ export const previewScreens: Record<string, () => ReactNode> = {
         steps: [
           { key: "1", title: "October leave has 1 unresolved need", detail: "2 of 4 covered", href: "#", action: "Review plan" },
           { key: "2", title: "2 colleagues replied to your referral", detail: "Trauma / PTSD", href: "#", action: "Review replies" },
-          { key: "3", title: "Dr. Imani Brooks added you as a trusted colleague", detail: "Add them back to put them first in your matches", href: "#", action: "Review" },
+          { key: "3", title: "Dr. Imani Ambershaw added you as a trusted colleague", detail: "Add them back to put them first in your matches", href: "#", action: "Review" },
           { key: "4", title: "Confirm your availability", detail: "Last confirmed 34 days ago. Colleagues see it as stale", href: "#", action: "Update" },
         ],
         gettingStarted: null,
         availability: { referrals: "Selected referrals", cover: "Limited, ask me", consult: "Open to consult", confirmedLabel: "Last confirmed 34 days ago. Reconfirm to stay in suggestions", stale: true, canReconfirm: true },
         relevant: [
-          { key: "r1", title: "Referral: Anxiety", detail: "From Dr. Eli Ramirez · NY", why: "From a trusted colleague", href: "#" },
-          { key: "r2", title: "Cover request: Depression", detail: "From Dr. Maya Chen", why: "Sent to you", href: "#" },
+          { key: "r1", title: "Referral: Anxiety", detail: "From Dr. Eli Kestrelby · NY", why: "From a trusted colleague", href: "#" },
+          { key: "r2", title: "Cover request: Depression", detail: "From Dr. Maya Calderwick", why: "Sent to you", href: "#" },
         ],
-        circle: { trusted: 12, saved: 5, workedWith: 7, newThisMonth: 2, recentlyAvailable: ["Dr. Maya Chen", "Dr. Eli Ramirez"] },
+        circle: { trusted: 12, saved: 5, workedWith: 7, newThisMonth: 2, recentlyAvailable: ["Dr. Maya Calderwick", "Dr. Eli Kestrelby"] },
         resources: [
           { code: "PA-02", title: "Extended Leave Coverage Plan & Clinical Handoff Pack", purpose: "Guidance and a handoff pack for your cover plan.", href: "#" },
           { code: "PA-05", title: "Case Consultation Presentation Template", purpose: "Shape a focused, de-identified case question.", href: "#" },
@@ -191,20 +192,20 @@ export const previewScreens: Record<string, () => ReactNode> = {
     <ReferIndexView
       options={options}
       mine={[{ id: 1, focus: "Trauma / PTSD", where: "Brooklyn, New York", status: "sent", createdAt: "2026-09-21", interested: 2, responses: 3, audience: "selected" }]}
-      offered={[{ id: 2, focus: "Anxiety", where: "New York", status: "sent", createdAt: "2026-09-22", interested: 0, responses: 0, audience: "trusted", from: "Dr. Eli Ramirez", myResponse: null }]}
+      offered={[{ id: 2, focus: "Anxiety", where: "New York", status: "sent", createdAt: "2026-09-22", interested: 0, responses: 0, audience: "trusted", from: "Dr. Eli Kestrelby", myResponse: null }]}
     />
   ),
   "refer-shortlist": () => <ReferShortlistView options={options} need={need} matches={matches} widen={[]} avatarUrls={{}} />,
-  "refer-review": () => <ReferReviewView options={options} need={need} picked={[{ profileId: "a", name: "Dr. Maya Chen" }, { profileId: "b", name: "Dr. Eli Ramirez" }]} trustedCount={12} networkCount={148} />,
+  "refer-review": () => <ReferReviewView options={options} need={need} picked={[{ profileId: "a", name: "Dr. Maya Calderwick" }, { profileId: "b", name: "Dr. Eli Kestrelby" }]} trustedCount={12} networkCount={148} />,
   "refer-track": () => (
     <ReferTrackView
       r={{
         id: 1, isMine: true, focus: "Trauma / PTSD", where: "Brooklyn, New York", status: "sent", audience: "selected", timeframe: "within_month", notes: "Prefers evening telehealth.", createdAt: "2026-09-21", requesterName: "You",
         rows: [["Where", "Brooklyn, New York"], ["Setting", "Virtual or in person"], ["Timeframe", "Within a month"], ["Audience", "Selected colleagues (3)"], ["Client details shared", "None"]],
         responses: [
-          { profileId: "a", name: "Dr. Maya Chen", status: "interested", message: "I have two Tuesday evening openings.", avatarUrl: null },
-          { profileId: "b", name: "Dr. Eli Ramirez", status: "question", message: "Is medication management needed?", avatarUrl: null },
-          { profileId: "c", name: "Dr. Imani Brooks", status: "unavailable", message: null, avatarUrl: null },
+          { profileId: "a", name: "Dr. Maya Calderwick", status: "interested", message: "I have two Tuesday evening openings.", avatarUrl: null },
+          { profileId: "b", name: "Dr. Eli Kestrelby", status: "question", message: "Is medication management needed?", avatarUrl: null },
+          { profileId: "c", name: "Dr. Imani Ambershaw", status: "unavailable", message: null, avatarUrl: null },
         ],
         myResponse: null, chosen: null, rated: false,
       }}
@@ -213,7 +214,7 @@ export const previewScreens: Record<string, () => ReactNode> = {
   "refer-track-question": () => (
     <ReferTrackView
       r={{
-        id: 4, isMine: false, focus: "OCD", where: "Brooklyn, New York", status: "sent", audience: "selected", timeframe: "within_month", notes: null, createdAt: "2026-10-09", requesterName: "Dr. Eli Ramirez", requesterId: "b",
+        id: 4, isMine: false, focus: "OCD", where: "Brooklyn, New York", status: "sent", audience: "selected", timeframe: "within_month", notes: null, createdAt: "2026-10-09", requesterName: "Dr. Eli Kestrelby", requesterId: "b",
         rows: [["Where", "Brooklyn, New York"], ["Setting", "Virtual or in person"], ["Timeframe", "Within a month"]],
         responses: [], myResponse: { status: "question", message: "Is evening telehealth possible?" }, chosen: null, rated: false,
       }}
@@ -231,9 +232,9 @@ export const previewScreens: Record<string, () => ReactNode> = {
   clinicians: () => (
     <CliniciansView
       people={[
-        { id: "a", name: "Maya Chen, PsyD", qualification: "PsyD", city: "Brooklyn", state: "NY", licenceStates: ["NY"], topFocus: ["Trauma / PTSD", "Anxiety"], availability: "Accepting referrals", fresh: true, confirmedDaysAgo: 2, psypact: false, avatarUrl: null, relationship: "trusted" },
-        { id: "b", name: "Eli Ramirez, MD", qualification: "MD", city: "Manhattan", state: "NY", licenceStates: ["NY", "NJ"], topFocus: ["Depression"], availability: "Selected referrals", fresh: false, confirmedDaysAgo: 41, psypact: false, avatarUrl: null, relationship: "worked_with" },
-        { id: "c", name: "Rachel Rodorigo, PsyD", qualification: "PsyD", city: "Rochester", state: "MI", licenceStates: ["MA"], topFocus: ["Developmental Disabilities"], availability: "Accepting referrals", fresh: true, confirmedDaysAgo: 0, psypact: false, avatarUrl: null, relationship: "none" },
+        { id: "a", name: "Maya Calderwick, PsyD", qualification: "PsyD", city: "Brooklyn", state: "NY", licenceStates: ["NY"], topFocus: ["Trauma / PTSD", "Anxiety"], availability: "Accepting referrals", fresh: true, confirmedDaysAgo: 2, psypact: false, avatarUrl: null, relationship: "trusted" },
+        { id: "b", name: "Eli Kestrelby, MD", qualification: "MD", city: "Manhattan", state: "NY", licenceStates: ["NY", "NJ"], topFocus: ["Depression"], availability: "Selected referrals", fresh: false, confirmedDaysAgo: 41, psypact: false, avatarUrl: null, relationship: "worked_with" },
+        { id: "c", name: "Rachel Fennwhistle, PsyD", qualification: "PsyD", city: "Rochester", state: "MI", licenceStates: ["MA"], topFocus: ["Developmental Disabilities"], availability: "Accepting referrals", fresh: true, confirmedDaysAgo: 0, psypact: false, avatarUrl: null, relationship: "none" },
       ]}
       total={3}
       filters={{ q: "", focus: "", state: "", available: false, profession: "" }}
@@ -246,35 +247,35 @@ export const previewScreens: Record<string, () => ReactNode> = {
   network: () => (
     <NetworkView
       trusted={[
-        { id: "a", name: "Maya Chen, PsyD", where: "Brooklyn, NY", avatarUrl: null, why: "Trusted · worked together", trusted: true },
-        { id: "d", name: "Samuel Okafor, PhD", where: "Brooklyn, NY", avatarUrl: null, why: "Trusted colleague", trusted: true },
+        { id: "a", name: "Maya Calderwick, PsyD", where: "Brooklyn, NY", avatarUrl: null, why: "Trusted · worked together", trusted: true },
+        { id: "d", name: "Samuel Brindlemoor, PhD", where: "Brooklyn, NY", avatarUrl: null, why: "Trusted colleague", trusted: true },
       ]}
       worked={[
-        { id: "b", name: "Eli Ramirez, MD", where: "Manhattan, NY", avatarUrl: null, why: "2 referrals, cover or consults together", trusted: false },
+        { id: "b", name: "Eli Kestrelby, MD", where: "Manhattan, NY", avatarUrl: null, why: "2 referrals, cover or consults together", trusted: false },
       ]}
       suggested={[
-        { id: "e", name: "Imani Brooks, PhD", where: "Queens, NY", avatarUrl: null, why: "Added you as a trusted colleague", trusted: false },
-        { id: "f", name: "Lena Park, PsyD", where: "Albany, NY", avatarUrl: null, why: "Obsessive/Compulsive Disorder is their top specialty · NY license reviewed", trusted: false },
-        { id: "g", name: "Fatima Jordan, PsyD", where: "Rochester, NY", avatarUrl: null, why: "Works with Trauma/PTSD · NY license reviewed", trusted: false },
+        { id: "e", name: "Imani Ambershaw, PhD", where: "Queens, NY", avatarUrl: null, why: "Added you as a trusted colleague", trusted: false },
+        { id: "f", name: "Lena Larkhollow, PsyD", where: "Albany, NY", avatarUrl: null, why: "Obsessive/Compulsive Disorder is their top specialty · NY license reviewed", trusted: false },
+        { id: "g", name: "Fatima Ruskmere, PsyD", where: "Rochester, NY", avatarUrl: null, why: "Works with Trauma/PTSD · NY license reviewed", trusted: false },
       ]}
       nodes={[
-        { id: "a", name: "Maya Chen, PsyD", kind: "trusted", avatarUrl: null },
-        { id: "d", name: "Samuel Okafor, PhD", kind: "trusted", avatarUrl: null },
-        { id: "b", name: "Eli Ramirez, MD", kind: "worked", avatarUrl: null },
-        { id: "e", name: "Imani Brooks, PhD", kind: "suggested", avatarUrl: null },
-        { id: "f", name: "Lena Park, PsyD", kind: "suggested", avatarUrl: null },
+        { id: "a", name: "Maya Calderwick, PsyD", kind: "trusted", avatarUrl: null },
+        { id: "d", name: "Samuel Brindlemoor, PhD", kind: "trusted", avatarUrl: null },
+        { id: "b", name: "Eli Kestrelby, MD", kind: "worked", avatarUrl: null },
+        { id: "e", name: "Imani Ambershaw, PhD", kind: "suggested", avatarUrl: null },
+        { id: "f", name: "Lena Larkhollow, PsyD", kind: "suggested", avatarUrl: null },
       ]}
-      me={{ initials: "AR", avatarUrl: null }}
+      me={{ initials: "AT", avatarUrl: null }}
       invite={INVITE}
     />
   ),
   "network-new": () => (
     <NetworkView
-      trusted={[{ id: "r", name: "Rachel Rodorigo, PsyD", where: "Rochester, NY", avatarUrl: null, why: "Trusted colleague", trusted: true }]}
+      trusted={[{ id: "r", name: "Rachel Fennwhistle, PsyD", where: "Rochester, NY", avatarUrl: null, why: "Trusted colleague", trusted: true }]}
       worked={[]}
       suggested={[]}
-      nodes={[{ id: "r", name: "Rachel Rodorigo, PsyD", kind: "trusted", avatarUrl: null }]}
-      me={{ initials: "AR", avatarUrl: null }}
+      nodes={[{ id: "r", name: "Rachel Fennwhistle, PsyD", kind: "trusted", avatarUrl: null }]}
+      me={{ initials: "AT", avatarUrl: null }}
       invite={INVITE}
       ranked
     />
@@ -283,8 +284,8 @@ export const previewScreens: Record<string, () => ReactNode> = {
     <ConsultIndexView
       tab="discussions"
       posts={[
-        { id: 1, kind: "question", question: "How are you structuring a transition to a new covering clinician?", context: "A planned leave is approaching. I would welcome approaches to transition communication and clear role boundaries.", tags: ["Private practice"], audienceLabel: "Trusted colleagues", authorName: "Dr. Maya Chen", createdAt: new Date().toISOString(), replies: 3, status: "open", mine: false, why: "From a trusted colleague" },
-        { id: 2, kind: "question", question: "What helps your peer consultation group stay clinically focused?", context: null, tags: ["Supervision"], audienceLabel: "Verified network", authorName: "Dr. Imani Brooks", createdAt: new Date(Date.now() - 86400000).toISOString(), replies: 6, status: "resolved", mine: false },
+        { id: 1, kind: "question", question: "How are you structuring a transition to a new covering clinician?", context: "A planned leave is approaching. I would welcome approaches to transition communication and clear role boundaries.", tags: ["Private practice"], audienceLabel: "Trusted colleagues", authorName: "Dr. Maya Calderwick", createdAt: new Date().toISOString(), replies: 3, status: "open", mine: false, why: "From a trusted colleague" },
+        { id: 2, kind: "question", question: "What helps your peer consultation group stay clinically focused?", context: null, tags: ["Supervision"], audienceLabel: "Verified network", authorName: "Dr. Imani Ambershaw", createdAt: new Date(Date.now() - 86400000).toISOString(), replies: 6, status: "resolved", mine: false },
       ]}
       tags={["Anxiety", "Trauma / PTSD", "Private practice", "Supervision"]}
       followed={["Anxiety"]}
@@ -294,7 +295,7 @@ export const previewScreens: Record<string, () => ReactNode> = {
       supervisorAvatars={{}}
     />
   ),
-  "consult-new": () => <ConsultComposeView kind="question" areas={["Anxiety", "Depression"]} suggestions={[{ id: "a", name: "Maya Chen, PsyD", avatarUrl: null, where: "Brooklyn, NY", group: "trusted", reason: "Trusted colleague", focus: [], trusted: true }]} groups={[{ id: 1, name: "Thursday Circle", members: 6 }]} />,
+  "consult-new": () => <ConsultComposeView kind="question" areas={["Anxiety", "Depression"]} suggestions={[{ id: "a", name: "Maya Calderwick, PsyD", avatarUrl: null, where: "Brooklyn, NY", group: "trusted", reason: "Trusted colleague", focus: [], trusted: true }]} groups={[{ id: 1, name: "Thursday Circle", members: 6 }]} />,
   "consult-new-draft": () => <ConsultComposeView kind="question" areas={["Anxiety", "Depression"]} suggestions={PICK} groups={[]} preset={{ question: "How do you pace ERP early on?", context: "Adult outpatient, mild avoidance." }} draft={{ id: 9, audience: "selected", recipients: [PICK[0].id], tagArea: "Anxiety", tagTopic: "", type: "" }} />,
   "consult-new-one": () => <ConsultComposeView kind="question" areas={["Anxiety", "Depression"]} suggestions={PICK} groups={[{ id: 1, name: "Thursday Circle", members: 5 }, { id: 2, name: "Hudson Child & Adolescent Peer Group", members: 4 }]} preselect="ag" />,
   "messages-compose": () => (
@@ -315,8 +316,8 @@ export const previewScreens: Record<string, () => ReactNode> = {
   continuity: () => (
     <ContinuityView
       sp={{}}
-      answers={{ practice_name: "Rivers Psychology, PLLC", practice_contact: "(718) 555-0142, hello@riverspsych.example", records_system: "SimplePractice; older paper files in the locked cabinet at the office" }}
-      backup={{ id: "m", name: "Maya Chen, PsyD", status: "invited" }}
+      answers={{ practice_name: "Thornvale Psychology, PLLC", practice_contact: "(718) 555-0142, hello@riverspsych.example", records_system: "SimplePractice; older paper files in the locked cabinet at the office" }}
+      backup={{ id: "m", name: "Maya Calderwick, PsyD", status: "invited" }}
       alternate={null}
       updatedAt="2026-10-06T15:00:00Z"
       reviewedAt={null}
@@ -328,10 +329,10 @@ export const previewScreens: Record<string, () => ReactNode> = {
   "continuity-print": () => (
     <div className="pa print-shell">
       <PlanDocument
-        ownerName="Alex Rivers, PsyD"
+        ownerName="Alex Thornvale, PsyD"
         ownerRole="Clinical psychologist · Brooklyn, NY"
-        answers={{ practice_name: "Rivers Psychology, PLLC", records_system: "SimplePractice", access_kept_with: "Sealed envelope with my attorney, Dana Ortiz", notify_clients: "Call every current client within 48 hours." }}
-        backup={{ name: "Maya Chen, PsyD", status: "accepted" }}
+        answers={{ practice_name: "Thornvale Psychology, PLLC", records_system: "SimplePractice", access_kept_with: "Sealed envelope with my attorney, Dana Merriwick", notify_clients: "Call every current client within 48 hours." }}
+        backup={{ name: "Maya Calderwick, PsyD", status: "accepted" }}
         alternate={{ name: "Dr. Jane Smith, (212) 555-0123" }}
         updatedAt="2026-10-06T15:00:00Z"
         reviewedAt="2026-10-06T15:00:00Z"
@@ -341,27 +342,27 @@ export const previewScreens: Record<string, () => ReactNode> = {
   full: () => (
     <FullView
       sp={{}}
-      page={{ slug: "alex-rivers", enabled: true, message: null, hidden: ["ah"] }}
+      page={{ slug: "alex-thornvale", enabled: true, message: null, hidden: ["ah"] }}
       listing={{ enabled: true, website: null, phone: "(718) 555-0142", email: null, note: null }}
       candidates={[
-        { profile_id: "m", full_name: "Maya Chen", credential_prefix: "Dr.", qualification_level: "PsyD", city: "Brooklyn", state: "NY", listed: true, open: true, referral: "yes", confirmed_at: "2026-10-03" },
-        { profile_id: "s", full_name: "Samuel Okafor", credential_prefix: "Dr.", qualification_level: "PhD", city: "Brooklyn", state: "NY", listed: true, open: true, referral: "limited", confirmed_at: "2026-09-28" },
-        { profile_id: "ah", full_name: "Aaron Howard", credential_prefix: "Dr.", qualification_level: "PhD", city: "White Plains", state: "NY", listed: true, open: true, referral: "yes", confirmed_at: "2026-09-30" },
-        { profile_id: "e", full_name: "Eli Ramirez", credential_prefix: "Dr.", qualification_level: "MD", city: "Manhattan", state: "NY", listed: true, open: false, referral: "no", confirmed_at: "2026-09-01" },
-        { profile_id: "i", full_name: "Imani Brooks", credential_prefix: "Dr.", qualification_level: "PhD", city: "Queens", state: "NY", listed: false, open: true, referral: "yes", confirmed_at: "2026-10-01" },
+        { profile_id: "m", full_name: "Maya Calderwick", credential_prefix: "Dr.", qualification_level: "PsyD", city: "Brooklyn", state: "NY", listed: true, open: true, referral: "yes", confirmed_at: "2026-10-03" },
+        { profile_id: "s", full_name: "Samuel Brindlemoor", credential_prefix: "Dr.", qualification_level: "PhD", city: "Brooklyn", state: "NY", listed: true, open: true, referral: "limited", confirmed_at: "2026-09-28" },
+        { profile_id: "ah", full_name: "Aaron Hollisford", credential_prefix: "Dr.", qualification_level: "PhD", city: "White Plains", state: "NY", listed: true, open: true, referral: "yes", confirmed_at: "2026-09-30" },
+        { profile_id: "e", full_name: "Eli Kestrelby", credential_prefix: "Dr.", qualification_level: "MD", city: "Manhattan", state: "NY", listed: true, open: false, referral: "no", confirmed_at: "2026-09-01" },
+        { profile_id: "i", full_name: "Imani Ambershaw", credential_prefix: "Dr.", qualification_level: "PhD", city: "Queens", state: "NY", listed: false, open: true, referral: "yes", confirmed_at: "2026-10-01" },
       ]}
       base="https://psyalliance.example/full/"
-      suggestedSlug="alex-rivers"
+      suggestedSlug="alex-thornvale"
     />
   ),
   "full-public": () => (
     <OverflowPublicView
       d={{
-        owner: { name: "Alex Rivers", prefix: "Dr.", qualification: "PsyD", city: "Brooklyn", state: "NY" },
+        owner: { name: "Alex Thornvale", prefix: "Dr.", qualification: "PsyD", city: "Brooklyn", state: "NY" },
         message: null,
         colleagues: [
-          { name: "Maya Chen", prefix: "Dr.", qualification: "PsyD", city: "Brooklyn", state: "NY", referral: "yes", confirmed_at: "2026-10-03", website: "https://example.com", phone: "(212) 555-0142", email: "intake@example.com", note: "Evening telehealth; free 15-minute call", focus: ["Trauma/PTSD", "Anxiety/Panic Disorders"], sessions: ["Face to Face", "Virtual"] },
-          { name: "Samuel Okafor", prefix: "Dr.", qualification: "PhD", city: "Brooklyn", state: "NY", referral: "limited", confirmed_at: "2026-09-28", website: null, phone: "(212) 555-0187", email: null, note: null, focus: ["Obsessive/Compulsive Disorder"], sessions: ["Virtual"] },
+          { name: "Maya Calderwick", prefix: "Dr.", qualification: "PsyD", city: "Brooklyn", state: "NY", referral: "yes", confirmed_at: "2026-10-03", website: "https://example.com", phone: "(212) 555-0142", email: "intake@example.com", note: "Evening telehealth; free 15-minute call", focus: ["Trauma/PTSD", "Anxiety/Panic Disorders"], sessions: ["Face to Face", "Virtual"] },
+          { name: "Samuel Brindlemoor", prefix: "Dr.", qualification: "PhD", city: "Brooklyn", state: "NY", referral: "limited", confirmed_at: "2026-09-28", website: null, phone: "(212) 555-0187", email: null, note: null, focus: ["Obsessive/Compulsive Disorder"], sessions: ["Virtual"] },
         ],
       }}
     />
@@ -371,7 +372,7 @@ export const previewScreens: Record<string, () => ReactNode> = {
       d={{
         leads: [
           { id: 3, created_at: "2026-10-06T14:02:00Z", library_code: "PA-03", full_name: "Jordan Avery-Whitcombe", email: "jordan.avery-whitcombe.practice@example.com", role: "Psychologist", state: "NY", intent: "download", source: "library-PA-03" },
-          { id: 2, created_at: "2026-10-05T10:40:00Z", library_code: "PA-02", full_name: "Sam Lee", email: "sam@example.com", role: "Other clinician", state: "NJ", intent: "notify", source: "library-PA-02" },
+          { id: 2, created_at: "2026-10-05T10:40:00Z", library_code: "PA-02", full_name: "Sam Hartwhistle", email: "sam@example.com", role: "Other clinician", state: "NJ", intent: "notify", source: "library-PA-02" },
         ],
         joins: { "library-PA-03": 1, "library-index": 2 },
       }}
@@ -387,7 +388,7 @@ export const previewScreens: Record<string, () => ReactNode> = {
   "library-public-long": () => <PublicResourceView d={PUBLIC_DOCS[7]} related={[]} preview />,
   "consult-review": () => (
     <ConsultDetailView
-      c={{ id: 3, kind: "question", question: "Approaches to a stalled treatment with adolescent anxiety?", context: "Twelve sessions in, avoidance persists despite exposure work. Looking for ideas on engagement.", typeLabel: "Treatment impasse", tags: ["Anxiety"], status: "draft", mine: true, authorName: "You", createdAt: new Date().toISOString(), audienceLabel: "Selected colleagues", recipients: ["Dr. Maya Chen", "Dr. Eli Ramirez"], responses: [] }}
+      c={{ id: 3, kind: "question", question: "Approaches to a stalled treatment with adolescent anxiety?", context: "Twelve sessions in, avoidance persists despite exposure work. Looking for ideas on engagement.", typeLabel: "Treatment impasse", tags: ["Anxiety"], status: "draft", mine: true, authorName: "You", createdAt: new Date().toISOString(), audienceLabel: "Selected colleagues", recipients: ["Dr. Maya Calderwick", "Dr. Eli Kestrelby"], responses: [] }}
     />
   ),
   "messages-notifications": () => (
@@ -395,9 +396,9 @@ export const previewScreens: Record<string, () => ReactNode> = {
       <NotificationsView
         items={[
           { key: "a", at: "2026-10-10T10:40:00.000Z", unread: true, label: "PsyAlliance", title: "Your credentials have been reviewed and verified", body: "You're now free to use PsyAlliance. Welcome to the network.", markRead: { kind: "notice", id: 1 } },
-          { key: "b", at: "2026-10-10T09:10:00.000Z", unread: true, label: "Network", title: "Maya Chen, PsyD added you as a trusted colleague", body: null, open: { deliveryId: 2, href: "/dashboard/people/x" } },
-          { key: "c", at: "2026-10-09T16:00:00.000Z", unread: true, label: "Refer", title: "Samuel Okafor, PhD replied to your referral: interested", body: null, open: { deliveryId: 3, href: "/dashboard/refer" } },
-          { key: "d", at: "2026-10-07T12:00:00.000Z", unread: false, label: "Cover", title: "Eli Ramirez, MD accepted cover for one client", body: null, open: { deliveryId: 4, href: "/dashboard/cover" } },
+          { key: "b", at: "2026-10-10T09:10:00.000Z", unread: true, label: "Network", title: "Maya Calderwick, PsyD added you as a trusted colleague", body: null, open: { deliveryId: 2, href: "/dashboard/people/x" } },
+          { key: "c", at: "2026-10-09T16:00:00.000Z", unread: true, label: "Refer", title: "Samuel Brindlemoor, PhD replied to your referral: interested", body: null, open: { deliveryId: 3, href: "/dashboard/refer" } },
+          { key: "d", at: "2026-10-07T12:00:00.000Z", unread: false, label: "Cover", title: "Eli Kestrelby, MD accepted cover for one client", body: null, open: { deliveryId: 4, href: "/dashboard/cover" } },
           { key: "e", at: "2026-10-02T12:00:00.000Z", unread: false, label: "Credentials", title: "Your New York license was reviewed", body: null },
         ]}
       />
@@ -410,14 +411,14 @@ export const previewScreens: Record<string, () => ReactNode> = {
         <ConversationList
           activeId={1}
           items={[
-            { id: 1, title: "Dr. Maya Chen", context: "Cover · October leave", preview: "I can review your coverage dates this week.", when: "9:14 AM", unread: true, avatarName: "Maya Chen", avatarUrl: null },
-            { id: 2, title: "Dr. Eli Ramirez", context: "Referral · Anxiety · New York", preview: "Thanks, I have two openings.", when: "Sep 21", unread: false, avatarName: "Eli Ramirez", avatarUrl: null },
+            { id: 1, title: "Dr. Maya Calderwick", context: "Cover · October leave", preview: "I can review your coverage dates this week.", when: "9:14 AM", unread: true, avatarName: "Maya Calderwick", avatarUrl: null },
+            { id: 2, title: "Dr. Eli Kestrelby", context: "Referral · Anxiety · New York", preview: "Thanks, I have two openings.", when: "Sep 21", unread: false, avatarName: "Eli Kestrelby", avatarUrl: null },
           ]}
         />
       }
     >
       <section className="card message-area">
-        <div className="context-head"><div><h3 style={{ margin: 0 }}>Dr. Maya Chen</h3><span className="micro-note">Cover · October leave</span></div></div>
+        <div className="context-head"><div><h3 style={{ margin: 0 }}>Dr. Maya Calderwick</h3><span className="micro-note">Cover · October leave</span></div></div>
         <div className="message-scroll">
           <div className="bubble">I can review your coverage dates this week.<small>Sep 23, 9:14 AM</small></div>
           <div className="bubble me">Thank you. I will send the non-identifying plan details for your review.<small>Sep 23, 9:20 AM</small></div>
@@ -433,7 +434,7 @@ export const previewScreens: Record<string, () => ReactNode> = {
         {
           planId: 1,
           ownerId: "x",
-          ownerName: "Maya Chen, PsyD",
+          ownerName: "Maya Calderwick, PsyD",
           ownerRole: "Clinical psychologist · Brooklyn, NY",
           ownerAvatar: null,
           absence: "Unexpected absence",
@@ -452,11 +453,11 @@ export const previewScreens: Record<string, () => ReactNode> = {
   ),
   "cover-plan": () => <CoverPlanStepView options={options} />,
   "cover-candidates": () => <CoverCandidatesView plan={{ ...plan, counts: { total: 2, covered: 0, invited: 0, open: 2 } }} cases={cases.slice(2).map((c) => ({ ...c, status: "needs_cover" as const }))} suggestions={{ 3: matches, 4: matches.slice(0, 1) }} avatarUrls={{}} />,
-  "cover-invite": () => <CoverInviteView plan={plan} rows={[{ caseId: 3, reference: "Client 3", focus: "Depression", picks: [{ id: "b", name: "Dr. Eli Ramirez" }, { id: "c", name: "Dr. Imani Brooks" }] }]} />,
+  "cover-invite": () => <CoverInviteView plan={plan} rows={[{ caseId: 3, reference: "Client 3", focus: "Depression", picks: [{ id: "b", name: "Dr. Eli Kestrelby" }, { id: "c", name: "Dr. Imani Ambershaw" }] }]} />,
   "cover-plan-fix": () => <CoverPlanStepView options={options} error="That looks like it could identify a client. Use a general name." preset={{ absenceType: "extended_leave", title: "", starts: "2026-11-02", ends: "2026-12-14", state: "NY" }} fix="title" />,
-  "cover-invite-unverified": () => <CoverInviteView plan={plan} canSend={false} rows={[{ caseId: 3, reference: "Client 3", focus: "Depression", picks: [{ id: "b", name: "Dr. Eli Ramirez" }] }]} />,
+  "cover-invite-unverified": () => <CoverInviteView plan={plan} canSend={false} rows={[{ caseId: 3, reference: "Client 3", focus: "Depression", picks: [{ id: "b", name: "Dr. Eli Kestrelby" }] }]} />,
   "cover-track-empty": () => <CoverTrackView plan={{ ...plan, counts: { total: 0, covered: 0, invited: 0, open: 0 } }} cases={[]} nextSuggestion={{}} toRate={[]} />,
-  "cover-track": () => <CoverTrackView plan={plan} cases={cases} nextSuggestion={{ 3: { id: "b", name: "Dr. Eli Ramirez" } }} toRate={[]} />,
+  "cover-track": () => <CoverTrackView plan={plan} cases={cases} nextSuggestion={{ 3: { id: "b", name: "Dr. Eli Kestrelby" } }} toRate={[]} />,
   library: () => <LibraryView resources={resources} q="" category="" mineCount={2} />,
   "library-mine": () => (
     <MyLibraryView
@@ -475,6 +476,7 @@ export const previewScreens: Record<string, () => ReactNode> = {
       sp={{}}
     />
   ),
+  demos: () => <DemosPage />,
   "availability-new": () => <AvailabilityView p={{ referral_availability: null, coverage_availability: null, consultation_availability: null, availability_confirmed_at: null, approx_spaces: null, availability_paused_until: null }} sp={{}} />,
   credentials: () => (
     <CredentialsView
@@ -492,7 +494,7 @@ export const previewScreens: Record<string, () => ReactNode> = {
   profile: () => (
     <ProfileView
       sp={{}}
-      profile={{ full_name: "Alex Rivers", credential_prefix: "Dr.", qualification_level: "PsyD", primary_practice_city: "Brooklyn", primary_state: "NY", bio: "I work with adults and adolescents with anxiety and trauma, mostly CBT and EMDR, in person in Brooklyn and by telehealth across New York.", referral_availability: "limited", availability_confirmed_at: new Date().toISOString(), psypact_participating: true, avatar_path: null }}
+      profile={{ full_name: "Alex Thornvale", credential_prefix: "Dr.", qualification_level: "PsyD", primary_practice_city: "Brooklyn", primary_state: "NY", bio: "I work with adults and adolescents with anxiety and trauma, mostly CBT and EMDR, in person in Brooklyn and by telehealth across New York.", referral_availability: "limited", availability_confirmed_at: new Date().toISOString(), psypact_participating: true, avatar_path: null }}
       lookups={lookups}
       selectedRows={[{ lookup_value_id: 102, rank: 1 }, { lookup_value_id: 100, rank: 2 }, { lookup_value_id: 101, rank: 3 }, { lookup_value_id: 200, rank: null }, { lookup_value_id: 302, rank: null }, { lookup_value_id: 600, rank: null }]}
       licenceCount={1}
@@ -503,7 +505,7 @@ export const previewScreens: Record<string, () => ReactNode> = {
   "profile-new": () => (
     <ProfileView
       sp={{}}
-      profile={{ full_name: "Rena Pazienza", qualification_level: "PhD", primary_state: "TX", avatar_path: null }}
+      profile={{ full_name: "Jo Isenbrook", qualification_level: "PhD", primary_state: "TX", avatar_path: null }}
       lookups={lookups}
       selectedRows={[]}
       licenceCount={0}
@@ -515,7 +517,7 @@ export const previewScreens: Record<string, () => ReactNode> = {
   "profile-view": () => (
     <ProfileView
       sp={{ saved: "1" }}
-      profile={{ full_name: "Alex Rivers", credential_prefix: "Dr.", qualification_level: "PsyD", primary_practice_city: "Brooklyn", primary_state: "NY", bio: "Adults and adolescents with anxiety and trauma.", avatar_path: null }}
+      profile={{ full_name: "Alex Thornvale", credential_prefix: "Dr.", qualification_level: "PsyD", primary_practice_city: "Brooklyn", primary_state: "NY", bio: "Adults and adolescents with anxiety and trauma.", avatar_path: null }}
       lookups={lookups}
       selectedRows={[{ lookup_value_id: 102, rank: 1 }, { lookup_value_id: 100, rank: 2 }]}
       licenceCount={1}
@@ -560,7 +562,7 @@ export const previewScreens: Record<string, () => ReactNode> = {
       excluded={[]}
       blocked={[]}
       blockedProfiles={[]}
-      circle={[{ id: "a", full_name: "Maya Chen", credential_prefix: "Dr." }]}
+      circle={[{ id: "a", full_name: "Maya Calderwick", credential_prefix: "Dr." }]}
     />
   ),
 };

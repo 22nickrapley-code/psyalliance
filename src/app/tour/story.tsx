@@ -1,5 +1,5 @@
 // The one fictional story the tour and the sandbox share. Keep the facts
-// here identical to private.seed_demo_viewer: Alex Rivers, PsyD, a
+// here identical to private.seed_demo_viewer: Alex Thornvale, PsyD, a
 // clinical psychologist in Brooklyn, licensed in New York and New Jersey,
 // planning six weeks of parental leave that starts on the Monday after
 // the week four weeks from today.
@@ -32,10 +32,10 @@ export function AlexCard({ compact, eyebrow = "In every demo you’re" }: { comp
   const leave = leaveDates();
   return (
     <div className={`story-alex${compact ? " compact" : ""}`}>
-      <span className="story-initials" aria-hidden="true">AR</span>
+      <span className="story-initials" aria-hidden="true">AT</span>
       <div>
         <div className="eyebrow">{eyebrow}</div>
-        <h3>Alex Rivers, PsyD</h3>
+        <h3>Alex Thornvale, PsyD</h3>
         <p>Clinical psychologist in Brooklyn, New York</p>
         {compact && <p className="story-alex-line">Six weeks of parental leave from {leave.startLong}. Licensed in New York and New Jersey.</p>}
         {!compact && (

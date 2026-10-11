@@ -1,5 +1,7 @@
 import { PublicNav, PublicFooter } from "../_public/chrome";
 import { JOIN_HREF, TOUR_URL } from "@/lib/env";
+import { SectionReel } from "../tour/story-reel";
+import { findDemo } from "../tour/demos";
 import { CATEGORIES, PUBLIC_WORKFLOW, SHORT_CATEGORY, monthYear, docName, publicLibraryHref, type PublicDoc } from "@/lib/library";
 import { LeadForm } from "./lead-form";
 
@@ -7,7 +9,7 @@ import { LeadForm } from "./lead-form";
 // whether it has been independently reviewed. Provisional templates are
 // always labelled "In review"; only reviewed ones can be downloaded.
 
-const DEMO_HREF = `${TOUR_URL}/overview`;
+const DEMO_HREF = TOUR_URL;
 
 export const joinFrom = (code: string) => `${JOIN_HREF}?from=library-${code}`;
 
@@ -66,6 +68,26 @@ export function PublicLibraryView({ docs, q }: { docs: PublicDoc[]; q: string })
             </p>
           </div>
         </section>
+
+        {!q && (
+          <section className="public-section lib-demo">
+            <div className="section-inner">
+              <div className="section-intro">
+                <div className="eyebrow">See how it works &middot; fictional people</div>
+                <h2>Find the right template, in the moment you need it.</h2>
+              </div>
+              <SectionReel
+                demo={findDemo("library")!}
+                tryHref={`${JOIN_HREF}?from=library-video`}
+                end={{
+                  title: "The right template, when you need it.",
+                  text: "Create your account to save any template to your own private library.",
+                  tryLabel: "Create your account",
+                }}
+              />
+            </div>
+          </section>
+        )}
 
         <section className="public-section tint lib-list">
           <div className="section-inner">

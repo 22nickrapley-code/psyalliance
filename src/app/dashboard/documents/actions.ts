@@ -45,10 +45,21 @@ export async function uploadDocument(formData: FormData) {
   if (file.size > MAX_FILE_SIZE_BYTES) {
     documentsError(`File is too large (max ${MAX_FILE_SIZE_BYTES / (1024 * 1024)}MB)`);
   }
-  if (file.type && !ALLOWED_CONTENT_TYPES.has(file.type)) {
-    documentsError(
-      `File type "${file.type}" isn't supported. Use PDF, Word, plain text/CSV, or an image.`
-    );
+  // Some browsers send no type; it comes from the file's extension instead.
+  const byExtension: Record<string, string> = {
+    pdf: "application/pdf",
+    png: "image/png",
+    jpg: "image/jpeg",
+    jpeg: "image/jpeg",
+    webp: "image/webp",
+    doc: "application/msword",
+    docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    txt: "text/plain",
+    csv: "text/csv",
+  };
+  const contentType = file.type || byExtension[(file.name.split(".").pop() || "").toLowerCase()] || "";
+  if (!ALLOWED_CONTENT_TYPES.has(contentType)) {
+    documentsError(`That file type isn't supported. Use PDF, Word, plain text or CSV, or an image.`);
   }
 
   // Product Spec v1: the member-facing Library is curated. Members upload
@@ -62,7 +73,7 @@ export async function uploadDocument(formData: FormData) {
   const arrayBuffer = await file.arrayBuffer();
   const { error: uploadError } = await supabase.storage
     .from("documents")
-    .upload(storagePath, arrayBuffer, { contentType: file.type || "application/octet-stream" });
+    .upload(storagePath, arrayBuffer, { contentType });
   if (uploadError) documentsError(uploadError.message);
 
   // A document can carry several treatment areas now (document_treatment_areas
@@ -107,7 +118,11 @@ export async function uploadDocument(formData: FormData) {
     })
     .select("id")
     .single();
-  if (insertError) documentsError(insertError.message);
+  if (insertError) {
+    // The file went up but its record didn't: take the file back down.
+    await supabase.storage.from("documents").remove([storagePath]);
+    documentsError("Your file didn't save. Nothing was kept; please try again.");
+  }
 
   if (treatmentAreaIds.length > 0 && inserted) {
     const { error: areasError } = await supabase.from("document_treatment_areas").insert(
@@ -147,8 +162,11 @@ export async function deleteDocument(formData: FormData) {
     await assertIsAdmin(supabase, user.id);
   }
 
+  // The file goes first; its record is only removed once the file is gone,
+  // so a failure never leaves a file that nothing points to.
   if (storagePath) {
-    await supabase.storage.from("documents").remove([storagePath]);
+    const { error: removeError } = await supabase.storage.from("documents").remove([storagePath]);
+    if (removeError) documentsError("We couldn't remove that file just now. Nothing was changed; please try again.");
   }
   const { error } = await supabase.from("documents").delete().eq("id", id);
   if (error) documentsError(error.message);
@@ -265,7 +283,10 @@ export async function saveWorkingCopyAction(formData: FormData) {
     is_general: true,
     sources: `Your copy of ${doc.library_code ? `the ${docName(doc.library_code)}` : doc.title}, version ${doc.version || 1}`,
   });
-  if (error) documentsError(error.message);
+  if (error) {
+    await supabase.storage.from("documents").remove([target]);
+    documentsError("Your copy didn't save. Nothing was kept; please try again.");
+  }
 
   revalidatePath("/dashboard/documents");
   redirect(`/dashboard/documents?tab=mine&copied=${encodeURIComponent(doc.library_code || "1")}`);

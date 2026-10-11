@@ -110,7 +110,7 @@ export default async function HomePage() {
             </p>
             <div className="hero-actions">
               <a className="btn lg" href="/auth/sign-up">Create your account</a>
-              <a className="btn secondary lg" href={DEMO()}>See it in 90 seconds &rarr;</a>
+              <a className="btn secondary lg" href={DEMO()}>See it in two minutes &rarr;</a>
             </div>
             <p className="hero-free">Founding members never pay.</p>
             <ul className="hero-trust" aria-label="Who it's for">
@@ -122,7 +122,7 @@ export default async function HomePage() {
           <div className="hero-visual" aria-label="Example cover plan">
             <div className="visual-top">
               <span>Inside PsyAlliance</span>
-              <span>Example</span>
+              <span>Example &middot; fictional people</span>
             </div>
             <div className="visual-card">
               <div className="eyebrow">Cover plan &middot; Six weeks&rsquo; parental leave</div>
@@ -136,7 +136,7 @@ export default async function HomePage() {
               </div>
               <div className="visual-person">
                 <span className="avatar" aria-hidden="true">MC</span>
-                <span><b>Maya Chen, PsyD</b><small>Trusted colleague &middot; Brooklyn</small></span>
+                <span><b>Maya Calderwick, PsyD</b><small>Trusted colleague &middot; Brooklyn</small></span>
               </div>
               <ul className="reasons">
                 <li>Trauma specialist, NY license reviewed</li>
@@ -145,12 +145,12 @@ export default async function HomePage() {
             <div className="visual-card visual-list">
               <div className="line">
                 <b>Client 2 &middot; Teen anxiety</b>
-                <span className="who">Maya Chen, PsyD</span>
+                <span className="who">Samuel Brindlemoor, PhD</span>
                 <span className="status">Covered</span>
               </div>
               <div className="line">
                 <b>Client 3 &middot; Needs prescribing</b>
-                <span className="who">Eli Ramirez, MD</span>
+                <span className="who">Eli Kestrelby, MD</span>
                 <span className="status">Covered</span>
               </div>
             </div>
@@ -169,14 +169,14 @@ export default async function HomePage() {
                   <div className="n">{k}</div>
                   <h3>{t}</h3>
                   <p>{b}</p>
-                  <a className="text-arrow moment-watch" href={DEMO(`/${k.toLowerCase()}`)}>
+                  <a className="text-arrow moment-watch" href={DEMO(`?chapter=${k.toLowerCase()}`)}>
                     <span aria-hidden="true">&#9654;</span> Watch how {k} works
                   </a>
                 </article>
               ))}
             </div>
             <p className="section-more">
-              <a className="text-arrow" href={DEMO()}>Or watch the whole story in 90 seconds &rarr;</a>
+              <a className="text-arrow" href={DEMO()}>Or watch the whole story in two minutes &rarr;</a>
             </p>
           </div>
         </section>

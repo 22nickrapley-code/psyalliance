@@ -20,6 +20,9 @@ import {
 } from "./actions";
 import { rateCollaborationAction } from "../refer/actions";
 import { startConversation } from "../messages/actions";
+import { InlineThread } from "../_components/inline-thread";
+import type { ThreadMessage } from "@/lib/threads";
+import { coverThreadTitle, stateName } from "./labels";
 
 const STEPS = ["Plan", "Needs", "Candidates", "Invite", "Track"];
 
@@ -37,11 +40,17 @@ export type CaseItem = {
   focus: string;
   details: string[];
   status: "needs_cover" | "awaiting_response" | "confirmed" | "declined_all";
-  invited: { name: string; status: string }[];
+  invited: { name: string; status: string; profileId?: string; requestId?: number }[];
   assignedName: string | null;
   assignedId: string | null;
   queueCount: number;
+  // The state this client is in (their own, or the plan's).
+  state?: string | null;
+  // Questions colleagues have asked about this client, shown in place.
+  conversations?: CaseConversation[];
 };
+
+export type CaseConversation = { profileId: string; name: string; requestId: number; conversationId: number | null; messages: ThreadMessage[] };
 
 export type PlanSummary = {
   id: number;
@@ -50,6 +59,8 @@ export type PlanSummary = {
   starts: string | null;
   ends: string | null;
   state: string | null;
+  // Every state the plan's clients are in.
+  states?: string[];
   status: string;
   counts: { total: number; covered: number; invited: number; open: number };
 };
@@ -65,7 +76,7 @@ const CASE_STATUS: Record<CaseItem["status"], { label: string; tone: "" | "warn"
 
 const INVITE_STATUS: Record<string, { label: string; tone: "" | "warn" | "neutral" }> = {
   sent: { label: "asked, awaiting reply", tone: "warn" },
-  discussing: { label: "interested, not yet accepted", tone: "warn" },
+  discussing: { label: "has a question", tone: "warn" },
   accepted: { label: "accepted", tone: "" },
   declined: { label: "declined", tone: "neutral" },
   expired: { label: "closed", tone: "neutral" },
@@ -94,7 +105,7 @@ function PlanAside({ plan, extra }: { plan: PlanSummary; extra?: ReactNode }) {
           rows={[
             ["Type", ABSENCE[plan.absenceType || ""]?.label || "Cover"],
             ["Dates", `${fmt(plan.starts)} – ${fmt(plan.ends)}`],
-            ["Jurisdiction", plan.state || "Not set"],
+            [plan.states && plan.states.length > 1 ? "States" : "State", (plan.states?.length ? plan.states : plan.state ? [plan.state] : []).map((c) => stateName(c)).join(", ") || "Not set"],
             ["Clients", plan.counts.total],
             ["Asked, awaiting reply", plan.counts.invited],
             ["Covered", plan.counts.covered],
@@ -149,7 +160,16 @@ export type IncomingPlan = {
   note: string | null;
   urgent: boolean;
   sentAt: string | null;
-  cases: { requestId: number; status?: string; reference: string | null; focus: string; details: [string, string][] }[];
+  cases: {
+    requestId: number;
+    caseId?: number;
+    status?: string;
+    reference: string | null;
+    focus: string;
+    details: [string, string][];
+    // The conversation about this client, once a question has been asked.
+    thread?: { conversationId: number | null; messages: ThreadMessage[] };
+  }[];
 };
 
 function IncomingCard({ r }: { r: IncomingPlan }) {
@@ -188,7 +208,7 @@ function IncomingCard({ r }: { r: IncomingPlan }) {
           // Keep the owner's numbering, so "Client 2" stays Client 2 after Client 1 is answered.
           const label = c.reference ? c.reference.trim().replace(/^case\s*(\d+)$/i, "Client $1") : `Client ${i + 1}`;
           const ownerFirst = r.ownerName.replace(/^(dr\.?)\s+/i, "").split(/[\s,]+/)[0];
-          const threadTitle = `Cover · ${r.planTitle} · ${label} · ${c.focus}`;
+          const threadTitle = coverThreadTitle(r.planTitle, label, c.focus);
           const discussing = c.status === "discussing";
           return (
           <div key={c.requestId} id={`request-${c.requestId}`} className={`incoming-case${discussing ? " is-discussing" : ""}`}>
@@ -207,13 +227,18 @@ function IncomingCard({ r }: { r: IncomingPlan }) {
               // and (folded away) the final answer.
               <div className="reply-summary is-question">
                 <h3>Your question was sent to {r.ownerName}</h3>
-                <p className="small">It&rsquo;s in Messages, in your conversation about {label}. Once you&rsquo;ve talked it through, give your final answer here.</p>
-                <form action={startConversation} className="inline">
-                  <input type="hidden" name="participant_ids" value={r.ownerId} />
-                  <input type="hidden" name="title" value={threadTitle} />
-                  <input type="hidden" name="body" value="" />
-                  <button type="submit" className="btn small-btn">Go to messages &rarr;</button>
-                </form>
+                <InlineThread
+                  messages={c.thread?.messages || []}
+                  conversationId={c.thread?.conversationId}
+                  otherName={r.ownerName}
+                  otherIds={[r.ownerId]}
+                  title={threadTitle}
+                  heading={`Your conversation with ${ownerFirst} about ${label}`}
+                  returnTo="/dashboard/cover"
+                  anchor={`request-${c.requestId}`}
+                  link={c.caseId ? `/dashboard/cover/${r.planId}?step=track#case-${c.caseId}` : undefined}
+                />
+                <p className="micro-note">Once you&rsquo;ve talked it through, give your final answer.</p>
                 <details className="final-answer">
                   <summary>Give your final answer</summary>
                   <form action={respondCoverAction} className="row wrap" style={{ marginTop: 12, gap: 8 }}>
@@ -238,7 +263,7 @@ function IncomingCard({ r }: { r: IncomingPlan }) {
                   <label className="field">
                     Your question
                     <textarea name="question" rows={3} maxLength={600} placeholder={`e.g. Could we talk through the schedule for ${label} and how you'd like the handoff to work?`} />
-                    <small>It goes to {ownerFirst} in Messages. No client-identifying details.</small>
+                    <small>{ownerFirst}&rsquo;s reply appears here, under {label}. No client-identifying details.</small>
                   </label>
                   <button type="submit" name="response" value="discussing" className="btn small-btn resp-discuss">Send question</button>
                 </details>
@@ -378,12 +403,16 @@ export function CoverPlanStepView({
   error,
   preset,
   fix,
+  withColleague,
 }: {
   options: NeedOptions;
   error?: string;
   preset?: { absenceType: string; title: string; starts: string; ends: string; state?: string };
   fix?: string;
+  // From "Ask for cover" on a colleague's profile: asked first for each client.
+  withColleague?: { id: string; name: string } | null;
 }) {
+  const withFirst = withColleague ? withColleague.name.replace(/^(dr\.?)\s+/i, "").split(/[\s,]+/)[0] : "";
   return (
     <>
       <PageHead eyebrow="Cover / new plan" title="Start with the time away." lead="Choose the kind of cover and the dates. Describe each client&rsquo;s needs next, without identifiers." actions={<a className="btn secondary" href="/dashboard/cover">Cancel</a>} />
@@ -391,6 +420,14 @@ export function CoverPlanStepView({
       <Banner error={error} />
       <form className="split cover-plan-form" action={createPlanAction} data-deidentify="">
         <section className="card">
+          {withColleague && (
+            <>
+              <input type="hidden" name="with" value={withColleague.id} />
+              <div className="ask-first-note">
+                <b>{withColleague.name} will be asked first.</b> Once you&rsquo;ve described each client, {withFirst} is at the top of that client&rsquo;s colleagues, already ticked. You can change it.
+              </div>
+            </>
+          )}
           <div className="eyebrow">Step 1 &middot; Plan</div>
           <h2>What kind of cover do you need?</h2>
           <div className="choose-grid">
@@ -420,6 +457,7 @@ export function CoverPlanStepView({
                 <option value="">Choose a state</option>
                 {options.states.map((s) => <option key={s.code} value={s.code}>{s.name}</option>)}
               </select>
+              <small>Clients in more than one state? Choose the main one; you can set a different state for any client next.</small>
             </label>
           </div>
           <div className="tone-panel" style={{ marginTop: 16 }}>
@@ -444,6 +482,8 @@ export function CoverPlanStepView({
 
 // ---------- Step 2: Needs ----------
 export function CoverNeedsView({ plan, cases, options, error, addedId }: { plan: PlanSummary; cases: CaseItem[]; options: NeedOptions; error?: string; addedId?: number | null }) {
+  // A new client starts in the state of the last one added, or the plan's.
+  const nextState = cases[cases.length - 1]?.state || plan.state || "";
   return (
     <>
       <PlanHead plan={plan} step={1} lead="Describe each client who needs cover, by need. No names, initials or dates." />
@@ -491,6 +531,12 @@ export function CoverNeedsView({ plan, cases, options, error, addedId }: { plan:
                 <select name="focus" defaultValue="">
                   <option value="">None</option>
                   {options.focus.map((o) => <option key={o.id} value={o.id}>{o.value}</option>)}
+                </select>
+              </label>
+              <label className="field">
+                State this client is in
+                <select name="client_state" defaultValue={nextState}>
+                  {options.states.map((st) => <option key={st.code} value={st.code}>{st.name}</option>)}
                 </select>
               </label>
               <label className="field">
@@ -555,12 +601,16 @@ export function CoverCandidatesView({
   suggestions,
   avatarUrls,
   preselected,
+  preferred,
 }: {
   plan: PlanSummary;
   cases: CaseItem[];
   suggestions: Record<number, Match[]>;
   avatarUrls: Record<string, string | null>;
   preselected?: Record<number, string[]>;
+  // The colleague chosen from their profile: first for every client, with
+  // anything that stops them fitting a client said plainly.
+  preferred?: { id: string; perCase: Record<number, { canAsk: boolean; gaps: string[] }> } | null;
 }) {
   const openCases = cases.filter((c) => c.status === "needs_cover" || c.status === "declined_all");
   return (
@@ -587,13 +637,28 @@ export function CoverCandidatesView({
                 {list.length === 0 ? (
                   <Empty title="No colleague matches this client yet." body="Nobody with an active license in this state, the right focus and current availability is left to ask. Try widening the case, or invite a colleague you trust to join." />
                 ) : (
-                  list.map((m, i) => (
+                  list.map((m, i) => {
+                    const pin = preferred && m.profileId === preferred.id ? preferred.perCase[c.id] : undefined;
+                    const pinBlocked = !!(preferred && preferred.perCase[c.id] && !preferred.perCase[c.id].canAsk);
+                    // Ticked: the chosen colleague when they can be asked,
+                    // otherwise the first suggestion.
+                    const firstOther = list.find((x) => !preferred || x.profileId !== preferred.id)?.profileId;
+                    const checked = preselected
+                      ? (preselected[c.id] || []).includes(m.profileId)
+                      : preferred && preferred.perCase[c.id]
+                        ? pin
+                          ? pin.canAsk
+                          : pinBlocked && m.profileId === firstOther
+                        : i === 0;
+                    return (
                     <MatchCard
                       key={m.profileId}
                       m={m}
                       rank={i + 1}
                       avatarUrl={avatarUrls[m.profileId]}
-                      select={{ name: `pick_${c.id}`, checked: preselected ? (preselected[c.id] || []).includes(m.profileId) : i === 0 }}
+                      flag={pin ? "Your choice" : undefined}
+                      note={pin?.gaps}
+                      select={{ name: `pick_${c.id}`, checked, disabled: pin ? !pin.canAsk : false }}
                       actions={
                         <button
                           type="submit"
@@ -608,7 +673,8 @@ export function CoverCandidatesView({
                         </button>
                       }
                     />
-                  ))
+                    );
+                  })
                 )}
               </section>
             );
@@ -779,7 +845,7 @@ export function CoverTrackView({
               const s = CASE_STATUS[c.status];
               const next = nextSuggestion[c.id];
               return (
-                <div key={c.id} className="pa-case">
+                <div key={c.id} className="pa-case" id={`case-${c.id}`}>
                   <div className="row between">
                     <strong>{c.reference} &middot; {c.focus}</strong>
                     <Status tone={s.tone}>{s.label}</Status>
@@ -791,6 +857,26 @@ export function CoverTrackView({
                       ))}
                     </div>
                   )}
+                  {(c.conversations || []).map((t) => {
+                    const first = t.name.replace(/^(dr\.?)\s+/i, "").split(/[\s,]+/)[0];
+                    return (
+                      <div key={t.profileId} className="case-question">
+                        <InlineThread
+                          messages={t.messages}
+                          conversationId={t.conversationId}
+                          otherName={t.name}
+                          otherIds={[t.profileId]}
+                          title={coverThreadTitle(plan.title, c.reference, c.focus)}
+                          heading={`${first} has a question about ${c.reference || "this client"}`}
+                          returnTo={`/dashboard/cover/${plan.id}?step=track`}
+                          anchor={`case-${c.id}`}
+                          link={`/dashboard/cover#request-${t.requestId}`}
+                          placeholder={`Answer ${first}…`}
+                        />
+                        <p className="micro-note">{first} accepts or declines once you&rsquo;ve talked it through.</p>
+                      </div>
+                    );
+                  })}
                   {c.status === "confirmed" && (() => {
                     // The thread is the one the colleague used for this
                     // client (same title), so any earlier question is there.
@@ -807,7 +893,7 @@ export function CoverTrackView({
                         {c.assignedId && (
                           <form action={startConversation} className="handoff-actions">
                             <input type="hidden" name="participant_ids" value={c.assignedId} />
-                            <input type="hidden" name="title" value={`Cover · ${plan.title} · ${label} · ${c.focus}`} />
+                            <input type="hidden" name="title" value={coverThreadTitle(plan.title, label, c.focus)} />
                             <input type="hidden" name="body" value="" />
                             <input
                               type="hidden"

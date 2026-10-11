@@ -70,6 +70,7 @@ export function buildNavGroups(opts: {
         { href: "/dashboard/messages", label: "Messages", glyph: "messages", badge: opts.unreadMessages },
         { href: "/dashboard/network", label: "Network", glyph: "network", matches: ["/dashboard/invite"] },
         { href: "/dashboard/documents", label: "Practice Library", glyph: "library" },
+        { href: "/dashboard/demos", label: "Demos", glyph: "play" },
         { href: "/dashboard/settings", label: "Settings", glyph: "settings" },
       ],
     },

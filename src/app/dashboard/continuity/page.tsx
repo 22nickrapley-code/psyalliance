@@ -21,7 +21,9 @@ export default async function ContinuityPage(props: { searchParams: Promise<{ sa
       .maybeSingle<any>(),
     supabase.rpc("my_continuity_duties"),
     supabase.from("licenses").select("state, license_number").eq("profile_id", me).order("state"),
-    supabase.from("profiles").select("full_name, credential_prefix, qualification_level, malpractice_carrier, malpractice_expires").eq("id", me).maybeSingle<any>(),
+    // Your own details, including your insurer, from your own-profile
+    // function (a direct read of the insurer column isn't allowed).
+    supabase.rpc("my_profile").maybeSingle<any>(),
   ]);
   // What PsyAlliance already knows, offered as a starting point.
   const known = {

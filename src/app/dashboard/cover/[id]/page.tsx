@@ -1,11 +1,12 @@
 import { clinicianName } from "@/lib/profession";
 import { createClient } from "@/lib/supabase/server";
 import { loadNeedOptions } from "@/lib/need-options";
-import { findMatches, type Match } from "@/lib/match-engine";
+import { findMatches, assessColleague, type Match } from "@/lib/match-engine";
+import { loadThread } from "@/lib/threads";
 import { resolveAvatarUrls } from "@/lib/avatars";
 import { PageHead, Empty } from "../../_components/ui";
 import { CoverNeedsView, CoverCandidatesView, CoverInviteView, CoverTrackView } from "../views";
-import { loadPlan, caseNeed, excludedFor } from "../data";
+import { loadPlan, caseNeed, excludedFor, coverThreadTitle } from "../data";
 
 export const metadata = { title: "Cover plan" };
 
@@ -51,11 +52,30 @@ export default async function CoverPlanPage(props: { params: Promise<{ id: strin
         return [c.id, matches] as [number, Match[]];
       })
     );
+    // "Ask for cover" from a colleague's profile: that colleague comes first
+    // for every client, with anything that stops them fitting said plainly.
+    let preferred: { id: string; perCase: Record<number, { canAsk: boolean; gaps: string[] }> } | null = null;
+    if (plan.preferred_profile_id) {
+      const pid = plan.preferred_profile_id as string;
+      const perCase: Record<number, { canAsk: boolean; gaps: string[] }> = {};
+      await Promise.all(
+        open.map(async (c: any) => {
+          const exclude = await excludedFor(supabase, c.id);
+          if (exclude.includes(pid)) return; // already asked, or removed from this client's suggestions
+          const fit = await assessColleague(supabase, myself, pid, caseNeed(c, plan));
+          if (!fit) return;
+          perCase[c.id] = { canAsk: fit.canAsk, gaps: fit.gaps };
+          const list = results.find(([id]) => id === c.id)!;
+          list[1] = [fit.match, ...list[1].filter((m) => m.profileId !== pid)];
+        })
+      );
+      if (Object.keys(perCase).length) preferred = { id: pid, perCase };
+    }
     const suggestions = Object.fromEntries(results);
     const every = results.flatMap(([, m]) => m);
     const urls = await resolveAvatarUrls(supabase, every.map((m) => m.avatarPath));
     const avatarUrls = Object.fromEntries(every.map((m) => [m.profileId, urls.get(m.avatarPath || "") || null]));
-    return <CoverCandidatesView plan={summary} cases={cases} suggestions={suggestions} avatarUrls={avatarUrls} />;
+    return <CoverCandidatesView plan={summary} cases={cases} suggestions={suggestions} avatarUrls={avatarUrls} preferred={preferred} />;
   }
 
   if (step === "invite") {
@@ -113,6 +133,21 @@ export default async function CoverPlanPage(props: { params: Promise<{ id: strin
       const done = new Set((rated || []).map((r: any) => r.colleague_profile_id));
       toRate = Array.from(covered.entries()).filter(([pid]) => !done.has(pid)).map(([pid, name]) => ({ id: pid, name }));
     }
+    // A colleague's question about a client shows under that client, with
+    // the conversation so far and a reply box.
+    await Promise.all(
+      cases.map(async (c) => {
+        const asking = c.invited.filter((i) => i.status === "discussing" && i.profileId && i.requestId);
+        if (!asking.length) return;
+        const title = coverThreadTitle(plan.title, c.reference, c.focus);
+        c.conversations = await Promise.all(
+          asking.map(async (i) => {
+            const t = await loadThread(supabase, myself, [i.profileId!], title);
+            return { profileId: i.profileId!, name: i.name, requestId: i.requestId!, conversationId: t.conversationId, messages: t.messages };
+          })
+        );
+      })
+    );
     const sent = one("sent");
     const ok = one("completed")
       ? "Plan completed. Colleagues who covered for you now show as Worked with before."

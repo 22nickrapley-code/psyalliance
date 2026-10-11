@@ -4,7 +4,7 @@ import { Children, useCallback, useEffect, useRef, useState, type ReactNode } fr
 import { actionMs, sceneMs, typeStep, TYPE_LIMIT, type SceneAction } from "./scene-timing";
 export type { SceneAction } from "./scene-timing";
 
-// The 90-second story: real PsyAlliance screens with fictional people,
+// The two-minute story: real PsyAlliance screens with fictional people,
 // playing on their own with a caption for each moment. No clicking needed
 // to understand it; pause, step back or jump to a chapter at any time.
 
@@ -69,16 +69,17 @@ function findFocus(root: HTMLElement, focus?: string, index = 0): HTMLElement | 
 
 // What the closing card says. Inside the app the example opens over the
 // page itself, so "Try it yourself" closes it rather than going anywhere.
-export type StoryEnd = { title: string; text: string; tryLabel?: string };
+export type StoryEnd = { title: string; text: string; tryLabel?: string; otherLabel?: string; otherHref?: string };
 const DEFAULT_END: StoryEnd = { title: "That\u2019s PsyAlliance.", text: "Cover, referrals, questions and templates, with colleagues you trust." };
 
 export function StoryPlayer({
   scenes,
   children,
   tryHref,
-  label = "PsyAlliance in 90 seconds",
+  label = "PsyAlliance in two minutes",
   end = DEFAULT_END,
   embed = false,
+  startAt = 0,
 }: {
   scenes: Scene[];
   children: ReactNode;
@@ -86,9 +87,11 @@ export function StoryPlayer({
   label?: string;
   end?: StoryEnd;
   embed?: boolean;
+  // Start from a chapter (a link such as "Watch how Cover works").
+  startAt?: number;
 }) {
   const screens = Children.toArray(children);
-  const [i, setI] = useState(0);
+  const [i, setI] = useState(Math.max(0, Math.min(scenes.length - 1, startAt)));
   const [playing, setPlaying] = useState(false);
   const [started, setStarted] = useState(false);
   const [ended, setEnded] = useState(false);
@@ -428,7 +431,8 @@ export function StoryPlayer({
                   ) : (
                     <a className="btn" href={tryHref}>{end.tryLabel || "Try it yourself"} &rarr;</a>
                   )}
-                  <button type="button" className="btn secondary" onClick={() => { go(0, false); setPlaying(true); }}>Watch again</button>
+                  {end.otherHref && <a className="btn secondary" href={end.otherHref}>{end.otherLabel || "Back"}</a>}
+                  <button type="button" className={end.otherHref ? "btn ghost" : "btn secondary"} onClick={() => { go(0, false); setPlaying(true); }}>Watch again</button>
                 </div>
               </div>
             )}

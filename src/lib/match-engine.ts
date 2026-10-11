@@ -99,7 +99,7 @@ export async function findMatches(
   supabase: Supabase,
   requesterId: string,
   need: MatchNeed,
-  opts: { exclude?: string[]; limit?: number } = {}
+  opts: { exclude?: string[]; limit?: number; only?: string[] } = {}
 ): Promise<MatchResult> {
   const needState = need.state ? need.state.trim().toUpperCase() : null;
   const needCity = need.city ? need.city.trim().toLowerCase() : null;
@@ -121,7 +121,7 @@ export async function findMatches(
     supabase.from("collaboration_ratings").select("colleague_profile_id, would_work_again").eq("rater_profile_id", requesterId),
     supabase.from("do_not_work_with").select("blocked_profile_id").eq("profile_id", requesterId),
   ]);
-  const candidates = ((pool as any[]) || []).filter((p) => p.id !== requesterId);
+  const candidates = ((pool as any[]) || []).filter((p) => p.id !== requesterId && (!opts.only || opts.only.includes(p.id)));
 
   const licenceStates = new Map<string, Set<string>>();
   for (const p of candidates) licenceStates.set(p.id, new Set(p.states || []));
@@ -318,4 +318,87 @@ function widenOptions(need: MatchNeed): { key: string; label: string }[] {
   if (need.city) out.push({ key: "city", label: "Anywhere in the state" });
   if (need.languageId) out.push({ key: "languageId", label: "Any language" });
   return out;
+}
+
+// One named colleague against a need: used when a member starts from that
+// colleague's profile ("Refer a client", "Ask for cover"). If they would be
+// suggested anyway, the reasons are the usual ones. If not, each gap is said
+// plainly, and canAsk is false only when they can't take the client at all
+// (no reviewed license where the client is).
+export type ColleagueFit = { match: Match; fits: boolean; canAsk: boolean; gaps: string[] };
+
+export async function assessColleague(supabase: Supabase, requesterId: string, colleagueId: string, need: MatchNeed): Promise<ColleagueFit | null> {
+  const { matches } = await findMatches(supabase, requesterId, need, { only: [colleagueId], limit: 1 });
+  if (matches[0]) return { match: matches[0], fits: true, canAsk: true, gaps: [] };
+
+  const focusIds = (need.focusIds || []).filter((n) => Number.isFinite(n) && n > 0);
+  const [{ data: rows }, { data: licenceRows }, { data: extra }, { data: trustedRow }, { data: workedRow }, { data: focusRows }] = await Promise.all([
+    supabase.from("public_directory").select("*").eq("id", colleagueId),
+    supabase.rpc("network_licence_states").eq("profile_id", colleagueId),
+    supabase.from("profiles").select("availability_paused_until").eq("id", colleagueId).maybeSingle(),
+    supabase.from("trusted_colleagues").select("colleague_id").eq("profile_id", requesterId).eq("colleague_id", colleagueId).maybeSingle(),
+    supabase.from("worked_with_before").select("colleague_id").eq("profile_id", requesterId).eq("colleague_id", colleagueId).maybeSingle(),
+    focusIds.length ? supabase.from("lookup_values").select("id, value").in("id", focusIds) : Promise.resolve({ data: [] as any[] }),
+  ]);
+  const p: any = (rows as any[])?.[0];
+  if (!p) return null;
+  const first = String(p.full_name || "They").replace(/^(dr\.?)\s+/i, "").split(/\s+/)[0];
+  const states = new Set<string>((((licenceRows as any[]) || []).find((r) => r.profile_id === colleagueId)?.states as string[] | undefined || []).map((x) => String(x).toUpperCase()));
+  const needState = need.state ? need.state.trim().toUpperCase() : null;
+  const allowsTelehealth = need.setting !== "in_person";
+  const gaps: string[] = [];
+  let canAsk = true;
+
+  if (states.size === 0) {
+    gaps.push(`${first} has no reviewed license on file yet, so can't take a client.`);
+    canAsk = false;
+  } else if (needState && !states.has(needState)) {
+    const tele = psypactCovers(needState, p.primary_state, p.qualification_level, !!p.psypact_participating);
+    if (tele && allowsTelehealth) {
+      // Telehealth under PSYPACT is fine; nothing to flag.
+    } else if (tele) {
+      gaps.push(`${first} could only see this client by telehealth (PSYPACT), and you asked for in person.`);
+    } else {
+      gaps.push(`No reviewed license in ${needState}, so ${first} can't take this client.`);
+      canAsk = false;
+    }
+  }
+  const theirFocus = new Set(((rows as any[]) || []).filter((r) => r.category === "treatment_specialism").map((r) => String(r.value).toLowerCase()));
+  const wanted = ((focusRows as any[]) || []).map((f) => String(f.value));
+  if (wanted.length && !wanted.some((w) => theirFocus.has(w.toLowerCase()))) {
+    gaps.push(`Doesn't list ${wanted.join(" or ")} among their specialties.`);
+  }
+  if (need.prescribing && !PRESCRIBER_QUALIFICATIONS.has(String(p.qualification_level))) gaps.push(`${first} doesn't prescribe.`);
+  const avail = availabilityFor(need.kind, { ...p, availability_paused_until: (extra as any)?.availability_paused_until ?? null });
+  if (need.kind !== "discovery" && avail.value === "no") gaps.push(`${avail.label}.`);
+  const age = daysSince(p.availability_confirmed_at);
+  if ((need.kind === "referral" || need.kind === "cover") && age !== null && age > DROP_DAYS) gaps.push("Hasn't confirmed availability in over three months.");
+  if (!gaps.length) gaps.push("Not among the usual suggestions for this client.");
+
+  const tier: RelationshipTier = trustedRow ? "trusted" : workedRow ? "worked_with" : "none";
+  const freshness: Freshness = age === null ? "unconfirmed" : age <= FRESH_DAYS ? "fresh" : "stale";
+  const reasons: string[] = [];
+  if (tier === "trusted") reasons.push("Trusted colleague");
+  else if (tier === "worked_with") reasons.push("Worked together before");
+  if (needState && states.has(needState)) reasons.push(`${needState} license reviewed`);
+  return {
+    match: {
+      profileId: p.id,
+      fullName: p.full_name,
+      credentialPrefix: p.credential_prefix,
+      qualification: p.qualification_level,
+      city: p.primary_practice_city,
+      state: p.primary_state,
+      avatarPath: p.avatar_path,
+      score: 0,
+      tier,
+      freshness,
+      availabilityLabel: avail.label,
+      confirmedDaysAgo: age,
+      reasons,
+    },
+    fits: false,
+    canAsk,
+    gaps,
+  };
 }

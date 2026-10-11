@@ -178,8 +178,9 @@ export function SettingsView({ sp, email, me, prefs, profile, emergency, exclude
             <div className="row wrap">
               <a className="btn secondary small-btn" href="/dashboard/settings/export">Download my data (JSON)</a>
             </div>
+            <p className="micro-note" style={{ marginTop: 8 }}>A copy of your records: profile, credentials, cover, referrals, consultations, groups, continuity plan and messages. Files in My Library are listed, not included; download those from My Library. It isn&rsquo;t a backup.</p>
             {email.endsWith("@sandbox.psyalliance.test") ? (
-              <p className="small" style={{ marginTop: 14, marginBottom: 0 }}>A sandbox ends on its own when its link expires. To start again, use Reset in the sandbox bar.</p>
+              <p className="small" style={{ marginTop: 14, marginBottom: 0 }}>A sandbox ends on its own when its link expires. To start again, use Start the story again in the sandbox bar.</p>
             ) : (
               <div style={{ marginTop: 14 }}>
                 <DeleteAccount back="/dashboard/settings" />

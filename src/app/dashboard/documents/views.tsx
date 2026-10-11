@@ -223,7 +223,7 @@ export function ResourceDetailView({
             </div>
           )}
           <p className="small" style={{ marginTop: 16, marginBottom: 0 }}>
-            The PDF is saved to My Library, where only you can see it. Print it or fill it in outside PsyAlliance, especially if it will hold client details. Never upload a completed form that identifies a client.
+            Save PDF to My Library keeps a private copy that only you can see. Print it or fill it in outside PsyAlliance, especially if it will hold client details. Never upload a completed form that identifies a client.
           </p>
         </section>
         <aside className="stack">

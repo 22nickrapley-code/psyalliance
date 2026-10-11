@@ -3,7 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { loadNeedOptions } from "@/lib/need-options";
 import { resolveAvatarUrls } from "@/lib/avatars";
 import { PageHead, Empty } from "../../_components/ui";
-import { ReferTrackView, type ReferralDetail } from "../views";
+import { ReferTrackView, referralThreadTitle, type ReferralDetail } from "../views";
+import { loadThread } from "@/lib/threads";
 
 export const metadata = { title: "Referral" };
 
@@ -42,7 +43,7 @@ export default async function ReferralDetailPage(props: {
   const isMine = r.requesting_profile_id === myself;
   const { data: responses } = await supabase
     .from("referral_responses")
-    .select("responding_profile_id, status, message, responder:responding_profile_id(full_name, credential_prefix, qualification_level, avatar_path)")
+    .select("responding_profile_id, status, message, created_at, responded_at, responder:responding_profile_id(full_name, credential_prefix, qualification_level, avatar_path)")
     .eq("referral_request_id", r.id)
     .order("created_at", { ascending: true });
   const urls = await resolveAvatarUrls(supabase, (responses || []).map((x: any) => x.responder?.avatar_path));
@@ -101,7 +102,33 @@ export default async function ReferralDetailPage(props: {
     myResponse: mine ? { status: mine.status, message: mine.message } : null,
     chosen: chosenRow ? { profileId: chosenRow.responding_profile_id, name: nameOf((chosenRow as any).responder) } : null,
     rated,
+    meId: myself,
   };
+
+  // The conversation about this referral shows in place: for the referrer,
+  // one per colleague who replied; for a colleague, the one with the referrer.
+  const title = referralThreadTitle(focus, where);
+  const others: string[] = isMine ? (responses || []).map((x: any) => x.responding_profile_id) : mine ? [r.requesting_profile_id] : [];
+  if (others.length) {
+    const loaded = await Promise.all(others.map(async (other) => [other, await loadThread(supabase, myself, [other], title)] as const));
+    detail.threads = Object.fromEntries(loaded);
+    // A question asked before questions were posted to the conversation
+    // (or one that didn't reach it) is shown first, so nothing is missing.
+    for (const x of (responses || []) as any[]) {
+      if (!x.message || !["question", "interested", "unavailable", "accepted"].includes(x.status)) continue;
+      const other = isMine ? x.responding_profile_id : x.responding_profile_id === myself ? r.requesting_profile_id : null;
+      const t = other ? detail.threads[other] : null;
+      if (!t || t.messages.some((m) => m.body.trim() === String(x.message).trim())) continue;
+      if (x.status !== "question" && t.messages.length === 0) continue;
+      t.messages.unshift({
+        id: -Number(x.created_at ? Date.parse(x.created_at) : 1),
+        mine: x.responding_profile_id === myself,
+        author: x.responding_profile_id === myself ? "You" : nameOf(x.responder),
+        body: String(x.message),
+        at: x.responded_at || x.created_at || r.created_at,
+      });
+    }
+  }
 
   const ok = sp.sent
     ? "Referral sent. You'll be notified as colleagues reply."

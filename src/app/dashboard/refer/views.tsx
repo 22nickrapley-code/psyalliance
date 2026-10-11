@@ -3,7 +3,9 @@ import { startConversation } from "../messages/actions";
 import { TOUR_URL } from "@/lib/env";
 import { FirstVisit } from "../_components/first-visit";
 import type { ReactNode } from "react";
-import type { Match } from "@/lib/match-engine";
+import type { Match, ColleagueFit } from "@/lib/match-engine";
+import type { ThreadMessage } from "@/lib/threads";
+import { InlineThread } from "../_components/inline-thread";
 import type { NeedOptions } from "@/lib/need-options";
 import { needToQuery, type parseNeed } from "@/lib/need-options";
 import { NavIcon } from "../icons";
@@ -33,6 +35,28 @@ import {
 
 type Need = ReturnType<typeof parseNeed>;
 const STEPS = ["Need", "Shortlist", "Review", "Track"];
+// Referring to one colleague, from their profile: no shortlist.
+const DIRECT_STEPS = ["Need", "Check and send", "Track"];
+
+export type DirectColleague = { id: string; name: string; first: string; role: string; avatarUrl: string | null; relation: string | null };
+
+// The colleague a direct referral goes to, with how you know them.
+function ColleagueCard({ c, children }: { c: DirectColleague; children?: ReactNode }) {
+  return (
+    <section className="card direct-colleague">
+      <div className="eyebrow">Referring to</div>
+      <div className="dc-person">
+        <PersonAvatar name={c.name} url={c.avatarUrl} size={52} />
+        <div>
+          <h3><a href={`/dashboard/people/${c.id}`}>{c.name}</a></h3>
+          <p className="small">{c.role}</p>
+          {c.relation && <span className="chip">{c.relation}</span>}
+        </div>
+      </div>
+      {children}
+    </section>
+  );
+}
 
 export function describeNeed(need: Need, options: Pick<NeedOptions, "focus" | "language" | "states">) {
   const focus = need.focusIds.map((id) => options.focus.find((f) => f.id === id)?.value).filter(Boolean).join(" + ");
@@ -68,33 +92,45 @@ function ResourceAside() {
 }
 
 // ---------- Step 1: Need ----------
-export function ReferNeedView({ options, need, error }: { options: NeedOptions; need: Need; error?: string }) {
+export function ReferNeedView({ options, need, error, to }: { options: NeedOptions; need: Need; error?: string; to?: DirectColleague | null }) {
   return (
     <>
       <PageHead
-        eyebrow="Refer / new referral"
-        title="Refer"
-        lead="Start with the service need. Review a shortlist before anyone is contacted."
-        actions={<a className="btn secondary" href="/dashboard/refer">Back to referrals</a>}
+        eyebrow={to ? "Refer / to a colleague" : "Refer / new referral"}
+        title={to ? `Refer a client to ${to.name}` : "Refer"}
+        lead={
+          to
+            ? `Describe what the client needs. You'll see how ${to.first} fits before anything is sent, and it goes to ${to.first} only.`
+            : "Start with the service need. Review a shortlist before anyone is contacted."
+        }
+        actions={<a className="btn secondary" href={to ? `/dashboard/people/${to.id}` : "/dashboard/refer"}>{to ? `Back to ${to.first}` : "Back to referrals"}</a>}
       />
-      <Progress steps={STEPS} current={0} />
+      <Progress steps={to ? DIRECT_STEPS : STEPS} current={0} />
       <Banner error={error} />
       <div className="split">
         <form className="card" method="get" action="/dashboard/refer/new">
-          <input type="hidden" name="step" value="shortlist" />
+          <input type="hidden" name="step" value={to ? "review" : "shortlist"} />
+          {to && <input type="hidden" name="to" value={to.id} />}
           <div className="eyebrow">Step 1 &middot; Define the need</div>
-          <h2>Who could be a good fit?</h2>
+          <h2>{to ? "What does the client need?" : "Who could be a good fit?"}</h2>
           <p>Start with the main need and where the client is. Everything else is optional.</p>
           <NeedFields options={options} values={need} />
           <div className="tone-panel" style={{ marginTop: 18 }}>
             {HANDOFF_RULE}
           </div>
           <div className="step-actions">
-            <a className="btn ghost" href="/dashboard/refer">Cancel</a>
-            <button type="submit" className="btn">See shortlist &rarr;</button>
+            <a className="btn ghost" href={to ? `/dashboard/people/${to.id}` : "/dashboard/refer"}>Cancel</a>
+            <button type="submit" className="btn">{to ? `Check the fit` : "See shortlist"} &rarr;</button>
           </div>
         </form>
         <aside className="stack">
+          {to && (
+            <ColleagueCard c={to}>
+              <p className="small" style={{ marginTop: 12 }}>
+                Want to see everyone who fits instead? <a href="/dashboard/refer/new">Start an open referral</a>.
+              </p>
+            </ColleagueCard>
+          )}
           <section className="card tint">
             <div className="eyebrow">How it works</div>
             <h3>You stay in control.</h3>
@@ -114,12 +150,15 @@ export function ReferShortlistView({
   matches,
   widen,
   avatarUrls,
+  pinned,
 }: {
   options: NeedOptions;
   need: Need;
   matches: Match[];
   widen: { key: string; label: string }[];
   avatarUrls: Record<string, string | null>;
+  // The colleague the member started from, first and ticked.
+  pinned?: { id: string; canAsk: boolean; gaps: string[] } | null;
 }) {
   const d = describeNeed(need, options);
   const widenHref = (key: string) => {
@@ -158,10 +197,21 @@ export function ReferShortlistView({
               />
             ) : (
               <>
-                <p className="small">Tick who should receive this referral. The top three are selected for you.</p>
-                {matches.map((m, i) => (
-                  <MatchCard key={m.profileId} m={m} rank={i + 1} avatarUrl={avatarUrls[m.profileId]} select={{ name: "pick", checked: i < 3 }} />
-                ))}
+                <p className="small">{pinned ? "Your colleague is first. Tick anyone else who should receive it." : "Tick who should receive this referral. The top three are selected for you."}</p>
+                {matches.map((m, i) => {
+                  const isPinned = pinned?.id === m.profileId;
+                  return (
+                    <MatchCard
+                      key={m.profileId}
+                      m={m}
+                      rank={i + 1}
+                      avatarUrl={avatarUrls[m.profileId]}
+                      flag={isPinned ? "Your choice" : undefined}
+                      note={isPinned ? pinned!.gaps : undefined}
+                      select={{ name: "pick", checked: pinned ? isPinned && pinned.canAsk : i < 3, disabled: isPinned && !pinned!.canAsk }}
+                    />
+                  );
+                })}
               </>
             )}
             {widen.length > 0 && (
@@ -201,6 +251,7 @@ export function ReferReviewView({
   trustedCount,
   networkCount,
   error,
+  direct,
 }: {
   options: NeedOptions;
   need: Need;
@@ -208,8 +259,11 @@ export function ReferReviewView({
   trustedCount: number;
   networkCount: number;
   error?: string;
+  // A referral to one colleague, from their profile.
+  direct?: { colleague: DirectColleague; fit: ColleagueFit | null } | null;
 }) {
   const d = describeNeed(need, options);
+  if (direct) return <DirectReview options={options} need={need} colleague={direct.colleague} fit={direct.fit} error={error} />;
   return (
     <>
       <PageHead eyebrow="Refer / new referral" title="Review before you reach out." lead="Choose exactly who receives this. Nothing is sent until you confirm." />
@@ -284,6 +338,103 @@ export function ReferReviewView({
             <SummaryList rows={needRows(need, options)} />
           </section>
           <ResourceAside />
+        </aside>
+      </form>
+    </>
+  );
+}
+
+// ---------- Direct referral: check the fit, then send to one colleague ----------
+function DirectReview({ options, need, colleague, fit, error }: { options: NeedOptions; need: Need; colleague: DirectColleague; fit: ColleagueFit | null; error?: string }) {
+  const d = describeNeed(need, options);
+  const first = colleague.first;
+  const canAsk = !fit || fit.canAsk;
+  const shortlistHref = `/dashboard/refer/new?${needToQuery(need, { step: "shortlist" })}&to=${colleague.id}`;
+  const needHref = `/dashboard/refer/new?${needToQuery(need)}&to=${colleague.id}`;
+  return (
+    <>
+      <PageHead
+        eyebrow="Refer / to a colleague"
+        title={canAsk ? `Check and send to ${first}` : `${first} can't take this client`}
+        lead={canAsk ? `How ${first} fits ${d.focus.toLowerCase() === "any focus" ? "this client" : `a client with ${d.focus}`} in ${d.where}. Nothing is sent until you confirm.` : "Here's why, and who could."}
+        actions={<a className="btn secondary" href={`/dashboard/people/${colleague.id}`}>Back to {first}</a>}
+      />
+      <Progress steps={DIRECT_STEPS} current={1} />
+      <Banner error={error} />
+      <form className="split" action={sendReferralAction} data-deidentify="">
+        {need.focusIds.map((f) => <input key={f} type="hidden" name="focus" value={f} />)}
+        {need.state && <input type="hidden" name="state" value={need.state} />}
+        {need.city && <input type="hidden" name="city" value={need.city} />}
+        {need.insurance && <input type="hidden" name="insurance" value={need.insurance} />}
+        {need.ageBand && <input type="hidden" name="age" value={need.ageBand} />}
+        {need.setting && <input type="hidden" name="setting" value={need.setting} />}
+        {need.languageId && <input type="hidden" name="language" value={need.languageId} />}
+        <input type="hidden" name="pick" value={colleague.id} />
+        <input type="hidden" name="to" value={colleague.id} />
+        <input type="hidden" name="audience" value="selected" />
+        <section className="card">
+          <div className="eyebrow">Step 2 &middot; Check and send</div>
+          {fit && fit.fits && (
+            <div className="fit-panel is-good">
+              <b>Why {first} fits</b>
+              <ul>{fit.match.reasons.map((r) => <li key={r}>{r}</li>)}</ul>
+            </div>
+          )}
+          {fit && !fit.fits && canAsk && (
+            <div className="fit-panel is-warn">
+              <b>Worth knowing before you send</b>
+              <ul>{fit.gaps.map((g) => <li key={g}>{g}</li>)}</ul>
+              <p className="small">You can still send it to {first}, or <a href={shortlistHref}>see colleagues who fit</a>.</p>
+            </div>
+          )}
+          {!canAsk && fit && (
+            <div className="fit-panel is-stop">
+              <b>{first} can&rsquo;t take this client.</b>
+              <ul>{fit.gaps.map((g) => <li key={g}>{g}</li>)}</ul>
+              <div className="row wrap" style={{ marginTop: 12 }}>
+                <a className="btn small-btn" href={shortlistHref}>See colleagues who can &rarr;</a>
+                <a className="btn ghost small-btn" href={needHref}>Change the need</a>
+              </div>
+            </div>
+          )}
+          {canAsk && (
+            <>
+              <div className="fields" style={{ marginTop: 16 }}>
+                <label className="field">
+                  Timeframe
+                  <select name="timeframe" defaultValue="within_month">
+                    <option value="urgent">Urgent (this week)</option>
+                    <option value="within_month">Within a month</option>
+                    <option value="flexible">Flexible</option>
+                  </select>
+                </label>
+                <label className="field full">
+                  Note for {first} (optional)
+                  <textarea name="notes" maxLength={500} placeholder="e.g. Prefers evening telehealth. Has tried CBT before." />
+                  <small>Broad context only. No names, dates, contact details or clinical notes.</small>
+                </label>
+              </div>
+              <label className="checkline" style={{ marginTop: 14 }}>
+                <input type="checkbox" name="deidentified" required />
+                This referral contains no client-identifying information.
+              </label>
+              <div className="step-actions">
+                <a className="btn ghost" href={needHref}>&larr; Change the need</a>
+                <button type="submit" className="btn">Send to {first}</button>
+              </div>
+              <p className="micro-note" style={{ marginTop: 10 }}>
+                Want others to see it too? <a href={shortlistHref}>Add colleagues who fit</a>.
+              </p>
+            </>
+          )}
+        </section>
+        <aside className="stack">
+          <ColleagueCard c={colleague} />
+          <section className="card tint">
+            <div className="eyebrow">What {first} will see</div>
+            <h3>{d.focus}</h3>
+            <SummaryList rows={needRows(need, options)} />
+          </section>
         </aside>
       </form>
     </>
@@ -447,6 +598,9 @@ export type ReferralDetail = {
   chosen: { profileId: string; name: string } | null;
   rated: boolean;
   audienceCount?: number | null;
+  // Conversations about this referral, by the other person's profile id.
+  threads?: Record<string, { conversationId: number | null; messages: ThreadMessage[] }>;
+  meId?: string;
 };
 
 const RESPONSE_LABEL: Record<string, { label: string; tone: "" | "warn" | "neutral" | "danger" }> = {
@@ -467,7 +621,7 @@ function ReplyForm({ id, current, heading, threadTitle, final = false }: { id: n
       {heading && <h3>{heading}</h3>}
       <label className="radio-card"><input type="radio" name="response" value="interested" defaultChecked={current === "interested"} /><span><b>Interested</b><span>I have capacity and this fits my practice.</span></span></label>
       {!final && (
-        <label className="radio-card"><input type="radio" name="response" value="question" defaultChecked={current === "question"} /><span><b>I have a question</b><span>Ask before deciding. Your question goes to Messages.</span></span></label>
+        <label className="radio-card"><input type="radio" name="response" value="question" defaultChecked={current === "question"} /><span><b>I have a question</b><span>Ask before deciding. The conversation stays here, on this referral.</span></span></label>
       )}
       <label className="radio-card"><input type="radio" name="response" value="unavailable" defaultChecked={current === "unavailable"} /><span><b>Not available</b><span>No capacity right now.</span></span></label>
       <label className="field" style={{ marginTop: 10 }}>
@@ -480,6 +634,10 @@ function ReplyForm({ id, current, heading, threadTitle, final = false }: { id: n
   );
 }
 
+export function referralThreadTitle(focus: string, where: string) {
+  return `Referral · ${focus} · ${where}`;
+}
+
 export function ReferTrackView({ r, ok, error }: { r: ReferralDetail; ok?: string; error?: string }) {
   const s = referralStatus({
     status: r.status,
@@ -488,7 +646,8 @@ export function ReferTrackView({ r, ok, error }: { r: ReferralDetail; ok?: strin
     audienceCount: r.audienceCount,
   });
   const open = r.status === "sent" || r.status === "open";
-  const threadTitle = `Referral · ${r.focus} · ${r.where}`;
+  const threadTitle = referralThreadTitle(r.focus, r.where);
+  const firstOf = (name: string) => name.replace(/^(dr\.?)\s+/i, "").split(/[\s,]+/)[0];
   return (
     <>
       <PageHead
@@ -517,24 +676,36 @@ export function ReferTrackView({ r, ok, error }: { r: ReferralDetail; ok?: strin
                 r.responses.map((resp) => {
                   const rl = RESPONSE_LABEL[resp.status] || { label: resp.status, tone: "neutral" as const };
                   return (
-                    <div key={resp.profileId} className="mini-person">
+                    <div key={resp.profileId} className="mini-person" id={`resp-${resp.profileId}`}>
                       <PersonAvatar name={resp.name} url={resp.avatarUrl} />
                       <div className="content">
                         <div className="row between">
                           <h3><a href={`/dashboard/people/${resp.profileId}`}>{resp.name}</a></h3>
                           <Status tone={rl.tone}>{rl.label}</Status>
                         </div>
-                        {resp.message && <p>&ldquo;{resp.message}&rdquo;</p>}
+                        {(() => {
+                          const t = r.threads?.[resp.profileId];
+                          // A question, or any conversation already under way, shows here.
+                          if (resp.status === "question" || (t && t.messages.length > 0)) {
+                            return (
+                              <InlineThread
+                                messages={t?.messages.length ? t.messages : resp.message ? [{ id: 0, mine: false, author: resp.name, body: resp.message, at: r.createdAt }] : []}
+                                conversationId={t?.conversationId}
+                                otherName={resp.name}
+                                otherIds={[resp.profileId]}
+                                title={threadTitle}
+                                heading={resp.status === "question" ? `${firstOf(resp.name)} has a question` : `Conversation with ${firstOf(resp.name)}`}
+                                returnTo={`/dashboard/refer/${r.id}`}
+                                anchor={`resp-${resp.profileId}`}
+                                link={`/dashboard/refer/${r.id}#your-reply`}
+                                placeholder={resp.status === "question" ? `Answer ${firstOf(resp.name)}…` : undefined}
+                              />
+                            );
+                          }
+                          return resp.message ? <p>&ldquo;{resp.message}&rdquo;</p> : null;
+                        })()}
                         {open && (resp.status === "interested" || resp.status === "question") && (
                           <div className="actions">
-                            {resp.status === "question" && (
-                              <form action={startConversation} className="inline">
-                                <input type="hidden" name="participant_ids" value={resp.profileId} />
-                                <input type="hidden" name="title" value={threadTitle} />
-                                <input type="hidden" name="body" value="" />
-                                <button type="submit" className="btn secondary small-btn">Answer in Messages</button>
-                              </form>
-                            )}
                             <form action={chooseReferralColleagueAction} className="inline">
                               <input type="hidden" name="referral_request_id" value={r.id} />
                               <input type="hidden" name="responding_profile_id" value={resp.profileId} />
@@ -550,23 +721,35 @@ export function ReferTrackView({ r, ok, error }: { r: ReferralDetail; ok?: strin
               )}
             </section>
           ) : (
-            <section className="card">
+            <section className="card" id="your-reply">
               <div className="eyebrow">Your reply</div>
               {r.myResponse && r.myResponse.status === "question" && open && !r.chosen ? (
-                // After a question: what was sent, where the conversation is,
-                // and (folded away) the final answer once it's talked through.
+                // After a question: the conversation with the colleague who
+                // referred, in place, and (folded away) the final answer.
                 <div className="reply-summary is-question">
                   <h3>Your question was sent to {r.requesterName}</h3>
-                  {r.myResponse.message && <blockquote className="reply-quote">&ldquo;{r.myResponse.message}&rdquo;</blockquote>}
-                  <p className="small">It&rsquo;s in Messages, in your conversation about this referral. Once you&rsquo;ve talked it through, give your final answer here.</p>
-                  {r.requesterId && (
-                    <form action={startConversation} className="inline">
-                      <input type="hidden" name="participant_ids" value={r.requesterId} />
-                      <input type="hidden" name="title" value={threadTitle} />
-                      <input type="hidden" name="body" value="" />
-                      <button type="submit" className="btn small-btn">Go to messages &rarr;</button>
-                    </form>
+                  {r.requesterId ? (
+                    <InlineThread
+                      messages={
+                        r.threads?.[r.requesterId]?.messages.length
+                          ? r.threads[r.requesterId].messages
+                          : r.myResponse.message
+                            ? [{ id: 0, mine: true, author: "You", body: r.myResponse.message, at: r.createdAt }]
+                            : []
+                      }
+                      conversationId={r.threads?.[r.requesterId]?.conversationId}
+                      otherName={r.requesterName}
+                      otherIds={[r.requesterId]}
+                      title={threadTitle}
+                      heading={`Your conversation with ${firstOf(r.requesterName)}`}
+                      returnTo={`/dashboard/refer/${r.id}`}
+                      anchor="your-reply"
+                      link={`/dashboard/refer/${r.id}${r.meId ? `#resp-${r.meId}` : ""}`}
+                    />
+                  ) : (
+                    r.myResponse.message && <blockquote className="reply-quote">&ldquo;{r.myResponse.message}&rdquo;</blockquote>
                   )}
+                  <p className="micro-note">Once you&rsquo;ve talked it through, give your final answer.</p>
                   <details className="final-answer">
                     <summary>Give your final answer</summary>
                     <ReplyForm id={r.id} current="interested" threadTitle={threadTitle} final />
@@ -576,6 +759,19 @@ export function ReferTrackView({ r, ok, error }: { r: ReferralDetail; ok?: strin
                 <div className="reply-summary">
                   <h3>You replied: {(RESPONSE_LABEL[r.myResponse.status] || { label: r.myResponse.status }).label}</h3>
                   {r.myResponse.message && <blockquote className="reply-quote">&ldquo;{r.myResponse.message}&rdquo;</blockquote>}
+                  {r.requesterId && (r.threads?.[r.requesterId]?.messages.length || 0) > 0 && (
+                    <InlineThread
+                      messages={r.threads![r.requesterId].messages}
+                      conversationId={r.threads![r.requesterId].conversationId}
+                      otherName={r.requesterName}
+                      otherIds={[r.requesterId]}
+                      title={threadTitle}
+                      heading={`Your conversation with ${firstOf(r.requesterName)}`}
+                      returnTo={`/dashboard/refer/${r.id}`}
+                      anchor="your-reply"
+                      link={`/dashboard/refer/${r.id}${r.meId ? `#resp-${r.meId}` : ""}`}
+                    />
+                  )}
                   {r.chosen && <p className="small">{r.requesterName} has chosen a colleague for this referral.</p>}
                   {open && !r.chosen && (
                     <details className="final-answer">

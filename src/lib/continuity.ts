@@ -33,7 +33,7 @@ export const CONTINUITY_SECTIONS: Section[] = [
     why: "So your backup can say who you are and where you practice, and find your license and insurance details quickly.",
     required: ["practice_name", "practice_contact"],
     fields: [
-      { key: "practice_name", label: "Practice name", placeholder: "e.g. Rivers Psychology, PLLC" },
+      { key: "practice_name", label: "Practice name", placeholder: "e.g. Thornvale Psychology, PLLC" },
       { key: "practice_address", label: "Office address", placeholder: "Street, city, state, or 'Telehealth only'" },
       { key: "practice_contact", label: "Practice phone and email clients use", placeholder: "e.g. (718) 555-0142, hello@riverspsych.com" },
       { key: "licenses", label: "License numbers", hint: "State and number for each license.", placeholder: "e.g. NY 012345, NJ 35SI00987600" },

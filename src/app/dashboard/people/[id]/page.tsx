@@ -164,6 +164,7 @@ export default async function PersonPage(props: { params: Promise<{ id: string }
     signals,
     primaryState: p.primary_state || null,
     why,
+    selfHref: safeBack(back) ? `/dashboard/people/${id}?back=${encodeURIComponent(safeBack(back)!)}` : `/dashboard/people/${id}`,
   };
   void AVAIL.referral;
   void AVAIL.cover;

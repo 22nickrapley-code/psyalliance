@@ -82,7 +82,7 @@ export function PersonCard({ p, back }: { p: Person; back: string }) {
       <div className="content">
         <div className="top">
           <div>
-            <h3><a href={`/dashboard/people/${p.id}`}>{p.name}</a></h3>
+            <h3><a href={`/dashboard/people/${p.id}?back=${encodeURIComponent(back)}`}>{p.name}</a></h3>
             <p className="role">{roleLabel(p.qualification)}{where ? ` · ${where}` : ""}</p>
           </div>
           <Status tone={p.fresh ? "" : paused ? "warn" : "neutral"}>{p.availability}</Status>
@@ -93,7 +93,7 @@ export function PersonCard({ p, back }: { p: Person; back: string }) {
           {p.relationship !== "none" && <> &middot; <span className="rel">{REL_LABEL[p.relationship]}</span></>}
         </p>
         <div className="actions">
-          <a className="text-arrow" href={`/dashboard/people/${p.id}`}>View profile &rarr;</a>
+          <a className="text-arrow" href={`/dashboard/people/${p.id}?back=${encodeURIComponent(back)}`}>View profile &rarr;</a>
           <TrustButton id={p.id} trusted={p.relationship === "trusted"} back={back} />
         </div>
       </div>
