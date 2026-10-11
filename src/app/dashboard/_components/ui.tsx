@@ -379,3 +379,84 @@ export function ConnectedNote({ name, profileId }: { name: string; profileId?: s
     </section>
   );
 }
+
+// A list in a card, the same everywhere it's used (Refer: sent and
+// received; Cover: covering for colleagues and your time away): a header
+// with an icon, a title, one line saying what's in it and a count, then
+// each item as its own row with its status and next step on the right.
+export function ListPanel({
+  icon,
+  tone = "forest",
+  title,
+  description,
+  count,
+  children,
+  empty,
+  footer,
+  id,
+}: {
+  footer?: ReactNode;
+  icon: ReactNode;
+  tone?: "forest" | "brass" | "blue";
+  title: string;
+  description: string;
+  count?: number;
+  children?: ReactNode;
+  empty?: ReactNode;
+  id?: string;
+}) {
+  return (
+    <section className={`card list-panel tone-${tone}`} id={id}>
+      <div className="list-panel-head">
+        <span className="lp-icon" aria-hidden="true">{icon}</span>
+        <div className="lp-title">
+          <h3>{title}</h3>
+          <p>{description}</p>
+        </div>
+        {typeof count === "number" && <span className="lp-count" aria-label={`${count} in this list`}>{count}</span>}
+      </div>
+      <div className="list-panel-body">
+        {children || empty}
+        {footer}
+      </div>
+    </section>
+  );
+}
+
+export function ListItem({
+  href,
+  title,
+  meta,
+  status,
+  action,
+}: {
+  href?: string;
+  title: ReactNode;
+  meta: ReactNode[];
+  status?: ReactNode;
+  action?: ReactNode;
+}) {
+  const inner = (
+    <>
+      <span className="lp-main">
+        <strong>{title}</strong>
+        <span className="lp-meta">
+          {meta.filter(Boolean).map((m, i) => (
+            <span key={i}>{m}</span>
+          ))}
+        </span>
+      </span>
+      <span className="lp-side">
+        {status}
+        {action && <span className="lp-go">{action}</span>}
+      </span>
+    </>
+  );
+  return href ? (
+    <a className="lp-item" href={href}>
+      {inner}
+    </a>
+  ) : (
+    <div className="lp-item">{inner}</div>
+  );
+}

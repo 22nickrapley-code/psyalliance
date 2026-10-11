@@ -11,9 +11,15 @@ async function noopSignOut() {
   "use server";
 }
 
-export default async function PreviewPage({ params }: { params: Promise<{ screen: string }> }) {
+async function noopReset() {
+  "use server";
+}
+
+export default async function PreviewPage({ params, searchParams }: { params: Promise<{ screen: string }>; searchParams: Promise<{ sandbox?: string }> }) {
   if (process.env.NODE_ENV === "production") notFound();
   const { screen } = await params;
+  // ?sandbox=1 shows the sandbox band above the screen.
+  const sandbox = (await searchParams).sandbox === "1";
   const render = previewScreens[screen];
   if (!render) notFound();
   const groups = buildNavGroups({ isAdmin: false, unreadMessages: 2, pendingCoverRequests: 1, pendingReferrals: 0 });
@@ -26,6 +32,8 @@ export default async function PreviewPage({ params }: { params: Promise<{ screen
       verificationLabel="Verified"
       unreadNotifications={2}
       signOutAction={noopSignOut}
+      demoSite={sandbox ? { label: "Nick", expires: "Oct 17", who: "Alex Rivers, PsyD", role: "Clinical psychologist in Brooklyn" } : null}
+      resetSandboxAction={sandbox ? noopReset : undefined}
     >
       {render()}
     </PremiumShell>

@@ -6,8 +6,11 @@ import type { ReactNode } from "react";
 import type { Match } from "@/lib/match-engine";
 import type { NeedOptions } from "@/lib/need-options";
 import { needToQuery, type parseNeed } from "@/lib/need-options";
+import { NavIcon } from "../icons";
 import {
   type NeedValues,
+  ListPanel,
+  ListItem,
   PageHead,
   Banner,
   Progress,
@@ -42,7 +45,7 @@ function needRows(need: Need, options: Pick<NeedOptions, "focus" | "language" | 
   const rows: [string, ReactNode][] = [
     ["Focus", d.focus],
     ["Where", d.where],
-    ["Setting", need.setting === "virtual" ? "Virtual" : need.setting === "in_person" ? "In person" : "Either"],
+    ["Setting", need.setting === "virtual" ? "Virtual" : need.setting === "in_person" ? "In person" : "Virtual or in person"],
   ];
   if (need.insurance) rows.push(["Insurance", need.insurance]);
   if (need.ageBand) rows.push(["Age band", need.ageBand]);
@@ -365,52 +368,55 @@ export function ReferIndexView({
         </div>
         <p className="small" style={{ color: "#cfe0d4", margin: "10px 0 0" }}>No client details. Nothing is sent until you review.</p>
       </form>
-      <div className="split equal" style={{ marginTop: 20 }}>
-        <section className="card">
-          <div className="card-title"><h3>Referrals You&rsquo;ve Sent Out</h3><span className="micro-note">{mine.length} total</span></div>
-          {mine.length === 0 ? (
-            <QuietEmpty title="No referrals yet." body="When you can't take a client, start above: describe the need and PsyAlliance shortlists the right colleagues." />
-          ) : (
+      <div className="split equal list-pair" style={{ marginTop: 20 }}>
+        <ListPanel
+          icon={<NavIcon name="refer" size={19} />}
+          title="Referrals You’ve Sent Out"
+          description="Clients you’ve passed on, and how colleagues replied."
+          count={mine.length}
+          empty={<QuietEmpty title="No referrals yet." body="When you can't take a client, start above: describe the need and PsyAlliance shortlists the right colleagues." />}
+        >
+          {mine.length > 0 &&
             mine.map((r) => {
               const s = referralStatus(r);
               return (
-                <a key={r.id} className="list-row" href={`/dashboard/refer/${r.id}`} style={{ textDecoration: "none", color: "inherit" }}>
-                  <span>
-                    <strong>{r.focus}</strong>
-                    <small>
-                      {r.where} &middot; {r.responses}
-                      {r.audienceCount ? ` of ${r.audienceCount}` : ""} repl{r.responses === 1 ? "y" : "ies"} &middot;{" "}
-                      {shortDate(r.createdAt)}
-                    </small>
-                  </span>
-                  <span className="status-next">
-                    <Status tone={s.tone}>{s.label}</Status>
-                    <span className="text-arrow">{s.next} &rarr;</span>
-                  </span>
-                </a>
+                <ListItem
+                  key={r.id}
+                  href={`/dashboard/refer/${r.id}`}
+                  title={r.focus}
+                  meta={[r.where, `${r.responses}${r.audienceCount ? ` of ${r.audienceCount}` : ""} replied`, `Sent ${shortDate(r.createdAt)}`]}
+                  status={<Status tone={s.tone}>{s.label}</Status>}
+                  action={<>{s.next} &rarr;</>}
+                />
               );
-            })
-          )}
-        </section>
-        <section className="card">
-          <div className="card-title"><h3>Referrals You&rsquo;ve Received</h3><span className="micro-note">Matched to your practice</span></div>
-          {offered.length === 0 ? (
-            <QuietEmpty title="Nothing waiting for you." body="Referrals that fit your profile and availability, sent to you by colleagues, appear here. Keeping your availability current helps colleagues find you." action={<a className="btn secondary small-btn" href="/dashboard/availability?back=%2Fdashboard%2Frefer">Update availability</a>} />
-          ) : (
+            })}
+        </ListPanel>
+        <ListPanel
+          icon={<NavIcon name="messages" size={19} />}
+          tone="brass"
+          title="Referrals You’ve Received"
+          description="Clients colleagues have asked you to take, matched to your practice."
+          count={offered.length}
+          empty={
+            <QuietEmpty
+              title="Nothing waiting for you."
+              body="Referrals that fit your profile and availability, sent to you by colleagues, appear here. Keeping your availability current helps colleagues find you."
+              action={<a className="btn secondary small-btn" href="/dashboard/availability?back=%2Fdashboard%2Frefer">Update availability</a>}
+            />
+          }
+        >
+          {offered.length > 0 &&
             offered.map((r) => (
-              <a key={r.id} className="list-row" href={`/dashboard/refer/${r.id}`} style={{ textDecoration: "none", color: "inherit" }}>
-                <span>
-                  <strong>{r.focus}</strong>
-                  <small>From {r.from} &middot; {r.where} &middot; {shortDate(r.createdAt)}</small>
-                </span>
-                <span className="status-next">
-                  {r.myResponse ? <Status tone="neutral">You replied</Status> : <Status tone="warn">Needs your reply</Status>}
-                  <span className="text-arrow">{r.myResponse ? "View" : "Reply"} &rarr;</span>
-                </span>
-              </a>
-            ))
-          )}
-        </section>
+              <ListItem
+                key={r.id}
+                href={`/dashboard/refer/${r.id}`}
+                title={r.focus}
+                meta={[`From ${r.from}`, r.where, shortDate(r.createdAt)]}
+                status={r.myResponse ? <Status tone="neutral">You replied</Status> : <Status tone="warn">Needs your reply</Status>}
+                action={<>{r.myResponse ? "View" : "Reply"} &rarr;</>}
+              />
+            ))}
+        </ListPanel>
       </div>
     </>
   );
@@ -452,17 +458,21 @@ const RESPONSE_LABEL: Record<string, { label: string; tone: "" | "warn" | "neutr
   declined: { label: "Declined", tone: "neutral" },
 };
 
-function ReplyForm({ id, current, heading }: { id: number; current: string; heading?: string }) {
+// "final": after a question, the answer is Interested or Not available.
+function ReplyForm({ id, current, heading, threadTitle, final = false }: { id: number; current: string; heading?: string; threadTitle: string; final?: boolean }) {
   return (
     <form action={respondReferralAction} data-deidentify="">
       <input type="hidden" name="referral_request_id" value={id} />
+      <input type="hidden" name="thread_title" value={threadTitle} />
       {heading && <h3>{heading}</h3>}
       <label className="radio-card"><input type="radio" name="response" value="interested" defaultChecked={current === "interested"} /><span><b>Interested</b><span>I have capacity and this fits my practice.</span></span></label>
-      <label className="radio-card"><input type="radio" name="response" value="question" defaultChecked={current === "question"} /><span><b>I have a question</b><span>Ask before deciding.</span></span></label>
+      {!final && (
+        <label className="radio-card"><input type="radio" name="response" value="question" defaultChecked={current === "question"} /><span><b>I have a question</b><span>Ask before deciding. Your question goes to Messages.</span></span></label>
+      )}
       <label className="radio-card"><input type="radio" name="response" value="unavailable" defaultChecked={current === "unavailable"} /><span><b>Not available</b><span>No capacity right now.</span></span></label>
       <label className="field" style={{ marginTop: 10 }}>
-        Message (optional)
-        <textarea name="message" maxLength={500} placeholder="e.g. I have two openings on Tuesday evenings." />
+        {final ? "Message (optional)" : "Message or question"}
+        <textarea name="message" maxLength={500} placeholder={final ? "e.g. I have two openings on Tuesday evenings." : "e.g. I have two openings on Tuesday evenings. Or your question."} />
         <small>No client-identifying details.</small>
       </label>
       <div className="step-actions"><span /><button type="submit" className="btn">Send reply</button></div>
@@ -542,36 +552,40 @@ export function ReferTrackView({ r, ok, error }: { r: ReferralDetail; ok?: strin
           ) : (
             <section className="card">
               <div className="eyebrow">Your reply</div>
-              {r.myResponse ? (
-                <>
+              {r.myResponse && r.myResponse.status === "question" && open && !r.chosen ? (
+                // After a question: what was sent, where the conversation is,
+                // and (folded away) the final answer once it's talked through.
+                <div className="reply-summary is-question">
+                  <h3>Your question was sent to {r.requesterName}</h3>
+                  {r.myResponse.message && <blockquote className="reply-quote">&ldquo;{r.myResponse.message}&rdquo;</blockquote>}
+                  <p className="small">It&rsquo;s in Messages, in your conversation about this referral. Once you&rsquo;ve talked it through, give your final answer here.</p>
+                  {r.requesterId && (
+                    <form action={startConversation} className="inline">
+                      <input type="hidden" name="participant_ids" value={r.requesterId} />
+                      <input type="hidden" name="title" value={threadTitle} />
+                      <input type="hidden" name="body" value="" />
+                      <button type="submit" className="btn small-btn">Go to messages &rarr;</button>
+                    </form>
+                  )}
+                  <details className="final-answer">
+                    <summary>Give your final answer</summary>
+                    <ReplyForm id={r.id} current="interested" threadTitle={threadTitle} final />
+                  </details>
+                </div>
+              ) : r.myResponse ? (
+                <div className="reply-summary">
                   <h3>You replied: {(RESPONSE_LABEL[r.myResponse.status] || { label: r.myResponse.status }).label}</h3>
-                  {r.myResponse.message && <p>&ldquo;{r.myResponse.message}&rdquo;</p>}
-                  {r.chosen ? (
-                    <p className="small">{r.requesterName} has chosen a colleague for this referral.</p>
-                  ) : open && r.myResponse.status === "question" ? (
-                    <div className="next-step-note">
-                      <p className="small">
-                        Your question is with {r.requesterName}. Talk it through in Messages, then come back here to say whether you can take the client.
-                      </p>
-                      {r.requesterId && (
-                        <form action={startConversation} className="inline">
-                          <input type="hidden" name="participant_ids" value={r.requesterId} />
-                          <input type="hidden" name="title" value={threadTitle} />
-                          <input type="hidden" name="body" value="" />
-                          <button type="submit" className="btn small-btn">Continue in Messages</button>
-                        </form>
-                      )}
-                    </div>
-                  ) : null}
+                  {r.myResponse.message && <blockquote className="reply-quote">&ldquo;{r.myResponse.message}&rdquo;</blockquote>}
+                  {r.chosen && <p className="small">{r.requesterName} has chosen a colleague for this referral.</p>}
                   {open && !r.chosen && (
-                    <details className="change-reply" open={r.myResponse.status === "question"}>
-                      <summary>{r.myResponse.status === "question" ? "Give your answer" : "Change your reply"}</summary>
-                      <ReplyForm id={r.id} current={r.myResponse.status === "question" ? "interested" : r.myResponse.status} />
+                    <details className="final-answer">
+                      <summary>Change your reply</summary>
+                      <ReplyForm id={r.id} current={r.myResponse.status} threadTitle={threadTitle} final />
                     </details>
                   )}
-                </>
+                </div>
               ) : open ? (
-                <ReplyForm id={r.id} current="interested" heading="Can you take this referral?" />
+                <ReplyForm id={r.id} current="interested" heading="Can you take this referral?" threadTitle={threadTitle} />
               ) : (
                 <p>This referral is no longer open.</p>
               )}

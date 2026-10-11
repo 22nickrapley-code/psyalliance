@@ -6,7 +6,7 @@ import { redirect } from "next/navigation";
 import { createCoveragePlan, sendCoverageRequest, respondToCoverageRequest } from "@/lib/coverage";
 import { logProfessionalEvent } from "@/lib/professional-events";
 import { identifierError } from "@/lib/deidentify";
-import { startConversation } from "../messages/actions";
+import { postToThread } from "@/lib/threads";
 
 // Cover wizard server actions (Product Spec v1, "Cover"):
 // Plan -> Needs -> Candidates -> Invite -> Track. Nothing is sent until
@@ -200,22 +200,40 @@ export async function respondCoverAction(formData: FormData) {
   const requestId = Number(formData.get("coverage_request_id"));
   const response = String(formData.get("response") || "") as "accepted" | "declined" | "discussing";
   if (!["accepted", "declined", "discussing"].includes(response)) back("/dashboard/cover", "Choose a response.");
+  // "Ask a question first": the question goes into Messages, in this
+  // request's thread with the colleague who asked, and the request shows
+  // as being discussed until the final answer.
+  const question = String(formData.get("question") || "").trim();
+  if (response === "discussing") {
+    if (!question) back("/dashboard/cover", "Write your question first.");
+    const idErr = identifierError(question);
+    if (idErr) back("/dashboard/cover", idErr);
+  }
   const { error } = await respondToCoverageRequest(supabase, userId, requestId, response);
   if (error) back("/dashboard/cover", error);
-  revalidatePath("/dashboard/cover");
   if (response === "discussing") {
-    const ownerId = String(formData.get("owner_id") || "");
+    const { data: req } = await supabase
+      .from("coverage_requests")
+      .select("coverage_plan_cases(coverage_plans(profile_id))")
+      .eq("id", requestId)
+      .maybeSingle();
+    const ownerId = (req as any)?.coverage_plan_cases?.coverage_plans?.profile_id as string | undefined;
     const title = String(formData.get("thread_title") || "Cover request");
-    if (ownerId) {
-      const fd = new FormData();
-      fd.append("participant_ids", ownerId);
-      fd.append("title", title);
-      fd.append("body", "");
-      fd.append("draft", String(formData.get("draft") || ""));
-      await startConversation(fd);
-    }
+    const sent = ownerId ? await postToThread(supabase, userId, [ownerId], title, question) : null;
+    revalidatePath("/dashboard/messages");
+    if (!sent || sent.error) back("/dashboard/cover", "Your reply is saved, but the question didn't reach Messages. Use Go to messages to send it there.");
   }
-  redirect(`/dashboard/cover?ok=${encodeURIComponent(response === "accepted" ? "You've accepted. The colleague will be in touch about the handoff." : response === "declined" ? "Declined. Thanks for letting them know." : "Opened a conversation.")}`);
+  revalidatePath("/dashboard/cover");
+  const ownerName = String(formData.get("owner_name") || "").trim();
+  redirect(
+    `/dashboard/cover?ok=${encodeURIComponent(
+      response === "accepted"
+        ? "You've accepted. The colleague will be in touch about the handoff."
+        : response === "declined"
+          ? "Declined. Thanks for letting them know."
+          : `Question sent${ownerName ? ` to ${ownerName}` : ""}. It's in Messages.`
+    )}#request-${requestId}`
+  );
 }
 
 export async function completePlanAction(formData: FormData) {

@@ -8,6 +8,7 @@ import { ConsultComposeView, ConsultDetailView } from "../dashboard/consult/view
 import { ConversationList, MessagesShell } from "../dashboard/messages/views";
 import { HomeView } from "../dashboard/home-view";
 import { MessageReactions } from "../dashboard/messages/reactions";
+import type { SceneAction } from "./scene-timing";
 import { CliniciansView, type Person } from "../dashboard/clinicians/views";
 import { NetworkView } from "../dashboard/network/views";
 import { ClinicianProfileView, type ClinicianProfile } from "../dashboard/people/[id]/view";
@@ -36,6 +37,9 @@ export type DemoStep = {
   focus?: string;
   focusIndex?: number;
   focusNote?: string;
+  // In the videos: what the person does on this screen before that last
+  // click (one to three choices). The screen starts without them.
+  actions?: SceneAction[];
   render: () => ReactNode;
 };
 export type Demo = {
@@ -303,6 +307,10 @@ const DETAIL: Demo[] = [
         what: `Parental leave from ${leave.startLong}. A cover plan starts with three facts: the kind of absence, the dates and the state Alex's clients are in.`,
         focus: "Define the needs",
         focusNote: "Next, Alex describes each client by need.",
+        actions: [
+          { do: "pick", target: 'input[name="absence_type"][value="extended_leave"]' },
+          { do: "type", target: 'input[name="title"]', text: PLAN_TITLE },
+        ],
         render: () => <CoverPlanStepView options={options} preset={{ absenceType: "extended_leave", title: PLAN_TITLE, starts: leave.start, ends: leave.end }} />,
       },
       {
@@ -321,6 +329,10 @@ const DETAIL: Demo[] = [
         what: "For each client, colleagues with a reviewed New York license, the right focus and recently confirmed availability, trusted colleagues first. Each match says why it fits.",
         focus: "Review invitations",
         focusNote: "Alex has ticked who to ask for each client. Next, a final check.",
+        actions: [
+          { do: "pick", target: 'input[name="pick_1"][value="maya"]' },
+          { do: "pick", target: 'input[name="pick_2"][value="maya"]' },
+        ],
         render: () => <CoverCandidatesView plan={plan} cases={clientsOpen} suggestions={coverSuggestions} avatarUrls={avatars} preselected={{ 1: ["maya", "imani"], 2: ["maya"], 3: ["eli"] }} />,
       },
       {
@@ -330,6 +342,7 @@ const DETAIL: Demo[] = [
         what: "Before anything is sent, Alex sees exactly who is asked for each client, in what order, and why each colleague fits. If the first declines, the next is asked automatically.",
         focus: "Send cover requests",
         focusNote: "Send. Next, see what Maya receives.",
+        actions: [{ do: "pick", target: 'input[name="reviewed"]' }],
         render: () => (
           <CoverInviteView
             plan={plan}
@@ -408,6 +421,10 @@ const DETAIL: Demo[] = [
         what: "An adult with OCD asks Alex for help, but Alex is about to go on leave. On Refer, Alex starts with the main need and where the client is; everything else is optional.",
         focus: "Find colleagues",
         focusNote: "Next, colleagues who fit, with reasons.",
+        actions: [
+          { do: "type", target: ".combo-input", text: "Obsessive/Compulsive Disorder" },
+          { do: "select", target: 'select[name="insurance"]', value: "Aetna" },
+        ],
         render: () => <ReferIndexView options={options} start={referNeed as any} mine={[]} offered={[]} />,
       },
       {
@@ -417,6 +434,11 @@ const DETAIL: Demo[] = [
         what: "Colleagues with a reviewed New York license and OCD experience who are taking referrals. Trusted colleagues and people Alex has worked with come first, and each says why.",
         focus: "Review before sending",
         focusNote: "Alex keeps all three. Next, the final check.",
+        actions: [
+          { do: "pick", target: 'input[name="pick"][value="maya"]' },
+          { do: "pick", target: 'input[name="pick"][value="sam"]' },
+          { do: "pick", target: 'input[name="pick"][value="lena"]' },
+        ],
         render: () => <ReferShortlistView options={options} need={referNeed as any} matches={referMatches} widen={[]} avatarUrls={avatars} />,
       },
       {
@@ -447,6 +469,10 @@ const DETAIL: Demo[] = [
         what: "This is Samuel's account. He sees the need, where and when, and that no client details are shared. He replies in one step.",
         focus: "Send reply",
         focusNote: "Samuel replies Interested. Back to Alex next.",
+        actions: [
+          { do: "pick", target: 'input[name="response"][value="interested"]' },
+          { do: "type", target: 'textarea[name="message"]', text: "Happy to. I run ERP weekly and can start in two weeks." },
+        ],
         render: () => (
           <ReferTrackView
             r={{
@@ -561,6 +587,10 @@ const DETAIL: Demo[] = [
         what: "How do colleagues run the handoff call when someone covers mid-treatment? A quick question like this goes to the people Alex trusts and gets answers in a day. (Standing consultation groups, with a charter and regular meetings, are separate.)",
         focus: "Review before posting",
         focusNote: "Next, a last look before it's shared.",
+        actions: [
+          { do: "type", target: 'input[name="question"]', text: "How do you structure the handoff call when a colleague covers mid-treatment?" },
+          { do: "pick", target: 'input[name="deidentified"]' },
+        ],
         render: () => (
           <ConsultComposeView
             kind="question"
@@ -793,6 +823,10 @@ const DETAIL: Demo[] = [
         what: "Whether Alex is taking referrals, open to cover or to consult. Colleagues see when it was last confirmed, so stale availability never looks current. Pausing for leave is one click.",
         focus: "Save and confirm",
         focusNote: "Save. Next, the profile colleagues see.",
+        actions: [
+          { do: "pick", target: 'input[name="referral_availability"][value="limited"]' },
+          { do: "pick", target: 'input[name="coverage_availability"][value="ask_me"]' },
+        ],
         render: () => (
           <AvailabilityView
             p={{ referral_availability: "limited", coverage_availability: "ask_me", consultation_availability: "yes", availability_confirmed_at: daysAgo(3), approx_spaces: 2, availability_paused_until: null }}
@@ -843,6 +877,7 @@ const DETAIL: Demo[] = [
         focus: "Explore",
         focusIndex: 1,
         focusNote: "Alex opens the Extended Leave pack.",
+        actions: [{ do: "type", target: 'input[name="q"]', text: "leave" }],
         render: () => <LibraryView resources={LIB_LEAVE} q="leave" category="" mineCount={0} />,
       },
       {
@@ -894,6 +929,7 @@ const DETAIL: Demo[] = [
         what: "New to PsyAlliance, Alex copies her existing profile page and pastes it into Quick start at the top of Profile. A practice website, LinkedIn or a CV works too.",
         focus: "Fill in from this text",
         focusNote: "Next, everything fills itself in.",
+        actions: [{ do: "type", target: ".quick-start-drop", text: PASTED_PROFILE }],
         render: () => setupScreen({ text: PASTED_PROFILE }, ALEX_SIGNUP, []),
       },
       {

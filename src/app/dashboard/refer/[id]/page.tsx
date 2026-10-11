@@ -105,7 +105,7 @@ export default async function ReferralDetailPage(props: {
 
   const ok = sp.sent
     ? "Referral sent. You'll be notified as colleagues reply."
-    : sp.responded
+    : sp.responded && sp.responded !== "question"
       ? "Reply sent."
       : sp.closed
         ? "Referral closed."

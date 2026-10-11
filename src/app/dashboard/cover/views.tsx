@@ -6,7 +6,8 @@ import type { Match } from "@/lib/match-engine";
 import type { NeedOptions } from "@/lib/need-options";
 import { FirstVisit } from "../_components/first-visit";
 import { TOUR_URL } from "@/lib/env";
-import { QuietEmpty, PageHead, Banner, Progress, Empty, Status, MatchCard, SummaryList, PersonAvatar, HANDOFF_RULE } from "../_components/ui";
+import { QuietEmpty, PageHead, Banner, Progress, Empty, Status, MatchCard, SummaryList, PersonAvatar, HANDOFF_RULE, ListPanel, ListItem } from "../_components/ui";
+import { NavIcon } from "../icons";
 import {
   createPlanAction,
   addCaseAction,
@@ -18,6 +19,7 @@ import {
   cancelPlanAction,
 } from "./actions";
 import { rateCollaborationAction } from "../refer/actions";
+import { startConversation } from "../messages/actions";
 
 const STEPS = ["Plan", "Needs", "Candidates", "Invite", "Track"];
 
@@ -186,31 +188,62 @@ function IncomingCard({ r }: { r: IncomingPlan }) {
           // Keep the owner's numbering, so "Client 2" stays Client 2 after Client 1 is answered.
           const label = c.reference ? c.reference.trim().replace(/^case\s*(\d+)$/i, "Client $1") : `Client ${i + 1}`;
           const ownerFirst = r.ownerName.replace(/^(dr\.?)\s+/i, "").split(/[\s,]+/)[0];
-          const draft = `Hi ${ownerFirst}, I may be able to cover ${label} (${c.focus}) for ${r.dates}. Before I accept, could we talk through the schedule and how you'd like the handoff to work?`;
+          const threadTitle = `Cover · ${r.planTitle} · ${label} · ${c.focus}`;
+          const discussing = c.status === "discussing";
           return (
-          <div key={c.requestId} className={`incoming-case${c.status === "discussing" ? " is-discussing" : ""}`}>
+          <div key={c.requestId} id={`request-${c.requestId}`} className={`incoming-case${discussing ? " is-discussing" : ""}`}>
             <div className="row between wrap" style={{ gap: 8 }}>
               <strong>
                 {label} &middot; {c.focus}
               </strong>
-              {c.status === "discussing" && <span className="status warn">You&rsquo;re discussing this one</span>}
             </div>
             <dl className="case-facts">
               {c.details.map(([k, v]) => (
                 <div key={k}><dt>{k}</dt><dd>{v}</dd></div>
               ))}
             </dl>
-            <form action={respondCoverAction} className="row wrap" style={{ marginTop: 12, gap: 8 }}>
-              <input type="hidden" name="coverage_request_id" value={c.requestId} />
-              <input type="hidden" name="owner_id" value={r.ownerId} />
-              <input type="hidden" name="thread_title" value={`Cover · ${r.planTitle} · ${label} · ${c.focus}`} />
-              <input type="hidden" name="draft" value={draft} />
-              <button type="submit" name="response" value="accepted" className="btn small-btn resp-accept">Accept {label}</button>
-              {c.status !== "discussing" && (
-                <button type="submit" name="response" value="discussing" className="btn small-btn resp-discuss">Discuss first</button>
-              )}
-              <button type="submit" name="response" value="declined" className="btn small-btn resp-decline">Decline</button>
-            </form>
+            {discussing ? (
+              // After a question: what happened, where the conversation is,
+              // and (folded away) the final answer.
+              <div className="reply-summary is-question">
+                <h3>Your question was sent to {r.ownerName}</h3>
+                <p className="small">It&rsquo;s in Messages, in your conversation about {label}. Once you&rsquo;ve talked it through, give your final answer here.</p>
+                <form action={startConversation} className="inline">
+                  <input type="hidden" name="participant_ids" value={r.ownerId} />
+                  <input type="hidden" name="title" value={threadTitle} />
+                  <input type="hidden" name="body" value="" />
+                  <button type="submit" className="btn small-btn">Go to messages &rarr;</button>
+                </form>
+                <details className="final-answer">
+                  <summary>Give your final answer</summary>
+                  <form action={respondCoverAction} className="row wrap" style={{ marginTop: 12, gap: 8 }}>
+                    <input type="hidden" name="coverage_request_id" value={c.requestId} />
+                    <input type="hidden" name="thread_title" value={threadTitle} />
+                    <button type="submit" name="response" value="accepted" className="btn small-btn resp-accept">Accept {label}</button>
+                    <button type="submit" name="response" value="declined" className="btn small-btn resp-decline">Decline</button>
+                  </form>
+                </details>
+              </div>
+            ) : (
+              <form action={respondCoverAction} data-deidentify="" className="cover-reply">
+                <input type="hidden" name="coverage_request_id" value={c.requestId} />
+                <input type="hidden" name="thread_title" value={threadTitle} />
+                <input type="hidden" name="owner_name" value={r.ownerName} />
+                <div className="row wrap" style={{ gap: 8 }}>
+                  <button type="submit" name="response" value="accepted" className="btn small-btn resp-accept">Accept {label}</button>
+                  <button type="submit" name="response" value="declined" className="btn small-btn resp-decline">Decline</button>
+                </div>
+                <details className="ask-first">
+                  <summary>Ask {ownerFirst} a question first</summary>
+                  <label className="field">
+                    Your question
+                    <textarea name="question" rows={3} maxLength={600} placeholder={`e.g. Could we talk through the schedule for ${label} and how you'd like the handoff to work?`} />
+                    <small>It goes to {ownerFirst} in Messages. No client-identifying details.</small>
+                  </label>
+                  <button type="submit" name="response" value="discussing" className="btn small-btn resp-discuss">Send question</button>
+                </details>
+              </form>
+            )}
           </div>
           );
         })}
@@ -259,60 +292,74 @@ export function CoverIndexView({
         </>
       )}
       {covering.length > 0 && (
-        <section className="card covering-card" style={{ marginBottom: 26 }}>
-          <div className="card-title">
-            <h3>You&rsquo;re covering</h3>
-            <span className="micro-note">What you&rsquo;ve agreed to, until each plan ends</span>
-          </div>
-          {covering.map((c) => (
-            <div key={c.planId} className="list-row covering-row">
-              <span>
-                <strong>
-                  For <a href={`/dashboard/people/${c.ownerId}`}>{c.ownerName}</a>
-                </strong>
-                <small>{c.dates} &middot; {c.clients.join(" · ")}</small>
-              </span>
-              <a className="btn secondary small-btn" href={`/dashboard/messages?to=${c.ownerId}`}>Message</a>
-            </div>
-          ))}
-        </section>
+        <div style={{ marginBottom: 26 }}>
+          <ListPanel
+            icon={<NavIcon name="network" size={19} />}
+            tone="brass"
+            title="Covering for colleagues"
+            description="Clients you’ve agreed to see while a colleague is away."
+            count={covering.reduce((n, c) => n + c.clients.length, 0)}
+          >
+            {covering.map((c) => (
+              <ListItem
+                key={c.planId}
+                title={<>For <a href={`/dashboard/people/${c.ownerId}`}>{c.ownerName}</a></>}
+                meta={[`Away ${c.dates}`, ...c.clients]}
+                status={<Status>{c.clients.length === 1 ? "1 client" : `${c.clients.length} clients`}</Status>}
+                action={<a href={`/dashboard/messages?to=${c.ownerId}`}>Message &rarr;</a>}
+              />
+            ))}
+          </ListPanel>
+        </div>
       )}
       <div className="split">
-        <section className="card">
-          <div className="card-title"><h3>Your cover plans</h3></div>
-          {active.length === 0 ? (
+        <ListPanel
+          icon={<NavIcon name="cover" size={19} />}
+          title="Your time away"
+          description="Plans for your own leave, and who’s covering your clients."
+          count={active.length}
+          footer={
+            past.length > 0 && (
+              <details className="lp-past">
+                <summary>Past plans ({past.length})</summary>
+                {past.map((p) => (
+                  <ListItem
+                    key={p.id}
+                    href={`/dashboard/cover/${p.id}?step=track`}
+                    title={p.title}
+                    meta={[`${fmt(p.starts)} – ${fmt(p.ends)}`]}
+                    status={<Status tone="neutral">{p.status === "completed" ? "Completed" : "Cancelled"}</Status>}
+                  />
+                ))}
+              </details>
+            )
+          }
+          empty={
             <QuietEmpty
               title="No cover planned."
               body="Going away, closing a practice, or just want a backup? A plan tracks every client from need to a confirmed colleague."
               action={<a className="btn secondary small-btn" href="/dashboard/cover/new">Plan cover</a>}
             />
-          ) : (
+          }
+        >
+          {active.length > 0 &&
             active.map((p) => (
-              <a key={p.id} href={`/dashboard/cover/${p.id}?step=${p.status === "draft" ? "needs" : "track"}`} className="list-row" style={{ textDecoration: "none", color: "inherit" }}>
-                <span>
-                  <strong>{p.title}</strong>
-                  <small>{ABSENCE[p.absenceType || ""]?.label || "Cover"} &middot; {fmt(p.starts)} &ndash; {fmt(p.ends)}</small>
-                </span>
-                {p.status === "draft" ? (
-                  <Status tone="neutral">Draft</Status>
-                ) : (
-                  <Status tone={p.counts.open > 0 ? "warn" : ""}>{p.counts.covered} of {p.counts.total} covered</Status>
-                )}
-              </a>
-            ))
-          )}
-          {past.length > 0 && (
-            <details style={{ marginTop: 14 }}>
-              <summary className="small">Past plans ({past.length})</summary>
-              {past.map((p) => (
-                <a key={p.id} href={`/dashboard/cover/${p.id}?step=track`} className="list-row" style={{ textDecoration: "none", color: "inherit" }}>
-                  <span><strong>{p.title}</strong><small>{fmt(p.starts)} &ndash; {fmt(p.ends)}</small></span>
-                  <Status tone="neutral">{p.status === "completed" ? "Closed, completed" : "Closed, cancelled"}</Status>
-                </a>
-              ))}
-            </details>
-          )}
-        </section>
+              <ListItem
+                key={p.id}
+                href={`/dashboard/cover/${p.id}?step=${p.status === "draft" ? "needs" : "track"}`}
+                title={p.title}
+                meta={[ABSENCE[p.absenceType || ""]?.label || "Cover", `${fmt(p.starts)} – ${fmt(p.ends)}`]}
+                status={
+                  p.status === "draft" ? (
+                    <Status tone="neutral">Draft</Status>
+                  ) : (
+                    <Status tone={p.counts.open > 0 || p.counts.invited > 0 ? "warn" : ""}>{p.counts.covered} of {p.counts.total} covered</Status>
+                  )
+                }
+                action={<>{p.status === "draft" ? "Continue" : "Open"} &rarr;</>}
+              />
+            ))}
+        </ListPanel>
         <aside className="stack">
           <section className="card dark">
             <div className="eyebrow" style={{ color: "#e2c49c" }}>How it works</div>
@@ -744,16 +791,35 @@ export function CoverTrackView({
                       ))}
                     </div>
                   )}
-                  {c.status === "confirmed" && (
-                    <div className="handoff-note">
-                      <b>Accepted. Next, the handoff.</b>
-                      <ul>
-                        <li>Agree the start date and how urgent contacts reach them.</li>
-                        <li>Share the coverage summary through your own secure channel, not PsyAlliance.</li>
-                        <li>Tell the client who is covering and how to reach them.</li>
-                      </ul>
-                    </div>
-                  )}
+                  {c.status === "confirmed" && (() => {
+                    // The thread is the one the colleague used for this
+                    // client (same title), so any earlier question is there.
+                    const label = c.reference ? c.reference.trim().replace(/^case\s*(\d+)$/i, "Client $1") : "the client";
+                    const first = (c.assignedName || "").replace(/^(dr\.?)\s+/i, "").split(/[\s,]+/)[0] || "them";
+                    return (
+                      <div className="handoff-note">
+                        <b>Accepted. Next, the handoff.</b>
+                        <ul>
+                          <li>Agree the start date and how urgent contacts reach them.</li>
+                          <li>Share the coverage summary through your own secure channel, not PsyAlliance.</li>
+                          <li>Tell the client who is covering and how to reach them.</li>
+                        </ul>
+                        {c.assignedId && (
+                          <form action={startConversation} className="handoff-actions">
+                            <input type="hidden" name="participant_ids" value={c.assignedId} />
+                            <input type="hidden" name="title" value={`Cover · ${plan.title} · ${label} · ${c.focus}`} />
+                            <input type="hidden" name="body" value="" />
+                            <input
+                              type="hidden"
+                              name="draft"
+                              value={`Hi ${first}, thank you for covering ${label}. Could we agree the start date and how urgent contacts should reach you? I'll send the coverage summary through our secure channel.`}
+                            />
+                            <button type="submit" className="btn small-btn">Message {first} &rarr;</button>
+                          </form>
+                        )}
+                      </div>
+                    );
+                  })()}
                   {c.status === "awaiting_response" && c.queueCount > 0 && (
                     <p className="micro-note" style={{ marginTop: 6 }}>{c.queueCount} more colleague{c.queueCount === 1 ? "" : "s"} queued if this is declined.</p>
                   )}

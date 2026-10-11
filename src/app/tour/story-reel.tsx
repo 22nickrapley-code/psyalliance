@@ -1,5 +1,6 @@
 import { findDemo, PEOPLE, type Demo, type DemoStep } from "./demos";
 import { StoryPlayer, type Scene, type StoryEnd } from "./story-player";
+import { actionsMs } from "./scene-timing";
 
 // The 90-second story, told on the real screens: covering time away and
 // referring out (an established practice), receiving referrals and using
@@ -7,7 +8,9 @@ import { StoryPlayer, type Scene, type StoryEnd } from "./story-player";
 // checked. It plays on its own; the hands-on demos follow for anyone who
 // wants to try it.
 
-type Beat = { demo: string; slug: string; chapter: string; caption: string; sub: string; seconds?: number; focus?: string | null };
+// "act": the scene also shows the first thing the person chooses on that
+// screen. Only a few, so the story stays near ninety seconds.
+type Beat = { demo: string; slug: string; chapter: string; caption: string; sub: string; seconds?: number; focus?: string | null; act?: boolean };
 
 const BEATS: Beat[] = [
   {
@@ -28,6 +31,7 @@ const BEATS: Beat[] = [
   {
     demo: "cover",
     slug: "matches",
+    act: true,
     chapter: "Time away",
     caption: "PsyAlliance suggests colleagues who fit, and says why.",
     sub: "A reviewed license in the client's state, the right focus, recent availability. Her trusted colleagues come first.",
@@ -49,6 +53,7 @@ const BEATS: Beat[] = [
   {
     demo: "refer",
     slug: "samuel",
+    act: true,
     chapter: "Growing a practice",
     caption: "Building a caseload? Referrals that fit you come to you.",
     sub: "Samuel sees what the client needs and replies in one tap: interested, a question, or not available.",
@@ -71,6 +76,7 @@ const BEATS: Beat[] = [
   {
     demo: "profile",
     slug: "paste",
+    act: true,
     chapter: "Joining",
     caption: "Joining takes a minute.",
     sub: "A new member pastes their Psychology Today profile, practice website or CV into Quick start.",
@@ -108,6 +114,7 @@ export function StoryReel({ tryHref = "#try" }: { tryHref?: string }) {
       who: { name: who.name, initials: who.initials, colleague: who.colleague },
       focus: beat.focus === null ? undefined : beat.focus || step.focus,
       focusIndex: step.focusIndex,
+      actions: beat.act ? step.actions?.slice(0, 1) : undefined,
     };
   });
   return (
@@ -130,7 +137,7 @@ export function sceneSeconds(step: Pick<DemoStep, "title" | "what">) {
 }
 
 export function watchLength(demo: Demo) {
-  const total = demo.steps.reduce((n, s) => n + sceneSeconds(s), 0);
+  const total = demo.steps.reduce((n, s) => n + sceneSeconds(s) + actionsMs(s.actions) / 1000, 0);
   if (total < 50) return `${Math.round(total / 5) * 5}-second video`;
   const minutes = Math.round(total / 30) / 2;
   return minutes <= 1 ? "1-minute video" : `${minutes.toString().replace(".5", "½")}-minute video`;
@@ -147,6 +154,7 @@ export function SectionReel({ demo, tryHref, embed = false }: { demo: Demo; tryH
       who: { name: who.name, initials: who.initials, colleague: who.colleague },
       focus: step.focus,
       focusIndex: step.focusIndex,
+      actions: step.actions,
     };
   });
   const end: StoryEnd = embed

@@ -1,6 +1,8 @@
 "use client";
 
 import { Children, useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { actionMs, sceneMs, typeStep, TYPE_LIMIT, type SceneAction } from "./scene-timing";
+export type { SceneAction } from "./scene-timing";
 
 // The 90-second story: real PsyAlliance screens with fictional people,
 // playing on their own with a caption for each moment. No clicking needed
@@ -14,7 +16,40 @@ export type Scene = {
   focus?: string;
   focusIndex?: number;
   seconds?: number;
+  actions?: SceneAction[];
 };
+
+// "#id", ".class" or "tag[attr]" is a selector; anything else is the start
+// of a label's text.
+function resolveAction(root: HTMLElement, a: SceneAction): { el: HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement | null; point: HTMLElement | null } {
+  let el: Element | null = null;
+  if (/^[#.\[]|^[a-z]+[\[.#]/i.test(a.target)) el = root.querySelector(a.target);
+  else {
+    const want = a.target.toLowerCase();
+    const label = Array.from(root.querySelectorAll<HTMLElement>("label")).find((l) => (l.textContent || "").replace(/\s+/g, " ").trim().toLowerCase().startsWith(want));
+    el = label ? label.querySelector("input:not([type=hidden]), textarea, select") : null;
+  }
+  const field = el as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement | null;
+  // A tick box is pointed at itself when it shows; a styled choice (its
+  // box hidden) is pointed at through its label.
+  const shown = !!field && field.offsetWidth > 4 && field.offsetHeight > 4;
+  const point = field ? (a.do === "pick" && !shown ? (field.closest("label") as HTMLElement | null) : null) || (field as HTMLElement) : null;
+  return { el: field, point };
+}
+
+function setActionState(root: HTMLElement, a: SceneAction, done: boolean, typed?: string) {
+  const { el } = resolveAction(root, a);
+  if (!el) return;
+  if (a.do === "pick") (el as HTMLInputElement).checked = done;
+  else if (a.do === "type") el.value = done ? (typed ?? a.text) : "";
+  else if (a.do === "select" && el instanceof HTMLSelectElement) {
+    if (!done) el.selectedIndex = 0;
+    else {
+      const opt = Array.from(el.options).find((o) => o.text.toLowerCase().startsWith(a.value.toLowerCase()) || o.value === a.value);
+      if (opt) el.value = opt.value;
+    }
+  }
+}
 
 // Screens are drawn at desktop width on a computer and at phone width on
 // a phone, where the app's own phone layout applies.
@@ -72,7 +107,8 @@ export function StoryPlayer({
   const startedAt = useRef(0);
 
   const s = scenes[i];
-  const duration = (s?.seconds || 8.5) * 1000;
+  const duration = s ? sceneMs(s) : 8500;
+  const actions = s?.actions || [];
   const chapters = scenes.reduce<{ name: string; first: number }[]>((acc, sc, n) => (acc.some((c) => c.name === sc.chapter) ? acc : [...acc, { name: sc.chapter, first: n }]), []);
 
   useEffect(() => {
@@ -156,6 +192,70 @@ export function StoryPlayer({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [i, scale, screenW]);
 
+  // Where the screen and pointer go for an action: the same arithmetic as
+  // the scene's last click.
+  const placeFor = (target: HTMLElement) => {
+    const vp = viewport.current;
+    const screen = screenRefs.current[i];
+    if (!vp || !screen) return null;
+    let ox = Math.min(target.offsetWidth / 2, 60);
+    let oy = target.offsetHeight / 2;
+    let el: HTMLElement | null = target;
+    while (el && el !== screen) {
+      ox += el.offsetLeft;
+      oy += el.offsetTop;
+      el = el.offsetParent as HTMLElement | null;
+    }
+    const vw = vp.clientWidth;
+    const vh = vp.clientHeight;
+    const x = Math.max(0, Math.min(Math.max(0, screenW * scale - vw), ox * scale - vw / 2));
+    const y = Math.max(0, Math.min(Math.max(0, screen.scrollHeight * scale - vh), oy * scale - vh * 0.5));
+    return { x, y, cx: ox * scale - x, cy: oy * scale - y };
+  };
+  const actionsDone = useRef(0);
+  const typing = useRef(0);
+  const prepare = (n: number) => {
+    const screen = screenRefs.current[n];
+    (scenes[n]?.actions || []).forEach((a) => screen && setActionState(screen, a, false));
+  };
+  const finishActions = () => {
+    const screen = screenRefs.current[i];
+    window.clearInterval(typing.current);
+    actions.forEach((a) => screen && setActionState(screen, a, true));
+    actionsDone.current = actions.length;
+  };
+  const doAction = (k: number) => {
+    const screen = screenRefs.current[i];
+    const a = actions[k];
+    if (!screen || !a) return;
+    const { point, el } = resolveAction(screen, a);
+    if (!point || !el) {
+      actionsDone.current = k + 1;
+      return;
+    }
+    const place = placeFor(point);
+    if (place) {
+      setPan({ x: place.x, y: place.y, scene: i });
+      setCursor({ x: place.cx, y: place.cy, on: true, click: false, scene: i });
+    }
+    window.setTimeout(() => {
+      setCursor((c) => ({ ...c, click: true }));
+      if (a.do === "type" && a.text.length <= TYPE_LIMIT) {
+        // Typed a letter at a time; a long paste lands at once.
+        let n = 0;
+        const step = typeStep(a.text);
+        window.clearInterval(typing.current);
+        typing.current = window.setInterval(() => {
+          n += 1;
+          setActionState(screen, a, true, a.text.slice(0, n));
+          if (n >= a.text.length) window.clearInterval(typing.current);
+        }, step);
+      } else setActionState(screen, a, true);
+      actionsDone.current = Math.max(actionsDone.current, k + 1);
+    }, 1000);
+    window.setTimeout(() => setCursor((c) => ({ ...c, click: false })), 1650);
+  };
+
   const reach = (n: number) => {
     reached.current = Math.max(reached.current, n);
     const p = plan.current;
@@ -164,11 +264,16 @@ export function StoryPlayer({
     if (at >= 2 && p.target && !reduced) setCursor({ x: p.cx, y: p.cy, on: true, click: at >= 3, scene: i });
   };
 
-  // A new scene starts at the top, pointer hidden.
+  // A new scene starts at the top, pointer hidden, before anything on it
+  // has been chosen or typed.
   useEffect(() => {
     reached.current = 0;
+    actionsDone.current = 0;
+    window.clearInterval(typing.current);
+    prepare(i);
     setPan({ x: 0, y: 0, scene: i });
     setCursor((c) => ({ ...c, on: false, click: false }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [i]);
 
   // Measure where this scene's moment is (again after a resize). Reduced
@@ -177,10 +282,16 @@ export function StoryPlayer({
   useEffect(() => {
     if (!started) return;
     measure();
-    if (reduced) reach(1);
-    else if (reached.current > 0) reach(reached.current);
+    if (reduced) {
+      finishActions();
+      reach(1);
+    } else if (reached.current > 0) reach(reached.current);
     let t = 0;
-    if (manual.current && !playing && !reduced) t = window.setTimeout(() => reach(3), 900);
+    if (manual.current && !playing && !reduced)
+      t = window.setTimeout(() => {
+        finishActions();
+        reach(3);
+      }, 900);
     return () => window.clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [measure, started, reduced]);
@@ -195,9 +306,30 @@ export function StoryPlayer({
     const elapsed = spent.current.ms;
     const ts: number[] = [];
     if (!reduced) {
-      const moments = [Math.max(1500, duration - 4400), Math.max(2600, duration - 2800), Math.max(3800, duration - 1400)];
-      moments.forEach((at, n) => {
-        if (reached.current < n + 1) ts.push(window.setTimeout(() => reach(n + 1), Math.max(0, at - elapsed)));
+      // Read first; then the person's own choices; then the last click.
+      // With choices to make, the pointer is already on screen, so the
+      // screen and pointer move to the last click together.
+      const base = (s?.seconds || 8.5) * 1000;
+      const acting = actions.length > 0;
+      const actionsFrom = Math.max(1500, base - (acting ? 3400 : 4400));
+      let at = actionsFrom;
+      actions.forEach((a, k) => {
+        const when = at;
+        if (actionsDone.current <= k) ts.push(window.setTimeout(() => doAction(k), Math.max(0, when - elapsed)));
+        at += actionMs(a);
+      });
+      const finalFrom = at;
+      const moments: [number, number][] = acting
+        ? [[finalFrom + 600, 2], [finalFrom + 2000, 3]]
+        : [[finalFrom, 1], [finalFrom + 1600, 2], [finalFrom + 3000, 3]];
+      moments.forEach(([when, level], n) => {
+        if (reached.current < level)
+          ts.push(
+            window.setTimeout(() => {
+              if (n === 0) finishActions();
+              reach(level);
+            }, Math.max(0, when - elapsed))
+          );
       });
     }
     ts.push(
@@ -306,7 +438,7 @@ export function StoryPlayer({
       <div className="sp-progress" aria-hidden="true">
         {scenes.map((sc, n) => (
           <button key={n} type="button" tabIndex={-1} className={`sp-seg${n < i || ended ? " done" : ""}${n === i && !ended ? " on" : ""}`} onClick={() => go(n)}>
-            <span style={n === i && !ended ? { animationDuration: `${(sc.seconds || 8.5)}s`, animationPlayState: playing ? "running" : "paused" } : undefined} key={`${n}-${i}-${ended}`} />
+            <span style={n === i && !ended ? { animationDuration: `${sceneMs(sc) / 1000}s`, animationPlayState: playing ? "running" : "paused" } : undefined} key={`${n}-${i}-${ended}`} />
           </button>
         ))}
       </div>

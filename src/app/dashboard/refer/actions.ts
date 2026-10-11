@@ -15,6 +15,7 @@ import {
   closeReferralRequest,
 } from "@/lib/referrals-v2";
 import { startConversation } from "../messages/actions";
+import { postToThread } from "@/lib/threads";
 
 // Refer flow server actions (Product Spec v1, "Refer"):
 // Need -> Shortlist -> Review -> Track. Nothing sends until the member
@@ -102,8 +103,17 @@ export async function respondReferralAction(formData: FormData) {
   if (idErr) back(`/dashboard/refer/${id}`, idErr);
   const { error } = await respondToReferralRequest(supabase, userId, id, response, message);
   if (error) back(`/dashboard/refer/${id}`, error);
+  // A question goes straight into Messages, in the referral's thread with
+  // the colleague who sent it, so the conversation starts there.
+  if (response === "question" && message) {
+    const { data: ref } = await supabase.from("referral_requests").select("requesting_profile_id").eq("id", id).maybeSingle();
+    const title = String(formData.get("thread_title") || "").trim() || null;
+    const sent = ref?.requesting_profile_id ? await postToThread(supabase, userId, [ref.requesting_profile_id as string], title, message) : null;
+    revalidatePath("/dashboard/messages");
+    if (!sent || sent.error) back(`/dashboard/refer/${id}`, "Your reply is saved, but the question didn't reach Messages. Use Go to messages to send it there.");
+  }
   revalidatePath(`/dashboard/refer/${id}`);
-  redirect(`/dashboard/refer/${id}?responded=1`);
+  redirect(`/dashboard/refer/${id}?responded=${response === "question" ? "question" : "1"}`);
 }
 
 export async function chooseReferralColleagueAction(formData: FormData) {

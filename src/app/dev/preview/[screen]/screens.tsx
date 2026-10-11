@@ -200,7 +200,7 @@ export const previewScreens: Record<string, () => ReactNode> = {
     <ReferTrackView
       r={{
         id: 1, isMine: true, focus: "Trauma / PTSD", where: "Brooklyn, New York", status: "sent", audience: "selected", timeframe: "within_month", notes: "Prefers evening telehealth.", createdAt: "2026-09-21", requesterName: "You",
-        rows: [["Where", "Brooklyn, New York"], ["Setting", "Either"], ["Timeframe", "Within a month"], ["Audience", "Selected colleagues (3)"], ["Patient details shared", "None"]],
+        rows: [["Where", "Brooklyn, New York"], ["Setting", "Virtual or in person"], ["Timeframe", "Within a month"], ["Audience", "Selected colleagues (3)"], ["Client details shared", "None"]],
         responses: [
           { profileId: "a", name: "Dr. Maya Chen", status: "interested", message: "I have two Tuesday evening openings.", avatarUrl: null },
           { profileId: "b", name: "Dr. Eli Ramirez", status: "question", message: "Is medication management needed?", avatarUrl: null },
@@ -214,7 +214,7 @@ export const previewScreens: Record<string, () => ReactNode> = {
     <ReferTrackView
       r={{
         id: 4, isMine: false, focus: "OCD", where: "Brooklyn, New York", status: "sent", audience: "selected", timeframe: "within_month", notes: null, createdAt: "2026-10-09", requesterName: "Dr. Eli Ramirez", requesterId: "b",
-        rows: [["Where", "Brooklyn, New York"], ["Setting", "Either"], ["Timeframe", "Within a month"]],
+        rows: [["Where", "Brooklyn, New York"], ["Setting", "Virtual or in person"], ["Timeframe", "Within a month"]],
         responses: [], myResponse: { status: "question", message: "Is evening telehealth possible?" }, chosen: null, rated: false,
       }}
     />

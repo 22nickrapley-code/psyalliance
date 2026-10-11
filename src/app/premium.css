@@ -1534,7 +1534,7 @@
 .pa img,.pa svg,.pa video,.pa canvas{max-width:100%}
 .pa input,.pa select,.pa textarea,.pa button{max-width:100%}
 .pa fieldset{min-width:0}
-.pa p,.pa li,.pa h1,.pa h2,.pa h3,.pa h4,.pa dd,.pa td,.pa small,.pa strong,.pa b,.pa blockquote{overflow-wrap:anywhere}
+.pa p,.pa li,.pa h1,.pa h2,.pa h3,.pa h4,.pa dd,.pa td,.pa small,.pa strong,.pa b,.pa blockquote{overflow-wrap:break-word}
 /* Flex and grid children may shrink below their content's width. */
 .pa .card > *,.pa .split > *,.pa .stack > *,.pa .fields > *,.pa .aud-summary > *,.pa .colleague-picker > *{min-width:0}
 /* Colleague picker: wrap rather than push the list wider than its card. */
@@ -1545,7 +1545,7 @@
 .pa input[type=date]::-webkit-date-and-time-value{text-align:left;margin:0}
 .pa input[type=date]::-webkit-calendar-picker-indicator{opacity:.6}
 @media (max-width:760px){
-  html{overflow-x:hidden}
+  body{overflow-x:clip}
   .pa .page{overflow-x:clip}
   .pa .aud-options{grid-template-columns:1fr}
   .pa .aud-summary{padding:14px}
@@ -1947,11 +1947,6 @@
 .pa .notice-line{border-left:3px solid var(--forest);background:#eef5ef;padding:10px 13px;border-radius:0 8px 8px 0;font-size:13.5px;color:var(--ink);margin:10px 0}
 .pa .notice-line.warn{border-left-color:var(--brass);background:#f8f2e9;color:#634e36}
 /* What the import filled in */
-.pa .autofilled:is(input,select,textarea){background:#fff8d8 !important;border-color:#e0bf55 !important;box-shadow:0 0 0 3px rgba(224,191,85,.25)}
-.pa label.autofilled{background:#fff8d8;border-radius:6px;box-shadow:0 0 0 2px #f1dc93}
-.pa .check-grid label.autofilled{padding:2px 6px;margin:-2px -6px}
-.pa img.avatar.autofilled{box-shadow:0 0 0 3px #e0bf55}
-.pa details.has-autofill > summary .profile-section-title:after{content:"Filled in from your text";margin-left:10px;font:600 11px/1 var(--body);color:#7a5d10;background:#fff4c7;border:1px solid #ecd27a;border-radius:999px;padding:3px 8px;vertical-align:middle}
 /* Completeness: what's left first, in its own colour */
 .pa .completeness li.is-todo{background:#f8f2e9;border-radius:6px;padding-left:8px;padding-right:8px}
 .pa .completeness li.is-todo span{color:#634e36;font-weight:600}
@@ -2166,6 +2161,8 @@
 /* Practice at a glance: labels never break mid-word */
 .pa .glance li span{flex:0 0 auto;white-space:nowrap}
 .pa .glance li strong{flex:1 1 auto;min-width:0;overflow-wrap:break-word}
+/* On the narrowest phones a long label may take two lines rather than push the value out */
+@media (max-width:360px){.pa .glance li span{flex:0 1 auto;white-space:normal;max-width:50%}}
 
 /* Colleague profile banner */
 .pa .profile-hero{position:relative;overflow:hidden;display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:26px;align-items:center;padding:32px 34px;border-radius:18px;background:radial-gradient(120% 140% at 100% 0%,#2a5f4f 0%,#1d473b 45%,#163a30 100%);box-shadow:0 18px 44px rgba(16,45,37,.22)}
@@ -2196,3 +2193,132 @@
 
 /* The one-time example note never shows inside a demo screen */
 .sp-screen .first-visit,[data-tour-screen] .first-visit{display:none}
+
+
+/* ---- 11 Oct: lists, replies and phone fixes ---- */
+
+/* List cards (Refer: sent and received; Cover: covering and time away) */
+.pa .list-panel{padding:0;overflow:hidden;border-color:#e0e6df}
+.pa .list-panel-head{display:flex;gap:14px;align-items:center;padding:18px 20px 16px;border-bottom:1px solid #e6ebe5;background:linear-gradient(180deg,#fbfaf6,#fff)}
+.pa .lp-icon{width:42px;height:42px;flex:0 0 42px;border-radius:12px;display:grid;place-items:center;line-height:0;background:#e6f0ea;color:var(--forest)}
+.pa .list-panel.tone-brass .lp-icon{background:#f6ecdf;color:#8a6230}
+.pa .list-panel.tone-blue .lp-icon{background:#e5eef2;color:#3d6273}
+.pa .lp-title{flex:1;min-width:0}
+.pa .lp-title h3{margin:0;font-size:18px;line-height:1.25}
+.pa .lp-title p{margin:3px 0 0;font-size:13px;color:var(--muted);line-height:1.45}
+.pa .lp-count{flex:0 0 auto;min-width:32px;height:32px;padding:0 10px;border-radius:999px;display:grid;place-items:center;background:#eef3ef;color:var(--forest);font:700 14px/1 var(--body)}
+.pa .list-panel.tone-brass .lp-count{background:#f6ecdf;color:#7a5223}
+.pa .list-panel-body{padding:14px;display:grid;gap:10px}
+.pa .list-panel-body .quiet-panel{margin:0}
+.pa .lp-item{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 16px;align-items:center;padding:14px 16px;border:1px solid #e3e8e2;border-radius:12px;background:#fff;color:inherit;text-decoration:none;transition:border-color .15s,box-shadow .15s,transform .15s}
+.pa a.lp-item:hover{border-color:#c3d3c7;box-shadow:0 8px 20px rgba(16,35,29,.07);transform:translateY(-1px)}
+.pa .lp-main{min-width:0}
+.pa .lp-main strong{display:block;font-size:15px;font-weight:650;color:var(--ink);line-height:1.35}
+.pa .lp-main strong a{color:inherit;text-decoration:underline;text-decoration-color:#c9d3cc;text-underline-offset:3px}
+.pa .lp-meta{display:flex;flex-wrap:wrap;gap:2px 0;margin-top:4px;font-size:13px;color:var(--muted);line-height:1.5}
+.pa .lp-meta span{white-space:nowrap}
+.pa .lp-meta span + span:before{content:"·";margin:0 8px;color:#a9b5ae}
+.pa .lp-side{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+.pa .lp-go{font-size:13px;font-weight:650;color:var(--forest);white-space:nowrap}
+.pa .lp-go a{color:inherit;text-decoration:none}
+.pa .lp-past{margin-top:4px}
+.pa .lp-past summary{cursor:pointer;font-size:13px;font-weight:650;color:var(--forest);padding:6px 2px}
+.pa .lp-past .lp-item{margin-top:8px;background:#fafbf8}
+@media (max-width:640px){
+  .pa .list-panel-head{padding:16px}
+  .pa .list-panel-body{padding:12px}
+  .pa .lp-item{grid-template-columns:1fr;padding:13px 14px}
+  .pa .lp-side{flex-direction:row;justify-content:space-between;align-items:center}
+  .pa .lp-meta span{white-space:normal}
+}
+
+/* Short count and state pills stay on one line (longer ones may wrap on phones) */
+.pa .section-heading .status,.pa .card-title > .status,.pa .lp-item .status{white-space:nowrap}
+.pa .section-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:nowrap}
+.pa .section-heading h2{min-width:0}
+
+/* After a reply: what was sent, where the conversation is, the final answer folded */
+.pa .reply-summary{border:1px solid #d6e3d9;background:#f3f8f4;border-radius:14px;padding:18px 20px}
+.pa .reply-summary.is-question{border-color:#e6d2b2;background:#fbf6ee}
+.pa .reply-summary h3{margin:0 0 6px;font-size:18px}
+.pa .reply-summary .small{margin:6px 0 12px}
+.pa .reply-quote{margin:8px 0 0;padding:10px 14px;border-left:3px solid #c9a46f;background:#fff;border-radius:8px;font-size:14.5px;color:var(--ink)}
+.pa .final-answer{margin-top:14px;border-top:1px solid rgba(0,0,0,.07);padding-top:12px}
+.pa .final-answer > summary{cursor:pointer;font-size:13.5px;font-weight:650;color:var(--forest);list-style:none}
+.pa .final-answer > summary::-webkit-details-marker{display:none}
+.pa .final-answer > summary:before{content:"+";display:inline-block;width:16px;font-weight:700}
+.pa .final-answer[open] > summary:before{content:"–"}
+.pa .final-answer form{margin-top:10px}
+.pa .incoming-case .reply-summary{margin-top:12px}
+.pa .cover-reply{margin-top:12px}
+.pa .ask-first{margin-top:10px}
+.pa .ask-first > summary{cursor:pointer;font-size:13.5px;font-weight:650;color:#7a5223;list-style:none;padding:6px 0}
+.pa .ask-first > summary::-webkit-details-marker{display:none}
+.pa .ask-first > summary:before{content:"? ";font-weight:800}
+.pa .ask-first[open]{background:#fbf6ee;border:1px solid #ecd9bb;border-radius:12px;padding:6px 14px 14px}
+.pa .ask-first .field{margin:6px 0 10px}
+.pa .handoff-actions{margin-top:12px}
+
+/* Tick boxes and radios big enough to hit, the same everywhere */
+.pa input[type=checkbox],.pa input[type=radio],.pa .field input[type=checkbox],.pa .field input[type=radio],.pa .check-grid input,.pa .checkline input{width:20px;height:20px;min-width:20px;flex:0 0 20px;margin:0;accent-color:var(--forest);vertical-align:middle}
+@media (max-width:760px){.pa input[type=checkbox],.pa input[type=radio],.pa .field input[type=checkbox],.pa .field input[type=radio],.pa .check-grid input,.pa .checkline input{width:22px;height:22px;min-width:22px;flex-basis:22px}}
+.pa .checkline{display:flex;align-items:flex-start;gap:10px}
+.pa .checkline input{margin-top:1px}
+
+/* Every dropdown gets the same arrow, centered */
+.pa select:not([multiple]){-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2346554f' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;background-size:16px;padding-right:38px}
+.pa .field.searchable{gap:8px}
+.pa .field.searchable > label{display:block;line-height:inherit;margin:0}
+.pa .combo-value{box-shadow:none !important;background:transparent !important}
+
+/* Sandbox band on phones: buttons share the width and wrap their words */
+@media (max-width:800px){
+  .pa .sandbox-band .band-actions{display:grid;grid-template-columns:1fr 1.4fr auto;align-items:stretch}
+  .pa .sandbox-band .btn{white-space:normal;line-height:1.2;min-width:0;text-align:center}
+  .pa .sandbox-band .band-more summary{display:flex;align-items:center;height:100%}
+}
+
+/* Large tabs on small phones: icon above the words, so no word is split */
+@media (max-width:480px){
+  .pa .section-tab{flex-direction:column;align-items:flex-start;gap:8px;padding:12px}
+  .pa .section-tab .st-icon{width:30px;height:30px;border-radius:9px}
+  .pa .section-tab b{font-size:14px}
+  .pa .section-tab small{font-size:11.5px}
+  /* A "3 new" count sits in the tile's corner, level with the icon */
+  .pa .section-tab{position:relative}
+  .pa .section-tab .new-pill{position:absolute;top:15px;right:12px;margin:0}
+}
+
+/* The bottom bar on phones sits above the browser's own bar */
+@media (max-width:760px){
+  .pa .mobile-bottom{position:fixed;bottom:0;left:0;right:0;transform:translateZ(0);padding-bottom:max(6px,env(safe-area-inset-bottom))}
+}
+
+/* Availability: the same layout for every signal, colored by what's chosen */
+.pa .seg.traffic{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:10px}
+.pa .seg.traffic label{min-height:52px;padding:12px 14px;border:1.5px solid #dbe2db;border-radius:12px;font-size:14.5px;font-weight:600;gap:10px;line-height:1.3;transition:border-color .15s,background .15s,box-shadow .15s}
+.pa .seg.traffic label span{min-width:0}
+.pa .seg.traffic label:hover{border-color:#b8c7bc}
+.pa .seg.traffic .tone-go input{accent-color:#2f7a52}
+.pa .seg.traffic .tone-some input{accent-color:#c27d1f}
+.pa .seg.traffic .tone-stop input{accent-color:#b5483c}
+.pa .seg.traffic label.tone-go:has(input:checked){border-color:#2f7a52;background:#e8f5ec;color:#1d5a3a;box-shadow:inset 0 0 0 1px #2f7a52}
+.pa .seg.traffic label.tone-some:has(input:checked){border-color:#c98a2b;background:#fdf2df;color:#7a4e14;box-shadow:inset 0 0 0 1px #c98a2b}
+.pa .seg.traffic label.tone-stop:has(input:checked){border-color:#b5483c;background:#fbeceb;color:#8a2f25;box-shadow:inset 0 0 0 1px #b5483c}
+@media (max-width:640px){.pa .seg.traffic{grid-template-columns:1fr}}
+
+/* Filled in from pasted text: a quiet, consistent mark rather than yellow
+   blocks. Each field shows a small "Filled in" tag beside its label and a
+   warm edge; nothing moves; the section header says so in two words. */
+.pa label.field.autofilled{position:relative}
+.pa label.field.autofilled:after{content:"\2713  Filled in";position:absolute;top:1px;right:0;font:650 11px/1.2 var(--body);letter-spacing:.01em;color:#7a5223;background:#fbf3e6;border:1px solid #ecd9bb;border-radius:999px;padding:2px 8px;white-space:nowrap;pointer-events:none}
+.pa .autofilled:is(input,select,textarea),.pa .field .autofilled:is(input,select,textarea){border-color:#d7b98a !important;background-color:#fffcf6 !important;box-shadow:inset 3px 0 0 #c9a46f !important}
+.pa .check-grid label.autofilled{background:#fbf6ec;border-radius:8px;box-shadow:inset 0 0 0 1px #ecdcbf}
+.pa .check-grid label.autofilled input{accent-color:#a5743f}
+.pa .rank-list label.autofilled select,.pa .rank-list select.autofilled{border-color:#d7b98a !important;background-color:#fffcf6 !important}
+.pa img.avatar.autofilled{box-shadow:0 0 0 3px #e7d2b0}
+.pa details.has-autofill > summary .profile-section-title:after{content:"Filled in";display:inline-block;margin-left:10px;font:650 11px/1.2 var(--body);color:#7a5223;background:#fbf3e6;border:1px solid #ecd9bb;border-radius:999px;padding:3px 9px;vertical-align:middle;white-space:nowrap}
+.pa details.profile-section > summary{flex-wrap:nowrap}
+.pa details.profile-section > summary .profile-section-title{min-width:0}
+.pa .quick-start-applied li{background:#fbf3e6 !important;border:1px solid #ecd9bb !important;color:#6d4a1c !important}
+.pa .quick-start-applied li:before{content:"\2713  "}

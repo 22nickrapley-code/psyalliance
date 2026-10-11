@@ -9,19 +9,21 @@ import { BackLink, BackField } from "../_components/back-link";
 // shown or treated as Yes: nothing is pre-selected until the member
 // chooses (Sept 23 audit fix).
 
-const REFERRAL = [
-  { v: "yes", label: "Accepting" },
-  { v: "limited", label: "Selected referrals only" },
-  { v: "no", label: "Not accepting" },
+// Traffic lights: green open, amber some, red closed.
+type Option = { v: string; label: string; tone: "go" | "some" | "stop" };
+const REFERRAL: Option[] = [
+  { v: "yes", label: "Accepting", tone: "go" },
+  { v: "limited", label: "Selected referrals only", tone: "some" },
+  { v: "no", label: "Not accepting", tone: "stop" },
 ];
-const COVER = [
-  { v: "yes", label: "Available" },
-  { v: "ask_me", label: "Limited capacity, ask me" },
-  { v: "no", label: "Not available" },
+const COVER: Option[] = [
+  { v: "yes", label: "Available", tone: "go" },
+  { v: "ask_me", label: "Limited capacity, ask me", tone: "some" },
+  { v: "no", label: "Not available", tone: "stop" },
 ];
-const CONSULT = [
-  { v: "yes", label: "Open to consult" },
-  { v: "no", label: "Not now" },
+const CONSULT: Option[] = [
+  { v: "yes", label: "Open to consult", tone: "go" },
+  { v: "no", label: "Not now", tone: "stop" },
 ];
 
 function labelFor(list: { v: string; label: string }[], v: string | null | undefined) {
@@ -41,7 +43,7 @@ function Signal({
   name: string;
   title: string;
   help: string;
-  options: { v: string; label: string }[];
+  options: Option[];
   value: string | null | undefined;
   preselect: boolean;
 }) {
@@ -51,11 +53,11 @@ function Signal({
       <legend className="sr-only">{title}</legend>
       <h3>{title}</h3>
       <p className="small">{help}</p>
-      <div className="seg">
+      <div className="seg traffic">
         {options.map((o) => (
-          <label key={o.v}>
+          <label key={o.v} className={`tone-${o.tone}`}>
             <input type="radio" name={name} value={o.v} required defaultChecked={preselect && current === o.v} />
-            {o.label}
+            <span>{o.label}</span>
           </label>
         ))}
       </div>
