@@ -141,6 +141,16 @@ update public.overflow_pages o
    and not exists (select 1 from public.overflow_pages x
                     where x.slug = regexp_replace(o.slug, '(^|-)' || lower(m.old) || '($|-)', '\1' || lower(m.new) || '\2'));
 
+-- The name stored with a sandbox guest's sign-in.
+update auth.users u
+   set raw_user_meta_data = jsonb_set(u.raw_user_meta_data, '{full_name}',
+         to_jsonb(split_part(u.raw_user_meta_data->>'full_name', ' ', 1) || ' ' || m.new))
+  from pa_name_map m
+ where u.raw_user_meta_data ? 'full_name'
+   and split_part(u.raw_user_meta_data->>'full_name', ' ', 2) = m.old
+   and split_part(u.raw_user_meta_data->>'full_name', ' ', 3) = ''
+   and exists (select 1 from public.profiles p where p.id = u.id and (p.is_demo or private.is_sandbox_guest(p.id)));
+
 -- Their internal sign-in addresses (never shown, but no real names either).
 update auth.users u
    set email = regexp_replace(u.email, '\.' || lower(m.old) || '(-|@)', '.' || lower(m.new) || '\1')

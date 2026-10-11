@@ -525,6 +525,7 @@ export const previewScreens: Record<string, () => ReactNode> = {
       me="me"
       editing={false}
       licenses={[{ state: "NY", reviewed: true }]}
+      founding={{ state: "NY", place: 12 }}
     />
   ),
   "home-setup-done": () => (

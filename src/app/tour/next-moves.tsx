@@ -6,7 +6,7 @@ export function NextMoves() {
   return (
     <div className="next-moves two">
       <section className="card">
-        <div className="eyebrow">Founding members never pay</div>
+        <div className="eyebrow">The first 50 in each state join free for life</div>
         <h3>Create your account</h3>
         <p className="small">
           For doctoral psychologists and psychiatrists. While a person checks your license, you can try everything in a sandbox with fictional colleagues

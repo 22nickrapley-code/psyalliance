@@ -29,7 +29,7 @@ export default async function InvitePage() {
             title={invite.mode === "member" ? "Send your link however suits you." : "Invite a colleague"}
             lead={
               invite.mode === "member"
-                ? "Type their email, mobile number or LinkedIn profile and send it from your own email, phone or LinkedIn. You're connected once both of you are verified with a reviewed license in an open state; until then the connection waits and gives no one early access."
+                ? "You're connected once you're both verified in an open state. Until then the connection waits and gives no one early access."
                 : undefined
             }
           />

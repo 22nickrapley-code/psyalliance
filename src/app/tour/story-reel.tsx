@@ -56,11 +56,20 @@ const BEATS: Beat[] = [
   },
   {
     demo: "refer",
+    slug: "need",
+    chapter: "Referring out",
+    act: true,
+    seconds: 7.5,
+    caption: "A client she can't take? She starts with what they need.",
+    sub: "On Refer, she picks the main need and where the client is. Everything else is optional.",
+  },
+  {
+    demo: "refer",
     slug: "shortlist",
     chapter: "Referring out",
     act: true,
-    caption: "A client she can't take? A shortlist in seconds.",
-    sub: "Colleagues who fit, each with the reason, instead of names from memory. She picks who receives it.",
+    caption: "A shortlist in seconds, each with a reason.",
+    sub: "Colleagues who fit, instead of names from memory. She picks who receives it.",
   },
   {
     demo: "refer",

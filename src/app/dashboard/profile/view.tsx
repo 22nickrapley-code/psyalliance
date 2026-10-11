@@ -13,6 +13,7 @@ import { PageHead, Banner, PersonAvatar, Status } from "../_components/ui";
 import { ProfileTabs } from "../_components/profile-tabs";
 import { BackLink, BackField } from "../_components/back-link";
 import { DeleteAccount } from "./delete-account";
+import { foundingLabel, type FoundingPlace } from "@/lib/founding";
 
 // Profile (Product Spec v1): the facts every match is computed against.
 // Profession, specialties ranked 1 to 5, populations and age bands,
@@ -70,7 +71,10 @@ export function ProfileView({
   ledger = [],
   back,
   importDemo,
+  founding = null,
 }: {
+  // The member's founding place, if they hold one (migration 0112).
+  founding?: FoundingPlace | null;
   // Demo screens only: the Quick start part-way through.
   importDemo?: ImportDemo;
   ledger?: string[];
@@ -155,7 +159,10 @@ export function ProfileView({
               <div style={{ minWidth: 0 }}>
                 <h2 className="serif-title" style={{ fontSize: 32, margin: 0 }}>{display}</h2>
                 <p style={{ margin: "4px 0 10px", fontSize: 15 }}>{roleLabel(profile?.qualification_level)}{where ? ` · ${where}` : ""}</p>
-                {reviewed.length > 0 ? <Status>Professional evidence reviewed</Status> : licenses.length ? <Status tone="warn">License awaiting review</Status> : <Status tone="warn">Add your license</Status>}
+                <div className="profile-chips">
+                  {reviewed.length > 0 ? <Status>Professional evidence reviewed</Status> : licenses.length ? <Status tone="warn">License awaiting review</Status> : <Status tone="warn">Add your license</Status>}
+                  {founding && <span className="founding-badge">Founding member &middot; {foundingLabel(founding)}</span>}
+                </div>
               </div>
             </div>
             {profile?.bio && <p className="lead-text" style={{ marginTop: 20 }}>{profile.bio}</p>}

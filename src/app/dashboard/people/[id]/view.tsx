@@ -35,6 +35,8 @@ export type ClinicianProfile = {
   collaborations: number;
   signals: string[];
   primaryState: string | null;
+  // "New York · #12" when they hold a founding place.
+  founding?: string | null;
   // What you have in common, as reasons PsyAlliance would suggest them.
   why?: string[];
   // This page with the list it was opened from, so actions come back here
@@ -138,6 +140,7 @@ export function ClinicianProfileView({ p, error, note, back }: { p: ClinicianPro
             )}
             <span className="chip">{p.availabilityChip}</span>
             {p.psypact && <span className="chip">PSYPACT</span>}
+            {p.founding && <span className="chip chip-founding">Founding member &middot; {p.founding}</span>}
           </div>
         </div>
         <div className="hero-cta">
@@ -239,6 +242,7 @@ export function ClinicianProfileView({ p, error, note, back }: { p: ClinicianPro
             <ul className="glance">
               <li><span>Reviewed licenses</span><strong>{p.licenceStates.length ? p.licenceStates.join(", ") : "None reviewed yet"}</strong></li>
               {p.psypact && <li><span>PSYPACT</span><strong>Participating</strong></li>}
+              {p.founding && <li><span>Founding member</span><strong>{p.founding}</strong></li>}
               {p.boardCertified && <li><span>Board certification</span><strong>Self-reported</strong></li>}
               <li><span>Availability</span><strong>{p.confirmed}</strong></li>
             </ul>

@@ -25,8 +25,10 @@ export default function TermsPage() {
               Practice Library templates show whether they have been independently reviewed; adapt any template with your own advisers before you rely on it.
             </p>
             <p>
-              Founding members never pay. Membership stays free for as long as you remain a member; if PsyAlliance introduces a fee, it applies only to people who
-              join after the founding period.
+              <b>Founding members.</b> The first 50 members in each state whose license PsyAlliance approves are founding members. Places are counted in the
+              order licenses are approved, in each member&rsquo;s main practice state, one place per person. Founding members never pay for membership, for as long
+              as they remain members, including if PsyAlliance introduces fees later. A place can&rsquo;t be transferred and isn&rsquo;t reused if a member
+              leaves. After a state&rsquo;s founding places are taken, membership in that state will be paid; PsyAlliance will publish the price before then.
             </p>
           </div>
         </section>

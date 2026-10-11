@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { loadFoundingPlace } from "@/lib/founding";
 import { loadLedger, ledgerItems } from "@/lib/ledger";
 import { resolveAvatarUrl } from "@/lib/avatars";
 import { ProfileView } from "./view";
@@ -65,6 +66,7 @@ export default async function ProfilePage(props: {
       licenses={licenses}
       ledger={ledgerItems(await loadLedger(supabase, me))}
       back={safeBack(sp.back)}
+      founding={await loadFoundingPlace(supabase, me)}
     />
   );
 }

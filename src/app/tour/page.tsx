@@ -50,7 +50,7 @@ export default async function DemoStoryPage(props: { searchParams: Promise<{ cha
                 <h2>Create your account for the full demos and your own sandbox.</h2>
                 <p>
                   Inside, every part of PsyAlliance has a short step-by-step demo, and your sandbox is a fully set-up fictional practice, with colleagues,
-                  clients and requests, to learn on at your own pace. Nothing you do there reaches anyone. Founding members never pay.
+                  clients and requests, to learn on at your own pace. Nothing you do there reaches anyone. The first 50 members in each state are founding members, free for life.
                 </p>
               </div>
               <div className="demo-join-actions">

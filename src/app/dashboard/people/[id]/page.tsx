@@ -1,4 +1,5 @@
 import { effectiveReferral, effectiveCover } from "@/lib/availability";
+import { foundingLabel, loadFoundingPlace } from "@/lib/founding";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { resolveAvatarUrl } from "@/lib/avatars";
@@ -64,6 +65,7 @@ export default async function PersonPage(props: { params: Promise<{ id: string }
         .eq("lookup_values.category", "treatment_specialism"),
       supabase.from("licenses").select("state").eq("profile_id", myself),
     ]);
+  const founding = await loadFoundingPlace(supabase, id);
 
   if (!rows || rows.length === 0) {
     return (
@@ -163,6 +165,7 @@ export default async function PersonPage(props: { params: Promise<{ id: string }
     collaborations: Number(workedWithMe?.interaction_count || 0),
     signals,
     primaryState: p.primary_state || null,
+    founding: founding ? foundingLabel(founding) : null,
     why,
     selfHref: safeBack(back) ? `/dashboard/people/${id}?back=${encodeURIComponent(safeBack(back)!)}` : `/dashboard/people/${id}`,
   };

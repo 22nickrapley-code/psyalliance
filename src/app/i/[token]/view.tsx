@@ -48,7 +48,7 @@ export function InviteLanding({ who, token, signedIn, error }: { who: InviteWho;
                     <a className="btn secondary block" href={`/auth/sign-in?next=${encodeURIComponent(`/i/${token}`)}`}>Already a member? Sign in and connect</a>
                   </div>
                 )}
-                <p className="micro-note" style={{ marginTop: 14 }}>Founding members never pay. For PhD, PsyD and EdD psychologists and MD and DO psychiatrists.</p>
+                <p className="micro-note" style={{ marginTop: 14 }}>The first 50 members in each state are founding members, free for life. For PhD, PsyD and EdD psychologists and MD and DO psychiatrists.</p>
               </div>
             )}
           </div>

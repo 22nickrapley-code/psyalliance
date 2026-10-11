@@ -1,5 +1,6 @@
 import { PublicNav, PublicFooter } from "../_public/chrome";
 import { JOIN_HREF, TOUR_URL } from "@/lib/env";
+import { FOUNDING_LINE } from "@/lib/founding";
 import { SectionReel } from "../tour/story-reel";
 import { findDemo } from "../tour/demos";
 import { CATEGORIES, PUBLIC_WORKFLOW, SHORT_CATEGORY, monthYear, docName, publicLibraryHref, type PublicDoc } from "@/lib/library";
@@ -121,8 +122,8 @@ export function PublicLibraryView({ docs, q }: { docs: PublicDoc[]; q: string })
           <div className="section-inner pa-cta">
             <div>
               <div className="eyebrow" style={{ color: "#e2c49c" }}>Members get every template</div>
-              <h2>Join the founding cohort.</h2>
-              <p>Founding members never pay. For doctoral-level psychologists and psychiatrists, opening state by state.</p>
+              <h2>Be one of the first 50 in your state.</h2>
+              <p>{FOUNDING_LINE} For doctoral-level psychologists and psychiatrists, opening state by state.</p>
             </div>
             <a className="btn" href={`${JOIN_HREF}?from=library-index`}>Create your account &rarr;</a>
           </div>

@@ -1,6 +1,8 @@
 import "../premium.css";
 import { PublicNav, PublicFooter } from "../_public/chrome";
 import { JOIN_HREF } from "@/lib/env";
+import { FOUNDING_LINE } from "@/lib/founding";
+import { FoundingCount } from "../_public/founding-count";
 
 export const metadata = {
   title: "Verification",
@@ -59,8 +61,9 @@ export default function VerificationPage() {
           <div className="section-inner pa-cta">
             <div>
               <div className="eyebrow" style={{ color: "#e2c49c" }}>Founding members</div>
-              <h2>Join the founding cohort.</h2>
-              <p>Founding members never pay. Opening state by state, starting with New York and Massachusetts.</p>
+              <h2>Be one of the first 50 in your state.</h2>
+              <p>{FOUNDING_LINE} Opening state by state, starting with New York and Massachusetts.</p>
+              <FoundingCount className="founding-count on-dark" />
             </div>
             <a className="btn" href={JOIN_HREF}>Create your account &rarr;</a>
           </div>

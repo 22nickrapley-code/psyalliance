@@ -5,19 +5,24 @@ import { createClient } from "@/lib/supabase/server";
 import { loadOpenStates, stateList } from "@/lib/open-states";
 import { PublicNav, PublicFooter } from "./_public/chrome";
 import { publicLibraryHref } from "@/lib/library";
+import { FOUNDING_LINE } from "@/lib/founding";
+import { FoundingCount } from "./_public/founding-count";
 
 // Public landing. Written for a busy clinician who gives it a few seconds:
 // what it is and the benefit first, then the three moments it helps with,
 // why it exists, why it's safe, the questions people ask first and one way
 // in. Verification detail lives at /verification and the full rules at
-// /privacy. Founding members never pay.
+// /privacy. The first 50 members in each state are founding members.
 
 const FAQ: [string, string][] = [
   [
     "Who can join?",
     "Doctoral-level psychologists (PhD, PsyD, EdD) and psychiatrists (MD, DO) licensed in the US. Anyone eligible can create an account; the network opens state by state, starting with New York and Massachusetts.",
   ],
-  ["What does it cost?", "Nothing. Founding members never pay: membership stays free for as long as you remain a member. If a fee is ever introduced, it applies only to people who join after the founding period."],
+  [
+    "What does it cost?",
+    "The first 50 members in each state are founding members and never pay: membership stays free for as long as you remain a member. A place counts once your license is approved, in your main practice state. After a state's founding places are taken, membership there will be paid; we'll publish the price before then.",
+  ],
   [
     "What's in the Practice Library?",
     "Twenty templates for independent practice, from a professional will to a reciprocal cover agreement. Members get all of them, placed beside the work they support. Each becomes a free download for everyone once it has been independently reviewed.",
@@ -112,7 +117,8 @@ export default async function HomePage() {
               <a className="btn lg" href="/auth/sign-up">Create your account</a>
               <a className="btn secondary lg" href={DEMO()}>See it in two minutes &rarr;</a>
             </div>
-            <p className="hero-free">Founding members never pay.</p>
+            <p className="hero-free">{FOUNDING_LINE}</p>
+            <FoundingCount className="founding-count hero-count" />
             <ul className="hero-trust" aria-label="Who it's for">
               <li>Doctoral-level only</li>
               <li>Every license checked by a person</li>
@@ -263,8 +269,9 @@ export default async function HomePage() {
           <div className="section-inner pa-cta">
             <div>
               <div className="eyebrow" style={{ color: "#e2c49c" }}>Founding members</div>
-              <h2>Join the founding cohort.</h2>
-              <p>Founding members never pay. Open now in {open || "the Northeast"}; other states open as colleagues join.</p>
+              <h2>Be one of the first 50 in your state.</h2>
+              <p>{FOUNDING_LINE} Open now in {open || "the Northeast"}; other states open as colleagues join.</p>
+              <FoundingCount className="founding-count on-dark" />
             </div>
             <a className="btn" href="/auth/sign-up">Create your account &rarr;</a>
           </div>

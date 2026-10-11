@@ -38,8 +38,8 @@ function buildMessage(info: InviteInfo, name: string) {
       : "I'm on PsyAlliance, a private network for doctoral psychologists and psychiatrists in private practice: cover when you're away, referrals that fit, and trusted colleagues to ask.";
   const ask =
     info.mode === "member"
-      ? "I'd like you as one of my trusted colleagues there. Join through my link and we're connected once you're verified. Founding members never pay."
-      : "Have a look. Founding members never pay.";
+      ? "I'd like you as one of my trusted colleagues there. Join through my link and we're connected once you're verified. The first 50 members in each state are founding members, free for life."
+      : "Have a look. The first 50 members in each state are founding members, free for life.";
   const sign = info.mode !== "sandbox" && info.firstName ? `\n\n${info.firstName}` : "";
   return { body: `${hi} ${what} ${ask}`, sign };
 }
@@ -101,6 +101,26 @@ export function InviteBox({
   const sms = `sms:+${target.value}?&body=${encodeURIComponent(withLink)}`;
   const whatsapp = `https://wa.me/${target.value}?text=${encodeURIComponent(withLink)}`;
 
+  // One action at a time: what fits what was typed, or Share / Email when
+  // nothing is typed yet.
+  const primary =
+    target.kind === "email" ? (
+      <a className="btn small-btn" href={mailto}>Write the email</a>
+    ) : target.kind === "phone" ? (
+      <>
+        <a className="btn small-btn" href={sms}>Send a text</a>
+        <a className="btn secondary small-btn" href={whatsapp} target="_blank" rel="noopener">WhatsApp</a>
+      </>
+    ) : target.kind === "linkedin" ? (
+      <button type="button" className="btn small-btn" onClick={linkedin}>
+        {copied === "message" ? "Copied. Opening LinkedIn…" : "Copy message, open LinkedIn"}
+      </button>
+    ) : canShare ? (
+      <button type="button" className="btn small-btn" onClick={share}>Share&hellip;</button>
+    ) : (
+      <a className="btn small-btn" href={mailto}>Email it</a>
+    );
+
   return (
     <section className="card invite-box" id={id} aria-labelledby={`${id}-title`}>
       <div className="invite-intro">
@@ -109,67 +129,49 @@ export function InviteBox({
         <p className="small">
           {lead ||
             (info.mode === "member"
-              ? "Send them your own link from your email, phone or LinkedIn. When they join and are verified, you're each other's trusted colleagues."
+              ? "When they join and are verified, you're each other's trusted colleagues."
               : info.mode === "sandbox"
-                ? "Send a psychologist or psychiatrist the main site from your email, phone or LinkedIn. Nothing is sent from the sandbox itself."
-                : "Send a psychologist or psychiatrist PsyAlliance from your email, phone or LinkedIn.")}
+                ? "Sends them the main site. Nothing is sent from the sandbox."
+                : "Send them PsyAlliance from your own email, phone or LinkedIn.")}
+          {info.mode === "member" && (
+            <>
+              {" "}
+              <a href="/dashboard/invite">Who&rsquo;s joined</a>
+            </>
+          )}
         </p>
-        {info.mode === "member" && (
-          <a className="text-arrow small" href="/dashboard/invite">Who&rsquo;s joined through your link &rarr;</a>
-        )}
       </div>
 
       <div className="invite-form">
-        <div className="invite-fields">
-          <label className="field">
-            Email, mobile number or LinkedIn profile
-            <input
-              value={contact}
-              onChange={(e) => setContact(e.target.value)}
-              placeholder="sam@practice.com, (917) 555-0142 or linkedin.com/in/…"
-              autoComplete="off"
-              aria-describedby={`${id}-kind`}
-            />
-          </label>
-          <label className="field">
-            Their first name
-            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Optional" autoComplete="off" />
-          </label>
-        </div>
-        <p className="invite-kind micro-note" id={`${id}-kind`} aria-live="polite">
-          {target.kind === "email" && "Email address. It opens in your own email."}
-          {target.kind === "phone" && "Mobile number. Send it as a text or on WhatsApp."}
-          {target.kind === "linkedin" && "LinkedIn profile. We copy the message; paste it into a message on their profile."}
-          {!target.kind && contact.trim() && "That doesn't look like an email address, mobile number or LinkedIn profile yet."}
-          {!contact.trim() && (canShare ? "Or tap Share to send it through any app on your phone." : "Or copy your link and send it however you like.")}
-        </p>
-
-        <div className="invite-actions">
-          {target.kind === "email" && <a className="btn" href={mailto}>Write the email</a>}
-          {target.kind === "phone" && (
-            <>
-              <a className="btn" href={sms}>Send a text</a>
-              <a className="btn secondary" href={whatsapp} target="_blank" rel="noopener">WhatsApp</a>
-            </>
-          )}
-          {target.kind === "linkedin" && (
-            <button type="button" className="btn" onClick={linkedin}>
-              {copied === "message" ? "Copied. Opening LinkedIn…" : "Copy message, open LinkedIn"}
-            </button>
-          )}
-          {canShare && (
-            <button type="button" className={`btn${target.kind ? " secondary" : ""}`} onClick={share}>
-              Share&hellip;
-            </button>
-          )}
-          {!target.kind && !canShare && <a className="btn secondary" href={mailto}>Email it</a>}
-          <button type="button" className="btn ghost" onClick={() => copy(info.link, "link")}>
+        <div className="invite-row">
+          <input
+            value={contact}
+            onChange={(e) => setContact(e.target.value)}
+            placeholder="Email, mobile or LinkedIn profile"
+            autoComplete="off"
+            aria-label="Their email, mobile number or LinkedIn profile"
+            aria-describedby={`${id}-kind`}
+          />
+          {primary}
+          <button type="button" className="btn ghost small-btn" onClick={() => copy(info.link, "link")}>
             {copied === "link" ? "Link copied" : "Copy link"}
           </button>
         </div>
+        {contact.trim() && (
+          <p className="invite-kind micro-note" id={`${id}-kind`} aria-live="polite">
+            {target.kind === "email" && "Opens in your own email."}
+            {target.kind === "phone" && "Send it as a text or on WhatsApp."}
+            {target.kind === "linkedin" && "We copy the message; paste it into a message on their profile."}
+            {!target.kind && "That doesn't look like an email address, mobile number or LinkedIn profile yet."}
+          </p>
+        )}
 
         <details className="invite-message">
-          <summary>See or change the message</summary>
+          <summary>Add their name or change the message</summary>
+          <label className="field invite-name">
+            Their first name
+            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Optional" autoComplete="off" />
+          </label>
           <textarea
             rows={6}
             value={edited ?? full}
