@@ -1,4 +1,6 @@
 import { PageHead, Empty, Status, PersonAvatar, Banner } from "../_components/ui";
+import { InviteBox } from "../_components/invite-box";
+import type { InviteInfo } from "@/lib/invite";
 import { addTrustedAction } from "../network/actions";
 import { roleLabel } from "@/lib/profession";
 import { US_STATES } from "@/lib/us-states";
@@ -122,6 +124,7 @@ export function CliniciansView({
   networkSize = 1,
   note,
   error,
+  invite,
 }: {
   people: Person[];
   total?: number;
@@ -134,6 +137,7 @@ export function CliniciansView({
   networkSize?: number;
   note?: string | null;
   error?: string | null;
+  invite?: InviteInfo;
 }) {
   const pages = Math.max(1, Math.ceil(total / pageSize));
   const from = total === 0 ? 0 : (page - 1) * pageSize + 1;
@@ -235,7 +239,7 @@ export function CliniciansView({
             symbol={"◎"}
             title="The founding circle is forming."
             body="Verified members appear here as they join, a few states at a time. Know a psychologist or psychiatrist who should be here? Send them your invitation link."
-            action={<a className="btn secondary small-btn" href="/dashboard/invite">Invite a colleague</a>}
+            action={<a className="btn secondary small-btn" href={invite ? "#invite" : "/dashboard/invite"}>Invite a colleague</a>}
           />
         </div>
       ) : people.length === 0 ? (
@@ -260,6 +264,12 @@ export function CliniciansView({
             Listed members are verified, with an active license reviewed against the state board. Availability is set by each member; fit for a particular client is always your clinical judgment.
           </p>
         </>
+      )}
+      {invite && (
+        <InviteBox
+          info={invite}
+          title={people.length === 0 ? "Not here yet? Invite them." : "Can't find someone? Invite them."}
+        />
       )}
     </>
   );

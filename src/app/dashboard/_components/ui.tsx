@@ -180,7 +180,7 @@ export function MatchCard({
   return <div className="mini-person">{body}</div>;
 }
 
-type NeedValues = {
+export type NeedValues = {
   focusIds?: number[];
   state?: string | null;
   city?: string | null;

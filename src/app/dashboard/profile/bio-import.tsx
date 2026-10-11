@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { parseProfileBio } from "./actions";
 
 // Quick start: paste or drop an existing profile (Psychology Today, a
@@ -50,11 +50,29 @@ function imageFromHtml(html: string): string | null {
   }
 }
 
-export default function BioImportBox({ prominent = true }: { prominent?: boolean }) {
-  const [bioText, setBioText] = useState("");
+// For the demos: the same screen part-way through (text pasted, or filled
+// in and highlighted). Real pages never pass it.
+export type ImportDemo = { text: string; applied?: string[]; marks?: string[]; ranks?: number };
+
+// Highlights fields as "Fill in from this text" does, on a demo screen.
+export function AutofillMarks({ ids, ranks = 0 }: { ids: string[]; ranks?: number }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  useEffect(() => {
+    const form = ref.current?.closest("form");
+    if (!form) return;
+    ids.forEach((id) => mark(form.querySelector(`#${CSS.escape(id)}`)));
+    for (let n = 1; n <= ranks; n += 1) mark(form.querySelector(`select[name="spec_rank_${n}"]`));
+    const ask = form.querySelector<HTMLElement>("#rank-confirm");
+    if (ask && ranks) ask.hidden = false;
+  }, [ids, ranks]);
+  return <span ref={ref} hidden />;
+}
+
+export default function BioImportBox({ prominent = true, demo }: { prominent?: boolean; demo?: ImportDemo }) {
+  const [bioText, setBioText] = useState(demo?.text || "");
   const [isPending, startTransition] = useTransition();
-  const [applied, setApplied] = useState<string[] | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
+  const [applied, setApplied] = useState<string[] | null>(demo?.applied || null);
+  const [message, setMessage] = useState<string | null>(demo?.applied ? "Filled in and highlighted below. Check each part, then press Save profile." : null);
   const [isError, setIsError] = useState(false);
   const [photo, setPhoto] = useState<{ src: string; file?: File; url?: string } | null>(null);
   const [lowRes, setLowRes] = useState(false);

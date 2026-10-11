@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { loadInvite } from "@/lib/invite";
 import { loadLedger, ledgerItems } from "@/lib/ledger";
 import { effectiveReferral, effectiveCover } from "@/lib/availability";
 import { createClient } from "@/lib/supabase/server";
@@ -344,7 +345,7 @@ export default async function HomePage(props: { searchParams: Promise<{ reconfir
   const verifiedAt = profile.verified_at as string | null;
   const justVerified = !awaitingVerification && !IS_DEMO_SITE && profile.verification_status === "verified" && !!verifiedAt && Date.now() - new Date(verifiedAt).getTime() < 14 * 86_400_000;
 
-  const ledger = await loadLedger(supabase, myself);
+  const [ledger, inviteInfo] = await Promise.all([loadLedger(supabase, myself), loadInvite(supabase)]);
 
   const d: HomeData = {
     firstName: String(profile.full_name || "there").replace(/^(dr\.?)\s+/i, "").split(/[\s,]+/)[0],
@@ -379,6 +380,7 @@ export default async function HomePage(props: { searchParams: Promise<{ reconfir
       },
     },
     circleSnapshot,
+    invite: inviteInfo,
     ledger: ledgerItems(ledger),
     ledgerYear: ledger.year,
     sandbox: IS_DEMO_SITE,

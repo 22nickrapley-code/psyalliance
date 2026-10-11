@@ -1,9 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
 import { clinicianName } from "@/lib/profession";
-import { IS_DEMO_SITE, REAL_SITE_URL } from "@/lib/env";
+import { loadInvite } from "@/lib/invite";
 import { shortDate } from "@/lib/dates";
 import { PageHead, Status, PersonAvatar } from "../_components/ui";
-import { CopyLink } from "../_components/copy-link";
+import { InviteBox } from "../_components/invite-box";
 
 export const metadata = { title: "Invite a colleague" };
 
@@ -12,19 +12,8 @@ export const metadata = { title: "Invite a colleague" };
 // and you into theirs, once both of you are verified.
 export default async function InvitePage() {
   const supabase = await createClient();
-  const [{ data: token }, { data: inv }, { data: me }] = await Promise.all([
-    supabase.rpc("my_invite_link"),
-    supabase.rpc("my_invitations"),
-    supabase.rpc("my_profile").select("full_name, credential_prefix, qualification_level").maybeSingle<any>(),
-  ]);
-  const link = token ? `${REAL_SITE_URL}/i/${token}` : null;
-  const myName = me ? clinicianName(me.full_name, me.qualification_level, me.credential_prefix) : "A colleague";
+  const [invite, { data: inv }] = await Promise.all([loadInvite(supabase), supabase.rpc("my_invitations")]);
   const sent = ((inv as any)?.sent as any[]) || [];
-  const mail = link
-    ? `mailto:?subject=${encodeURIComponent(`${myName.split(",")[0]} invited you to PsyAlliance`)}&body=${encodeURIComponent(
-        `I use PsyAlliance for cover, referrals and consultation with colleagues I trust, and I'd like you in my circle.\n\nThis link connects us as soon as you've joined and been verified:\n${link}\n\nIt's free for founding members, for doctoral psychologists and psychiatrists.`
-      )}`
-    : null;
 
   return (
     <>
@@ -35,28 +24,15 @@ export default async function InvitePage() {
       />
       <div className="split">
         <div className="stack">
-          <section className="card roomy">
-            <div className="eyebrow">Your invitation link</div>
-            {link ? (
-              <>
-                <h3>Share it however suits you.</h3>
-                <CopyLink value={link} label="Your invitation link" />
-                <div className="row wrap" style={{ marginTop: 12, gap: 10 }}>
-                  <a className="btn" href={mail!}>Email it</a>
-                </div>
-                <p className="micro-note" style={{ marginTop: 12 }}>
-                  You&rsquo;re connected once both of you are verified with a reviewed license in an open state. Until then the connection waits; it gives no
-                  one access early.
-                </p>
-              </>
-            ) : (
-              <p className="small">
-                {IS_DEMO_SITE
-                  ? "Invitations aren't sent from the sandbox. In your real account, Network > Invite a colleague gives you your own link."
-                  : "Your link becomes available once your account is set up as a clinician."}
-              </p>
-            )}
-          </section>
+          <InviteBox
+            info={invite}
+            title={invite.mode === "member" ? "Send your link however suits you." : "Invite a colleague"}
+            lead={
+              invite.mode === "member"
+                ? "Type their email, mobile number or LinkedIn profile and send it from your own email, phone or LinkedIn. You're connected once both of you are verified with a reviewed license in an open state; until then the connection waits and gives no one early access."
+                : undefined
+            }
+          />
 
           <section className="card">
             <div className="card-title"><h3>Joined through your link</h3>{sent.length > 0 && <span className="micro-note">{sent.length}</span>}</div>

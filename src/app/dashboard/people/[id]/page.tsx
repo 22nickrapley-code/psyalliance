@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { resolveAvatarUrl } from "@/lib/avatars";
 import { clinicianName, roleLabel, professionFor } from "@/lib/profession";
 import { US_STATES } from "@/lib/us-states";
+import { stateName } from "@/lib/open-states";
 import { ClinicianProfileView, type ClinicianProfile } from "./view";
 import { PageHead, Empty } from "../../_components/ui";
 import { safeBack } from "@/lib/back";
@@ -45,7 +46,7 @@ export default async function PersonPage(props: { params: Promise<{ id: string }
     .select("bio, approx_spaces, availability_paused_until")
     .eq("id", id)
     .maybeSingle();
-  const [{ data: rows }, { data: licenceRows }, { data: trustRows }, { data: excludedRow }, { data: track }, { data: workedWithMe }] =
+  const [{ data: rows }, { data: licenceRows }, { data: trustRows }, { data: excludedRow }, { data: track }, { data: workedWithMe }, { data: mySpecRows }, { data: myLicences }] =
     await Promise.all([
       supabase.from("public_directory").select("*").eq("id", id),
       supabase.rpc("network_licence_states").eq("profile_id", id),
@@ -56,6 +57,12 @@ export default async function PersonPage(props: { params: Promise<{ id: string }
       supabase.from("do_not_work_with").select("blocked_profile_id").eq("profile_id", myself).eq("blocked_profile_id", id).maybeSingle(),
       supabase.rpc("member_track_record", { target: id }).maybeSingle<any>(),
       supabase.from("worked_with_before").select("interaction_count").eq("profile_id", myself).eq("colleague_id", id).maybeSingle(),
+      supabase
+        .from("profile_lookup_values")
+        .select("lookup_values!inner(value, category)")
+        .eq("profile_id", myself)
+        .eq("lookup_values.category", "treatment_specialism"),
+      supabase.from("licenses").select("state").eq("profile_id", myself),
     ]);
 
   if (!rows || rows.length === 0) {
@@ -99,6 +106,18 @@ export default async function PersonPage(props: { params: Promise<{ id: string }
   const joinSome = (xs: string[], n: number) => (xs.length > n ? `${xs.slice(0, n).join(", ")} +${xs.length - n}` : xs.join(", "));
   const specialties = list("treatment_specialism");
   const referral = effectiveReferral(p.referral_availability, p.availability_confirmed_at, extra?.availability_paused_until);
+
+  // Why PsyAlliance suggests this colleague to you: what you have in common.
+  const mySpecs = new Set(((mySpecRows as any[]) || []).map((r) => String(r.lookup_values?.value || "")));
+  const sharedSpecs = specialties.filter((v) => mySpecs.has(v)).slice(0, 2);
+  const myStates = new Set(((myLicences as any[]) || []).map((l) => stateName(String(l.state || ""))));
+  const sharedStates = licenceStates.filter((s) => myStates.has(s)).slice(0, 2);
+  const why = [
+    trustsMe ? "Added you as a trusted colleague" : null,
+    sharedSpecs.length ? `Works with ${sharedSpecs.join(" and ")}, as you do` : null,
+    sharedStates.length ? `Licensed in ${sharedStates.join(" and ")}, like you` : null,
+    referral.open ? referral.label : null,
+  ].filter(Boolean) as string[];
   const today = new Date().toISOString().slice(0, 10);
   const glance: [string, string][] = [
     ["Primary service", professionFor(p.qualification_level) === "psychiatrist" ? "Psychiatry and medication management" : "Psychotherapy and assessment"],
@@ -144,6 +163,7 @@ export default async function PersonPage(props: { params: Promise<{ id: string }
     collaborations: Number(workedWithMe?.interaction_count || 0),
     signals,
     primaryState: p.primary_state || null,
+    why,
   };
   void AVAIL.referral;
   void AVAIL.cover;

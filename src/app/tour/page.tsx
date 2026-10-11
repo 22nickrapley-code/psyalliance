@@ -26,8 +26,8 @@ export default function DemoLibraryPage() {
                 <div className="eyebrow">PsyAlliance in 90 seconds &middot; fictional people</div>
                 <h1>Your own practice, with a group behind you.</h1>
                 <p className="lead">
-                  Watch it work on the real screens: cover for time away, a referral out, referrals coming in, a template and a question to colleagues. It plays on
-                  its own; pause or skip at any time.
+                  Watch it work on the real screens: cover for time away, a referral out, referrals coming in, a template, a question to colleagues, and
+                  joining in a minute. It plays on its own; pause or skip at any time.
                 </p>
               </div>
             </div>

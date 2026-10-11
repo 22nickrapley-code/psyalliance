@@ -4,7 +4,9 @@ import { effectiveReferral } from "@/lib/availability";
 import { saveProfile, uploadAvatar } from "./actions";
 import { professionFor, professionLabel, clinicianName, roleLabel } from "@/lib/profession";
 import { US_STATES } from "@/lib/us-states";
-import BioImportBox from "./bio-import";
+import BioImportBox, { AutofillMarks, type ImportDemo } from "./bio-import";
+import { FirstVisit } from "../_components/first-visit";
+import { TOUR_URL } from "@/lib/env";
 import { AvatarPicker } from "./avatar-picker";
 import { HashOpener } from "./hash-opener";
 import { PageHead, Banner, PersonAvatar, Status } from "../_components/ui";
@@ -67,7 +69,10 @@ export function ProfileView({
   licenses = [],
   ledger = [],
   back,
+  importDemo,
 }: {
+  // Demo screens only: the Quick start part-way through.
+  importDemo?: ImportDemo;
   ledger?: string[];
   back?: string | null;
   sp: { saved?: string; availability_saved?: string; avatar_saved?: string; avatar_error?: string; error?: string; photo?: string };
@@ -205,6 +210,9 @@ export function ProfileView({
     <>
       <BackLink back={back} />
       <ProfileTabs active="profile" back={back} />
+      {pct < 70 && !importDemo && (
+        <FirstVisit id="profile" what="Profile set-up" title="Setting up your profile?" length="1-minute" exampleHref={`${TOUR_URL}/profile`} />
+      )}
       <PageHead
         eyebrow="Your profile"
         title="Edit your profile"
@@ -223,7 +231,7 @@ export function ProfileView({
       <HashOpener />
       <div className="split">
         <div className="stack">
-          <BioImportBox prominent={pct < 70} />
+          <BioImportBox prominent={pct < 70 || !!importDemo} demo={importDemo} />
 
           <section className="card" id="photo">
             <div className="card-title"><h3>Photo</h3>{profile?.avatar_path ? <Status>Done</Status> : <Status tone="warn">To do</Status>}</div>
@@ -236,6 +244,7 @@ export function ProfileView({
 
           <form action={saveProfile} id="profile-form" className="stack">
             <BackField back={back} />
+            {importDemo?.marks && <AutofillMarks ids={importDemo.marks} ranks={importDemo.ranks} />}
             <Section title="The basics" id="basics" done={basicsDone} open={!basicsDone}>
               <div className="fields">
                 <label className="field">

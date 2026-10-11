@@ -19,6 +19,22 @@ const ACTIVE: Record<string, string> = {
   credentials: "/dashboard/credentials",
   availability: "/dashboard/availability",
   profile: "/dashboard/profile",
+  verified: "/dashboard/credentials",
+  library: "/dashboard/documents",
+};
+// The 90-second story borrows screens from the other demos; its own step
+// names say which part of the app each one is in.
+const OVERVIEW_ACTIVE: Record<string, string> = {
+  problem: "/dashboard/cover",
+  need: "/dashboard/cover",
+  match: "/dashboard/cover",
+  control: "/dashboard/cover",
+  result: "/dashboard/cover",
+  refer: "/dashboard/refer",
+  consult: "/dashboard/consult",
+  setup: "/dashboard/profile",
+  filled: "/dashboard/profile",
+  verified: "/dashboard/credentials",
 };
 
 // One screen of a demo: the real PsyAlliance screen with fictional data.
@@ -35,7 +51,7 @@ export function DemoStepScreen({ demo, index: i }: { demo: Demo; index: number }
   const last = i === demo.steps.length - 1;
   const colleague = who.colleague;
   const groups = buildNavGroups({ isAdmin: false, unreadMessages: 1, pendingCoverRequests: colleague ? 2 : 0, pendingReferrals: colleague ? 1 : 0 });
-  const active = ACTIVE[s.slug] || ACTIVE[demo.key] || "/dashboard";
+  const active = (demo.key === "overview" ? OVERVIEW_ACTIVE[s.slug] : ACTIVE[s.slug] || ACTIVE[demo.key]) || "/dashboard";
 
   return (
     <TourFrame

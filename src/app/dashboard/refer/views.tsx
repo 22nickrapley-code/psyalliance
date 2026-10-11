@@ -7,6 +7,7 @@ import type { Match } from "@/lib/match-engine";
 import type { NeedOptions } from "@/lib/need-options";
 import { needToQuery, type parseNeed } from "@/lib/need-options";
 import {
+  type NeedValues,
   PageHead,
   Banner,
   Progress,
@@ -336,7 +337,10 @@ export function ReferIndexView({
   offered,
   ok,
   error,
+  start,
 }: {
+  // Values to show in the green card (the demos use this; the page doesn't).
+  start?: NeedValues;
   options: NeedOptions;
   mine: ReferralListItem[];
   offered: (ReferralListItem & { from: string; myResponse: string | null })[];
@@ -355,7 +359,7 @@ export function ReferIndexView({
       <form className="quick-search" method="get" action="/dashboard/refer/new" id="start-referral">
         <input type="hidden" name="step" value="shortlist" />
         <h3>Start a referral</h3>
-        <NeedFields options={options} compact refineInline />
+        <NeedFields options={options} values={start} compact refineInline />
         <div className="row wrap" style={{ marginTop: 14, gap: 12 }}>
           <button type="submit" className="btn">Find colleagues</button>
         </div>

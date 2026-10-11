@@ -84,7 +84,7 @@ export default async function ReferralDetailPage(props: {
     requesterId: r.requesting_profile_id,
     rows: [
       ["Where", where],
-      ["Setting", r.modality === "virtual" ? "Virtual" : r.modality === "in_person" ? "In person" : "Either"],
+      ["Setting", r.modality === "virtual" ? "Virtual" : r.modality === "in_person" ? "In person" : "Virtual or in person"],
       ...(r.insurance ? [["Insurance", r.insurance] as [string, string]] : []),
       ...(r.age_band ? [["Age band", r.age_band] as [string, string]] : []),
       ["Timeframe", timeframeLabel],

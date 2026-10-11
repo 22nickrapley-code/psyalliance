@@ -7,7 +7,19 @@ import { useEffect, useRef, useState } from "react";
 // over the page; "Try it yourself" at the end closes it and leaves the
 // member on the real page. Closing the note or watching the example means
 // it doesn't come back in this browser.
-export function FirstVisit({ id, what, exampleHref, length = "short" }: { id: string; what: string; exampleHref: string; length?: string }) {
+export function FirstVisit({
+  id,
+  what,
+  exampleHref,
+  length = "short",
+  title,
+}: {
+  id: string;
+  what: string;
+  exampleHref: string;
+  length?: string;
+  title?: string;
+}) {
   const key = `pa-help-${id}`;
   const [show, setShow] = useState(false);
   const [open, setOpen] = useState(false);
@@ -57,7 +69,7 @@ export function FirstVisit({ id, what, exampleHref, length = "short" }: { id: st
       <aside className="first-visit" aria-label="Watch an example">
         <span className="first-visit-icon" aria-hidden="true">&#9654;</span>
         <a className="first-visit-text" href={exampleHref} target="_blank" rel="noopener" onClick={watch}>
-          <b>New to {what}?</b> Watch a {length} example, then try it yourself <span aria-hidden="true">&rarr;</span>
+          <b>{title || `New to ${what}?`}</b> Watch a {length} example, then try it yourself <span aria-hidden="true">&rarr;</span>
         </a>
         <button type="button" className="first-visit-close" aria-label="Close" onClick={close}>&times;</button>
       </aside>

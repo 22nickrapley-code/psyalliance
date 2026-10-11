@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { loadInvite } from "@/lib/invite";
 import { resolveAvatarUrls } from "@/lib/avatars";
 import { US_STATES } from "@/lib/us-states";
 import { effectiveReferral } from "@/lib/availability";
@@ -37,10 +38,11 @@ export default async function CliniciansPage(props: {
   } = await supabase.auth.getUser();
   const myself = user!.id;
 
-  const [trusted, { data: workedRows }, { data: excludedRows }] = await Promise.all([
+  const [trusted, { data: workedRows }, { data: excludedRows }, invite] = await Promise.all([
     getTrustedIds(supabase, myself),
     supabase.from("worked_with_before").select("colleague_id").eq("profile_id", myself),
     supabase.from("do_not_work_with").select("blocked_profile_id").eq("profile_id", myself),
+    loadInvite(supabase),
   ]);
   const worked = new Set((workedRows || []).map((w: any) => w.colleague_id as string));
   const excluded = (excludedRows || []).map((e: any) => e.blocked_profile_id as string);
@@ -106,6 +108,7 @@ export default async function CliniciansPage(props: {
       networkSize={Number(res.all) || 0}
       note={sp.trusted ? "Added as a trusted colleague. They come first in your matches, and they've been told." : null}
       error={sp.error || null}
+      invite={invite}
     />
   );
 }

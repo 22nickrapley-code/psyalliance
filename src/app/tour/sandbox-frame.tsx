@@ -141,7 +141,10 @@ export function TourFrame({
     const scope = inNav ? root?.querySelector<HTMLElement>(".sidebar") : root?.querySelector<HTMLElement>("[data-tour-screen]");
     if (!root || !scope || !focus) return;
     const want = clean(inNav ? focus.slice(4) : focus).toLowerCase();
-    const hits = Array.from(scope.querySelectorAll<HTMLElement>("a, button, summary")).filter((n) => clean(n.textContent).toLowerCase().startsWith(want));
+    // "#rank-confirm" points at something to look at rather than click.
+    const hits = focus.startsWith("#")
+      ? Array.from(scope.querySelectorAll<HTMLElement>(focus))
+      : Array.from(scope.querySelectorAll<HTMLElement>("a, button, summary")).filter((n) => clean(n.textContent).toLowerCase().startsWith(want));
     const el = hits[Math.min(focusIndex, hits.length - 1)] || null;
     target.current = el;
     if (!el) return;
@@ -300,10 +303,16 @@ export function TourFrame({
         <div id="tour-callout" className={`tour-callout ${callout.side}`} style={{ top: callout.top, left: callout.left }} role="note">
           <b>{intro?.last ? "Last step" : "Next in the story"}</b>
           {focusNote}
-          <span className="tour-callout-hint">{intro?.last ? "Then finish the demo below." : `Click the highlighted ${target.current?.closest(".sidebar") ? "link" : "button"} to continue.`}</span>
+          <span className="tour-callout-hint">
+            {intro?.last
+              ? "Then finish the demo below."
+              : focus?.startsWith("#")
+                ? "Then press Continue below."
+                : `Click the highlighted ${target.current?.closest(".sidebar") ? "link" : "button"} to continue.`}
+          </span>
         </div>
       )}
-      {revealed && !note && (narrow || !hasFocus || !inView || intro?.last) && (
+      {revealed && !note && (narrow || !hasFocus || !inView || intro?.last || !!focus?.startsWith("#")) && (
         <div className={`tour-dock${intro?.colleague ? " colleague" : ""}`} role="region" aria-label="Next step" data-tour-nav>
           <span className="tour-dock-text">
             <b>{intro?.last ? "Last step" : "Next"}</b> {focusNote || "Continue the demo."}

@@ -3,7 +3,7 @@ import type { Match } from "@/lib/match-engine";
 import type { NeedOptions } from "@/lib/need-options";
 import { US_STATES } from "@/lib/us-states";
 import { CoverIndexView, CoverCandidatesView, CoverTrackView, CoverPlanStepView, CoverNeedsView, CoverInviteView, type CaseItem, type PlanSummary } from "../dashboard/cover/views";
-import { ReferNeedView, ReferShortlistView, ReferReviewView, ReferTrackView } from "../dashboard/refer/views";
+import { ReferIndexView, ReferShortlistView, ReferReviewView, ReferTrackView } from "../dashboard/refer/views";
 import { ConsultComposeView, ConsultDetailView } from "../dashboard/consult/views";
 import { ConversationList, MessagesShell } from "../dashboard/messages/views";
 import { HomeView } from "../dashboard/home-view";
@@ -16,6 +16,9 @@ import { AvailabilityView } from "../dashboard/availability/view";
 import { LibraryView, ResourceDetailView, MyLibraryView } from "../dashboard/documents/views";
 import type { LibraryResource } from "@/lib/library";
 import { HANDOFF_RULE } from "../dashboard/_components/ui";
+import { ProfileView } from "../dashboard/profile/view";
+import type { ImportDemo } from "../dashboard/profile/bio-import";
+import { REAL_SITE_URL } from "@/lib/env";
 import { AV, leaveDates } from "./story";
 
 // The demo library: six short demos, each one job done start to finish on
@@ -132,6 +135,8 @@ const referralRows: [string, string][] = [
 ];
 
 // ---- Home and circle fixtures ----
+// The invite box as Alex sees it (her own link; display only in the demo).
+const DEMO_INVITE = { link: `${REAL_SITE_URL}/i/7d3e91c0a2b4`, mode: "member" as const, firstName: "Alex", fullName: "Alex Rivers, PsyD" };
 const ALEX_CIRCLE = {
   me: { initials: "AR", avatarUrl: AV.alex as string | null },
   nodes: [
@@ -187,6 +192,7 @@ const mayaProfile: ClinicianProfile = {
   bio: "Adults and adolescents with trauma and anxiety. EMDR and CBT, in person in Brooklyn and by telehealth across New York.",
   availabilityChip: "Accepting referrals",
   glance: [
+    ["Primary service", "Psychotherapy and assessment"],
     ["Focus", "Trauma/PTSD · Anxiety/Panic Disorders · Grief/Loss"],
     ["Populations", "Adolescents, Young Adults, Adults"],
     ["Approaches", "EMDR, Cognitive Behavioral Therapy (CBT)"],
@@ -197,6 +203,7 @@ const mayaProfile: ClinicianProfile = {
     ["Referrals", "Accepting referrals"],
     ["Cover", "Open to cover"],
     ["Consultation", "Open to consult"],
+    ["Supervision", "Open to supervise"],
   ],
   confirmed: "Confirmed 3 days ago",
   relationship: "Trusted colleague",
@@ -205,39 +212,6 @@ const mayaProfile: ClinicianProfile = {
   since: "March 2026",
   collaborations: 3,
   signals: ["Worked with you 3 times", "Covered for colleagues twice", "Typically replies within a day"],
-};
-
-const alexProfile: ClinicianProfile = {
-  ...profileBase,
-  id: "alex",
-  name: "Alex Rivers, PsyD",
-  firstName: "Alex",
-  role: "Clinical psychologist",
-  where: "Brooklyn, NY",
-  avatarUrl: AV.alex,
-  licenceStates: ["New York", "New Jersey"],
-  psypact: false,
-  bio: "I work with adults and adolescents living with anxiety, trauma and OCD, mostly CBT, ERP and EMDR. In person in Brooklyn and by telehealth across New York.",
-  availabilityChip: "Selected referrals",
-  glance: [
-    ["Primary service", "Psychotherapy and assessment"],
-    ["Focus", "Anxiety/Panic Disorders · Trauma/PTSD · Obsessive/Compulsive Disorder"],
-    ["Populations", "Adolescents, Young Adults, Adults"],
-    ["Approaches", "CBT, EMDR, Exposure and Response Prevention (ERP)"],
-    ["Sessions", "Face to Face, Virtual"],
-    ["Insurance", "Aetna, Cigna, Self-pay (out of network)"],
-  ],
-  availability: [
-    ["Referrals", "Selected referrals"],
-    ["Cover", "Cover: ask me"],
-    ["Consultation", "Open to consult"],
-  ],
-  confirmed: "Confirmed today",
-  relationship: "Verified network",
-  trusted: false,
-  trustsMe: false,
-  collaborations: 0,
-  signals: [],
 };
 
 // The Practice Library demo uses the real titles, summaries and contents.
@@ -263,10 +237,49 @@ const LIB_PA02 = libDoc(
   ["Step-by-step plan for leave of more than two weeks", "Client notification letter templates", "Clinical handoff summary for each client", "Return-to-practice checklist"],
 );
 const LIB_LEAVE: LibraryResource[] = [
+  libDoc("PA-01", "Reciprocal Coverage Agreement", "Two-clinician reciprocal coverage agreement with per-patient coverage summary and post-coverage debrief.", []),
   LIB_PA02,
   libDoc("PA-03", "Professional Will & Practice Succession Plan", "Professional will template, practice continuity inventory, executor acceptance and consent-form language.", []),
-  libDoc("PA-01", "Reciprocal Coverage Agreement", "Two-clinician reciprocal coverage agreement with per-patient coverage summary and post-coverage debrief.", []),
 ];
+
+
+// ---- Profile fixtures: Alex setting up, and Alex's profile today ----
+const PROFILE_LOOKUPS = [
+  ...["Anxiety/Panic Disorders", "Trauma/PTSD", "Obsessive/Compulsive Disorder", "Depression", "Grief/Loss", "Life Transitions", "Eating Disorders", "Bipolar Disorder", "Couples"].map((value, i) => ({ id: 700 + i, category: "treatment_specialism", value })),
+  ...["Cognitive Behavioral Therapy (CBT)", "EMDR", "Exposure and Response Prevention (ERP)", "Acceptance and Commitment Therapy (ACT)", "Psychodynamic"].map((value, i) => ({ id: 720 + i, category: "treatment_modality", value })),
+  ...["Children", "Adolescents", "Young Adults", "Adults", "Older Adults"].map((value, i) => ({ id: 740 + i, category: "age_group_specialism", value })),
+  ...["Face to Face", "Virtual"].map((value, i) => ({ id: 760 + i, category: "session_type", value })),
+  ...["Aetna", "Cigna", "Empire BlueCross BlueShield", "Self-pay (out of network)"].map((value, i) => ({ id: 780 + i, category: "insurance", value })),
+  ...["English", "Spanish"].map((value, i) => ({ id: 800 + i, category: "language", value })),
+];
+// What the pasted profile ticks: six specialties (top three ranked), three
+// approaches, two age groups, both session types, three insurers, Spanish.
+const SETUP_TICKS = [700, 701, 702, 703, 704, 705, 720, 721, 722, 741, 743, 760, 761, 780, 781, 783, 801];
+const SETUP_RANKS: Record<number, number> = { 700: 1, 701: 2, 702: 3 };
+const SETUP_ROWS = SETUP_TICKS.map((id) => ({ lookup_value_id: id, rank: SETUP_RANKS[id] ?? null }));
+const ALEX_SIGNUP = { full_name: "Alex Rivers", qualification_level: "PsyD", primary_state: "NY", avatar_path: null };
+const ALEX_BIO =
+  "I work with adults and adolescents living with anxiety, trauma and OCD, using CBT, exposure and response prevention and EMDR. In person in Park Slope and by telehealth across New York and New Jersey.";
+const ALEX_FILLED = { ...ALEX_SIGNUP, credential_prefix: "Dr", primary_practice_city: "Brooklyn", bio: ALEX_BIO };
+// A profile page as Alex copies it (all invented; the numbers are fictional).
+const PASTED_PROFILE = `Alex Rivers
+Psychologist, PsyD
+Brooklyn, NY 11215
+(718) 555-0136
+
+Feeling stuck in worry, or still carrying something that happened years ago? I work with adults and adolescents living with anxiety, trauma and OCD, using CBT, exposure and response prevention and EMDR. In person in Park Slope and by telehealth across New York and New Jersey.
+
+Specialties: Anxiety, Trauma and PTSD, Obsessive-Compulsive (OCD)
+Expertise: Depression, Grief, Life Transitions
+Client focus: Adolescents, Adults. Languages: Spanish
+Types of therapy: Cognitive Behavioral (CBT), EMDR, Exposure Response Prevention (ERP)
+Insurance: Aetna, Cigna, out of network
+License: New York 019283; New Jersey 35SI00123`;
+const SETUP_APPLIED = ["Title", "Practice city", "Short bio", `${SETUP_TICKS.length} specialties, approaches and other details ticked`, "Your top 3 specialties ranked: check the order"];
+const SETUP_MARKS = ["credential_prefix", "primary_practice_city", "bio", ...SETUP_TICKS.map((id) => `lv_${id}`)];
+const setupScreen = (demo: ImportDemo, profile: Record<string, unknown>, rows: { lookup_value_id: number; rank: number | null }[]) => (
+  <ProfileView sp={{}} profile={profile} lookups={PROFILE_LOOKUPS} selectedRows={rows} licenceCount={0} avatarUrl={null} me="alex" importDemo={demo} />
+);
 
 // ---------------------------------------------------------------------------
 const DETAIL: Demo[] = [
@@ -350,7 +363,7 @@ const DETAIL: Demo[] = [
                 dates: leave.range,
                 length: "6 weeks",
                 location: "Brooklyn, New York",
-                outreach: "You are asked first; others follow if you decline",
+                outreach: "You are asked in turn; others follow if you decline",
                 note: "Two clients below. A joint handoff call the week before I go would suit me best.",
                 urgent: false,
                 sentAt: null,
@@ -392,10 +405,10 @@ const DETAIL: Demo[] = [
         slug: "need",
         perspective: "alex",
         title: "A new inquiry Alex can't take",
-        what: "An adult with OCD asks Alex for help, but Alex is about to go on leave. Alex starts with the main need and where the client is; everything else is optional.",
-        focus: "See shortlist",
+        what: "An adult with OCD asks Alex for help, but Alex is about to go on leave. On Refer, Alex starts with the main need and where the client is; everything else is optional.",
+        focus: "Find colleagues",
         focusNote: "Next, colleagues who fit, with reasons.",
-        render: () => <ReferNeedView options={options} need={referNeed as any} />,
+        render: () => <ReferIndexView options={options} start={referNeed as any} mine={[]} offered={[]} />,
       },
       {
         slug: "shortlist",
@@ -582,7 +595,7 @@ const DETAIL: Demo[] = [
               authorName: "You",
               createdAt: daysAgo(0),
               audienceLabel: "Trusted colleagues",
-              recipients: [],
+              recipients: ["Maya Chen, PsyD", "Samuel Okafor, PhD", "Aaron Garcia, DO", "Aaron Howard, PhD", "Adrian Dalton, PsyD", "Adrian Ramirez, PsyD", "Aaron Quinn, PsyD"],
               responses: [],
             }}
           />
@@ -643,6 +656,7 @@ const DETAIL: Demo[] = [
         render: () => (
           <HomeView
             d={{
+              invite: DEMO_INVITE,
               firstName: "Alex",
               today: new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", timeZone: "America/New_York" }),
               greeting: "Good morning",
@@ -650,7 +664,7 @@ const DETAIL: Demo[] = [
                 { key: "cover-1", title: "Aaron Garcia, DO asked you to cover 2 clients", detail: "Anxiety/Panic Disorders and Trauma/PTSD · Unexpected absence · NY · this week", href: "#", action: "Review request", urgent: true, person: { id: "t3", name: "Aaron Garcia, DO" } },
                 { key: "ref-1", title: "Your Obsessive/Compulsive Disorder referral is ready to choose", detail: "Everyone you asked has replied. 2 interested", href: "#", action: "Choose a colleague" },
                 { key: "offers", title: "3 referrals are waiting for your reply", detail: "Trauma/PTSD from Maya Chen · Anxiety/Panic Disorders from Eli Ramirez · Anxiety/Panic Disorders from Aaron Quinn", href: "#", action: "Review referrals" },
-                { key: "invs", title: "2 colleagues added you as a trusted colleague", detail: "Imani Brooks, Adrian Turner", href: "#", action: "Review" },
+                { key: "added", title: "2 colleagues added you as a trusted colleague", detail: "Imani Brooks, Adrian Turner", href: "#", action: "Review" },
                 { key: "msgs", title: "1 unread conversation", detail: "Messages from colleagues", href: "#", action: "Read" },
               ],
               gettingStarted: null,
@@ -681,6 +695,8 @@ const DETAIL: Demo[] = [
             focusOptions={options.focus.map((f) => f.value)}
             states={options.states}
             networkSize={1199}
+            moreOptions={{ insurance: ["Aetna", "Cigna", "Empire BlueCross BlueShield"], age: ["Children", "Adolescents", "Adults", "Older adults"], language: ["Spanish", "Mandarin"], modality: ["CBT", "EMDR", "ERP"], session: ["In person", "Telehealth"] }}
+            invite={DEMO_INVITE}
           />
         ),
       },
@@ -754,7 +770,7 @@ const DETAIL: Demo[] = [
         perspective: "alex",
         title: "A person checks every license",
         what: "Alex adds each license; a PsyAlliance reviewer checks it against the state board. New York is reviewed, New Jersey is waiting. Alex is matched only where a reviewed license is on file.",
-        focus: "nav:Availability",
+        focus: "Availability",
         focusNote: "Next, Alex sets availability.",
         render: () => (
           <CredentialsView
@@ -787,11 +803,23 @@ const DETAIL: Demo[] = [
       {
         slug: "profile",
         perspective: "alex",
-        title: "What colleagues see",
-        what: "Alex's profile as a colleague sees it: focus, who Alex sees and current availability, with dates. Only reviewed licenses appear, so New Jersey shows here, and Alex is matched there, once a reviewer has checked it.",
-        focus: "Send message",
-        focusNote: "Colleagues message or refer to Alex from here.",
-        render: () => <ClinicianProfileView p={alexProfile} />,
+        title: "The profile colleagues rely on",
+        what: "Alex's profile: focus, who Alex sees and current availability, with dates. Colleagues see only reviewed licenses, so New Jersey appears, and Alex is matched there, once a reviewer has checked it.",
+        focus: "Edit profile",
+        focusNote: "Alex can change any of it, any time.",
+        render: () => (
+          <ProfileView
+            sp={{}}
+            profile={{ ...ALEX_FILLED, availability_confirmed_at: daysAgo(3) }}
+            lookups={PROFILE_LOOKUPS}
+            selectedRows={SETUP_ROWS}
+            licenceCount={2}
+            avatarUrl={null}
+            me="alex"
+            editing={false}
+            licenses={[{ state: "NY", reviewed: true }, { state: "NJ", reviewed: false }]}
+          />
+        ),
       },
     ],
   },
@@ -813,6 +841,7 @@ const DETAIL: Demo[] = [
         title: "Alex searches for leave",
         what: "The Extended Leave Pack, the Professional Will and the Reciprocal Coverage Agreement come up. Each template shows its version and whether it has been independently reviewed.",
         focus: "Explore",
+        focusIndex: 1,
         focusNote: "Alex opens the Extended Leave pack.",
         render: () => <LibraryView resources={LIB_LEAVE} q="leave" category="" mineCount={0} />,
       },
@@ -834,13 +863,65 @@ const DETAIL: Demo[] = [
         focusNote: "Back to the Library whenever Alex needs the next template.",
         render: () => (
           <MyLibraryView
-            docs={[{ id: 1, title: "Extended Leave Coverage Plan & Clinical Handoff Pack (your copy)", storagePath: "", folderId: 1, createdAt: daysAgo(0), source: "From the Practice Library", url: "#" }]}
-            folders={[{ id: 1, name: "Leave" }]}
+            docs={[{ id: 1, title: "Extended Leave Coverage Plan & Clinical Handoff Pack (your copy)", storagePath: "", folderId: null, createdAt: daysAgo(0), source: "Your copy of the Extended Leave Pack, version 1", url: "#" }]}
+            folders={[]}
             folder="all"
-            folderCounts={{ "1": 1 }}
+            folderCounts={{ unfiled: 1 }}
             total={1}
             notice="The Extended Leave Pack is saved to My Library. Only you can see it."
           />
+        ),
+      },
+    ],
+  },
+  {
+    key: "profile",
+    title: "Set up your profile in a minute",
+    blurb: "Alex pastes her Psychology Today profile. Everything fills itself in, her top specialties are ranked, and she checks and saves.",
+    minutes: "1 minute",
+    outcome: "A full profile in a minute, checked before it's saved.",
+    learned: [
+      "Paste your Psychology Today profile, practice website, LinkedIn or CV into Quick start.",
+      "Everything filled in is highlighted so you can check it.",
+      "Your top specialties are ranked for you; you confirm the order.",
+      "Nothing is saved until you press Save profile.",
+    ],
+    steps: [
+      {
+        slug: "paste",
+        perspective: "alex",
+        title: "Alex pastes her Psychology Today profile",
+        what: "New to PsyAlliance, Alex copies her existing profile page and pastes it into Quick start at the top of Profile. A practice website, LinkedIn or a CV works too.",
+        focus: "Fill in from this text",
+        focusNote: "Next, everything fills itself in.",
+        render: () => setupScreen({ text: PASTED_PROFILE }, ALEX_SIGNUP, []),
+      },
+      {
+        slug: "filled",
+        perspective: "alex",
+        title: "Everything fills itself in",
+        what: "Title, city, bio, specialties, approaches, ages, insurance and languages are filled in and highlighted, so Alex can check each one. Nothing is saved yet.",
+        focus: "Practice city",
+        focusNote: "Next, her top specialties.",
+        render: () => setupScreen({ text: PASTED_PROFILE, applied: SETUP_APPLIED, marks: SETUP_MARKS, ranks: 3 }, ALEX_FILLED, SETUP_ROWS),
+      },
+      {
+        slug: "ranked",
+        perspective: "alex",
+        title: "Her top specialties, already in order",
+        what: "Alex's top three are ranked from her profile, and PsyAlliance asks her to check the order. Rank 1 counts most in matching.",
+        focus: "#rank-confirm",
+        focusNote: "Alex checks the order and saves.",
+        render: () => setupScreen({ text: PASTED_PROFILE, applied: SETUP_APPLIED, marks: SETUP_MARKS, ranks: 3 }, ALEX_FILLED, SETUP_ROWS),
+      },
+      {
+        slug: "saved",
+        perspective: "alex",
+        title: "Saved, with what's left listed first",
+        what: "The profile is saved. What's still to do comes first: next, her license, which a person checks before she's matched with anyone.",
+        focusNote: "That's set-up. Next, a person checks her license.",
+        render: () => (
+          <ProfileView sp={{ saved: "1" }} profile={ALEX_FILLED} lookups={PROFILE_LOOKUPS} selectedRows={SETUP_ROWS} licenceCount={0} avatarUrl={null} me="alex" editing={false} />
         ),
       },
     ],
@@ -874,7 +955,8 @@ const OVERVIEW: Demo = {
     pick("cover", "invite", { slug: "control", title: "Alex decides who is asked", what: "Nothing is sent until Alex has seen exactly who receives each request, and in what order. No client names ever enter PsyAlliance.", focusNote: "Send. A few days later, the replies are in." }),
     pick("cover", "covered", { slug: "result", title: "Every client covered", what: "Colleagues accept, and the plan shows it. A client only counts as covered once someone has said yes.", focusNote: "Next, a glimpse of referrals." }),
     pick("refer", "shortlist", { slug: "refer", title: "Referrals work the same way", what: "An inquiry Alex can't take becomes a shortlist of colleagues who fit, each with the reason, instead of a list of names from memory.", focusNote: "Alex checks who receives it before sending." }),
-    pick("consult", "replies", { slug: "consult", title: "And questions go to people Alex trusts", what: "A focused practice question, shared only with the colleagues Alex chooses, answered by people Alex knows.", focusNote: "Last, how members are checked." }),
+    pick("consult", "replies", { slug: "consult", title: "And questions go to people Alex trusts", what: "A focused practice question, shared only with the colleagues Alex chooses, answered by people Alex knows.", focusNote: "Next, how quickly joining goes." }),
+    pick("profile", "filled", { slug: "setup", title: "Joining takes a minute", what: "Alex pasted her Psychology Today profile into Quick start and everything filled itself in, highlighted to check before saving.", focus: undefined, focusNote: "Last, how members are checked." }),
     pick("verified", "credentials", { slug: "verified", title: "Everyone here is checked", what: "A person checks each license against the state board before anyone is listed. The Practice Library has templates for leave, referrals and consent, beside the work they support.", focus: undefined, focusNote: undefined }),
   ],
 };
@@ -883,7 +965,7 @@ export const DEMOS: Demo[] = [OVERVIEW, ...DETAIL];
 // The three closer looks offered after the overview; the rest stay
 // reachable as supporting detail.
 export const CLOSER_LOOKS = ["cover", "refer", "consult"];
-export const MORE_DETAIL = ["circle", "verified", "library"];
+export const MORE_DETAIL = ["profile", "circle", "verified", "library"];
 
 export function findDemo(key: string) {
   return DEMOS.find((d) => d.key === key) || null;

@@ -114,6 +114,7 @@ const PICK: Suggestion[] = [
 ];
 
 const INVITER = { full_name: "Maya Chen", credential_prefix: "Dr.", qualification_level: "PsyD", city: "Brooklyn", state: "NY" };
+const INVITE = { link: "https://psyalliance.22nickrapley.workers.dev/i/3f9c2a7b41d0", mode: "member" as const, firstName: "Alex", fullName: "Alex Rivers, PsyD" };
 
 export const previewScreens: Record<string, () => ReactNode> = {
   "invite-landing": () => <InviteLanding who={INVITER} token="abc123" signedIn={false} />,
@@ -121,6 +122,7 @@ export const previewScreens: Record<string, () => ReactNode> = {
   home: () => (
     <HomeView
       d={{
+        invite: INVITE,
         firstName: "Alex",
         steps: [
           { key: "1", title: "October leave has 1 unresolved need", detail: "2 of 4 covered", href: "#", action: "Review plan" },
@@ -238,6 +240,7 @@ export const previewScreens: Record<string, () => ReactNode> = {
       focusOptions={["Anxiety", "Depression", "Trauma / PTSD"]}
       states={US_STATES}
       note="Added as a trusted colleague. They come first in your matches, and they've been told."
+      invite={INVITE}
     />
   ),
   network: () => (
@@ -262,6 +265,18 @@ export const previewScreens: Record<string, () => ReactNode> = {
         { id: "f", name: "Lena Park, PsyD", kind: "suggested", avatarUrl: null },
       ]}
       me={{ initials: "AR", avatarUrl: null }}
+      invite={INVITE}
+    />
+  ),
+  "network-new": () => (
+    <NetworkView
+      trusted={[{ id: "r", name: "Rachel Rodorigo, PsyD", where: "Rochester, NY", avatarUrl: null, why: "Trusted colleague", trusted: true }]}
+      worked={[]}
+      suggested={[]}
+      nodes={[{ id: "r", name: "Rachel Rodorigo, PsyD", kind: "trusted", avatarUrl: null }]}
+      me={{ initials: "AR", avatarUrl: null }}
+      invite={INVITE}
+      ranked
     />
   ),
   consult: () => (

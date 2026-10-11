@@ -910,7 +910,7 @@
 .pa .story-fiction{display:flex;flex-wrap:wrap;justify-content:center;gap:4px 16px}
 .pa .story-fiction a{color:#e2c49c;font-weight:600;text-decoration:none}
 .pa .story-fiction a:hover{text-decoration:underline}
-.tour-mode.has-focus [data-tour-screen] :is(a.btn,button.btn,.plain-button,a.text-arrow,.hero-links a,button.btn-link):not(.tour-focus){opacity:.42;filter:saturate(.6)}
+.tour-mode.has-focus [data-tour-screen] :is(a.btn,button.btn,.plain-button,a.text-arrow,.hero-links a,.hero-btn,button.btn-link):not(.tour-focus){opacity:.42;filter:saturate(.6)}
 .tour-mode.has-focus [data-tour-screen] :is(input,select,textarea){opacity:.8}
 .tour-mode .tour-focus{position:relative;opacity:1!important;outline:3px solid #d9a95f;outline-offset:3px;box-shadow:0 0 0 7px rgba(217,169,95,.22);animation:tourGlow 2.4s ease-in-out infinite;z-index:2}
 .tour-mode .tour-focus.tour-pulse{animation:tourPulse .9s ease-out 2}
@@ -1188,7 +1188,7 @@
 .pa .not-fit-btn:hover{color:var(--danger)}
 .pa .mini-person.selectable:has(input:checked) .not-fit-btn{display:none}
 /* Demo: verification screen keeps attention on the verification card. */
-[data-step="verified-credentials"] section.card:not(.verification-card){opacity:.38;filter:saturate(.5)}
+[data-step="verified-credentials"] section.card:not(.verification-card),[data-step="overview-verified"] section.card:not(.verification-card){opacity:.38;filter:saturate(.5)}
 /* Room under the content so the bottom guide never covers it. */
 .tour-mode .pa .page{padding-bottom:130px}
 .tour-mode .pa .story-nav .btn{min-height:36px}
@@ -2147,3 +2147,52 @@
 .pa .section-tab .new-pill{font-size:10.5px;padding:1px 8px}
 @media (max-width:980px){.pa .section-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}.pa .section-tabs.two{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:420px){.pa .section-tabs{gap:8px}.pa .section-tab{padding:10px;gap:9px}.pa .section-tab .st-icon{width:32px;height:32px}.pa .section-tab b{font-size:14px}.pa .section-tab small{font-size:11.5px}}
+
+/* Invite a colleague: on Home, Network, Clinicians and the Invite page */
+.pa .invite-box{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.3fr);gap:26px;align-items:start;margin-top:22px;padding:24px 26px;background:linear-gradient(180deg,#fff 0%,#fbfaf6 100%);border-color:#e1e5df}
+.pa .invite-intro h3{font-family:var(--display);font-size:24px;line-height:1.2;margin:6px 0 8px}
+.pa .invite-intro p{margin:0 0 10px}
+.pa .invite-fields{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:12px}
+.pa .invite-fields .optional{color:var(--muted);font-weight:500}
+.pa .invite-kind{min-height:18px;margin:8px 0 12px}
+.pa .invite-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.pa .invite-message{margin-top:14px}
+.pa .invite-message summary{cursor:pointer;font-size:13px;font-weight:650;color:var(--forest)}
+.pa .invite-message textarea{width:100%;margin-top:8px;font:inherit;font-size:14px;line-height:1.5;border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:#fff;resize:vertical}
+.pa .stack > .invite-box,.pa .split .invite-box{margin-top:0}
+.pa .split .invite-box{grid-template-columns:1fr}
+@media (max-width:900px){.pa .invite-box{grid-template-columns:1fr;gap:16px;padding:20px}.pa .invite-fields{grid-template-columns:1fr}}
+
+/* Practice at a glance: labels never break mid-word */
+.pa .glance li span{flex:0 0 auto;white-space:nowrap}
+.pa .glance li strong{flex:1 1 auto;min-width:0;overflow-wrap:break-word}
+
+/* Colleague profile banner */
+.pa .profile-hero{position:relative;overflow:hidden;display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:26px;align-items:center;padding:32px 34px;border-radius:18px;background:radial-gradient(120% 140% at 100% 0%,#2a5f4f 0%,#1d473b 45%,#163a30 100%);box-shadow:0 18px 44px rgba(16,45,37,.22)}
+.pa .profile-hero.rel-trusted{background:radial-gradient(70% 120% at 100% 0%,rgba(226,196,156,.20) 0%,rgba(226,196,156,0) 60%),radial-gradient(120% 140% at 100% 0%,#2a5f4f 0%,#1d473b 45%,#163a30 100%)}
+.pa .profile-hero.rel-trusted:before{content:"";position:absolute;inset:0 0 auto 0;height:3px;background:linear-gradient(90deg,#e2c49c,#c99c62 60%,rgba(201,156,98,0))}
+.pa .profile-hero .hero-main{min-width:0}
+.pa .profile-hero .hero-avatar{position:relative;display:inline-block;line-height:0;justify-self:start;width:max-content}
+.pa .profile-hero .hero-avatar .avatar{width:88px;height:88px;flex:0 0 88px;font-size:32px;border:3px solid rgba(255,255,255,.18)}
+.pa .profile-hero .hero-avatar.is-trusted .avatar{border-color:#e2c49c;box-shadow:0 0 0 5px rgba(226,196,156,.18)}
+.pa .profile-hero .trust-seal{position:absolute;right:-2px;bottom:2px;width:28px;height:28px;border-radius:50%;background:linear-gradient(180deg,#ecd3ad,#c99c62);color:#173d32;display:grid;place-items:center;border:3px solid #1d473b;font:800 13px/1 var(--body)}
+.pa .profile-hero .trusted-mark{display:inline-flex;align-items:center;gap:7px;color:#ecd3ad;font:750 12px/1 var(--body);letter-spacing:.08em;text-transform:uppercase}
+.pa .profile-hero .trusted-mark i{font-style:normal;width:18px;height:18px;border-radius:50%;background:#e2c49c;color:#173d32;display:grid;place-items:center;font-size:11px;letter-spacing:0}
+.pa .profile-hero .trusted-line{color:#e9d6b8;font-size:13.5px;margin:6px 0 0}
+.pa .profile-hero .chip-row{margin-top:14px}
+.pa .profile-hero .chip{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.16);color:#e7f0ea;border-radius:999px;padding:6px 12px}
+.pa .profile-hero .hero-cta{display:flex;flex-direction:column;gap:10px;min-width:250px}
+.pa .profile-hero .hero-cta form{display:block}
+.pa .profile-hero .hero-cta-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.pa .hero-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:44px;padding:10px 16px;border-radius:12px;border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.06);color:#fff;font:650 14px/1.2 var(--body);text-decoration:none;cursor:pointer;transition:background .15s,border-color .15s,transform .15s;white-space:nowrap}
+.pa .hero-btn:hover{background:rgba(255,255,255,.13);border-color:rgba(255,255,255,.38);transform:translateY(-1px)}
+.pa .hero-btn.primary{background:#f4ead9;border-color:#f4ead9;color:#173d32;font-size:15px;min-height:48px;box-shadow:0 8px 20px rgba(0,0,0,.18)}
+.pa .hero-btn.primary:hover{background:#fff;border-color:#fff}
+.pa .hero-btn.trust{border-color:rgba(226,196,156,.55);color:#ecd3ad;background:rgba(226,196,156,.08)}
+.pa .hero-btn.trust:hover{background:rgba(226,196,156,.16);border-color:#e2c49c}
+.pa .hero-btn.trust span{font-size:18px;line-height:1}
+@media (max-width:980px){.pa .profile-hero{grid-template-columns:auto minmax(0,1fr)}.pa .profile-hero .hero-cta{grid-column:1 / -1;min-width:0}}
+@media (max-width:560px){.pa .profile-hero{grid-template-columns:1fr;padding:24px 20px;gap:16px}.pa .profile-hero .hero-avatar .avatar{width:72px;height:72px;flex-basis:72px;font-size:26px}}
+
+/* The one-time example note never shows inside a demo screen */
+.sp-screen .first-visit,[data-tour-screen] .first-visit{display:none}

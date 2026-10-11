@@ -23,6 +23,8 @@ const PHONE_WIDTH = 390;
 
 function findFocus(root: HTMLElement, focus?: string, index = 0): HTMLElement | null {
   if (!focus) return null;
+  // "#rank-confirm" points at an element by id rather than by its text.
+  if (focus.startsWith("#")) return root.querySelector<HTMLElement>(focus);
   const want = focus.toLowerCase();
   const hits = Array.from(root.querySelectorAll<HTMLElement>("a, button, summary, label, h3, strong")).filter((el) =>
     (el.textContent || "").replace(/\s+/g, " ").trim().toLowerCase().startsWith(want)

@@ -1,4 +1,6 @@
 import { PageHead, PersonAvatar, Banner } from "../_components/ui";
+import { InviteBox } from "../_components/invite-box";
+import type { InviteInfo } from "@/lib/invite";
 import { Orbit, type CircleNode } from "../_components/orbit";
 import { removeTrustedAction } from "./actions";
 import { TrustButton } from "../clinicians/views";
@@ -13,14 +15,19 @@ const BACK = "/dashboard/network";
 
 // A colleague in one of the three lists. A button sits under the name so
 // the name and details keep the full width of the column.
-function Row({ c, action, below = false }: { c: Colleague; action: React.ReactNode; below?: boolean }) {
+function Row({ c, action, below = false, why = false }: { c: Colleague; action: React.ReactNode; below?: boolean; why?: boolean }) {
   return (
     <div className={`net-row${below ? " action-below" : ""}`}>
       <PersonAvatar name={c.name} url={c.avatarUrl} />
       <div className="net-row-text">
         <a href={`/dashboard/people/${c.id}?back=${encodeURIComponent(BACK)}`}><strong>{c.name}</strong></a>
         {c.where && <small>{c.where}</small>}
-        {c.why && <small className="net-why">{c.why}</small>}
+        {c.why && (
+          <small className="net-why">
+            {why && <b>Why: </b>}
+            {c.why}
+          </small>
+        )}
         {below && <div className="net-row-action">{action}</div>}
       </div>
       {!below && <div className="net-row-action">{action}</div>}
@@ -36,6 +43,8 @@ export function NetworkView({
   me,
   note,
   error,
+  invite,
+  ranked = true,
 }: {
   trusted: Colleague[];
   worked: Colleague[];
@@ -44,6 +53,9 @@ export function NetworkView({
   me: { initials: string; avatarUrl: string | null };
   note?: string | null;
   error?: string | null;
+  invite?: InviteInfo;
+  // Whether the member has ranked their specialties (suggestions use them).
+  ranked?: boolean;
 }) {
   return (
     <>
@@ -54,7 +66,7 @@ export function NetworkView({
         actions={
           <>
             <a className="btn" href="/dashboard/clinicians">Find clinicians</a>
-            <a className="btn secondary" href="/dashboard/invite">Invite a colleague</a>
+            <a className="btn secondary" href={invite ? "#invite" : "/dashboard/invite"}>Invite a colleague</a>
           </>
         }
       />
@@ -124,12 +136,23 @@ export function NetworkView({
         <section className="card" id="suggested">
           <div className="card-title"><h3>Suggested for you</h3></div>
           {suggested.length === 0 ? (
-            <p className="small">Suggestions come from your specialties, your state and who&rsquo;s active. <a href="/dashboard/profile?edit=1&back=%2Fdashboard%2Fnetwork#specialties">Rank your specialties</a> for better ones.</p>
+            ranked ? (
+              <p className="small">
+                No one to suggest yet. Suggestions are colleagues licensed where you are whose specialties overlap with yours, and they appear here as more
+                join. {invite ? <>Know someone who should be here? <a href="#invite">Invite them</a>.</> : null}
+              </p>
+            ) : (
+              <p className="small">
+                Suggestions come from your specialties, your state and who&rsquo;s active.{" "}
+                <a href="/dashboard/profile?edit=1&back=%2Fdashboard%2Fnetwork#specialties">Rank your top specialties</a> to get them.
+              </p>
+            )
           ) : (
-            suggested.map((c) => <Row key={c.id} c={c} below action={<TrustButton id={c.id} trusted={c.trusted} back={`${BACK}#suggested`} />} />)
+            suggested.map((c) => <Row key={c.id} c={c} below why action={<TrustButton id={c.id} trusted={c.trusted} back={`${BACK}#suggested`} />} />)
           )}
         </section>
       </div>
+      {invite && <InviteBox info={invite} title="Someone missing from your network?" />}
     </>
   );
 }

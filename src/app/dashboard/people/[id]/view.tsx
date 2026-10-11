@@ -3,6 +3,7 @@ import { startConversation } from "../../messages/actions";
 import { addToBlocklist, removeFromBlocklist, blockMemberAction } from "../../settings/actions";
 import { fileReportAction } from "../../moderation-actions";
 import { Banner, PersonAvatar } from "../../_components/ui";
+import { NavIcon } from "../../icons";
 
 // A colleague's profile, laid out as the design concept: who they are on
 // a dark hero, their practice at a glance, the facts PsyAlliance holds
@@ -34,6 +35,8 @@ export type ClinicianProfile = {
   collaborations: number;
   signals: string[];
   primaryState: string | null;
+  // What you have in common, as reasons PsyAlliance would suggest them.
+  why?: string[];
 };
 
 function AddTrusted({ id, label = "Add as Trusted Colleague", cls = "btn secondary small-btn" }: { id: string; label?: string; cls?: string }) {
@@ -50,19 +53,8 @@ function AddTrusted({ id, label = "Add as Trusted Colleague", cls = "btn seconda
 // profile: what it is, what it means, and the one thing you can do next.
 function RelationshipBand({ p }: { p: ClinicianProfile }) {
   const first = p.firstName;
-  if (p.trusted) {
-    return (
-      <div className="rel-band rel-trusted">
-        <span className="rel-icon" aria-hidden="true">&#10003;</span>
-        <span className="rel-copy">
-          <b>Trusted colleague</b>
-          <small>
-            Since {p.since || "recently"}. {first} comes first in your matches{p.trustsMe ? ", and has added you too" : ""}.
-          </small>
-        </span>
-      </div>
-    );
-  }
+  // A trusted colleague is shown in the banner itself.
+  if (p.trusted) return null;
   if (p.trustsMe) {
     return (
       <div className="rel-band rel-invite">
@@ -81,18 +73,23 @@ function RelationshipBand({ p }: { p: ClinicianProfile }) {
         <span className="rel-icon" aria-hidden="true">&#8596;</span>
         <span className="rel-copy">
           <b>Worked with before</b>
-          <small>{p.collaborations > 0 ? `${p.collaborations} collaboration${p.collaborations === 1 ? "" : "s"} together. ` : ""}Add {first} as a trusted colleague to put them first in your matches.</small>
+          <small>{p.collaborations > 0 ? `${p.collaborations} collaboration${p.collaborations === 1 ? "" : "s"} together. ` : ""}{(p.why || []).filter((w) => !/^Added you/.test(w)).length ? `${(p.why || []).filter((w) => !/^Added you/.test(w)).join(" · ")}. ` : ""}Add {first} as a trusted colleague to put them first in your matches.</small>
         </span>
         <span className="rel-actions"><AddTrusted id={p.id} /></span>
       </div>
     );
   }
+  const why = (p.why || []).filter((w) => !/^Added you/.test(w));
   return (
     <div className="rel-band rel-none">
       <span className="rel-icon" aria-hidden="true">&#9675;</span>
       <span className="rel-copy">
-        <b>Verified member</b>
-        <small>You can message, refer or ask {first} for cover. Add {first} as a trusted colleague to put them first in your matches.</small>
+        <b>{why.length ? `Why ${first} is suggested for you` : "Verified member"}</b>
+        {why.length ? (
+          <small className="rel-why">{why.join(" · ")}. Add {first} as a trusted colleague to put them first in your matches.</small>
+        ) : (
+          <small>You can message, refer or ask {first} for cover. Add {first} as a trusted colleague to put them first in your matches.</small>
+        )}
       </span>
       <span className="rel-actions"><AddTrusted id={p.id} /></span>
     </div>
@@ -110,38 +107,65 @@ export function ClinicianProfileView({ p, error, note, back }: { p: ClinicianPro
       <RelationshipBand p={p} />
 
       <section className={`profile-hero rel-${p.trusted ? "trusted" : p.workedWith ? "worked" : "none"}`}>
-        <PersonAvatar name={p.name} url={p.avatarUrl} size={84} />
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div className="eyebrow">Clinician profile</div>
+        <span className={`hero-avatar${p.trusted ? " is-trusted" : ""}`}>
+          <PersonAvatar name={p.name} url={p.avatarUrl} size={88} />
+          {p.trusted && (
+            <span className="trust-seal" title="Your trusted colleague" aria-hidden="true">&#10003;</span>
+          )}
+        </span>
+        <div className="hero-main">
+          {p.trusted ? (
+            <div className="trusted-mark">
+              <i aria-hidden="true">&#10003;</i>
+              Your trusted colleague
+            </div>
+          ) : (
+            <div className="eyebrow">{p.workedWith ? "Worked with before" : "Clinician profile"}</div>
+          )}
           <h1>{p.name}</h1>
           <p className="hero-role">{p.role}{p.where ? ` · ${p.where}` : ""}</p>
+          {p.trusted && (
+            <p className="trusted-line">
+              Since {p.since || "recently"} &middot; first in your matches{p.trustsMe ? " · has added you too" : ""}
+            </p>
+          )}
           <div className="chip-row">
             {p.licenceStates.length > 0 && (
               <span className="chip">{p.licenceStates.length === 1 ? `${p.licenceStates[0]} license reviewed` : `Reviewed licenses: ${p.licenceStates.join(", ")}`}</span>
             )}
             <span className="chip">{p.availabilityChip}</span>
             {p.psypact && <span className="chip">PSYPACT</span>}
-            {p.relationship !== "Verified network" && <span className="chip gold">{p.relationship}</span>}
           </div>
         </div>
-        <div className="actions hero-actions">
-          <div className="row" style={{ gap: 8 }}>
-            {p.trusted ? (
-              <span className="btn on-dark is-static">Trusted colleague &#10003;</span>
-            ) : (
-              <AddTrusted id={p.id} cls="btn on-dark" />
-            )}
-            <form action={startConversation} data-deidentify="">
-              <input type="hidden" name="participant_ids" value={p.id} />
-              <input type="hidden" name="title" value="" />
-              <input type="hidden" name="body" value="" />
-              <button type="submit" className="btn ghost-on-dark">Send message</button>
+        <div className="hero-cta">
+          <form action={startConversation} data-deidentify="">
+            <input type="hidden" name="participant_ids" value={p.id} />
+            <input type="hidden" name="title" value="" />
+            <input type="hidden" name="body" value="" />
+            <button type="submit" className="hero-btn primary">
+              <NavIcon name="messages" size={17} />
+              Send message
+            </button>
+          </form>
+          <div className="hero-cta-row">
+            <a className="hero-btn" href={`/dashboard/refer/new?state=${p.primaryState || ""}`}>
+              <NavIcon name="refer" size={16} />
+              Refer a client
+            </a>
+            <a className="hero-btn" href="/dashboard/cover/new">
+              <NavIcon name="cover" size={16} />
+              Ask for cover
+            </a>
+          </div>
+          {!p.trusted && (
+            <form action={addTrustedAction}>
+              <input type="hidden" name="colleague_id" value={p.id} />
+              <input type="hidden" name="back" value={`/dashboard/people/${p.id}`} />
+              <button type="submit" className="hero-btn trust">
+                <span aria-hidden="true">+</span> Add as Trusted Colleague
+              </button>
             </form>
-          </div>
-          <div className="hero-links">
-            <a href={`/dashboard/refer/new?state=${p.primaryState || ""}`}>Refer a client &rarr;</a>
-            <a href="/dashboard/cover/new">Ask for cover &rarr;</a>
-          </div>
+          )}
         </div>
       </section>
 

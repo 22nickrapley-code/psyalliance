@@ -34,17 +34,10 @@ const BEATS: Beat[] = [
   },
   {
     demo: "cover",
-    slug: "invite",
-    chapter: "Time away",
-    caption: "Alex chooses who is asked.",
-    sub: "Nothing is sent until she has seen exactly who receives each request.",
-  },
-  {
-    demo: "cover",
     slug: "covered",
     chapter: "Time away",
     caption: "Colleagues reply, and every client is covered.",
-    sub: "A client only counts as covered once a colleague has said yes.",
+    sub: "Alex chose who was asked, and a client only counts as covered once a colleague has said yes.",
   },
   {
     demo: "refer",
@@ -74,6 +67,20 @@ const BEATS: Beat[] = [
     chapter: "Asking colleagues",
     caption: "A hard question, answered by people you trust.",
     sub: "De-identified, and shared only with the colleagues you choose.",
+  },
+  {
+    demo: "profile",
+    slug: "paste",
+    chapter: "Joining",
+    caption: "Joining takes a minute.",
+    sub: "A new member pastes their Psychology Today profile, practice website or CV into Quick start.",
+  },
+  {
+    demo: "profile",
+    slug: "filled",
+    chapter: "Joining",
+    caption: "Everything fills itself in.",
+    sub: "Specialties, approaches, insurance and a short bio, each highlighted to check before saving.",
   },
   {
     demo: "verified",

@@ -1,4 +1,6 @@
 import type { NeedOptions } from "@/lib/need-options";
+import { InviteBox } from "./_components/invite-box";
+import type { InviteInfo } from "@/lib/invite";
 import { libraryHref } from "@/lib/library";
 import { stateName, stateList } from "@/lib/open-states";
 import { openSandboxAction } from "./sandbox/actions";
@@ -60,6 +62,7 @@ export type HomeData = {
   circleSnapshot?: CircleSnapshot;
   ledger?: string[];
   ledgerYear?: number;
+  invite?: InviteInfo;
   options?: NeedOptions;
   notice?: string;
   sandbox?: boolean;
@@ -306,6 +309,7 @@ export function HomeView({ d }: { d: HomeData }) {
         <AvailabilityCard a={d.availability} />
         <CircleCard c={d.circleSnapshot} />
       </div>
+      {d.invite && <InviteBox info={d.invite} id="home-invite" />}
     </div>
   );
 }

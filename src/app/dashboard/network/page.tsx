@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { loadInvite } from "@/lib/invite";
 import { createClient } from "@/lib/supabase/server";
 import { resolveAvatarUrls } from "@/lib/avatars";
 import { findMatches } from "@/lib/match-engine";
@@ -30,7 +31,7 @@ export default async function NetworkPage(props: { searchParams: Promise<Record<
   } = await supabase.auth.getUser();
   const me = user!.id;
 
-  const [trusted, trustedBy, { data: workedRows }, { data: myProfile }, { data: myFocusRows }] = await Promise.all([
+  const [trusted, trustedBy, { data: workedRows }, { data: myProfile }, { data: myFocusRows }, invite] = await Promise.all([
     getTrustedIds(supabase, me),
     getTrustedByIds(supabase, me),
     supabase.from("worked_with_before").select("colleague_id, interaction_count").eq("profile_id", me),
@@ -41,6 +42,7 @@ export default async function NetworkPage(props: { searchParams: Promise<Record<
       .eq("profile_id", me)
       .eq("lookup_values.category", "treatment_specialism")
       .order("rank"),
+    loadInvite(supabase),
   ]);
   const worked = new Map<string, number>((workedRows || []).map((w: any) => [w.colleague_id as string, Number(w.interaction_count) || 1]));
 
@@ -114,6 +116,8 @@ export default async function NetworkPage(props: { searchParams: Promise<Record<
       me={{ initials: myInitials || "You", avatarUrl: urls.get(myProfile?.avatar_path || "") || null }}
       note={sp.trusted ? "Added as a trusted colleague. They've been told, and they come first in your matches." : sp.untrusted ? "Removed from your trusted colleagues. They aren't told." : null}
       error={sp.error || null}
+      invite={invite}
+      ranked={(myFocusRows || []).length > 0}
     />
   );
 }
