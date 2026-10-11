@@ -2318,6 +2318,7 @@
 .pa .rank-list label.autofilled select,.pa .rank-list select.autofilled{border-color:#d7b98a !important;background-color:#fffcf6 !important}
 .pa img.avatar.autofilled{box-shadow:0 0 0 3px #e7d2b0}
 .pa details.has-autofill > summary .profile-section-title:after{content:"Filled in";display:inline-block;margin-left:10px;font:650 11px/1.2 var(--body);color:#7a5223;background:#fbf3e6;border:1px solid #ecd9bb;border-radius:999px;padding:3px 9px;vertical-align:middle;white-space:nowrap}
+@media (max-width:480px){.pa details.has-autofill > summary .profile-section-title:after{display:table;margin:6px 0 0}}
 .pa details.profile-section > summary{flex-wrap:nowrap}
 .pa details.profile-section > summary .profile-section-title{min-width:0}
 .pa .quick-start-applied li{background:#fbf3e6 !important;border:1px solid #ecd9bb !important;color:#6d4a1c !important}
