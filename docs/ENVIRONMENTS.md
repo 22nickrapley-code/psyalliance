@@ -17,6 +17,14 @@ Two sites, two databases, never shared.
 
 `NEXT_PUBLIC_*` values are baked in at build time, which is why the demo is a separate build. The deploy script refuses to build the demo against the production project.
 
+## Addresses
+
+- Real site: https://psyalliance.org (www.psyalliance.org redirects there in `src/middleware.ts`). Sandbox: https://sandbox.psyalliance.org.
+- psyalliance.org is registered at GoDaddy; its DNS is on Cloudflare (nameservers changed 12 Oct). Email stays on Microsoft 365: the MX, SRV and TXT records and the Microsoft CNAMEs (autodiscover, lyncdiscover, msoid, sip, selector1/2, email, _domainconnect) must stay "DNS only", never proxied.
+- Each Worker has a Custom Domain (Workers & Pages > Worker > Settings > Domains & Routes): `psyalliance` has psyalliance.org and www.psyalliance.org; `psyalliance-demo` has sandbox.psyalliance.org.
+- Links come from `src/lib/env.ts`; any NEXT_PUBLIC_*_URL build setting that still names a workers.dev address is ignored. The old workers.dev addresses still answer, and may still frame the demo videos.
+- Supabase: `app_config.site_url` is https://psyalliance.org (real) and https://sandbox.psyalliance.org (sandbox); Authentication > URL Configuration uses the same Site URL, with the new address plus `/**` in Redirect URLs.
+
 ## Real site
 
 - **Admin**: Nick's login is an admin-only (operator) account: full admin access, no clinical profile, never verified, listed, matched or counted.

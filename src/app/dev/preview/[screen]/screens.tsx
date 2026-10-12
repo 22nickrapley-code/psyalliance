@@ -115,7 +115,7 @@ const PICK: Suggestion[] = [
 ];
 
 const INVITER = { full_name: "Maya Calderwick", credential_prefix: "Dr.", qualification_level: "PsyD", city: "Brooklyn", state: "NY" };
-const INVITE = { link: "https://psyalliance.22nickrapley.workers.dev/i/3f9c2a7b41d0", mode: "member" as const, firstName: "Alex", fullName: "Alex Thornvale, PsyD" };
+const INVITE = { link: "https://psyalliance.org/i/3f9c2a7b41d0", mode: "member" as const, firstName: "Alex", fullName: "Alex Thornvale, PsyD" };
 
 export const previewScreens: Record<string, () => ReactNode> = {
   "invite-landing": () => <InviteLanding who={INVITER} token="abc123" signedIn={false} />,

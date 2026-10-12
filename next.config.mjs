@@ -1,11 +1,16 @@
 // Security headers on every response (release review R16). Pages may be
-// framed only by the two PsyAlliance sites: the sandbox shows the real
-// site's demo videos in a dialog.
-const REAL = (process.env.NEXT_PUBLIC_REAL_SITE_URL || "https://psyalliance.22nickrapley.workers.dev").replace(/\/$/, "");
-const DEMO = (process.env.NEXT_PUBLIC_DEMO_URL || "https://psyalliance-demo.22nickrapley.workers.dev").replace(/\/$/, "");
+// framed only by the PsyAlliance sites: the sandbox shows the real site's
+// demo videos in a dialog. The old workers.dev addresses stay allowed while
+// anyone still has them open.
+const FRAMERS = [
+  "https://psyalliance.org",
+  "https://sandbox.psyalliance.org",
+  "https://psyalliance.22nickrapley.workers.dev",
+  "https://psyalliance-demo.22nickrapley.workers.dev",
+].join(" ");
 
 const securityHeaders = [
-  { key: "Content-Security-Policy", value: `frame-ancestors 'self' ${REAL} ${DEMO}; base-uri 'self'; object-src 'none'` },
+  { key: "Content-Security-Policy", value: `frame-ancestors 'self' ${FRAMERS}; base-uri 'self'; object-src 'none'` },
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
   { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), payment=(), usb=()" },

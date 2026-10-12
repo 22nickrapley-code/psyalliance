@@ -14,10 +14,8 @@ import "@fontsource/inter/500.css";
 import "@fontsource/inter/600.css";
 import "@fontsource/inter/700.css";
 
-// metadataBase must be a static value (Next.js can't await headers() here),
-// so it falls back to the current *.workers.dev URL until a custom domain is
-// live - set NEXT_PUBLIC_SITE_URL (see wrangler.jsonc) once it is, so OG
-// images/canonical links resolve to the real domain instead.
+// metadataBase must be a static value (Next.js can't await headers() here):
+// psyalliance.org, or sandbox.psyalliance.org on the sandbox build.
 const siteUrl = SITE_URL;
 
 export const metadata = {

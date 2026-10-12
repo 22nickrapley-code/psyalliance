@@ -8,15 +8,17 @@ export type AppEnv = "production" | "demo";
 export const APP_ENV: AppEnv = process.env.NEXT_PUBLIC_APP_ENV === "demo" ? "demo" : "production";
 export const IS_DEMO_SITE = APP_ENV === "demo";
 
-// Public addresses. psyalliance.org is not connected to the Worker yet, so
-// every link uses the workers.dev addresses until it is; switching is a
-// one-line change here (or the NEXT_PUBLIC_* overrides at build time).
-const REAL_DEFAULT = "https://psyalliance.22nickrapley.workers.dev";
-const DEMO_DEFAULT = "https://psyalliance-demo.22nickrapley.workers.dev";
+// Public addresses: psyalliance.org for the real site, sandbox.psyalliance.org
+// for the sandbox. The old *.workers.dev addresses still answer, but links
+// never use them: a build setting that still names one is ignored, so an
+// old .env file can't send people back there.
+const REAL_DEFAULT = "https://psyalliance.org";
+const DEMO_DEFAULT = "https://sandbox.psyalliance.org";
+const address = (value: string | undefined, fallback: string) => (value && !/\.workers\.dev/i.test(value) ? value : fallback).replace(/\/$/, "");
 
-export const REAL_SITE_URL = (process.env.NEXT_PUBLIC_REAL_SITE_URL || REAL_DEFAULT).replace(/\/$/, "");
-export const DEMO_URL: string | null = (process.env.NEXT_PUBLIC_DEMO_URL || DEMO_DEFAULT).replace(/\/$/, "");
-export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || (IS_DEMO_SITE ? DEMO_DEFAULT : REAL_DEFAULT)).replace(/\/$/, "");
+export const REAL_SITE_URL = address(process.env.NEXT_PUBLIC_REAL_SITE_URL, REAL_DEFAULT);
+export const DEMO_URL: string | null = address(process.env.NEXT_PUBLIC_DEMO_URL, DEMO_DEFAULT);
+export const SITE_URL = address(process.env.NEXT_PUBLIC_SITE_URL, IS_DEMO_SITE ? DEMO_DEFAULT : REAL_DEFAULT);
 // One door in: creating an account on the real site (sign-up is open; a
 // person verifies every license and the network opens state by state).
 export const JOIN_URL = `${REAL_SITE_URL}/auth/sign-up`;
