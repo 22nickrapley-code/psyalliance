@@ -146,6 +146,48 @@ export function Live() {
     return () => window.removeEventListener("submit", onSubmit, true);
   }, []);
 
+  // 0b. Phones: tapping a date field straight after typing in another field
+  // opened the calendar, then the keyboard closing moved the page and the
+  // calendar closed again (Nick, 13 Oct). Close the keyboard first, let the
+  // page settle, then open the calendar.
+  useEffect(() => {
+    if (!window.matchMedia("(pointer: coarse)").matches) return;
+    const isPicker = (el: Element | null): el is HTMLInputElement => el instanceof HTMLInputElement && /^(date|time|datetime-local|month|week)$/.test(el.type);
+    const typing = (el: Element | null) =>
+      el instanceof HTMLTextAreaElement ||
+      (el instanceof HTMLInputElement && !isPicker(el) && !/^(checkbox|radio|button|submit|reset|hidden|file|range|color|image)$/.test(el.type)) ||
+      !!(el as HTMLElement | null)?.isContentEditable;
+    let start: { x: number; y: number } | null = null;
+    const onStart = (e: TouchEvent) => {
+      const t = e.touches[0];
+      start = t ? { x: t.clientX, y: t.clientY } : null;
+    };
+    const onEnd = (e: TouchEvent) => {
+      const t = e.changedTouches[0];
+      if (!start || !t || Math.abs(t.clientX - start.x) > 10 || Math.abs(t.clientY - start.y) > 10) return; // a scroll, not a tap
+      const input = (e.target as Element | null)?.closest?.("input") || null;
+      if (!isPicker(input) || input.disabled || input.readOnly) return;
+      const active = document.activeElement;
+      if (active === input || !typing(active)) return;
+      e.preventDefault();
+      (active as HTMLElement).blur();
+      window.setTimeout(() => {
+        input.focus({ preventScroll: true });
+        try {
+          input.showPicker();
+        } catch {
+          /* the next tap opens it */
+        }
+      }, 380);
+    };
+    document.addEventListener("touchstart", onStart, { passive: true, capture: true });
+    document.addEventListener("touchend", onEnd, { passive: false, capture: true });
+    return () => {
+      document.removeEventListener("touchstart", onStart, true);
+      document.removeEventListener("touchend", onEnd, true);
+    };
+  }, []);
+
   // 1. Internal links without a full reload.
   useEffect(() => {
     const onClick = (e: MouseEvent) => {

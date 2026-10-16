@@ -273,9 +273,9 @@ export function HomeView({ d }: { d: HomeData }) {
               </form>
             </div>
             <div className="explore-item">
-              <b>Explore the guided demos</b>
-              <small>Six short walk-throughs of the real screens, a minute or two each.</small>
-              <a className="btn secondary small-btn" href="/tour">Explore the guided demos</a>
+              <b>Watch the demos</b>
+              <small>A short video of each part of PsyAlliance, a minute or two each, right here in your account.</small>
+              <a className="btn secondary small-btn" href="/dashboard/demos">Watch the demos</a>
             </div>
           </div>
           <p className="small" style={{ margin: "16px 0 0" }}>The Practice Library is open to you now. Three templates members start with:</p>

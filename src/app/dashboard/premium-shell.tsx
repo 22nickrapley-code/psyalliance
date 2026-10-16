@@ -117,42 +117,37 @@ export default function PremiumShell({
 
         <div className="workspace">
           {demoSite && (
-            <div className="sandbox-band" role="region" aria-label="About this sandbox">
-              <div className="sandbox-band-inner">
-                <div className="who">
-                  {demoSite.who && <span className="band-initials" aria-hidden="true">{initials}</span>}
-                  <div>
-                    <b>{demoSite.who ? `You're ${demoSite.who}` : "PsyAlliance demo"}</b>
-                    <span>
-                      {demoSite.role ? `${demoSite.role}. ` : ""}Everyone here is fictional and nothing is emailed.
-                    </span>
-                  </div>
-                  {demoSite.label && (
-                    <a className="band-leave" href={`${REAL_SITE_URL}/dashboard/profile`} title="Back to your own account on PsyAlliance. Your sandbox stays open, so you can come back to it.">
-                      Leave sandbox
-                    </a>
-                  )}
-                </div>
-                <div className="band-actions">
-                  <a className="btn" href="/dashboard/demos">Demos</a>
+            // One slim line (Nick, 13 Oct): you're in the sandbox, who you
+            // are, Leave, and a ··· menu for the rest.
+            <div className="sandbox-strip" role="region" aria-label="About this sandbox">
+              {demoSite.who && <span className="strip-initials" aria-hidden="true">{initials}</span>}
+              <p className="strip-who">
+                <b>Sandbox</b>
+                <span>{demoSite.who ? ` · You're ${demoSite.who}` : " · PsyAlliance demo"}</span>
+              </p>
+              {demoSite.label && (
+                <a className="strip-leave" href={`${REAL_SITE_URL}/dashboard/profile`} title="Back to your own account on PsyAlliance. Your sandbox stays open, so you can come back to it.">
+                  Leave
+                </a>
+              )}
+              <details className="strip-menu">
+                <summary aria-label="Sandbox options">
+                  <span aria-hidden="true">&middot;&middot;&middot;</span>
+                </summary>
+                <div className="strip-pop">
+                  <a href="/dashboard/demos">Demos</a>
                   {resetSandboxAction && demoSite.label && (
                     <form action={resetSandboxAction}>
-                      <button type="submit" className="btn outline" title="Clears everything you have done here and restores Alex's practice">
-                        Start the story again
-                      </button>
+                      <button type="submit" title="Clears everything you have done here and restores Alex's practice">Start the story again</button>
                     </form>
                   )}
-                  {demoSite.label && (
-                    <details className="band-more">
-                      <summary>About</summary>
-                      <div className="band-pop">
-                        <p>Colleagues reply to what you send within a minute or two. <b>Start the story again</b> clears everything you&rsquo;ve done and restores Alex&rsquo;s practice. <b>Leave sandbox</b> takes you back to your own account; open the sandbox again from your Home page.</p>
-                        {demoSite.expires && <p>Sandbox for {demoSite.label}, open until {demoSite.expires}.</p>}
-                      </div>
-                    </details>
-                  )}
+                  <p>
+                    {demoSite.role ? `${demoSite.role}. ` : ""}Everyone here is fictional and nothing is emailed. Colleagues reply to what you send within a minute or two.
+                    {demoSite.label ? " Start the story again clears everything you've done and restores Alex's practice. Leave takes you back to your own account; open the sandbox again from your Home page." : ""}
+                  </p>
+                  {demoSite.expires && <p>Sandbox for {demoSite.label}, open until {demoSite.expires}.</p>}
                 </div>
-              </div>
+              </details>
             </div>
           )}
           <header className="workspace-top">
@@ -197,7 +192,7 @@ export default function PremiumShell({
           )}
           {gateNotice && !demoView && (
             <div className="demo-bar gate-bar" role="status">
-              {gateNotice} <Link href="/dashboard#explore">Your sandbox</Link> &middot; <Link href="/dashboard/documents">Practice Library</Link> &middot; <Link href="/dashboard/credentials">Credentials</Link>
+              {gateNotice} <a href="/dashboard/sandbox/open" data-reload="">Your sandbox</a> &middot; <Link href="/dashboard/documents">Practice Library</Link> &middot; <Link href="/dashboard/credentials">Credentials</Link>
             </div>
           )}
           <main className="page" id="main" tabIndex={-1}>{children}</main>

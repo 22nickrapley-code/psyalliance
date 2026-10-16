@@ -18,6 +18,9 @@ export function PublicNav({ home = false }: { home?: boolean }) {
         <a className="text-link" href={`${base}#how`}>How it works</a>
         <a className="text-link" href={`${PUBLIC_BASE}/library`}>Library</a>
         <a className="text-link keep" href={DEMOS_HREF}>Demo</a>
+        {/* On phones the header is Home, Sign in and Join. */}
+        <a className="text-link phone-only" href={`${PUBLIC_BASE}/`}>Home</a>
+        <a className="text-link phone-only" href={SIGN_IN_HREF}>Sign in</a>
         <a className="btn secondary small-btn" href={SIGN_IN_HREF}>Sign in</a>
         <a className="btn small-btn" href={JOIN_HREF}><span className="label-full">Create your account</span><span className="label-short">Join</span></a>
       </div>

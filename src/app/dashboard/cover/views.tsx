@@ -576,7 +576,7 @@ export function CoverNeedsView({ plan, cases, options, error, addedId }: { plan:
             </div>
             <div className="step-actions">
               <span className="micro-note">Saved as &ldquo;Client {cases.length + 1}&rdquo;. No names, initials or dates.</span>
-              <button type="submit" className="btn secondary">Add client</button>
+              <button type="submit" className="btn add-client-btn">+ Save and add client</button>
             </div>
           </form>
           <div className="step-actions" style={{ borderTop: 0, marginTop: 0 }}>
