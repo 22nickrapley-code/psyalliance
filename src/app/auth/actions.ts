@@ -67,7 +67,23 @@ export async function signUp(formData: FormData) {
   }
   // With email confirmation on, there's no session until they click the link.
   if (data?.session) redirect("/dashboard/profile");
-  redirect("/auth/sign-in?message=" + encodeURIComponent(`Check ${email} for a link to confirm your account, then sign in.`));
+
+  // An address that already has an account: the sign-up service quietly
+  // sends nothing (so the form can't reveal who is a member). The owner
+  // still deserves to know, so they get a sign-in link by email, and the
+  // page says the same thing it says to everyone (Nick, 16 Oct).
+  const alreadyRegistered = !!data?.user && Array.isArray(data.user.identities) && data.user.identities.length === 0;
+  if (alreadyRegistered) {
+    const { error: linkError } = await supabase.auth.signInWithOtp({
+      email,
+      options: { shouldCreateUser: false, emailRedirectTo: `${await siteOrigin()}/auth/callback?next=${encodeURIComponent("/dashboard")}` },
+    });
+    if (linkError) console.error("sign-up: existing-account email not sent:", linkError.status, linkError.message);
+  }
+  redirect(
+    "/auth/sign-in?message=" +
+      encodeURIComponent(`Check ${email} for a link to confirm your account, then sign in. If you already have an account with this email, the email we sent helps you sign in instead.`)
+  );
 }
 
 export async function signIn(formData: FormData) {
@@ -100,12 +116,32 @@ export async function requestPasswordReset(formData: FormData) {
   const supabase = await createClient();
   const email = String(formData.get("email") || "");
 
-  await supabase.auth.resetPasswordForEmail(email, {
+  const fail = (msg: string) => redirect(`/auth/forgot-password?error=${encodeURIComponent(msg)}`);
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.trim())) fail("Add the email address you signed up with.");
+
+  const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
     redirectTo: `${await siteOrigin()}/auth/callback?next=${encodeURIComponent("/auth/reset-password")}`,
   });
 
-  // Always show the same message whether or not the email exists, so this
-  // can't be used to enumerate registered accounts.
+  // The answer is the same whether or not the email has an account, so this
+  // can't be used to find out who is a member. A refusal by the mail
+  // service is different: it is reported, so nobody waits for an email
+  // that was never sent (release review AUTH-01).
+  if (error) {
+    console.error("password reset not sent:", error.status, (error as any).code || "", error.message);
+    // Asked again within a minute for the same address: the earlier email is
+    // the one to use. Worded so it doesn't say whether the address is a member.
+    if (/only request this after/i.test(error.message)) {
+      fail("A reset link can only be sent once a minute. If that email has an account, use the link from a moment ago (check spam too), or wait a minute and ask again.");
+    }
+    const limited = error.status === 429 || (error as any).code === "over_email_send_rate_limit" || /rate limit/i.test(error.message);
+    fail(
+      limited
+        ? "Too many reset requests in a short time, so this one wasn't sent. Please wait a few minutes and try again."
+        : "We couldn't send a reset link just now. Please try again in a few minutes, or write to hello@psyalliance.org if it keeps happening."
+    );
+  }
+
   redirect(
     "/auth/forgot-password?message=" +
       encodeURIComponent("If that email has an account, a reset link is on its way. Check your inbox.")

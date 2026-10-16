@@ -201,7 +201,7 @@ export function HomeView({ d }: { d: HomeData }) {
     <div className="home-simple">
       <header className="member-home-hero">
         <div className="eyebrow">{d.today || "Your practice"}</div>
-        <h1>{d.greeting || "Welcome back"}, {d.firstName}.</h1>
+        <h1>{d.greeting || "Welcome back"}{d.firstName ? `, ${d.firstName}` : ""}.</h1>
         <p>{summary}</p>
       </header>
       <Banner ok={d.notice} error={d.error} />

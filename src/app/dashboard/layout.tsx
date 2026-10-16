@@ -173,6 +173,7 @@ export default async function DashboardLayout({
     unreadMessages: unreadConversationCount + (unreadNotificationCount || 0),
     pendingCoverRequests: pendingCoverageRequestCount || 0,
     pendingReferrals: (pendingProviderReferralCount || 0) + pendingPeerOfferCount,
+    hideDemos: (await cookies()).get("pa_hide_demos")?.value === "1",
   });
 
   return (

@@ -9,8 +9,12 @@ import { redirect } from "next/navigation";
 // anything useful. Every validation/DB-error path in this file routes through
 // this instead, so a bad input or a failed insert sends the user back to this
 // same page with an inline banner rather than taking the page down.
-function settingsError(message: string): never {
-  redirect(`/dashboard/settings?error=${encodeURIComponent(message)}`);
+// Database wording ("violates check constraint ...") never reaches the
+// page: members get what happened and what to do (release review N16-01).
+function settingsError(message: string, section?: string): never {
+  const raw = /violates|constraint|relation |column |permission denied|duplicate key|null value|syntax|PGRST|JWT/i.test(message);
+  const text = raw ? "That didn't save, so nothing was changed. Please try again, or write to hello@psyalliance.org if it keeps happening." : message;
+  redirect(`/dashboard/settings?error=${encodeURIComponent(text)}${section ? `#${section}` : ""}`);
 }
 
 export async function saveNotificationPreferences(formData: FormData) {
@@ -43,7 +47,7 @@ export async function saveNotificationPreferences(formData: FormData) {
   };
 
   const { error } = await supabase.from("notification_preferences").upsert(row);
-  if (error) settingsError(error.message);
+  if (error) settingsError(error.message, "notifications");
 
   revalidatePath("/dashboard/settings");
   redirect("/dashboard/settings?saved=1");

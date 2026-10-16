@@ -16,7 +16,7 @@ export async function replyInThreadAction(formData: FormData) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) redirect("/auth/login");
+  if (!user) redirect("/auth/sign-in");
 
   const returnTo = inDashboard(String(formData.get("return_to") || ""));
   const anchor = String(formData.get("anchor") || "").replace(/[^a-z0-9-]/gi, "");

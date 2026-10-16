@@ -1,0 +1,27 @@
+{
+  "name": "psyalliance-acceptance",
+  "private": true,
+  "description": "Independent acceptance suite for PsyAlliance: Playwright browser journeys, database-level checks and a disposable local staging stack.",
+  "type": "module",
+  "scripts": {
+    "stage:setup": "bash staging/stage.sh setup",
+    "stage:rebuild": "bash staging/stage.sh rebuild",
+    "stage:start": "bash staging/stage.sh start",
+    "stage:stop": "bash staging/stage.sh stop",
+    "test:staging": "playwright test --project=staging",
+    "test:public:live": "E2E_BASE_URL=https://psyalliance.org playwright test --project=public",
+    "test:public:sandbox": "E2E_BASE_URL=https://sandbox.psyalliance.org playwright test --project=public",
+    "login:live": "node tools/save-login.mjs",
+    "test:live": "playwright test --project=live",
+    "report": "playwright show-report reports/html"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "4.10.2",
+    "@playwright/test": "1.56.0",
+    "pg": "8.13.1"
+  },
+  "dependencies": {
+    "@supabase/ssr": "^0.5.2",
+    "@supabase/supabase-js": "^2.116.0"
+  }
+}

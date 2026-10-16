@@ -30,13 +30,15 @@ export default async function CoverPage(props: { searchParams: Promise<{ ok?: st
       .order("created_at", { ascending: false }),
     supabase
       .from("coverage_requests")
-      .select("id, status, message, sent_at, coverage_plan_cases(*, coverage_plans(id, title, starts_on, ends_on, absence_type, jurisdiction_state, outreach_mode, notes, profile_id, owner:profile_id(full_name, credential_prefix, qualification_level, primary_practice_city, primary_state, avatar_path)))")
+      .select("id, status, message, sent_at, responded_at, coverage_plan_cases(*, coverage_plans(id, title, starts_on, ends_on, absence_type, jurisdiction_state, outreach_mode, notes, profile_id, owner:profile_id(full_name, credential_prefix, qualification_level, primary_practice_city, primary_state, avatar_path)))")
       .eq("requested_profile_id", myself)
-      .in("status", ["sent", "discussing"])
+      // Open requests, plus ones answered in the last 12 hours, which stay on
+      // screen folded up so the member sees what they did (Nick, 13 Oct).
+      .or(`status.in.(sent,discussing),responded_at.gte.${new Date(Date.now() - 12 * 3600_000).toISOString().slice(0, 19)}`)
       .order("sent_at", { ascending: false }),
     supabase
       .from("coverage_requests")
-      .select("id, responded_at, coverage_plan_cases(case_reference, specialism_lookup_ids, coverage_plans(id, starts_on, ends_on, status, profile_id, owner:profile_id(full_name, credential_prefix, qualification_level)))")
+      .select("id, responded_at, coverage_plan_cases(case_reference, specialism_lookup_ids, coverage_plans(id, starts_on, ends_on, status, profile_id, owner:profile_id(full_name, credential_prefix, qualification_level, avatar_path)))")
       .eq("requested_profile_id", myself)
       .eq("status", "accepted")
       .order("responded_at", { ascending: false })
@@ -51,7 +53,10 @@ export default async function CoverPage(props: { searchParams: Promise<{ ok?: st
     return days >= 14 ? `${Math.round(days / 7)} weeks` : `${days} day${days === 1 ? "" : "s"}`;
   };
   const rows = (incomingRows || []).filter((r: any) => r.coverage_plan_cases?.coverage_plans);
-  const urls = await resolveAvatarUrls(supabase, rows.map((r: any) => r.coverage_plan_cases.coverage_plans.owner?.avatar_path));
+  const urls = await resolveAvatarUrls(supabase, [
+    ...rows.map((r: any) => r.coverage_plan_cases.coverage_plans.owner?.avatar_path),
+    ...((acceptedRows || []) as any[]).map((r) => r.coverage_plan_cases?.coverage_plans?.owner?.avatar_path),
+  ]);
 
   // One card per colleague's plan: how many patients they are asking you
   // to cover, where, when, and every detail they gave for each case.
@@ -136,6 +141,7 @@ export default async function CoverPage(props: { searchParams: Promise<{ ok?: st
         planId: p.id,
         ownerId: p.profile_id,
         ownerName: clinicianName(o.full_name, o.qualification_level, o.credential_prefix),
+        ownerAvatar: urls.get(o.avatar_path || "") || null,
         dates: p.starts_on ? `${fmt(p.starts_on)} to ${fmt(p.ends_on)}` : "Dates to confirm",
         clients: [],
       });

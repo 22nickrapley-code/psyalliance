@@ -107,30 +107,53 @@ export function ReferNeedView({ options, need, error, to }: { options: NeedOptio
       />
       <Progress steps={to ? DIRECT_STEPS : STEPS} current={0} />
       <Banner error={error} />
+      {to ? (
+        // The same green card as on Refer, so a referral from a profile looks
+        // and works like every other referral (Nick, 13 Oct).
+        <>
+          <form className="quick-search" method="get" action="/dashboard/refer/new" id="start-referral">
+            <input type="hidden" name="step" value="review" />
+            <input type="hidden" name="to" value={to.id} />
+            <h3>What does the client need?</h3>
+            <NeedFields options={options} values={need} compact refineInline />
+            <div className="row wrap" style={{ marginTop: 14, gap: 12 }}>
+              <button type="submit" className="btn">Check the fit &rarr;</button>
+            </div>
+            <p className="small" style={{ color: "#cfe0d4", margin: "10px 0 0" }}>
+              No client details. You&rsquo;ll see how {to.first} fits before anything is sent, and it goes to {to.first} only.
+            </p>
+          </form>
+          <div className="split equal" style={{ marginTop: 20 }}>
+            <ColleagueCard c={to}>
+              <p className="small" style={{ marginTop: 12 }}>
+                Want to see everyone who fits instead? <a href="/dashboard/refer/new">Start an open referral</a>.
+              </p>
+            </ColleagueCard>
+            <section className="card tint">
+              <div className="eyebrow">How it works</div>
+              <h3>You stay in control.</h3>
+              <p className="small">{to.first} sees the need only after you review it. No client names, dates or other details that identify someone.</p>
+              <div className="tone-panel" style={{ marginTop: 12 }}>{HANDOFF_RULE}</div>
+            </section>
+          </div>
+        </>
+      ) : (
       <div className="split">
         <form className="card" method="get" action="/dashboard/refer/new">
-          <input type="hidden" name="step" value={to ? "review" : "shortlist"} />
-          {to && <input type="hidden" name="to" value={to.id} />}
+          <input type="hidden" name="step" value="shortlist" />
           <div className="eyebrow">Step 1 &middot; Define the need</div>
-          <h2>{to ? "What does the client need?" : "Who could be a good fit?"}</h2>
+          <h2>Who could be a good fit?</h2>
           <p>Start with the main need and where the client is. Everything else is optional.</p>
           <NeedFields options={options} values={need} />
           <div className="tone-panel" style={{ marginTop: 18 }}>
             {HANDOFF_RULE}
           </div>
           <div className="step-actions">
-            <a className="btn ghost" href={to ? `/dashboard/people/${to.id}` : "/dashboard/refer"}>Cancel</a>
-            <button type="submit" className="btn">{to ? `Check the fit` : "See shortlist"} &rarr;</button>
+            <a className="btn ghost" href="/dashboard/refer">Cancel</a>
+            <button type="submit" className="btn">See shortlist &rarr;</button>
           </div>
         </form>
         <aside className="stack">
-          {to && (
-            <ColleagueCard c={to}>
-              <p className="small" style={{ marginTop: 12 }}>
-                Want to see everyone who fits instead? <a href="/dashboard/refer/new">Start an open referral</a>.
-              </p>
-            </ColleagueCard>
-          )}
           <section className="card tint">
             <div className="eyebrow">How it works</div>
             <h3>You stay in control.</h3>
@@ -139,6 +162,7 @@ export function ReferNeedView({ options, need, error, to }: { options: NeedOptio
           <ResourceAside />
         </aside>
       </div>
+      )}
     </>
   );
 }
@@ -151,6 +175,7 @@ export function ReferShortlistView({
   widen,
   avatarUrls,
   pinned,
+  chosen = null,
 }: {
   options: NeedOptions;
   need: Need;
@@ -159,6 +184,9 @@ export function ReferShortlistView({
   avatarUrls: Record<string, string | null>;
   // The colleague the member started from, first and ticked.
   pinned?: { id: string; canAsk: boolean; gaps: string[] } | null;
+  // Back from Review: exactly who the member had ticked, even if that's
+  // nobody (release review N02). Null on a first visit: the defaults apply.
+  chosen?: string[] | null;
 }) {
   const d = describeNeed(need, options);
   const widenHref = (key: string) => {
@@ -197,7 +225,7 @@ export function ReferShortlistView({
               />
             ) : (
               <>
-                <p className="small">{pinned ? "Your colleague is first. Tick anyone else who should receive it." : "Tick who should receive this referral. The top three are selected for you."}</p>
+                <p className="small">{chosen ? "Your choices are kept. Change who should receive this referral." : pinned ? "Your colleague is first. Tick anyone else who should receive it." : "Tick who should receive this referral. The top three are selected for you."}</p>
                 {matches.map((m, i) => {
                   const isPinned = pinned?.id === m.profileId;
                   return (
@@ -208,7 +236,7 @@ export function ReferShortlistView({
                       avatarUrl={avatarUrls[m.profileId]}
                       flag={isPinned ? "Your choice" : undefined}
                       note={isPinned ? pinned!.gaps : undefined}
-                      select={{ name: "pick", checked: pinned ? isPinned && pinned.canAsk : i < 3, disabled: isPinned && !pinned!.canAsk }}
+                      select={{ name: "pick", checked: chosen ? chosen.includes(m.profileId) : pinned ? isPinned && pinned.canAsk : i < 3, disabled: isPinned && !pinned!.canAsk }}
                     />
                   );
                 })}
@@ -269,7 +297,7 @@ export function ReferReviewView({
       <PageHead eyebrow="Refer / new referral" title="Review before you reach out." lead="Choose exactly who receives this. Nothing is sent until you confirm." />
       <Progress steps={STEPS} current={2} />
       <Banner error={error} />
-      <form className="split" action={sendReferralAction} data-deidentify="">
+      <form className="split" action={sendReferralAction} data-deidentify="" data-draft={`refer:${needToQuery(need)}`}>
         {need.focusIds.map((f) => <input key={f} type="hidden" name="focus" value={f} />)}
         {need.state && <input type="hidden" name="state" value={need.state} />}
         {need.city && <input type="hidden" name="city" value={need.city} />}
@@ -327,7 +355,7 @@ export function ReferReviewView({
             This referral contains no client-identifying information.
           </label>
           <div className="step-actions">
-            <a className="btn ghost" href={`/dashboard/refer/new?${needToQuery(need, { step: "shortlist" })}`}>&larr; Back to shortlist</a>
+            <a className="btn ghost" href={`/dashboard/refer/new?${needToQuery(need, { step: "shortlist", kept: "1" })}${picked.map((p) => `&pick=${encodeURIComponent(p.profileId)}`).join("")}`}>&larr; Back to shortlist</a>
             <button type="submit" className="btn">Send referral</button>
           </div>
         </section>
@@ -648,6 +676,14 @@ export function ReferTrackView({ r, ok, error }: { r: ReferralDetail; ok?: strin
   const open = r.status === "sent" || r.status === "open";
   const threadTitle = referralThreadTitle(r.focus, r.where);
   const firstOf = (name: string) => name.replace(/^(dr\.?)\s+/i, "").split(/[\s,]+/)[0];
+  const needCard = (
+    <section className="card tint">
+      <div className="eyebrow">The need</div>
+      <h3>{r.focus}</h3>
+      <SummaryList rows={r.rows} />
+      {r.notes && <p className="small" style={{ marginTop: 10 }}>&ldquo;{r.notes}&rdquo;</p>}
+    </section>
+  );
   return (
     <>
       <PageHead
@@ -660,6 +696,8 @@ export function ReferTrackView({ r, ok, error }: { r: ReferralDetail; ok?: strin
       <Banner ok={ok} error={error} />
       <div className="split">
         <div className="stack">
+          {/* A colleague who received it reads the need first, then replies (Nick, 13 Oct). */}
+          {!r.isMine && needCard}
           {r.isMine ? (
             <section className="card">
               <div className="card-title">
@@ -826,12 +864,7 @@ export function ReferTrackView({ r, ok, error }: { r: ReferralDetail; ok?: strin
           )}
         </div>
         <aside className="stack">
-          <section className="card tint">
-            <div className="eyebrow">The need</div>
-            <h3>{r.focus}</h3>
-            <SummaryList rows={r.rows} />
-            {r.notes && <p className="small" style={{ marginTop: 10 }}>&ldquo;{r.notes}&rdquo;</p>}
-          </section>
+          {r.isMine && needCard}
           {r.isMine && open && (
             <section className="card">
               <h3>Close without placing</h3>

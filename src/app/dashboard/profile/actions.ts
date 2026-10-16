@@ -592,29 +592,40 @@ export async function deleteAccountAction(formData: FormData) {
 
 // Every file this member stored: their documents (by record, and anything
 // left in their own folder) and their profile photos. Returns true if any
-// removal failed.
+// file could not be found or removed. A listing that fails is a failure,
+// not an empty folder (release review R04), and the folders are checked
+// again afterwards; the database also refuses to delete the account while
+// any of these files remain.
 async function removeMyStoredFiles(supabase: Awaited<ReturnType<typeof createClient>>, userId: string, avatarPath: string | null): Promise<boolean> {
   const docPaths = new Set<string>();
   const { data: docs, error: docsErr } = await supabase.from("documents").select("storage_path").eq("uploaded_by", userId);
   if (docsErr) return true;
-  for (const d of docs || []) if (d.storage_path) docPaths.add(String(d.storage_path));
-  const listAll = async (bucket: string, prefix: string) => {
+  for (const d of docs || []) if (d.storage_path && String(d.storage_path).startsWith(`personal/${userId}/`)) docPaths.add(String(d.storage_path));
+  // Every file under a folder, including any sub-folders. null = couldn't list.
+  const listAll = async (bucket: string, prefix: string, depth = 0): Promise<string[] | null> => {
     const out: string[] = [];
-    for (let offset = 0; offset < 5000; offset += 100) {
+    for (let offset = 0; ; offset += 100) {
       const { data, error } = await supabase.storage.from(bucket).list(prefix, { limit: 100, offset });
       if (error) return null;
-      for (const f of data || []) if (f.id) out.push(`${prefix}/${f.name}`);
+      for (const f of data || []) {
+        if (f.id) out.push(`${prefix}/${f.name}`);
+        else if (depth < 4) {
+          const inner = await listAll(bucket, `${prefix}/${f.name}`, depth + 1);
+          if (!inner) return null;
+          out.push(...inner);
+        }
+      }
       if (!data || data.length < 100) break;
+      if (offset > 100_000) return null;
     }
     return out;
   };
-  // Listing the member's own folders also catches files with no record; if
-  // listing isn't possible, the files on record are still removed.
-  const inFolder = (await listAll("documents", `personal/${userId}`)) || [];
-  const photos = (await listAll("avatars", userId)) || [];
+  const inFolder = await listAll("documents", `personal/${userId}`);
+  const photos = await listAll("avatars", userId);
+  if (!inFolder || !photos) return true;
   inFolder.forEach((p) => docPaths.add(p));
   const photoPaths = new Set(photos);
-  if (avatarPath) photoPaths.add(avatarPath);
+  if (avatarPath && avatarPath.startsWith(`${userId}/`)) photoPaths.add(avatarPath);
   const removeAll = async (bucket: string, paths: string[]) => {
     for (let i = 0; i < paths.length; i += 100) {
       const { error } = await supabase.storage.from(bucket).remove(paths.slice(i, i + 100));
@@ -624,5 +635,8 @@ async function removeMyStoredFiles(supabase: Awaited<ReturnType<typeof createCli
   };
   const docsOk = await removeAll("documents", [...docPaths]);
   const photosOk = await removeAll("avatars", [...photoPaths]);
-  return !(docsOk && photosOk);
+  if (!(docsOk && photosOk)) return true;
+  const leftDocs = await listAll("documents", `personal/${userId}`);
+  const leftPhotos = await listAll("avatars", userId);
+  return !leftDocs || !leftPhotos || leftDocs.length > 0 || leftPhotos.length > 0;
 }

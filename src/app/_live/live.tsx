@@ -59,6 +59,73 @@ function findAnchor(anchor: string): Element | null {
   return null;
 }
 
+// A page change that arrives but never shows (release testing, NAV-01).
+// Now and then the framework receives the next page in full, for a link or
+// after a save that moves on (a sent message opening its conversation), yet
+// the screen stays where it was and later clicks may do nothing. The member
+// can't tell their save worked and tends to press again. So we watch every
+// page change the app asks the server for: once the answer has fully
+// arrived, if the address still hasn't moved after a short wait, we open
+// the page the normal way. When things work, which is nearly always, this
+// does nothing.
+const NAV_GRACE_MS = 2500;
+let navSeq = 0;
+function installNavigationWatchdog() {
+  const w = window as unknown as { __paNavWatch?: boolean; fetch: typeof fetch };
+  if (w.__paNavWatch) return;
+  w.__paNavWatch = true;
+  const original = window.fetch.bind(window);
+  // The same address however its query is written.
+  const norm = (u: URL) => {
+    const p = new URLSearchParams(u.search);
+    p.delete("_rsc");
+    p.sort();
+    return `${u.pathname}?${p.toString()}`;
+  };
+  const here = () => norm(new URL(window.location.href));
+  window.addEventListener("popstate", () => {
+    navSeq += 1; // the member went back or forward: their choice wins
+  });
+  window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+    const res = await original(input, init);
+    try {
+      const headers = new Headers(init?.headers || (input instanceof Request ? input.headers : undefined));
+      const method = (init?.method || (input instanceof Request ? input.method : "GET")).toUpperCase();
+      const isAction = headers.has("next-action");
+      const isNav = !isAction && method === "GET" && headers.get("rsc") === "1" && !headers.has("next-router-prefetch") && !headers.has("next-router-segment-prefetch");
+      if (!isAction && !isNav) return res;
+      let target: URL | null = null;
+      if (isAction) {
+        const redirect = res.headers.get("x-action-redirect");
+        if (redirect) target = new URL(redirect.split(";")[0], window.location.href);
+      } else {
+        target = new URL(res.url || (input instanceof Request ? input.url : String(input)), window.location.href);
+      }
+      if (!target || target.origin !== window.location.origin || NOT_PAGES.some((r) => r.test(target!.pathname))) return res;
+      const from = here();
+      if (norm(target) === from) return res; // a refresh of this page
+      const go = new URL(target.toString());
+      go.searchParams.delete("_rsc");
+      const mine = ++navSeq;
+      // Wait for the whole answer (read from a copy), then give the page a
+      // moment to show it.
+      res
+        .clone()
+        .arrayBuffer()
+        .catch(() => null)
+        .then(() =>
+          window.setTimeout(() => {
+            if (mine !== navSeq || here() !== from || document.visibilityState === "hidden") return;
+            window.location.assign(go.toString());
+          }, NAV_GRACE_MS)
+        );
+    } catch {
+      /* never let the watch get in the way of the request */
+    }
+    return res;
+  };
+}
+
 function clearPending() {
   document.querySelectorAll(".is-pending").forEach((b) => {
     b.classList.remove("is-pending");
@@ -152,10 +219,11 @@ export function Live() {
   // page settle, then open the calendar.
   useEffect(() => {
     if (!window.matchMedia("(pointer: coarse)").matches) return;
-    const isPicker = (el: Element | null): el is HTMLInputElement => el instanceof HTMLInputElement && /^(date|time|datetime-local|month|week)$/.test(el.type);
+    const PICKER = /^(date|time|datetime-local|month|week)$/;
+    const isPicker = (el: Element | null): el is HTMLInputElement => el instanceof HTMLInputElement && PICKER.test(el.type);
     const typing = (el: Element | null) =>
       el instanceof HTMLTextAreaElement ||
-      (el instanceof HTMLInputElement && !isPicker(el) && !/^(checkbox|radio|button|submit|reset|hidden|file|range|color|image)$/.test(el.type)) ||
+      (el instanceof HTMLInputElement && !PICKER.test(el.type) && !/^(checkbox|radio|button|submit|reset|hidden|file|range|color|image)$/.test(el.type)) ||
       !!(el as HTMLElement | null)?.isContentEditable;
     let start: { x: number; y: number } | null = null;
     const onStart = (e: TouchEvent) => {
@@ -187,6 +255,87 @@ export function Live() {
       document.removeEventListener("touchend", onEnd, true);
     };
   }, []);
+
+  // 0c. One press, one save. A second press of the same form before the
+  // page has answered is ignored, so a double click can't send twice (for
+  // example two password-reset emails, the second refused). Search and
+  // filter forms (GET) are left alone.
+  useEffect(() => {
+    const busy = new WeakMap<HTMLFormElement, number>();
+    const onSubmit = (e: SubmitEvent) => {
+      const form = e.target as HTMLFormElement;
+      if (!(form instanceof HTMLFormElement) || e.defaultPrevented) return;
+      if ((form.getAttribute("method") || "").toLowerCase() === "get" || form.dataset.repeat !== undefined) return;
+      const since = busy.get(form);
+      if (since && Date.now() - since < 10000) {
+        e.preventDefault();
+        e.stopPropagation();
+        return;
+      }
+      busy.set(form, Date.now());
+      const release = () => busy.delete(form);
+      const watcher = new MutationObserver(() => {
+        release();
+        watcher.disconnect();
+      });
+      window.setTimeout(() => watcher.observe(document.body, { childList: true, subtree: true }), 200);
+      window.setTimeout(() => {
+        release();
+        watcher.disconnect();
+      }, 10000);
+    };
+    window.addEventListener("submit", onSubmit, true);
+    return () => window.removeEventListener("submit", onSubmit, true);
+  }, []);
+
+  // 0c2. Page changes that arrive but never show are completed (NAV-01).
+  useEffect(() => {
+    installNavigationWatchdog();
+  }, []);
+
+  // 0d. Drafts: a form marked data-draft keeps what was typed and chosen if
+  // the member goes back a step and returns, or the save comes back with an
+  // error (release review N02). Kept in this tab only; cleared once sent.
+  useEffect(() => {
+    const forms = Array.from(document.querySelectorAll<HTMLFormElement>("form[data-draft]"));
+    if (!forms.length) return;
+    const hasError = new URLSearchParams(window.location.search).has("error");
+    const cleanups: (() => void)[] = [];
+    for (const form of forms) {
+      const key = `pa-draft:${form.dataset.draft}`;
+      const fields = () =>
+        Array.from(form.querySelectorAll<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>("textarea[name], select[name], input[name]")).filter(
+          (f) => !(f instanceof HTMLInputElement) || /^(text|email|number|date|search|url|tel)$/.test(f.type)
+        );
+      try {
+        const saved = JSON.parse(window.sessionStorage.getItem(key) || "null") as { values: Record<string, string>; sent?: boolean } | null;
+        if (saved?.sent && !hasError) window.sessionStorage.removeItem(key);
+        else if (saved?.values) for (const f of fields()) if (f.name in saved.values) f.value = saved.values[f.name];
+      } catch {
+        /* storage unavailable: nothing to restore */
+      }
+      const save = (sent = false) => {
+        try {
+          const values: Record<string, string> = {};
+          for (const f of fields()) values[f.name] = f.value;
+          window.sessionStorage.setItem(key, JSON.stringify({ values, sent }));
+        } catch {
+          /* storage unavailable */
+        }
+      };
+      const onInput = () => save(false);
+      const onSubmit = () => save(true);
+      form.addEventListener("input", onInput);
+      form.addEventListener("change", onInput);
+      form.addEventListener("submit", onSubmit);
+      cleanups.push(() => {
+        form.removeEventListener("input", onInput);
+        form.removeEventListener("change", onInput);
+        form.removeEventListener("submit", onSubmit);
+      });
+    }
+    return () => cleanups.forEach((c) => c());
+  }, [pathname, search]);
 
   // 1. Internal links without a full reload.
   useEffect(() => {

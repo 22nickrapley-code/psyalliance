@@ -136,11 +136,27 @@ export async function respondToCoverageRequest(
   const respondedAt = new Date();
   const responseTimeSeconds = Math.round((respondedAt.getTime() - new Date(request.sent_at).getTime()) / 1000);
 
-  const { error } = await supabase
-    .from("coverage_requests")
-    .update({ status: response, responded_at: respondedAt.toISOString() })
-    .eq("id", coverageRequestId);
-  if (error) return { error: error.message };
+  // One answer per client: the database locks the client first, so two
+  // colleagues accepting at once can't both win, and a request that has
+  // closed (someone else took the client, the plan ended) says so
+  // (release review N16-02).
+  const { data: answered, error: rpcError } = await supabase.rpc("respond_to_cover_request", { p_request: coverageRequestId, p_response: response });
+  if (rpcError && !/could not find the function|PGRST202/i.test(`${rpcError.code} ${rpcError.message}`)) {
+    return { error: rpcError.code === "P0001" ? rpcError.message : "Your answer didn't save. Nothing was changed; please try again." };
+  }
+  if (rpcError) {
+    // Before migration 0114: a direct update (the table guard still applies).
+    const { data: rows, error } = await supabase
+      .from("coverage_requests")
+      .update({ status: response, responded_at: respondedAt.toISOString() })
+      .eq("id", coverageRequestId)
+      .select("id");
+    if (error) return { error: error.code === "P0001" ? error.message : error.message };
+    if (!rows?.length) return { error: "This request is closed." };
+  } else if ((answered as any)?.unchanged) {
+    // Pressed twice: already answered this way, nothing more to do.
+    return { error: null };
+  }
 
   // The case's own status (covered / still needs cover) follows its
   // requests in the database (sync_cover_case_status trigger, 0077): the

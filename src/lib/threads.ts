@@ -1,5 +1,5 @@
 import type { createClient } from "@/lib/supabase/server";
-import { raiseNotification } from "@/lib/notifications-v2";
+import { raiseNotification, markConversationNotificationsRead } from "@/lib/notifications-v2";
 import { clinicianName } from "@/lib/profession";
 
 type Supabase = Awaited<ReturnType<typeof createClient>>;
@@ -108,6 +108,7 @@ export async function loadThread(
     }));
   if (messages.some((m) => !m.mine)) {
     await supabase.from("conversation_participants").update({ last_read_at: new Date().toISOString() }).eq("conversation_id", conversationId).eq("profile_id", me);
+    await markConversationNotificationsRead(supabase, me, conversationId);
   }
   return { conversationId, messages };
 }

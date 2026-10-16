@@ -1,3 +1,4 @@
+import { markConversationNotificationsRead } from "@/lib/notifications-v2";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { loadConversations } from "../data";
@@ -22,6 +23,7 @@ export default async function ConversationPage(props: { params: Promise<{ conver
 
   // Mark read before loading the list so this thread isn't shown as unread.
   await supabase.from("conversation_participants").update({ last_read_at: new Date().toISOString() }).eq("conversation_id", id).eq("profile_id", myself);
+  await markConversationNotificationsRead(supabase, myself, id);
   const [items, newNotifications] = await Promise.all([loadConversations(supabase, myself), countNewNotifications(supabase, myself)]);
 
   return (

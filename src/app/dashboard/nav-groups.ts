@@ -30,6 +30,8 @@ export function buildNavGroups(opts: {
   unreadMessages: number;
   pendingCoverRequests: number;
   pendingReferrals: number;
+  // "I know my way around" on the Demos page.
+  hideDemos?: boolean;
 }): NavGroup[] {
   const adminItems: NavItem[] = [
     { href: "/dashboard/admin", label: "Overview", glyph: "overview" },
@@ -70,7 +72,7 @@ export function buildNavGroups(opts: {
         { href: "/dashboard/messages", label: "Messages", glyph: "messages", badge: opts.unreadMessages },
         { href: "/dashboard/network", label: "Network", glyph: "network", matches: ["/dashboard/invite"] },
         { href: "/dashboard/documents", label: "Practice Library", glyph: "library" },
-        { href: "/dashboard/demos", label: "Demos", glyph: "play" },
+        ...(opts.hideDemos ? [] : [{ href: "/dashboard/demos", label: "Demos", glyph: "play" } as NavItem]),
         { href: "/dashboard/settings", label: "Settings", glyph: "settings" },
       ],
     },

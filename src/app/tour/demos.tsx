@@ -53,9 +53,9 @@ export type Demo = {
 };
 
 export const PEOPLE: Record<Perspective, { name: string; initials: string; role: string; avatar: string | null; colleague: boolean }> = {
-  alex: { name: "Alex Thornvale, PsyD", initials: "AT", role: "Clinical psychologist in Brooklyn", avatar: AV.alex, colleague: false },
-  maya: { name: "Maya Calderwick, PsyD", initials: "MC", role: "One of Alex's trusted colleagues", avatar: AV.maya, colleague: true },
-  samuel: { name: "Samuel Brindlemoor, PhD", initials: "SB", role: "A colleague Alex has worked with before", avatar: AV.samuel, colleague: true },
+  alex: { name: "You", initials: "You", role: "A psychologist in private practice in Brooklyn", avatar: AV.alex, colleague: false },
+  maya: { name: "Maya Calderwick, PsyD", initials: "MC", role: "One of your trusted colleagues", avatar: AV.maya, colleague: true },
+  samuel: { name: "Samuel Brindlemoor, PhD", initials: "SB", role: "A colleague you've worked with before", avatar: AV.samuel, colleague: true },
 };
 
 const leave = leaveDates();
@@ -139,8 +139,8 @@ const referralRows: [string, string][] = [
 ];
 
 // ---- Home and circle fixtures ----
-// The invite box as Alex sees it (her own link; display only in the demo).
-const DEMO_INVITE = { link: `${REAL_SITE_URL}/i/7d3e91c0a2b4`, mode: "member" as const, firstName: "Alex", fullName: "Alex Thornvale, PsyD" };
+// The invite box as you see it (your own link; display only in the demo).
+const DEMO_INVITE = { link: `${REAL_SITE_URL}/i/7d3e91c0a2b4`, mode: "member" as const, firstName: "", fullName: "Your Name, PsyD" };
 const ALEX_CIRCLE = {
   me: { initials: "AT", avatarUrl: AV.alex as string | null },
   nodes: [
@@ -247,7 +247,7 @@ const LIB_LEAVE: LibraryResource[] = [
 ];
 
 
-// ---- Profile fixtures: Alex setting up, and Alex's profile today ----
+// ---- Profile fixtures: you setting up, and your profile today ----
 const PROFILE_LOOKUPS = [
   ...["Anxiety/Panic Disorders", "Trauma/PTSD", "Obsessive/Compulsive Disorder", "Depression", "Grief/Loss", "Life Transitions", "Eating Disorders", "Bipolar Disorder", "Couples"].map((value, i) => ({ id: 700 + i, category: "treatment_specialism", value })),
   ...["Cognitive Behavioral Therapy (CBT)", "EMDR", "Exposure and Response Prevention (ERP)", "Acceptance and Commitment Therapy (ACT)", "Psychodynamic"].map((value, i) => ({ id: 720 + i, category: "treatment_modality", value })),
@@ -261,12 +261,12 @@ const PROFILE_LOOKUPS = [
 const SETUP_TICKS = [700, 701, 702, 703, 704, 705, 720, 721, 722, 741, 743, 760, 761, 780, 781, 783, 801];
 const SETUP_RANKS: Record<number, number> = { 700: 1, 701: 2, 702: 3 };
 const SETUP_ROWS = SETUP_TICKS.map((id) => ({ lookup_value_id: id, rank: SETUP_RANKS[id] ?? null }));
-const ALEX_SIGNUP = { full_name: "Alex Thornvale", qualification_level: "PsyD", primary_state: "NY", avatar_path: null };
+const ALEX_SIGNUP = { full_name: "Your Name", qualification_level: "PsyD", primary_state: "NY", avatar_path: null };
 const ALEX_BIO =
   "I work with adults and adolescents living with anxiety, trauma and OCD, using CBT, exposure and response prevention and EMDR. In person in Park Slope and by telehealth across New York and New Jersey.";
 const ALEX_FILLED = { ...ALEX_SIGNUP, credential_prefix: "Dr", primary_practice_city: "Brooklyn", bio: ALEX_BIO };
-// A profile page as Alex copies it (all invented; the numbers are fictional).
-const PASTED_PROFILE = `Alex Thornvale
+// A profile page as you copy it (all invented; the numbers are fictional).
+const PASTED_PROFILE = `Your Name
 Psychologist, PsyD
 Brooklyn, NY 11215
 (718) 555-0136
@@ -290,7 +290,7 @@ const DETAIL: Demo[] = [
   {
     key: "cover",
     title: "Cover your time away",
-    blurb: "Alex has six weeks of parental leave. Three clients need cover. See them matched, asked and covered.",
+    blurb: "You have six weeks of parental leave. Three clients need cover. See them matched, asked and covered.",
     minutes: "2 minutes",
     outcome: "Six weeks away, every client covered.",
     learned: [
@@ -303,10 +303,10 @@ const DETAIL: Demo[] = [
       {
         slug: "plan",
         perspective: "alex",
-        title: "Alex needs six weeks away",
-        what: `Parental leave from ${leave.startLong}. A cover plan starts with three facts: the kind of absence, the dates and the state Alex's clients are in.`,
+        title: "You need six weeks away",
+        what: `Parental leave from ${leave.startLong}. A cover plan starts with three facts: the kind of absence, the dates and the state your clients are in.`,
         focus: "Define the needs",
-        focusNote: "Next, Alex describes each client by need.",
+        focusNote: "Next, you describe each client by need.",
         actions: [
           { do: "pick", target: 'input[name="absence_type"][value="extended_leave"]' },
           { do: "type", target: 'input[name="title"]', text: PLAN_TITLE },
@@ -328,7 +328,7 @@ const DETAIL: Demo[] = [
         title: "Matched colleagues, with the reasons",
         what: "For each client, colleagues with a reviewed New York license, the right focus and recently confirmed availability, trusted colleagues first. Each match says why it fits.",
         focus: "Review invitations",
-        focusNote: "Alex has ticked who to ask for each client. Next, a final check.",
+        focusNote: "You've ticked who to ask for each client. Next, a final check.",
         actions: [
           { do: "pick", target: 'input[name="pick_1"][value="maya"]' },
           { do: "pick", target: 'input[name="pick_2"][value="maya"]' },
@@ -339,7 +339,7 @@ const DETAIL: Demo[] = [
         slug: "invite",
         perspective: "alex",
         title: "Who is asked, in order, and why",
-        what: "Before anything is sent, Alex sees exactly who is asked for each client, in what order, and why each colleague fits. If the first declines, the next is asked automatically.",
+        what: "Before anything is sent, you see exactly who is asked for each client, in what order, and why each colleague fits. If the first declines, the next is asked automatically.",
         focus: "Send cover requests",
         focusNote: "Send. Next, see what Maya receives.",
         actions: [{ do: "pick", target: 'input[name="reviewed"]' }],
@@ -357,10 +357,10 @@ const DETAIL: Demo[] = [
       {
         slug: "maya",
         perspective: "maya",
-        title: "Maya receives Alex's request",
-        what: "This is Maya's account, not Alex's. She sees how many clients, where and when, and what each one needs, with no client details, and answers client by client.",
+        title: "Maya receives your request",
+        what: "This is Maya's account, not yours. She sees how many clients, where and when, and what each one needs, with no client details, and answers client by client.",
         focus: "Accept Client 1",
-        focusNote: "Maya accepts both of hers. Back to Alex next.",
+        focusNote: "Maya accepts both of hers. Back to you next.",
         render: () => (
           <CoverIndexView
             plans={[]}
@@ -368,7 +368,7 @@ const DETAIL: Demo[] = [
               {
                 planId: 1,
                 ownerId: "alex",
-                ownerName: "Alex Thornvale, PsyD",
+                ownerName: "Your Name, PsyD",
                 ownerRole: "Clinical psychologist · Brooklyn, NY",
                 ownerAvatar: AV.alex,
                 absence: "Extended leave",
@@ -392,10 +392,10 @@ const DETAIL: Demo[] = [
       {
         slug: "covered",
         perspective: "alex",
-        title: "Back with Alex: every client covered",
+        title: "Back with you: every client covered",
         what: "Maya accepted her two clients and Eli Kestrelby, a psychiatrist, accepted the one who needs prescribing. The handoffs now happen between the clinicians, outside PsyAlliance.",
         focus: "Complete plan",
-        focusNote: "When Alex is back, completing the plan records who covered.",
+        focusNote: "When you're back, completing the plan records who covered.",
         render: () => <CoverTrackView plan={{ ...plan, counts: { total: 3, covered: 3, invited: 0, open: 0 } }} cases={clientsCovered} nextSuggestion={{}} toRate={[]} />,
       },
     ],
@@ -403,7 +403,7 @@ const DETAIL: Demo[] = [
   {
     key: "refer",
     title: "Refer a client",
-    blurb: "An inquiry Alex can't take. Describe the need, see who fits and why, and choose from the replies.",
+    blurb: "An inquiry you can't take. Describe the need, see who fits and why, and choose from the replies.",
     minutes: "2 minutes",
     outcome: "The right colleague found, and the handoff under way.",
     learned: [
@@ -417,8 +417,8 @@ const DETAIL: Demo[] = [
       {
         slug: "need",
         perspective: "alex",
-        title: "A new inquiry Alex can't take",
-        what: "An adult with OCD asks Alex for help, but Alex is about to go on leave. On Refer, Alex starts with the main need and where the client is; everything else is optional.",
+        title: "A new inquiry you can't take",
+        what: "An adult with OCD asks you for help, but you're about to go on leave. On Refer, you start with the main need and where the client is; everything else is optional.",
         focus: "Find colleagues",
         focusNote: "Next, colleagues who fit, with reasons.",
         actions: [
@@ -431,9 +431,9 @@ const DETAIL: Demo[] = [
         slug: "shortlist",
         perspective: "alex",
         title: "A shortlist that explains itself",
-        what: "Colleagues with a reviewed New York license and OCD experience who are taking referrals. Trusted colleagues and people Alex has worked with come first, and each says why.",
+        what: "Colleagues with a reviewed New York license and OCD experience who are taking referrals. Trusted colleagues and people you've worked with come first, and each says why.",
         focus: "Review before sending",
-        focusNote: "Alex keeps all three. Next, the final check.",
+        focusNote: "You keep all three. Next, the final check.",
         actions: [
           { do: "pick", target: 'input[name="pick"][value="maya"]' },
           { do: "pick", target: 'input[name="pick"][value="sam"]' },
@@ -445,7 +445,7 @@ const DETAIL: Demo[] = [
         slug: "review",
         perspective: "alex",
         title: "Exactly who receives it",
-        what: "Three named colleagues, the need as they'll see it, and a check that nothing identifies the client. Nothing is sent until Alex confirms.",
+        what: "Three named colleagues, the need as they'll see it, and a check that nothing identifies the client. Nothing is sent until you confirm.",
         focus: "Send referral",
         focusNote: "Send. Next, what Samuel receives.",
         render: () => (
@@ -468,7 +468,7 @@ const DETAIL: Demo[] = [
         title: "Samuel receives the referral",
         what: "This is Samuel's account. He sees the need, where and when, and that no client details are shared. He replies in one step.",
         focus: "Send reply",
-        focusNote: "Samuel replies Interested. Back to Alex next.",
+        focusNote: "Samuel replies Interested. Back to you next.",
         actions: [
           { do: "pick", target: 'input[name="response"][value="interested"]' },
           { do: "type", target: 'textarea[name="message"]', text: "Happy to. I run ERP weekly and can start in two weeks." },
@@ -486,7 +486,7 @@ const DETAIL: Demo[] = [
               timeframe: "within_month",
               notes: "Adult, ERP experience needed, evenings preferred.",
               createdAt: daysAgo(0.2),
-              requesterName: "Alex Thornvale, PsyD",
+              requesterName: "Your Name, PsyD",
               rows: referralRows,
               responses: [],
               myResponse: null,
@@ -499,11 +499,11 @@ const DETAIL: Demo[] = [
       {
         slug: "choose",
         perspective: "alex",
-        title: "Everyone replied: Alex chooses",
-        what: "Two colleagues are interested and one is full. Interest isn't acceptance: Alex decides, and chooses Samuel, whom Alex has worked with before.",
+        title: "Everyone replied: you choose",
+        what: "Two colleagues are interested and one is full. Interest isn't acceptance: you decide, and choose Samuel, whom you've worked with before.",
         focus: "Choose and start handoff",
         focusIndex: 1,
-        focusNote: "Alex chooses Samuel. Next, the handoff.",
+        focusNote: "You choose Samuel. Next, the handoff.",
         render: () => (
           <ReferTrackView
             r={{
@@ -535,9 +535,9 @@ const DETAIL: Demo[] = [
         slug: "handoff",
         perspective: "alex",
         title: "Samuel chosen, handoff under way",
-        what: "The referral now shows Samuel as accepted. They arrange the clinical handoff between them through their own secure channel; once the client is placed, Alex closes the referral.",
+        what: "The referral now shows Samuel as accepted. You arrange the clinical handoff between you through your own secure channel; once the client is placed, you close the referral.",
         focus: "Mark placed and close",
-        focusNote: "Once the client is placed, Alex closes the referral.",
+        focusNote: "Once the client is placed, you close the referral.",
         render: () => (
           <ReferTrackView
             r={{
@@ -570,7 +570,7 @@ const DETAIL: Demo[] = [
   {
     key: "consult",
     title: "Ask colleagues a question",
-    blurb: "A practical question for the people Alex trusts, answered in a day, with the useful reply marked.",
+    blurb: "A practical question for the people you trust, answered in a day, with the useful reply marked.",
     minutes: "1 minute",
     outcome: "A clear answer from trusted peers, kept for next time.",
     learned: [
@@ -583,8 +583,8 @@ const DETAIL: Demo[] = [
       {
         slug: "ask",
         perspective: "alex",
-        title: "Alex asks the circle",
-        what: "How do colleagues run the handoff call when someone covers mid-treatment? A quick question like this goes to the people Alex trusts and gets answers in a day. (Standing consultation groups, with a charter and regular meetings, are separate.)",
+        title: "You ask your circle",
+        what: "How do colleagues run the handoff call when someone covers mid-treatment? A quick question like this goes to the people you trust and gets answers in a day. (Standing consultation groups, with a charter and regular meetings, are separate.)",
         focus: "Review before posting",
         focusNote: "Next, a last look before it's shared.",
         actions: [
@@ -608,7 +608,7 @@ const DETAIL: Demo[] = [
         slug: "review",
         perspective: "alex",
         title: "Reviewed before it's shared",
-        what: "Alex sees the question exactly as colleagues will, and who will see it: the seven trusted colleagues. Nothing is posted until Alex confirms.",
+        what: "You see the question exactly as colleagues will, and who will see it: your seven trusted colleagues. Nothing is posted until you confirm.",
         focus: "Post it",
         focusNote: "Post. Next, the replies a day later.",
         render: () => (
@@ -634,10 +634,10 @@ const DETAIL: Demo[] = [
       {
         slug: "replies",
         perspective: "alex",
-        title: "Answers from people Alex trusts",
-        what: "Two replies by the next day. Alex has marked Maya's reply as useful; only Alex sees those marks. With an answer in hand, Alex marks the question resolved.",
+        title: "Answers from people you trust",
+        what: "Two replies by the next day. You've marked Maya's reply as useful; only you see those marks. With an answer in hand, you mark the question resolved.",
         focus: "Mark resolved",
-        focusNote: "Alex marks the question resolved.",
+        focusNote: "You mark the question resolved.",
         render: () => (
           <ConsultDetailView
             c={{
@@ -679,15 +679,15 @@ const DETAIL: Demo[] = [
       {
         slug: "home",
         perspective: "alex",
-        title: "Alex's morning",
-        what: "Home asks one question: what would you like to do? Four jobs, and a fifth tile that counts what's waiting for Alex and opens the list in place. Underneath: what colleagues see of Alex's availability, and which of Alex's trusted colleagues are open today.",
+        title: "Your morning",
+        what: "Home asks one question: what would you like to do? Four jobs, and a fifth tile that counts what's waiting for you and opens the list in place. Underneath: what colleagues see of your availability, and which of your trusted colleagues are open today.",
         focus: "Find a clinician",
         focusNote: "Next, find a colleague in the network.",
         render: () => (
           <HomeView
             d={{
               invite: DEMO_INVITE,
-              firstName: "Alex",
+              firstName: "",
               today: new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", timeZone: "America/New_York" }),
               greeting: "Good morning",
               steps: [
@@ -714,7 +714,7 @@ const DETAIL: Demo[] = [
         slug: "network",
         perspective: "alex",
         title: "Find colleagues by need",
-        what: "Clinicians lists all 1,200 fictional members in six states, Alex's trusted colleagues first, with license, focus and availability on every card. One button on each: Add as Trusted Colleague.",
+        what: "Clinicians lists all 1,200 fictional members in six states, your trusted colleagues first, with license, focus and availability on every card. One button on each: Add as Trusted Colleague.",
         focus: "Maya Calderwick",
         focusNote: "Open a colleague's profile.",
         render: () => (
@@ -743,8 +743,8 @@ const DETAIL: Demo[] = [
         slug: "messages",
         perspective: "alex",
         title: "Messages with context",
-        what: "Every conversation shows what it's about: this one is Alex's cover plan with Maya, so the thread and the plan stay together. A thumbs up or a heart says you've seen a message without another reply.",
-        focusNote: "That's a day in Alex's practice.",
+        what: "Every conversation shows what it's about: this one is your cover plan with Maya, so the thread and the plan stay together. A thumbs up or a heart says you've seen a message without another reply.",
+        focusNote: "That's a day in your practice.",
         render: () => (
           <MessagesShell
             list={
@@ -799,9 +799,9 @@ const DETAIL: Demo[] = [
         slug: "credentials",
         perspective: "alex",
         title: "A person checks every license",
-        what: "Alex adds each license; a PsyAlliance reviewer checks it against the state board. New York is reviewed, New Jersey is waiting. Alex is matched only where a reviewed license is on file.",
+        what: "You add each license; a PsyAlliance reviewer checks it against the state board. New York is reviewed, New Jersey is waiting. You're matched only where a reviewed license is on file.",
         focus: "Availability",
-        focusNote: "Next, Alex sets availability.",
+        focusNote: "Next, you set your availability.",
         render: () => (
           <CredentialsView
             sp={{}}
@@ -820,7 +820,7 @@ const DETAIL: Demo[] = [
         slug: "availability",
         perspective: "alex",
         title: "Availability you control",
-        what: "Whether Alex is taking referrals, open to cover or to consult. Colleagues see when it was last confirmed, so stale availability never looks current. Pausing for leave is one click.",
+        what: "Whether you're taking referrals, open to cover or to consult. Colleagues see when it was last confirmed, so stale availability never looks current. Pausing for leave is one click.",
         focus: "Save and confirm",
         focusNote: "Save. Next, the profile colleagues see.",
         actions: [
@@ -838,9 +838,9 @@ const DETAIL: Demo[] = [
         slug: "profile",
         perspective: "alex",
         title: "The profile colleagues rely on",
-        what: "Alex's profile: focus, who Alex sees and current availability, with dates. Colleagues see only reviewed licenses, so New Jersey appears, and Alex is matched there, once a reviewer has checked it.",
+        what: "Your profile: focus, who you see and current availability, with dates. Colleagues see only reviewed licenses, so New Jersey appears, and you're matched there, once a reviewer has checked it.",
         focus: "Edit profile",
-        focusNote: "Alex can change any of it, any time.",
+        focusNote: "You can change any of it, any time.",
         render: () => (
           <ProfileView
             sp={{}}
@@ -860,7 +860,7 @@ const DETAIL: Demo[] = [
   {
     key: "library",
     title: "Find the right template",
-    blurb: "Alex is planning leave. Find the template for it, see what's inside and save the PDF to a private library.",
+    blurb: "You're planning leave. Find the template for it, see what's inside and save the PDF to your private library.",
     minutes: "1 minute",
     outcome: "The right template, in the moment you need it.",
     learned: [
@@ -872,11 +872,11 @@ const DETAIL: Demo[] = [
       {
         slug: "search",
         perspective: "alex",
-        title: "Alex searches for leave",
+        title: "You search for leave",
         what: "The Extended Leave Pack, the Professional Will and the Reciprocal Coverage Agreement come up. Each template shows its version and whether it has been independently reviewed.",
         focus: "Explore",
         focusIndex: 1,
-        focusNote: "Alex opens the Extended Leave pack.",
+        focusNote: "You open the Extended Leave pack.",
         actions: [{ do: "type", target: 'input[name="q"]', text: "leave" }],
         render: () => <LibraryView resources={LIB_LEAVE} q="leave" category="" mineCount={0} />,
       },
@@ -886,16 +886,16 @@ const DETAIL: Demo[] = [
         title: "What's inside the Extended Leave Pack",
         what: "What's inside, who it's for and the cover plan it supports. It's still in review, and it says so.",
         focus: "Save PDF to My Library",
-        focusNote: "Alex saves a private copy to print and complete.",
+        focusNote: "You save a private copy to print and complete.",
         render: () => <ResourceDetailView r={LIB_PA02} url="#" />,
       },
       {
         slug: "mine",
         perspective: "alex",
         title: "A private copy, ready to fill in",
-        what: "The saved PDF sits in My Library. Only Alex can see it, and it never holds client details.",
+        what: "The saved PDF sits in My Library. Only you can see it, and it never holds client details.",
         focus: "Practice Library",
-        focusNote: "Back to the Library whenever Alex needs the next template.",
+        focusNote: "Back to the Library whenever you need the next template.",
         render: () => (
           <MyLibraryView
             docs={[{ id: 1, title: "Extended Leave Coverage Plan & Clinical Handoff Pack (your copy)", storagePath: "", folderId: null, createdAt: daysAgo(0), source: "Your copy of the Extended Leave Pack, version 1", url: "#" }]}
@@ -912,7 +912,7 @@ const DETAIL: Demo[] = [
   {
     key: "profile",
     title: "Set up your profile in a minute",
-    blurb: "Alex pastes her Psychology Today profile. Everything fills itself in, her top specialties are ranked, and she checks and saves.",
+    blurb: "You paste your Psychology Today profile. Everything fills itself in, your top specialties are ranked, and you check and save.",
     minutes: "1 minute",
     outcome: "A full profile in a minute, checked before it's saved.",
     learned: [
@@ -925,8 +925,8 @@ const DETAIL: Demo[] = [
       {
         slug: "paste",
         perspective: "alex",
-        title: "Alex pastes her Psychology Today profile",
-        what: "New to PsyAlliance, Alex copies her existing profile page and pastes it into Quick start at the top of Profile. A practice website, LinkedIn or a CV works too.",
+        title: "You paste your Psychology Today profile",
+        what: "New to PsyAlliance, you copy your existing profile page and paste it into Quick start at the top of Profile. A practice website, LinkedIn or a CV works too.",
         focus: "Fill in from this text",
         focusNote: "Next, everything fills itself in.",
         actions: [{ do: "type", target: ".quick-start-drop", text: PASTED_PROFILE }],
@@ -936,26 +936,26 @@ const DETAIL: Demo[] = [
         slug: "filled",
         perspective: "alex",
         title: "Everything fills itself in",
-        what: "Title, city, bio, specialties, approaches, ages, insurance and languages are filled in and highlighted, so Alex can check each one. Nothing is saved yet.",
+        what: "Title, city, bio, specialties, approaches, ages, insurance and languages are filled in and highlighted, so you can check each one. Nothing is saved yet.",
         focus: "Practice city",
-        focusNote: "Next, her top specialties.",
+        focusNote: "Next, your top specialties.",
         render: () => setupScreen({ text: PASTED_PROFILE, applied: SETUP_APPLIED, marks: SETUP_MARKS, ranks: 3 }, ALEX_FILLED, SETUP_ROWS),
       },
       {
         slug: "ranked",
         perspective: "alex",
         title: "Her top specialties, already in order",
-        what: "Alex's top three are ranked from her profile, and PsyAlliance asks her to check the order. Rank 1 counts most in matching.",
+        what: "Your top three are ranked from your profile, and PsyAlliance asks you to check the order. Rank 1 counts most in matching.",
         focus: "#rank-confirm",
-        focusNote: "Alex checks the order and saves.",
+        focusNote: "You check the order and save.",
         render: () => setupScreen({ text: PASTED_PROFILE, applied: SETUP_APPLIED, marks: SETUP_MARKS, ranks: 3 }, ALEX_FILLED, SETUP_ROWS),
       },
       {
         slug: "saved",
         perspective: "alex",
         title: "Saved, with what's left listed first",
-        what: "The profile is saved. What's still to do comes first: next, her license, which a person checks before she's matched with anyone.",
-        focusNote: "That's set-up. Next, a person checks her license.",
+        what: "The profile is saved. What's still to do comes first: next, your license, which a person checks before you're matched with anyone.",
+        focusNote: "That's set-up. Next, a person checks your license.",
         render: () => (
           <ProfileView sp={{ saved: "1" }} profile={ALEX_FILLED} lookups={PROFILE_LOOKUPS} selectedRows={SETUP_ROWS} licenceCount={0} avatarUrl={null} me="alex" editing={false} />
         ),
@@ -965,7 +965,7 @@ const DETAIL: Demo[] = [
 ];
 
 // The 90-second overview: one coherent story told with screens from the
-// closer looks. The problem, the match, Alex's control, the result, then a
+// closer looks. The problem, the match, your control, the result, then a
 // glimpse of referring and asking, and how verification works.
 const pick = (demo: string, slug: string, over: Partial<DemoStep>): DemoStep => {
   const base = DETAIL.find((d) => d.key === demo)!.steps.find((x) => x.slug === slug)!;
@@ -975,9 +975,9 @@ const pick = (demo: string, slug: string, over: Partial<DemoStep>): DemoStep => 
 const OVERVIEW: Demo = {
   key: "overview",
   title: "See PsyAlliance in 90 seconds",
-  blurb: "Step through the story yourself: Alex needs six weeks away, colleagues cover every client. Plus a glimpse of referring and asking colleagues.",
+  blurb: "Step through the story yourself: you need six weeks away, colleagues cover every client. Plus a glimpse of referring and asking colleagues.",
   minutes: "90 seconds",
-  outcome: "Six weeks away, every client covered, by colleagues Alex chose.",
+  outcome: "Six weeks away, every client covered, by colleagues you chose.",
   learned: [
     "Matches come with reasons: a reviewed license, the right focus and fresh availability.",
     "You choose who is asked before anything is sent.",
@@ -985,14 +985,14 @@ const OVERVIEW: Demo = {
     "A person checks every license before anyone can see you.",
   ],
   steps: [
-    pick("cover", "plan", { slug: "problem", title: "Alex needs six weeks away", what: "Parental leave is coming, and three clients need cover. In private practice that usually means a week of phone calls. Here it starts with the dates and the state.", focusNote: "Next, Alex describes each client by need." }),
-    pick("cover", "clients", { slug: "need", title: "Each client, described by need", what: "Alex adds the three clients by what they need: focus, age group and setting. Never a name or anything that identifies them.", focusNote: "Next, PsyAlliance finds colleagues for each client." }),
-    pick("cover", "matches", { slug: "match", title: "The right colleagues, with reasons", what: "For each client, colleagues with a reviewed New York license, the right focus and recently confirmed availability. Trusted colleagues come first, and every match says why.", focusNote: "Alex ticks who to ask. Next, a final check." }),
-    pick("cover", "invite", { slug: "control", title: "Alex decides who is asked", what: "Nothing is sent until Alex has seen exactly who receives each request, and in what order. No client names ever enter PsyAlliance.", focusNote: "Send. A few days later, the replies are in." }),
+    pick("cover", "plan", { slug: "problem", title: "You need six weeks away", what: "Parental leave is coming, and three clients need cover. In private practice that usually means a week of phone calls. Here it starts with the dates and the state.", focusNote: "Next, you describe each client by need." }),
+    pick("cover", "clients", { slug: "need", title: "Each client, described by need", what: "You add the three clients by what they need: focus, age group and setting. Never a name or anything that identifies them.", focusNote: "Next, PsyAlliance finds colleagues for each client." }),
+    pick("cover", "matches", { slug: "match", title: "The right colleagues, with reasons", what: "For each client, colleagues with a reviewed New York license, the right focus and recently confirmed availability. Trusted colleagues come first, and every match says why.", focusNote: "You tick who to ask. Next, a final check." }),
+    pick("cover", "invite", { slug: "control", title: "You decide who is asked", what: "Nothing is sent until you've seen exactly who receives each request, and in what order. No client names ever enter PsyAlliance.", focusNote: "Send. A few days later, the replies are in." }),
     pick("cover", "covered", { slug: "result", title: "Every client covered", what: "Colleagues accept, and the plan shows it. A client only counts as covered once someone has said yes.", focusNote: "Next, a glimpse of referrals." }),
-    pick("refer", "shortlist", { slug: "refer", title: "Referrals work the same way", what: "An inquiry Alex can't take becomes a shortlist of colleagues who fit, each with the reason, instead of a list of names from memory.", focusNote: "Alex checks who receives it before sending." }),
-    pick("consult", "replies", { slug: "consult", title: "And questions go to people Alex trusts", what: "A focused practice question, shared only with the colleagues Alex chooses, answered by people Alex knows.", focusNote: "Next, how quickly joining goes." }),
-    pick("profile", "filled", { slug: "setup", title: "Joining takes a minute", what: "Alex pasted her Psychology Today profile into Quick start and everything filled itself in, highlighted to check before saving.", focus: undefined, focusNote: "Last, how members are checked." }),
+    pick("refer", "shortlist", { slug: "refer", title: "Referrals work the same way", what: "An inquiry you can't take becomes a shortlist of colleagues who fit, each with the reason, instead of a list of names from memory.", focusNote: "You check who receives it before sending." }),
+    pick("consult", "replies", { slug: "consult", title: "And questions go to people you trust", what: "A focused practice question, shared only with the colleagues you choose, answered by people you know.", focusNote: "Next, how quickly joining goes." }),
+    pick("profile", "filled", { slug: "setup", title: "Joining takes a minute", what: "You pasted your Psychology Today profile into Quick start and everything filled itself in, highlighted to check before saving.", focus: undefined, focusNote: "Last, how members are checked." }),
     pick("verified", "credentials", { slug: "verified", title: "Everyone here is checked", what: "A person checks each license against the state board before anyone is listed. The Practice Library has templates for leave, referrals and consent, beside the work they support.", focus: undefined, focusNote: undefined }),
   ],
 };

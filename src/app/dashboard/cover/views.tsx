@@ -14,7 +14,6 @@ import {
   removeCaseAction,
   sendInvitesAction,
   askColleagueAction,
-  respondCoverAction,
   completePlanAction,
   cancelPlanAction,
 } from "./actions";
@@ -23,6 +22,7 @@ import { startConversation } from "../messages/actions";
 import { InlineThread } from "../_components/inline-thread";
 import type { ThreadMessage } from "@/lib/threads";
 import { coverThreadTitle, stateName } from "./labels";
+import { IncomingCase, type CaseStatus } from "./incoming-case";
 
 const STEPS = ["Plan", "Needs", "Candidates", "Invite", "Track"];
 
@@ -174,6 +174,8 @@ export type IncomingPlan = {
 
 function IncomingCard({ r }: { r: IncomingPlan }) {
   const n = r.cases.length;
+  const open = r.cases.filter((c) => (c.status || "sent") === "sent").length;
+  const discussing = r.cases.filter((c) => c.status === "discussing").length;
   return (
     <section className={`card incoming-cover${r.urgent ? " urgent" : ""}`}>
       <div className="incoming-head">
@@ -184,12 +186,8 @@ function IncomingCard({ r }: { r: IncomingPlan }) {
               <a href={`/dashboard/people/${r.ownerId}`}>{r.ownerName}</a> asked you to cover {n === 1 ? "one client" : `${n} clients`}
             </h3>
             <span className="row" style={{ gap: 6 }}>
-              {r.urgent && <Status tone="danger">Urgent</Status>}
-              {r.cases.every((c) => c.status === "discussing") ? (
-                <Status tone="neutral">In discussion</Status>
-              ) : (
-                <Status tone="warn">Needs your reply</Status>
-              )}
+              {r.urgent && open > 0 && <Status tone="danger">Urgent</Status>}
+              {open > 0 ? <Status tone="warn">Needs your reply</Status> : discussing > 0 ? <Status tone="neutral">In discussion</Status> : <Status>Answered</Status>}
             </span>
           </div>
           <p className="small" style={{ margin: "3px 0 0" }}>{r.ownerRole}</p>
@@ -209,67 +207,35 @@ function IncomingCard({ r }: { r: IncomingPlan }) {
           const label = c.reference ? c.reference.trim().replace(/^case\s*(\d+)$/i, "Client $1") : `Client ${i + 1}`;
           const ownerFirst = r.ownerName.replace(/^(dr\.?)\s+/i, "").split(/[\s,]+/)[0];
           const threadTitle = coverThreadTitle(r.planTitle, label, c.focus);
-          const discussing = c.status === "discussing";
           return (
-          <div key={c.requestId} id={`request-${c.requestId}`} className={`incoming-case${discussing ? " is-discussing" : ""}`}>
-            <div className="row between wrap" style={{ gap: 8 }}>
-              <strong>
-                {label} &middot; {c.focus}
-              </strong>
-            </div>
-            <dl className="case-facts">
-              {c.details.map(([k, v]) => (
-                <div key={k}><dt>{k}</dt><dd>{v}</dd></div>
-              ))}
-            </dl>
-            {discussing ? (
-              // After a question: what happened, where the conversation is,
-              // and (folded away) the final answer.
-              <div className="reply-summary is-question">
-                <h3>Your question was sent to {r.ownerName}</h3>
-                <InlineThread
-                  messages={c.thread?.messages || []}
-                  conversationId={c.thread?.conversationId}
-                  otherName={r.ownerName}
-                  otherIds={[r.ownerId]}
-                  title={threadTitle}
-                  heading={`Your conversation with ${ownerFirst} about ${label}`}
-                  returnTo="/dashboard/cover"
-                  anchor={`request-${c.requestId}`}
-                  link={c.caseId ? `/dashboard/cover/${r.planId}?step=track#case-${c.caseId}` : undefined}
-                />
-                <p className="micro-note">Once you&rsquo;ve talked it through, give your final answer.</p>
-                <details className="final-answer">
-                  <summary>Give your final answer</summary>
-                  <form action={respondCoverAction} className="row wrap" style={{ marginTop: 12, gap: 8 }}>
-                    <input type="hidden" name="coverage_request_id" value={c.requestId} />
-                    <input type="hidden" name="thread_title" value={threadTitle} />
-                    <button type="submit" name="response" value="accepted" className="btn small-btn resp-accept">Accept {label}</button>
-                    <button type="submit" name="response" value="declined" className="btn small-btn resp-decline">Decline</button>
-                  </form>
-                </details>
-              </div>
-            ) : (
-              <form action={respondCoverAction} data-deidentify="" className="cover-reply">
-                <input type="hidden" name="coverage_request_id" value={c.requestId} />
-                <input type="hidden" name="thread_title" value={threadTitle} />
-                <input type="hidden" name="owner_name" value={r.ownerName} />
-                <div className="row wrap" style={{ gap: 8 }}>
-                  <button type="submit" name="response" value="accepted" className="btn small-btn resp-accept">Accept {label}</button>
-                  <button type="submit" name="response" value="declined" className="btn small-btn resp-decline">Decline</button>
+            <IncomingCase
+              key={c.requestId}
+              requestId={c.requestId}
+              label={label}
+              focus={c.focus}
+              details={c.details}
+              ownerId={r.ownerId}
+              ownerName={r.ownerName}
+              threadTitle={threadTitle}
+              initialStatus={(c.status as CaseStatus) || "sent"}
+            >
+              {c.status === "discussing" && (
+                <div className="reply-summary is-question">
+                  <InlineThread
+                    messages={c.thread?.messages || []}
+                    conversationId={c.thread?.conversationId}
+                    otherName={r.ownerName}
+                    otherIds={[r.ownerId]}
+                    title={threadTitle}
+                    heading={`Your conversation with ${ownerFirst} about ${label}`}
+                    returnTo="/dashboard/cover"
+                    anchor={`request-${c.requestId}`}
+                    link={c.caseId ? `/dashboard/cover/${r.planId}?step=track#case-${c.caseId}` : undefined}
+                  />
+                  <p className="micro-note">Once you&rsquo;ve talked it through, give your answer below.</p>
                 </div>
-                <details className="ask-first">
-                  <summary>Ask {ownerFirst} a question first</summary>
-                  <label className="field">
-                    Your question
-                    <textarea name="question" rows={3} maxLength={600} placeholder={`e.g. Could we talk through the schedule for ${label} and how you'd like the handoff to work?`} />
-                    <small>{ownerFirst}&rsquo;s reply appears here, under {label}. No client-identifying details.</small>
-                  </label>
-                  <button type="submit" name="response" value="discussing" className="btn small-btn resp-discuss">Send question</button>
-                </details>
-              </form>
-            )}
-          </div>
+              )}
+            </IncomingCase>
           );
         })}
       </div>
@@ -278,7 +244,7 @@ function IncomingCard({ r }: { r: IncomingPlan }) {
   );
 }
 
-export type CoveringItem = { planId: number; ownerId: string; ownerName: string; dates: string; clients: string[] };
+export type CoveringItem = { planId: number; ownerId: string; ownerName: string; ownerAvatar?: string | null; dates: string; clients: string[] };
 
 export function CoverIndexView({
   plans,
@@ -309,7 +275,11 @@ export function CoverIndexView({
         <>
           <div className="section-heading" style={{ marginTop: 0 }}>
             <h2>Cover requests for you</h2>
-            <Status tone="warn">{incoming.reduce((n, r) => n + r.cases.filter((c) => c.status !== "discussing").length, 0)} waiting</Status>
+            {(() => {
+              const waiting = incoming.reduce((n, r) => n + r.cases.filter((c) => (c.status || "sent") === "sent").length, 0);
+              const talking = incoming.reduce((n, r) => n + r.cases.filter((c) => c.status === "discussing").length, 0);
+              return waiting > 0 ? <Status tone="warn">{waiting} waiting</Status> : talking > 0 ? <Status tone="neutral">In discussion</Status> : <Status>All answered</Status>;
+            })()}
           </div>
           <div className="stack" style={{ marginBottom: 26 }}>
             {incoming.map((r) => <IncomingCard key={r.planId} r={r} />)}
@@ -317,25 +287,41 @@ export function CoverIndexView({
         </>
       )}
       {covering.length > 0 && (
-        <div style={{ marginBottom: 26 }}>
-          <ListPanel
-            icon={<NavIcon name="network" size={19} />}
-            tone="brass"
-            title="Covering for colleagues"
-            description="Clients you’ve agreed to see while a colleague is away."
-            count={covering.reduce((n, c) => n + c.clients.length, 0)}
-          >
+        <section className="card covering-panel" aria-labelledby="covering-title" style={{ marginBottom: 26 }}>
+          <div className="list-panel-head">
+            <span className="lp-icon" aria-hidden="true"><NavIcon name="network" size={19} /></span>
+            <div className="lp-title">
+              <h3 id="covering-title">Covering for colleagues</h3>
+              <p>Clients you&rsquo;ve agreed to see while a colleague is away.</p>
+            </div>
+            <span className="lp-count" aria-label={`${covering.reduce((n, c) => n + c.clients.length, 0)} clients`}>{covering.reduce((n, c) => n + c.clients.length, 0)}</span>
+          </div>
+          <ul className="covering-list">
             {covering.map((c) => (
-              <ListItem
-                key={c.planId}
-                title={<>For <a href={`/dashboard/people/${c.ownerId}`}>{c.ownerName}</a></>}
-                meta={[`Away ${c.dates}`, ...c.clients]}
-                status={<Status>{c.clients.length === 1 ? "1 client" : `${c.clients.length} clients`}</Status>}
-                action={<a href={`/dashboard/messages?to=${c.ownerId}`}>Message &rarr;</a>}
-              />
+              <li key={c.planId} className="covering-item">
+                <PersonAvatar name={c.ownerName} url={c.ownerAvatar ?? null} size={40} />
+                <div className="covering-main">
+                  <div className="covering-top">
+                    <a href={`/dashboard/people/${c.ownerId}`}>{c.ownerName}</a>
+                    <span className="covering-dates">Away {c.dates}</span>
+                  </div>
+                  <ul className="covering-clients" aria-label="Clients">
+                    {c.clients.map((cl) => {
+                      const [ref, ...rest] = cl.split(" · ");
+                      return (
+                        <li key={cl}>
+                          <b>{ref}</b>
+                          {rest.length > 0 && <span>{rest.join(" · ")}</span>}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+                <a className="btn secondary small-btn covering-msg" href={`/dashboard/messages?to=${c.ownerId}`}>Message</a>
+              </li>
             ))}
-          </ListPanel>
-        </div>
+          </ul>
+        </section>
       )}
       <div className="split">
         <ListPanel

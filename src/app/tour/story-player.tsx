@@ -1,7 +1,7 @@
 "use client";
 
 import { Children, useCallback, useEffect, useRef, useState, type ReactNode } from "react";
-import { actionMs, sceneMs, typeStep, TYPE_LIMIT, type SceneAction } from "./scene-timing";
+import { actionMs, actionsMs, sceneMs, typeStep, TYPE_LIMIT, type SceneAction } from "./scene-timing";
 export type { SceneAction } from "./scene-timing";
 
 // The two-minute story: real PsyAlliance screens with fictional people,
@@ -109,8 +109,18 @@ export function StoryPlayer({
   const spent = useRef({ scene: -1, ms: 0 });
   const startedAt = useRef(0);
 
+  // On a phone the screen is drawn at full size, so every scroll covers
+  // more ground and there is less room to read: everything runs slower
+  // there (Nick, 13 Oct: "the demo on a phone scrolls far too fast").
+  const [phone, setPhone] = useState(false);
+  const slow = phone ? 1.4 : 1;
+  const playMs = (sc: { seconds?: number; actions?: SceneAction[] }) =>
+    phone ? Math.round((sc.seconds || 8.5) * 1000 + 1600 + actionsMs(sc.actions) * slow) : sceneMs(sc);
+  // How long the current scroll takes: longer for a longer way on a phone.
+  const panAt = useRef({ x: 0, y: 0 });
+  const [panMs, setPanMs] = useState(1400);
   const s = scenes[i];
-  const duration = s ? sceneMs(s) : 8500;
+  const duration = s ? playMs(s) : 8500;
   const actions = s?.actions || [];
   const chapters = scenes.reduce<{ name: string; first: number }[]>((acc, sc, n) => (acc.some((c) => c.name === sc.chapter) ? acc : [...acc, { name: sc.chapter, first: n }]), []);
 
@@ -124,6 +134,7 @@ export function StoryPlayer({
     if (!el) return;
     const fit = () => {
       const phone = window.innerWidth < 760;
+      setPhone(phone);
       const w = phone ? PHONE_WIDTH : DESKTOP_WIDTH;
       setScreenW(w);
       setScale(phone ? Math.min(1, el.clientWidth / w) : Math.max(0.46, Math.min(0.72, el.clientWidth / w)));
@@ -195,6 +206,17 @@ export function StoryPlayer({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [i, scale, screenW]);
 
+  // Scroll the current screen. On a phone the time follows the distance,
+  // between 1.3 and 2.2 seconds, so a long way is never a jolt.
+  const panTo = (x: number, y: number) => {
+    const d = Math.hypot(x - panAt.current.x, y - panAt.current.y);
+    panAt.current = { x, y };
+    const ms = phone ? Math.round(Math.max(1300, Math.min(2200, 1200 + d * 0.9))) : 1400;
+    setPanMs(ms);
+    setPan({ x, y, scene: i });
+    return d > 1 ? ms : 0;
+  };
+
   // Where the screen and pointer go for an action: the same arithmetic as
   // the scene's last click.
   const placeFor = (target: HTMLElement) => {
@@ -237,10 +259,13 @@ export function StoryPlayer({
       return;
     }
     const place = placeFor(point);
+    let moving = 0;
     if (place) {
-      setPan({ x: place.x, y: place.y, scene: i });
+      moving = panTo(place.x, place.y);
       setCursor({ x: place.cx, y: place.cy, on: true, click: false, scene: i });
     }
+    // The click lands once the screen has arrived.
+    const clickAt = phone ? Math.max(1000 * slow, moving + 250) : 1000;
     window.setTimeout(() => {
       setCursor((c) => ({ ...c, click: true }));
       if (a.do === "type" && a.text.length <= TYPE_LIMIT) {
@@ -255,15 +280,15 @@ export function StoryPlayer({
         }, step);
       } else setActionState(screen, a, true);
       actionsDone.current = Math.max(actionsDone.current, k + 1);
-    }, 1000);
-    window.setTimeout(() => setCursor((c) => ({ ...c, click: false })), 1650);
+    }, clickAt);
+    window.setTimeout(() => setCursor((c) => ({ ...c, click: false })), clickAt + 650 * slow);
   };
 
   const reach = (n: number) => {
     reached.current = Math.max(reached.current, n);
     const p = plan.current;
     const at = reached.current;
-    if (at >= 1) setPan({ x: p.x, y: p.y, scene: i });
+    if (at >= 1) panTo(p.x, p.y);
     if (at >= 2 && p.target && !reduced) setCursor({ x: p.cx, y: p.cy, on: true, click: at >= 3, scene: i });
   };
 
@@ -274,6 +299,7 @@ export function StoryPlayer({
     actionsDone.current = 0;
     window.clearInterval(typing.current);
     prepare(i);
+    panAt.current = { x: 0, y: 0 };
     setPan({ x: 0, y: 0, scene: i });
     setCursor((c) => ({ ...c, on: false, click: false }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -312,19 +338,19 @@ export function StoryPlayer({
       // Read first; then the person's own choices; then the last click.
       // With choices to make, the pointer is already on screen, so the
       // screen and pointer move to the last click together.
-      const base = (s?.seconds || 8.5) * 1000;
       const acting = actions.length > 0;
-      const actionsFrom = Math.max(1500, base - (acting ? 3400 : 4400));
+      const lastAt = duration - actionsMs(actions) * slow;
+      const actionsFrom = Math.max(1500, lastAt - (acting ? 3400 : 4400) * slow);
       let at = actionsFrom;
       actions.forEach((a, k) => {
         const when = at;
         if (actionsDone.current <= k) ts.push(window.setTimeout(() => doAction(k), Math.max(0, when - elapsed)));
-        at += actionMs(a);
+        at += actionMs(a) * slow;
       });
       const finalFrom = at;
       const moments: [number, number][] = acting
-        ? [[finalFrom + 600, 2], [finalFrom + 2000, 3]]
-        : [[finalFrom, 1], [finalFrom + 1600, 2], [finalFrom + 3000, 3]];
+        ? [[finalFrom + 600 * slow, 2], [finalFrom + 2000 * slow, 3]]
+        : [[finalFrom, 1], [finalFrom + 1600 * slow, 2], [finalFrom + 3000 * slow, 3]];
       moments.forEach(([when, level], n) => {
         if (reached.current < level)
           ts.push(
@@ -349,7 +375,7 @@ export function StoryPlayer({
       if (spent.current.scene === i) spent.current.ms += performance.now() - startedAt.current;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [playing, i, ended, duration, scenes.length, reduced]);
+  }, [playing, i, ended, duration, scenes.length, reduced, slow]);
 
   const go = (n: number, byHand = true) => {
     manual.current = byHand && !playing;
@@ -362,6 +388,17 @@ export function StoryPlayer({
     if (embed && window.parent !== window) window.parent.postMessage({ type: "pa-example-done" }, "*");
     else window.location.href = tryHref;
   };
+  // Inside a dialog on another page, Escape belongs to that dialog: the key
+  // press lands here when the player has focus, so pass it on (release
+  // review DEMO-01).
+  useEffect(() => {
+    if (!embed || window.parent === window) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") window.parent.postMessage({ type: "pa-example-close" }, "*");
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [embed]);
   const toggle = () => {
     if (ended) {
       go(0, false);
@@ -390,7 +427,7 @@ export function StoryPlayer({
         <div className="sp-caption" aria-live="polite">
           <span className={`sp-who${s?.who.colleague ? " colleague" : ""}`}>
             <span className="sp-initials" aria-hidden="true">{s?.who.initials}</span>
-            {s?.who.colleague ? `${s.who.name.split(" ")[0]}'s view` : `${s?.who.name.split(" ")[0]}'s practice`}
+            {s?.who.colleague ? `${s.who.name.split(" ")[0]}'s view` : "Your practice"}
           </span>
           <h3 key={`c${i}`}>{s?.caption}</h3>
           <p key={`s${i}`}>{s?.sub}</p>
@@ -413,14 +450,18 @@ export function StoryPlayer({
                   screenRefs.current[n] = el;
                 }}
                 className={`sp-screen pa${n === i ? " on" : ""}${scenes[n]?.who.colleague ? " as-colleague" : ""}`}
-                style={{ width: screenW, transform: n === i && pan.scene === i ? `translate(${-pan.x}px, ${-pan.y}px) scale(${scale})` : `translate(0px, 0px) scale(${scale})` }}
+                style={{
+                  width: screenW,
+                  transform: n === i && pan.scene === i ? `translate(${-pan.x}px, ${-pan.y}px) scale(${scale})` : `translate(0px, 0px) scale(${scale})`,
+                  ...(phone && !reduced ? { transitionDuration: `0.6s, ${panMs}ms` } : null),
+                }}
                 aria-hidden="true"
                 {...({ inert: true } as Record<string, boolean>)}
               >
                 {screen}
               </div>
             ))}
-            <span className={`sp-cursor${cursor.on && cursor.scene === i ? " on" : ""}${cursor.click && cursor.scene === i ? " click" : ""}`} style={{ left: cursor.x, top: cursor.y }} aria-hidden="true" />
+            <span className={`sp-cursor${cursor.on && cursor.scene === i ? " on" : ""}${cursor.click && cursor.scene === i ? " click" : ""}`} style={{ left: cursor.x, top: cursor.y, ...(phone && !reduced ? { transitionDuration: `${panMs}ms, ${panMs}ms, 0.4s` } : null) }} aria-hidden="true" />
             {ended && (
               <div className="sp-end">
                 <b>{end.title}</b>
@@ -442,7 +483,7 @@ export function StoryPlayer({
       <div className="sp-progress" aria-hidden="true">
         {scenes.map((sc, n) => (
           <button key={n} type="button" tabIndex={-1} className={`sp-seg${n < i || ended ? " done" : ""}${n === i && !ended ? " on" : ""}`} onClick={() => go(n)}>
-            <span style={n === i && !ended ? { animationDuration: `${sceneMs(sc) / 1000}s`, animationPlayState: playing ? "running" : "paused" } : undefined} key={`${n}-${i}-${ended}`} />
+            <span style={n === i && !ended ? { animationDuration: `${playMs(sc) / 1000}s`, animationPlayState: playing ? "running" : "paused" } : undefined} key={`${n}-${i}-${ended}`} />
           </button>
         ))}
       </div>

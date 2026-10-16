@@ -258,6 +258,50 @@ export async function respondCoverAction(formData: FormData) {
   );
 }
 
+// Answering a cover request without leaving the page (Nick, 13 Oct): the
+// card changes in place. Returns what happened instead of redirecting.
+export type CoverAnswer = { ok: true; status: "accepted" | "declined" | "discussing"; note?: string } | { ok: false; error: string };
+
+export async function answerCoverAction(input: {
+  requestId: number;
+  response: "accepted" | "declined" | "discussing";
+  question?: string;
+  threadTitle?: string;
+}): Promise<CoverAnswer> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "You've been signed out. Please sign in again." };
+  const requestId = Number(input.requestId);
+  const response = input.response;
+  if (!Number.isFinite(requestId) || !["accepted", "declined", "discussing"].includes(response)) return { ok: false, error: "Choose a response." };
+  const question = String(input.question || "").trim().slice(0, 600);
+  if (response === "discussing") {
+    if (!question) return { ok: false, error: "Write your question first." };
+    const idErr = identifierError(question);
+    if (idErr) return { ok: false, error: idErr };
+  }
+  const { error } = await respondToCoverageRequest(supabase, user.id, requestId, response);
+  if (error) return { ok: false, error };
+  let note: string | undefined;
+  if (response === "discussing") {
+    const { data: req } = await supabase
+      .from("coverage_requests")
+      .select("coverage_plan_case_id, coverage_plan_cases(coverage_plan_id, coverage_plans(profile_id))")
+      .eq("id", requestId)
+      .maybeSingle();
+    const ownerId = (req as any)?.coverage_plan_cases?.coverage_plans?.profile_id as string | undefined;
+    const planId = (req as any)?.coverage_plan_cases?.coverage_plan_id;
+    const link = planId ? `/dashboard/cover/${planId}?step=track#case-${(req as any).coverage_plan_case_id}` : undefined;
+    const sent = ownerId ? await postToThread(supabase, user.id, [ownerId], String(input.threadTitle || "Cover request"), question, link) : null;
+    revalidatePath("/dashboard/messages");
+    if (!sent || sent.error) note = "Your answer is saved, but the question didn't reach Messages. Send it from Messages instead.";
+  }
+  revalidatePath("/dashboard/cover");
+  return { ok: true, status: response, note };
+}
+
 export async function completePlanAction(formData: FormData) {
   const { supabase, userId } = await me();
   const planId = Number(formData.get("plan_id"));
@@ -288,11 +332,17 @@ export async function cancelPlanAction(formData: FormData) {
   const { supabase, userId } = await me();
   const planId = Number(formData.get("plan_id"));
   if (!(await ownPlan(supabase, userId, planId))) back("/dashboard/cover", "Plan not found.");
-  await supabase.from("coverage_requests").update({ status: "expired" }).in(
-    "coverage_plan_case_id",
-    ((await supabase.from("coverage_plan_cases").select("id").eq("coverage_plan_id", planId)).data || []).map((c: any) => c.id)
-  ).eq("status", "sent");
-  await supabase.from("coverage_plans").update({ status: "cancelled" }).eq("id", planId);
+  // The plan is marked cancelled first: from then on the database refuses
+  // any acceptance for it, even from a colleague's open page. Then every
+  // request still open (asked, or in discussion) is closed.
+  const { error: planErr } = await supabase.from("coverage_plans").update({ status: "cancelled" }).eq("id", planId);
+  if (planErr) back("/dashboard/cover", "The plan couldn't be cancelled just now. Nothing was changed; please try again.");
+  const { data: cases } = await supabase.from("coverage_plan_cases").select("id").eq("coverage_plan_id", planId);
+  const ids = (cases || []).map((c: any) => c.id);
+  if (ids.length) {
+    const { error: reqErr } = await supabase.from("coverage_requests").update({ status: "expired" }).in("coverage_plan_case_id", ids).in("status", ["sent", "discussing"]);
+    if (reqErr) back("/dashboard/cover", "The plan is cancelled, but some colleagues' requests didn't close. Please try Cancel again.");
+  }
   revalidatePath("/dashboard/cover");
   redirect("/dashboard/cover?ok=Plan%20cancelled.");
 }

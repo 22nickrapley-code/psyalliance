@@ -247,8 +247,10 @@ export function TourFrame({
         explain();
         return;
       }
+      // Buttons that save or send (a form's submit, or a button that answers
+      // in place, marked data-acts) explain instead of acting.
       const b = t.closest("button");
-      if (b && b.type === "submit" && b.closest("form")) {
+      if (b && ((b.type === "submit" && b.closest("form")) || b.hasAttribute("data-acts"))) {
         e.preventDefault();
         e.stopPropagation();
         explain();

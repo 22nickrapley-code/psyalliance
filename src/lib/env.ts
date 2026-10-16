@@ -31,7 +31,8 @@ export const TOUR_URL = IS_DEMO_SITE ? `${REAL_SITE_URL}/tour` : "/tour";
 
 // The sandbox project, called from a real account to open a sandbox. The
 // key is the public (publishable) key the sandbox site already ships.
-export const SANDBOX_SUPABASE_URL = "https://xsfqeepxnmnvlhxwkfnw.supabase.co";
-export const SANDBOX_SUPABASE_KEY = "sb_publishable_FCl4vvKoongXIrfGQdGGQw_5Bb20GZY";
+// A build setting can point these at a local staging copy for testing.
+export const SANDBOX_SUPABASE_URL = process.env.NEXT_PUBLIC_SANDBOX_SUPABASE_URL || "https://xsfqeepxnmnvlhxwkfnw.supabase.co";
+export const SANDBOX_SUPABASE_KEY = process.env.NEXT_PUBLIC_SANDBOX_SUPABASE_KEY || "sb_publishable_FCl4vvKoongXIrfGQdGGQw_5Bb20GZY";
 // Public pages (how it works, verification, story) live on the real site.
 export const PUBLIC_BASE = IS_DEMO_SITE ? REAL_SITE_URL : "";

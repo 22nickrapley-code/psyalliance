@@ -45,7 +45,7 @@ export function FirstVisit({
   useEffect(() => {
     if (!open) return;
     const onMessage = (e: MessageEvent) => {
-      if (e.source === frame.current?.contentWindow && e.data?.type === "pa-example-done") dialog.current?.close();
+      if (e.source === frame.current?.contentWindow && (e.data?.type === "pa-example-done" || e.data?.type === "pa-example-close")) dialog.current?.close();
     };
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
@@ -61,6 +61,8 @@ export function FirstVisit({
   const finished = () => {
     setOpen(false);
     close();
+    // The note goes away with the example, so focus returns to the page.
+    document.getElementById("main")?.focus({ preventScroll: true });
   };
 
   if (!show) return null;

@@ -73,7 +73,8 @@ export default async function NewReferralPage(props: { searchParams: Promise<SP>
     }
     const urls = await resolveAvatarUrls(supabase, matches.map((m) => m.avatarPath));
     const avatarUrls = Object.fromEntries(matches.map((m) => [m.profileId, urls.get(m.avatarPath || "") || null]));
-    return <ReferShortlistView options={options} need={need} matches={matches} widen={widen} avatarUrls={avatarUrls} pinned={pinned} />;
+    const chosen = get("kept") === "1" ? getAll("pick").filter((id) => /^[0-9a-f-]{36}$/i.test(id)) : null;
+    return <ReferShortlistView options={options} need={need} matches={matches} widen={widen} avatarUrls={avatarUrls} pinned={pinned} chosen={chosen} />;
   }
 
   if (step === "review" && to) {

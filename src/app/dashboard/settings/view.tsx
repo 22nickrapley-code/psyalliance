@@ -8,6 +8,7 @@ import {
   setDemoViewAction,
 } from "./actions";
 import { PageHead, Banner } from "../_components/ui";
+import { showDemosAction } from "../demos/actions";
 
 // Settings (Product Spec v1): account, notification channels, digest
 // frequency, privacy (who can see your profile, Exclude and Block lists),
@@ -27,7 +28,7 @@ function nameOf(p: any) {
   return p ? clinicianName(p?.full_name, p?.qualification_level, p?.credential_prefix) : "Member";
 }
 
-export function SettingsView({ sp, email, me, prefs, profile, emergency, excluded, blocked, blockedProfiles, circle }: { sp: { saved?: string; error?: string }; email: string; me: string; prefs: any; profile: any; emergency: any; excluded: any[] | null; blocked: { blocked_profile_id: string }[] | null; blockedProfiles: any[] | null; circle: any[] | null }) {
+export function SettingsView({ sp, email, me, prefs, profile, emergency, excluded, blocked, blockedProfiles, circle, demosHidden = false }: { sp: { saved?: string; error?: string }; email: string; me: string; prefs: any; profile: any; emergency: any; excluded: any[] | null; blocked: { blocked_profile_id: string }[] | null; blockedProfiles: any[] | null; circle: any[] | null; demosHidden?: boolean }) {
   const blockedNames = new Map((blockedProfiles || []).map((p: any) => [p.id, nameOf(p)]));
 
   void circle;
@@ -65,6 +66,20 @@ export function SettingsView({ sp, email, me, prefs, profile, emergency, exclude
               </>
             )}
           </section>
+
+          <details className="card settings-group" id="menu">
+            <summary>
+              <span><h3>Menu</h3><small>{demosHidden ? "Demos is hidden" : "Demos is in the menu"}</small></span>
+            </summary>
+            <form action={showDemosAction} className="item row between wrap" style={{ gap: 12 }}>
+              <span>
+                <strong>Demos in the menu</strong>
+                <p>Short videos of each part of PsyAlliance. Hide them once you know your way around; the first-visit notes in Cover, Refer and Consult still offer an example.</p>
+              </span>
+              <input type="hidden" name="show" value={demosHidden ? "1" : "0"} />
+              <button type="submit" className="btn secondary small-btn">{demosHidden ? "Show Demos" : "Hide Demos"}</button>
+            </form>
+          </details>
 
           <details className="card settings-group" id="notifications">
             <summary>

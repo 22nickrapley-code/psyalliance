@@ -166,8 +166,18 @@ export async function setResponseUseful(
   const consultationAuthorId = (response as any).consultations?.author_profile_id as string | undefined;
   if (consultationAuthorId !== authorProfileId) return { error: "Only the consultation's author can mark a response useful" };
 
-  const { error } = await supabase.from("consultation_responses").update({ marked_useful: useful }).eq("id", responseId);
-  return { error: error?.message ?? null };
+  // Author-only, through the database (release review N01): there is no
+  // general update permission on replies, so a plain update changed nothing
+  // and the button silently stayed "Mark useful".
+  const { data: saved, error } = await supabase.rpc("set_response_useful", { p_response: responseId, p_useful: useful });
+  if (!error) return { error: saved === useful ? null : "That didn't save. Please try again.", saved: saved as boolean };
+  if (!/could not find the function|PGRST202/i.test(`${error.code} ${error.message}`)) {
+    return { error: error.code === "P0001" ? error.message : "That didn't save. Please try again." };
+  }
+  const { data: rows, error: updErr } = await supabase.from("consultation_responses").update({ marked_useful: useful }).eq("id", responseId).select("marked_useful");
+  if (updErr) return { error: updErr.message };
+  if (!rows?.length) return { error: "That didn't save. Please try again." };
+  return { error: null, saved: rows[0].marked_useful as boolean };
 }
 
 export async function resolveConsultation(

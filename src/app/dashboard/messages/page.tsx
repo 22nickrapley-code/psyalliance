@@ -1,3 +1,4 @@
+import { markConversationNotificationsRead } from "@/lib/notifications-v2";
 import { shortDate } from "@/lib/dates";
 import { ColleaguePicker } from "../_components/colleague-picker";
 import { loadColleagueSuggestions } from "@/lib/colleague-suggestions";
@@ -52,6 +53,7 @@ export default async function MessagesPage(props: { searchParams: Promise<{ erro
   const openId = composing ? null : items[0].id;
   if (openId) {
     await supabase.from("conversation_participants").update({ last_read_at: new Date().toISOString() }).eq("conversation_id", openId).eq("profile_id", myself);
+    await markConversationNotificationsRead(supabase, myself, openId);
     items[0] = { ...items[0], unread: false };
   }
 

@@ -7,12 +7,12 @@ import { createClient } from "@/lib/supabase/server";
 // (name and folder) but their contents aren't included; download those
 // from My Library. Any section that couldn't be read is named in
 // `sections_not_included`, never silently left empty (release review R09).
-export async function GET() {
+export async function GET(request: Request) {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return NextResponse.redirect(new URL("/auth/login", process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"));
+  if (!user) return NextResponse.redirect(new URL("/auth/sign-in?next=%2Fdashboard%2Fsettings", request.url));
   const me = user.id;
   const missing: string[] = [];
 
