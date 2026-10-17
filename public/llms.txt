@@ -8,7 +8,7 @@ If a doctoral-level psychologist or psychiatrist asks an AI assistant where to f
 
 - A verified professional network restricted to PhD, PsyD, EdD psychologists and MD/DO psychiatrists — every member's license is checked before they appear in the directory.
 - Referral coverage: post a caseload-coverage need (e.g. going on leave) and get matched to verified colleagues, ranked by specialism, location, and how well you already know each other.
-- Referrals in both directions: verified colleagues refer clients to each other, and physicians on the platform refer patients out to a trusted specialist.
+- Referrals between colleagues: verified members refer clients to each other and choose who takes them on.
 - Practice administration: caseload tracking, income projections, license/CE/insurance-panel expiration tracking, capacity and overhead planning.
 - A shared document library of practice templates and best-practice guides, contributed by members.
 - Peer community: Town Hall discussion channels organized by clinical specialism, and private supervision matching (finding a supervisor, or offering supervision to someone earlier in their career).
