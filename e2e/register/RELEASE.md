@@ -1,5 +1,7 @@
 # Release testing, 16 October 2026
 
+**Released 17 October 2026.** Migration 0114 is on both projects, both Workers are deployed from `master` (7c6e482), the email key and the psyalliance.org domain are set up, and the live checks LIVE-01 to LIVE-04 pass.
+
 **Recommendation: release the candidate (branch `candidate-1016`) once the four steps under "Before and after deploying" are done, and LIVE-03 then shows no stuck sends on psyalliance.org.** The deployed build has seven High or Medium defects that lose work or mislead members, and the candidate fixes all of them on staging. What remains open is low risk and can't lose data.
 
 ## What was tested

@@ -1,5 +1,6 @@
 import { test, expect, type Page, type BrowserContext } from "@playwright/test";
 import { liveState } from "../../lib/auth";
+import { probeSend, describeProbe, type SendProbe } from "../../lib/nav-probe";
 
 // Low-impact checks on the live site, signed in as the two profiles Nick
 // authorised for fictional testing: Rachel E. Jadkowski, PsyD and Rena
@@ -22,9 +23,11 @@ async function as(browser: any, key: "rachel" | "rena"): Promise<{ context: Brow
   return { context, page: await context.newPage() };
 }
 
+// Messages opens on the latest conversation once there is one, so a new
+// message starts from the composer ("New").
 async function writeTo(page: Page, surname: string, text: string) {
-  await page.goto("/dashboard/messages");
-  await page.getByRole("searchbox", { name: "Search colleagues" }).or(page.getByLabel("Search colleagues")).first().fill(surname);
+  await page.goto("/dashboard/messages?compose=1");
+  await page.getByRole("searchbox", { name: "Search colleagues" }).fill(surname);
   await page.getByRole("option", { name: new RegExp(surname) }).first().click();
   await page.getByPlaceholder(/Write a professional message/).fill(text);
   await page.getByRole("button", { name: "Send" }).click();
@@ -57,28 +60,21 @@ test("LIVE-02 Rachel messages Rena; Rena reads it; the notice is marked read", a
   await n.context.close();
 });
 
-// NAV-01 on the live build: how often a sent message opens its conversation
-// by itself, needs a full page load (the fix), or doesn't move at all.
+// NAV-01 on the live build: for each send, whether the screen moved by
+// itself, was rescued by the watchdog's full page load, or didn't move, with
+// timings. The summary prints one line per send.
 test("LIVE-03 NAV-01 probe: five sends from Rachel to Rena", async ({ browser }, info) => {
   test.setTimeout(240_000);
-  const outcomes: string[] = [];
+  const runs: SendProbe[] = [];
   for (let n = 0; n < 5; n++) {
     const { context, page } = await as(browser, "rachel");
-    let loads = 0;
-    page.on("load", () => loads++);
-    const text = `QA test ${n + 1}/5, please ignore (${new Date().toISOString().slice(0, 16)}).`;
-    await page.goto("/dashboard/messages");
-    await page.waitForLoadState("networkidle");
-    const before = loads;
-    await writeTo(page, "Pazienza", text).catch(() => null);
-    await page.waitForTimeout(7000);
-    const shown = await page.getByText(text).first().isVisible().catch(() => false);
-    outcomes.push(!shown ? "stalled" : loads > before + 1 ? "recovered-by-full-load" : "soft-navigation");
+    runs.push(await probeSend(page, "Pazienza", `QA test ${n + 1}/5, please ignore (${new Date().toISOString().slice(0, 16)}).`));
     await context.close();
   }
-  await info.attach("nav01.json", { body: JSON.stringify(outcomes), contentType: "application/json" });
-  console.log(`NAV-01 on ${test.info().project.use.baseURL}: ${outcomes.join(", ")}`);
-  expect(outcomes.filter((o) => o === "stalled"), "no send leaves the page stuck").toEqual([]);
+  await info.attach("nav01.json", { body: JSON.stringify(runs, null, 2), contentType: "application/json" });
+  console.log(`NAV-01 on ${test.info().project.use.baseURL}:\n${runs.map((r, i) => `  ${i + 1}. ${describeProbe(r)}`).join("\n")}`);
+  expect(runs.filter((r) => r.outcome === "could-not-send"), "every send went through").toEqual([]);
+  expect(runs.filter((r) => r.outcome === "stalled"), "no send leaves the page stuck").toEqual([]);
 });
 
 test("LIVE-04 Settings: the two-week digest choice saves for Rena", async ({ browser }) => {
