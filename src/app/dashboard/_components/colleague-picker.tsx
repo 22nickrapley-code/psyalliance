@@ -154,7 +154,7 @@ export function ColleaguePicker({
             />
             {searching && <span className="picker-spin" aria-hidden="true" />}
           </div>
-          <div className="picker-list" role="listbox" aria-multiselectable={mode === "multi"}>
+          <div className="picker-list" role="listbox" aria-label={mode === "multi" ? "Colleagues to choose from" : "Choose a colleague"} aria-multiselectable={mode === "multi"}>
             {list.length === 0 && (
               <p className="picker-empty">
                 {q.trim().length >= 2 && !searching ? "No one in the verified network matches that name." : "Your circle is empty so far. Type a name to search the verified network."}

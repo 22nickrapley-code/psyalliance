@@ -1,0 +1,206 @@
+{
+  "run": "candidate-load",
+  "base": "http://localhost:3601",
+  "at": "2026-10-17T00:48:25.832Z",
+  "note": "One Node process (next start) on the test machine with the local database; relative numbers, not production capacity.",
+  "levels": [
+    {
+      "users": 5,
+      "seconds": 41,
+      "requests": 271,
+      "perSecond": 6.7,
+      "errors": 0,
+      "errorRate": 0,
+      "over3s": 0,
+      "p50": 218,
+      "p95": 512,
+      "p99": 605,
+      "max": 658,
+      "pages": {
+        "/dashboard/documents": {
+          "n": 23,
+          "p50": 218,
+          "p95": 573
+        },
+        "/dashboard/settings": {
+          "n": 23,
+          "p50": 211,
+          "p95": 556
+        },
+        "/dashboard/refer": {
+          "n": 20,
+          "p50": 241,
+          "p95": 649
+        },
+        "/dashboard/profile": {
+          "n": 21,
+          "p50": 286,
+          "p95": 496
+        },
+        "/dashboard/clinicians": {
+          "n": 28,
+          "p50": 179,
+          "p95": 374
+        },
+        "/dashboard/network": {
+          "n": 26,
+          "p50": 228,
+          "p95": 460
+        },
+        "/dashboard/messages": {
+          "n": 42,
+          "p50": 193,
+          "p95": 486
+        },
+        "/dashboard": {
+          "n": 24,
+          "p50": 258,
+          "p95": 433
+        },
+        "/dashboard/consult": {
+          "n": 37,
+          "p50": 182,
+          "p95": 421
+        },
+        "/dashboard/cover": {
+          "n": 27,
+          "p50": 329,
+          "p95": 512
+        }
+      },
+      "errorsSample": []
+    },
+    {
+      "users": 20,
+      "seconds": 41,
+      "requests": 422,
+      "perSecond": 10.3,
+      "errors": 0,
+      "errorRate": 0,
+      "over3s": 0,
+      "p50": 1428,
+      "p95": 1780,
+      "p99": 1822,
+      "max": 1884,
+      "pages": {
+        "/dashboard": {
+          "n": 54,
+          "p50": 1531,
+          "p95": 1764
+        },
+        "/dashboard/network": {
+          "n": 42,
+          "p50": 1407,
+          "p95": 1776
+        },
+        "/dashboard/settings": {
+          "n": 38,
+          "p50": 1359,
+          "p95": 1778
+        },
+        "/dashboard/consult": {
+          "n": 35,
+          "p50": 1421,
+          "p95": 1810
+        },
+        "/dashboard/clinicians": {
+          "n": 49,
+          "p50": 1420,
+          "p95": 1754
+        },
+        "/dashboard/refer": {
+          "n": 34,
+          "p50": 1409,
+          "p95": 1784
+        },
+        "/dashboard/messages": {
+          "n": 42,
+          "p50": 1461,
+          "p95": 1710
+        },
+        "/dashboard/cover": {
+          "n": 44,
+          "p50": 1435,
+          "p95": 1798
+        },
+        "/dashboard/profile": {
+          "n": 47,
+          "p50": 1448,
+          "p95": 1811
+        },
+        "/dashboard/documents": {
+          "n": 37,
+          "p50": 1382,
+          "p95": 1664
+        }
+      },
+      "errorsSample": []
+    },
+    {
+      "users": 40,
+      "seconds": 42,
+      "requests": 481,
+      "perSecond": 11.4,
+      "errors": 0,
+      "errorRate": 0,
+      "over3s": 222,
+      "p50": 2985,
+      "p95": 3322,
+      "p99": 3636,
+      "max": 3716,
+      "pages": {
+        "/dashboard/documents": {
+          "n": 45,
+          "p50": 2971,
+          "p95": 3279
+        },
+        "/dashboard/messages": {
+          "n": 51,
+          "p50": 2942,
+          "p95": 3256
+        },
+        "/dashboard/network": {
+          "n": 44,
+          "p50": 3000,
+          "p95": 3305
+        },
+        "/dashboard": {
+          "n": 46,
+          "p50": 2991,
+          "p95": 3267
+        },
+        "/dashboard/consult": {
+          "n": 47,
+          "p50": 2980,
+          "p95": 3543
+        },
+        "/dashboard/settings": {
+          "n": 66,
+          "p50": 2993,
+          "p95": 3227
+        },
+        "/dashboard/clinicians": {
+          "n": 44,
+          "p50": 2924,
+          "p95": 3309
+        },
+        "/dashboard/refer": {
+          "n": 46,
+          "p50": 3022,
+          "p95": 3413
+        },
+        "/dashboard/cover": {
+          "n": 54,
+          "p50": 3002,
+          "p95": 3565
+        },
+        "/dashboard/profile": {
+          "n": 38,
+          "p50": 3019,
+          "p95": 3544
+        }
+      },
+      "errorsSample": []
+    }
+  ]
+}

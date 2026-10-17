@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { raiseNotification } from "@/lib/notifications-v2";
+import { friendly } from "@/lib/friendly-error";
 
 // A plain `throw` inside a server action wired to a bare <form action={fn}>
 // crashes the whole page with Next.js's generic error screen instead of showing
@@ -14,7 +15,16 @@ import { raiseNotification } from "@/lib/notifications-v2";
 // relevant page (the inbox, or the specific thread) with an inline banner
 // rather than taking the page down.
 function messagesError(path: string, message: string): never {
-  redirect(`${path}?error=${encodeURIComponent(message)}`);
+  redirect(`${path}${path.includes("?") ? "&" : "?"}error=${encodeURIComponent(message)}`);
+}
+
+// A save the database refused or couldn't take: the member sees a plain
+// sentence, never the database's own wording (release testing ERR-01). The
+// page keeps what they wrote (data-draft) so they can just press Send again.
+const NOT_SENT = "Your message wasn't sent. Please try again in a moment.";
+function notSent(path: string, raw: string): never {
+  console.error("message not sent:", raw);
+  messagesError(path, NOT_SENT);
 }
 
 // Finds "@Full Name" occurrences in a message body against the other
@@ -55,7 +65,7 @@ async function postInitialMessage(
     body,
     mentioned_profile_ids: mentioned,
   });
-  if (messageError) messagesError("/dashboard/messages", messageError.message);
+  if (messageError) notSent(`/dashboard/messages?to=${encodeURIComponent(otherParticipantIds[0] || "")}`, messageError.message);
 
   await supabase
     .from("conversations")
@@ -170,12 +180,12 @@ export async function startConversation(formData: FormData) {
     .insert({ created_by: user.id, title })
     .select("id")
     .single();
-  if (convError) messagesError("/dashboard/messages", convError.message);
+  if (convError) notSent(`/dashboard/messages?to=${encodeURIComponent(participantIds[0] || "")}`, convError.message);
 
   const { error: participantsError } = await supabase
     .from("conversation_participants")
     .insert(allParticipantIds.map((profile_id) => ({ conversation_id: conversation.id, profile_id })));
-  if (participantsError) messagesError("/dashboard/messages", participantsError.message);
+  if (participantsError) notSent(`/dashboard/messages?to=${encodeURIComponent(participantIds[0] || "")}`, participantsError.message);
 
   if (body) {
     await postInitialMessage(supabase, conversation.id, user.id, body, participantIds);
@@ -213,7 +223,7 @@ export async function sendMessage(formData: FormData) {
     body,
     mentioned_profile_ids: mentioned,
   });
-  if (error) messagesError(`/dashboard/messages/${conversationId}`, error.message);
+  if (error) notSent(`/dashboard/messages/${conversationId}`, error.message);
 
   await supabase
     .from("conversations")
@@ -270,7 +280,7 @@ export async function setConversationReadState(formData: FormData) {
     .update({ last_read_at: state === "unread" ? FORCE_UNREAD_SENTINEL : new Date().toISOString() })
     .eq("conversation_id", conversationId)
     .eq("profile_id", user.id);
-  if (error) messagesError("/dashboard/messages", error.message);
+  if (error) messagesError("/dashboard/messages", friendly(error));
 
   revalidatePath("/dashboard/messages");
   revalidatePath("/dashboard");
@@ -306,7 +316,7 @@ export async function setNotificationReadState(formData: FormData) {
     .update({ read_at: state === "unread" ? null : new Date().toISOString() })
     .eq("id", id)
     .eq("profile_id", user.id);
-  if (error) messagesError("/dashboard/messages", error.message);
+  if (error) messagesError("/dashboard/messages", friendly(error));
 
   revalidatePath("/dashboard/messages");
   revalidatePath("/dashboard");
@@ -327,7 +337,7 @@ export async function removeMessageAction(formData: FormData) {
     .update({ body: "", deleted_at: new Date().toISOString(), mentioned_profile_ids: [] })
     .eq("id", messageId)
     .eq("author_id", user.id);
-  if (error) redirect(`/dashboard/messages/${conversationId}?error=${encodeURIComponent(error.message)}`);
+  if (error) redirect(`/dashboard/messages/${conversationId}?error=${encodeURIComponent(friendly(error))}`);
   revalidatePath(`/dashboard/messages/${conversationId}`);
   redirect(`/dashboard/messages/${conversationId}`);
 }

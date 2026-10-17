@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { friendly } from "@/lib/friendly-error";
 
 // A signed-in member accepts a colleague's invitation link.
 export async function acceptInviteAction(formData: FormData) {
@@ -13,7 +14,7 @@ export async function acceptInviteAction(formData: FormData) {
   } = await supabase.auth.getUser();
   if (!user) redirect(`/auth/sign-in?next=${encodeURIComponent(`/i/${token}`)}`);
   const { data, error } = await supabase.rpc("accept_member_invite", { p_token: token });
-  if (error) redirect(`/i/${token}?error=${encodeURIComponent(error.message)}`);
+  if (error) redirect(`/i/${token}?error=${encodeURIComponent(friendly(error))}`);
   const r = (data || {}) as { inviter?: string; connected?: boolean; self?: boolean };
   if (r.self) redirect("/dashboard/invite");
   revalidatePath("/dashboard/network");

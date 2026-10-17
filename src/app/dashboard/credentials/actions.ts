@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { safeBack, backWith } from "@/lib/back";
 import { US_STATES } from "@/lib/us-states";
+import { friendly } from "@/lib/friendly-error";
 
 function stateCode(raw: string): string | null {
   const v = raw.trim().toUpperCase();
@@ -52,7 +53,7 @@ export async function addLicense(formData: FormData) {
     expiration_date: String(formData.get("expiration_date") || "") || null,
     notes: String(formData.get("notes") || "") || null,
   });
-  if (error) credentialsError(error.message, back);
+  if (error) credentialsError(friendly(error), back);
 
   revalidatePath("/dashboard/credentials");
   revalidatePath("/dashboard");
@@ -63,7 +64,7 @@ export async function deleteLicense(formData: FormData) {
   const supabase = await createClient();
   const id = Number(formData.get("id"));
   const { error } = await supabase.from("licenses").delete().eq("id", id);
-  if (error) credentialsError(error.message);
+  if (error) credentialsError(friendly(error));
   revalidatePath("/dashboard/credentials");
 }
 
@@ -83,7 +84,7 @@ export async function addCeCredit(formData: FormData) {
     completed_date: String(formData.get("completed_date") || ""),
     license_id: formData.get("license_id") ? Number(formData.get("license_id")) : null,
   });
-  if (error) credentialsError(error.message);
+  if (error) credentialsError(friendly(error));
 
   revalidatePath("/dashboard/credentials");
 }
@@ -92,7 +93,7 @@ export async function deleteCeCredit(formData: FormData) {
   const supabase = await createClient();
   const id = Number(formData.get("id"));
   const { error } = await supabase.from("continuing_education_credits").delete().eq("id", id);
-  if (error) credentialsError(error.message);
+  if (error) credentialsError(friendly(error));
   revalidatePath("/dashboard/credentials");
 }
 
@@ -110,7 +111,7 @@ export async function addInsurancePanel(formData: FormData) {
     effective_date: String(formData.get("effective_date") || "") || null,
     renewal_date: String(formData.get("renewal_date") || "") || null,
   });
-  if (error) credentialsError(error.message);
+  if (error) credentialsError(friendly(error));
 
   revalidatePath("/dashboard/credentials");
 }
@@ -121,7 +122,7 @@ export async function updateInsurancePanelStatus(formData: FormData) {
   const status = String(formData.get("status") || "");
 
   const { error } = await supabase.from("insurance_panels").update({ status }).eq("id", id);
-  if (error) credentialsError(error.message);
+  if (error) credentialsError(friendly(error));
 
   revalidatePath("/dashboard/credentials");
 }
@@ -130,7 +131,7 @@ export async function deleteInsurancePanel(formData: FormData) {
   const supabase = await createClient();
   const id = Number(formData.get("id"));
   const { error } = await supabase.from("insurance_panels").delete().eq("id", id);
-  if (error) credentialsError(error.message);
+  if (error) credentialsError(friendly(error));
   revalidatePath("/dashboard/credentials");
 }
 
@@ -148,7 +149,7 @@ export async function saveNpiNumber(formData: FormData) {
     .from("profiles")
     .update({ npi_number: npiNumber || null })
     .eq("id", user.id);
-  if (error) credentialsError(error.message);
+  if (error) credentialsError(friendly(error));
 
   revalidatePath("/dashboard/credentials");
   done(formData, "credentials", "/dashboard/credentials?saved=1");
@@ -171,7 +172,7 @@ export async function saveCaqhInfo(formData: FormData) {
       caqh_last_attested_date: lastAttestedDate || null,
     })
     .eq("id", user.id);
-  if (error) credentialsError(error.message);
+  if (error) credentialsError(friendly(error));
 
   revalidatePath("/dashboard/credentials");
   done(formData, "credentials", "/dashboard/credentials?saved=1");
@@ -247,7 +248,7 @@ export async function checkNpiRegistry() {
     matched,
     flagged_reason: matched ? null : flaggedReason,
   });
-  if (error) credentialsError(error.message);
+  if (error) credentialsError(friendly(error));
 
   revalidatePath("/dashboard/credentials");
   revalidatePath("/dashboard/profile");
@@ -267,7 +268,7 @@ export async function saveMalpracticeAction(formData: FormData) {
     .from("profiles")
     .update({ malpractice_carrier: carrier || null, malpractice_expires: expires || null })
     .eq("id", user.id);
-  if (error) credentialsError(error.message);
+  if (error) credentialsError(friendly(error));
   revalidatePath("/dashboard/credentials");
   done(formData, "credentials", "/dashboard/credentials?saved=1");
 }

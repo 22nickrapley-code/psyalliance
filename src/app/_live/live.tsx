@@ -61,15 +61,30 @@ function findAnchor(anchor: string): Element | null {
 
 // A page change that arrives but never shows (release testing, NAV-01).
 // Now and then the framework receives the next page in full, for a link or
-// after a save that moves on (a sent message opening its conversation), yet
-// the screen stays where it was and later clicks may do nothing. The member
-// can't tell their save worked and tends to press again. So we watch every
-// page change the app asks the server for: once the answer has fully
-// arrived, if the address still hasn't moved after a short wait, we open
-// the page the normal way. When things work, which is nearly always, this
-// does nothing.
+// after a save (a sent message opening its conversation, a reply marked
+// useful), yet the screen stays where it was and later clicks may do
+// nothing. The member can't tell their save worked and tends to press
+// again. So we watch every page change the app asks the server for: once
+// the answer has fully arrived, if after a short wait the address still
+// hasn't moved (or, for a save that returns to the same page, the screen is
+// still waiting), we open the page the normal way. When things work, which
+// is nearly always, this does nothing.
 const NAV_GRACE_MS = 2500;
 let navSeq = 0;
+// True when the screen is waiting on an update that will never arrive:
+// React has work it put aside to wait for data, and nothing is left to
+// wake it. Read defensively; null when it can't tell.
+function screenStuck(): boolean | null {
+  try {
+    const key = Object.keys(document).find((k) => k.startsWith("__reactContainer$"));
+    const root = key ? (document as unknown as Record<string, { stateNode?: { pendingLanes?: number; suspendedLanes?: number; pingedLanes?: number } }>)[key]?.stateNode : null;
+    if (!root || typeof root.pendingLanes !== "number" || typeof root.suspendedLanes !== "number") return null;
+    return (root.pendingLanes & root.suspendedLanes) !== 0 && !root.pingedLanes;
+  } catch {
+    return null;
+  }
+}
+
 function installNavigationWatchdog() {
   const w = window as unknown as { __paNavWatch?: boolean; fetch: typeof fetch };
   if (w.__paNavWatch) return;
@@ -96,17 +111,21 @@ function installNavigationWatchdog() {
       if (!isAction && !isNav) return res;
       let target: URL | null = null;
       if (isAction) {
+        // A save that moves on names its next page; one that stays here
+        // (with fresh data for this page) is watched as a same-page update.
         const redirect = res.headers.get("x-action-redirect");
-        if (redirect) target = new URL(redirect.split(";")[0], window.location.href);
+        target = redirect ? new URL(redirect.split(";")[0], window.location.href) : new URL(window.location.href);
       } else {
         target = new URL(res.url || (input instanceof Request ? input.url : String(input)), window.location.href);
       }
       if (!target || target.origin !== window.location.origin || NOT_PAGES.some((r) => r.test(target!.pathname))) return res;
       const from = here();
-      if (norm(target) === from) return res; // a refresh of this page
+      // A save that comes back to this same page (or a refresh of it)
+      // doesn't move the address, so for those only a stuck screen counts.
+      const samePage = norm(target) === from;
       const go = new URL(target.toString());
       go.searchParams.delete("_rsc");
-      const mine = ++navSeq;
+      const mine = samePage ? navSeq : ++navSeq;
       // Wait for the whole answer (read from a copy), then give the page a
       // moment to show it.
       res
@@ -115,9 +134,11 @@ function installNavigationWatchdog() {
         .catch(() => null)
         .then(() =>
           window.setTimeout(() => {
-            if (mine !== navSeq || here() !== from || document.visibilityState === "hidden") return;
-            window.location.assign(go.toString());
-          }, NAV_GRACE_MS)
+            if (mine !== navSeq || document.visibilityState === "hidden") return;
+            const moved = here() !== from;
+            if (moved) return;
+            if (!samePage || screenStuck()) window.location.assign(go.toString());
+          }, samePage ? NAV_GRACE_MS + 1500 : NAV_GRACE_MS)
         );
     } catch {
       /* never let the watch get in the way of the request */
@@ -297,11 +318,14 @@ export function Live() {
   // the member goes back a step and returns, or the save comes back with an
   // error (release review N02). Kept in this tab only; cleared once sent.
   useEffect(() => {
-    const forms = Array.from(document.querySelectorAll<HTMLFormElement>("form[data-draft]"));
-    if (!forms.length) return;
     const hasError = new URLSearchParams(window.location.search).has("error");
     const cleanups: (() => void)[] = [];
-    for (const form of forms) {
+    const bound = new WeakSet<HTMLFormElement>();
+    // The page's own content can arrive a moment after this runs, so forms
+    // are picked up as they appear (for a few seconds).
+    const bind = (form: HTMLFormElement) => {
+      if (bound.has(form)) return;
+      bound.add(form);
       const key = `pa-draft:${form.dataset.draft}`;
       const fields = () =>
         Array.from(form.querySelectorAll<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>("textarea[name], select[name], input[name]")).filter(
@@ -310,7 +334,7 @@ export function Live() {
       try {
         const saved = JSON.parse(window.sessionStorage.getItem(key) || "null") as { values: Record<string, string>; sent?: boolean } | null;
         if (saved?.sent && !hasError) window.sessionStorage.removeItem(key);
-        else if (saved?.values) for (const f of fields()) if (f.name in saved.values) f.value = saved.values[f.name];
+        else if (saved?.values) for (const f of fields()) if (f.name in saved.values && !f.value) f.value = saved.values[f.name];
       } catch {
         /* storage unavailable: nothing to restore */
       }
@@ -333,8 +357,17 @@ export function Live() {
         form.removeEventListener("change", onInput);
         form.removeEventListener("submit", onSubmit);
       });
-    }
-    return () => cleanups.forEach((c) => c());
+    };
+    const scan = () => document.querySelectorAll<HTMLFormElement>("form[data-draft]").forEach(bind);
+    scan();
+    const watcher = new MutationObserver(scan);
+    watcher.observe(document.body, { childList: true, subtree: true });
+    const stop = window.setTimeout(() => watcher.disconnect(), 5000);
+    return () => {
+      watcher.disconnect();
+      window.clearTimeout(stop);
+      cleanups.forEach((c) => c());
+    };
   }, [pathname, search]);
 
   // 1. Internal links without a full reload.

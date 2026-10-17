@@ -45,6 +45,12 @@ export function serviceKey(): string {
 export async function signInAs(context: BrowserContext, key: string, baseURL: string) {
   const a = stagingFixtures()[key];
   if (!a) throw new Error(`No staging fixture called ${key}`);
+  await signInWith(context, a.email, a.password, baseURL);
+  return { key, id: a.id, email: a.email, name: a.name };
+}
+
+// The same for an account made during the test (a disposable member).
+export async function signInWith(context: BrowserContext, email: string, password: string, baseURL: string) {
   let jar: { name: string; value: string; options?: any }[] = [];
   const client = createServerClient(SUPABASE_URL, anonKey(), {
     cookies: {
@@ -57,12 +63,11 @@ export async function signInAs(context: BrowserContext, key: string, baseURL: st
       },
     },
   });
-  const { error } = await client.auth.signInWithPassword({ email: a.email, password: a.password });
-  if (error) throw new Error(`Staging sign-in failed for ${key}: ${error.message}`);
+  const { error } = await client.auth.signInWithPassword({ email, password });
+  if (error) throw new Error(`Staging sign-in failed for ${email}: ${error.message}`);
   const host = new URL(baseURL).hostname;
   await context.clearCookies();
   await context.addCookies(jar.map((c) => ({ name: c.name, value: c.value, domain: host, path: "/", httpOnly: false, secure: false, sameSite: "Lax" as const })));
-  return { key, id: a.id, email: a.email, name: a.name };
 }
 
 // For tests that must type a password into the real sign-in form (the
@@ -106,5 +111,5 @@ export async function disposableMember(label: string) {
   const c = createClient(SUPABASE_URL, anonKey(), { auth: { persistSession: false, autoRefreshToken: false } });
   const { error } = await c.auth.signInWithPassword({ email, password });
   if (error) throw new Error(`disposable sign-in: ${error.message}`);
-  return { id: user.id as string, email, client: c };
+  return { id: user.id as string, email, password, client: c };
 }

@@ -2028,6 +2028,7 @@
 .pa .sp-who.colleague{color:#4b3a7a;background:#efecf8}
 .pa .sp-initials{width:22px;height:22px;border-radius:50%;background:var(--forest);color:#fff;display:grid;place-items:center;font-size:10px}
 .pa .sp-who.colleague .sp-initials{background:#5b4a91}
+.pa .sp-initials.is-long{font-size:8px;letter-spacing:-.02em}
 .pa .sp-controls{display:flex;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap}
 .pa .sp-step{border:1px solid var(--line);background:#fff;border-radius:8px;width:34px;height:34px;cursor:pointer;color:var(--ink)}
 .pa .sp-step:disabled{opacity:.4;cursor:default}
@@ -2498,3 +2499,10 @@
   .pa .picker-chosen .picker-text + .btn{margin-left:56px}
 }
 .pa .demos-hide{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin-top:22px;padding-top:16px;border-top:1px solid var(--line)}
+
+/* Contrast (release testing A11Y, 16 Oct): small text at 4.5:1 or better. */
+.pa .lib-code{color:#8a6230}
+.pa .new-pill{background:#8a6230}
+.pa .sp-chrome span{color:#56655f}
+.pa .progress-step{color:#56655d}
+.pa .orbit-big .node.suggested{color:#3f5666;opacity:1}

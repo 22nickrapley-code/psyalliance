@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { friendly } from "@/lib/friendly-error";
 
 // A plain `throw` inside a server action wired to a bare <form action={fn}>
 // crashes the whole page with Next.js's generic error screen instead of showing
@@ -36,7 +37,7 @@ export async function setProfileFlag(formData: FormData) {
   const value = formData.get("value") === "true";
 
   const { error } = await supabase.from("profiles").update({ [flag]: value }).eq("id", user.id);
-  if (error) dashboardError(error.message);
+  if (error) dashboardError(friendly(error));
 
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/profile");

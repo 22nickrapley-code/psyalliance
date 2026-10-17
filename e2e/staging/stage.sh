@@ -209,6 +209,7 @@ EOF
   $PSQL -U supabase_admin -f "$REPO/e2e/staging/after-migrations.sql"
   start
   node "$REPO/e2e/staging/fixtures.mjs"
+  $PSQL -U postgres -f "$REPO/e2e/staging/library-fixtures.sql"
 }
 
 migrate() {

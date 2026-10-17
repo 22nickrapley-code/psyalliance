@@ -426,7 +426,7 @@ export function StoryPlayer({
       <div className="sp-stage">
         <div className="sp-caption" aria-live="polite">
           <span className={`sp-who${s?.who.colleague ? " colleague" : ""}`}>
-            <span className="sp-initials" aria-hidden="true">{s?.who.initials}</span>
+            <span className={`sp-initials${(s?.who.initials || "").length > 2 ? " is-long" : ""}`} aria-hidden="true">{s?.who.initials}</span>
             {s?.who.colleague ? `${s.who.name.split(" ")[0]}'s view` : "Your practice"}
           </span>
           <h3 key={`c${i}`}>{s?.caption}</h3>

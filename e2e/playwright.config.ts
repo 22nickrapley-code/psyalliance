@@ -4,6 +4,7 @@ import { defineConfig, devices } from "@playwright/test";
 //
 // Projects:
 //   public   read-only public pages; any address (E2E_BASE_URL), safe on live
+//            (public-live and public-sandbox point at the two live sites)
 //   staging  full journeys on the disposable local stack (e2e/staging)
 //   live     signed-in, low-impact checks on psyalliance.org with the two
 //            named test profiles; uses browser sign-ins Nick saved himself
@@ -42,10 +43,16 @@ export default defineConfig({
   metadata: { run: RUN, base: BASE, build: process.env.E2E_BUILD || "unknown" },
   projects: [
     { name: "public", testMatch: /public\/.*\.spec\.ts/, use: { ...devices["Desktop Chrome"] } },
+    // The same read-only public checks against the two live sites.
+    { name: "public-live", testMatch: /public\/.*\.spec\.ts/, use: { ...devices["Desktop Chrome"], baseURL: "https://psyalliance.org" } },
+    { name: "public-sandbox", testMatch: /public\/.*\.spec\.ts/, use: { ...devices["Desktop Chrome"], baseURL: "https://sandbox.psyalliance.org" } },
     { name: "public-phone", testMatch: /public\/.*\.spec\.ts/, use: { ...devices["Pixel 7"] } },
-    { name: "staging", testMatch: /staging\/.*\.spec\.ts/, use: { ...devices["Desktop Chrome"] } },
+    { name: "staging", testMatch: /staging\/.*\.spec\.ts/, testIgnore: /staging\/phone\//, use: { ...devices["Desktop Chrome"] } },
     { name: "staging-phone", testMatch: /staging\/phone\/.*\.spec\.ts/, use: { ...devices["Pixel 7"] } },
-    { name: "live", testMatch: /live\/.*\.spec\.ts/, use: { ...devices["Desktop Chrome"] } },
+    // Live, signed in as the two authorised fictional test profiles. No
+    // traces or video (they would hold session cookies); screenshots only
+    // when a check fails.
+    { name: "live", testMatch: /live\/.*\.spec\.ts/, use: { ...devices["Desktop Chrome"], baseURL: process.env.E2E_LIVE_URL || "https://psyalliance.org", trace: "off", video: "off", screenshot: "only-on-failure" } },
     { name: "diagnostics", testMatch: /diagnostics\/.*\.spec\.ts/, use: { ...devices["Desktop Chrome"] } },
   ],
 });

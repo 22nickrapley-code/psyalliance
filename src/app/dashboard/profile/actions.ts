@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { safeBack, backWith } from "@/lib/back";
 import { IS_DEMO_SITE } from "@/lib/env";
 import { extractStructuredData, AiNotConfiguredError } from "@/lib/ai/anthropic";
+import { friendly } from "@/lib/friendly-error";
 
 // A plain `throw` inside a server action wired to a bare <form action={fn}>
 // crashes the whole page with Next.js's generic error screen instead of showing
@@ -194,7 +195,7 @@ export async function saveProfile(formData: FormData) {
     ? await supabase.from("profiles").update(profileRow).eq("id", user.id)
     : await supabase.from("profiles").insert(profileRow);
   if (saveError) {
-    profileError(saveError.message, back);
+    profileError(friendly(saveError), back);
   }
 
   // Rebuild the profile's lookup-value associations from scratch each save -
@@ -250,7 +251,7 @@ export async function saveProfile(formData: FormData) {
       await supabase.from("profile_lookup_values").delete().eq("profile_id", user.id);
       if (rows.length > 0) {
         const { error: insertError } = await supabase.from("profile_lookup_values").insert(rows);
-        if (insertError) profileError(insertError.message, back);
+        if (insertError) profileError(friendly(insertError), back);
       }
     } else {
       profileError("Your specialties and other practice details didn't save. Nothing was changed; try again.", back);
@@ -302,7 +303,7 @@ export async function toggleOpenToField(formData: FormData) {
     .from("profiles")
     .update({ [field]: !current, updated_at: new Date().toISOString() })
     .eq("id", user.id);
-  if (error) profileError(error.message);
+  if (error) profileError(friendly(error));
 
   revalidatePath("/dashboard/profile");
   revalidatePath("/dashboard");
@@ -323,7 +324,7 @@ export async function saveAvailability(formData: FormData) {
     const { error } = await supabase
       .from("profile_availability")
       .insert(days.map((day_of_week) => ({ profile_id: user.id, day_of_week })));
-    if (error) profileError(error.message);
+    if (error) profileError(friendly(error));
   }
 
   revalidatePath("/dashboard/profile");
@@ -520,14 +521,14 @@ export async function uploadAvatar(formData: FormData) {
     upsert: false,
   });
   if (uploadError) {
-    redirect("/dashboard/profile?avatar_error=" + encodeURIComponent(uploadError.message));
+    redirect("/dashboard/profile?avatar_error=" + encodeURIComponent(friendly(uploadError, "That photo didn't upload. Try a JPG or PNG under 5 MB.")));
   }
 
   const { error: updateError } = await supabase.from("profiles").update({ avatar_path: path }).eq("id", user.id);
   if (updateError) {
     // Clean up the just-uploaded object rather than leaving an orphan.
     await supabase.storage.from("avatars").remove([path]);
-    redirect("/dashboard/profile?avatar_error=" + encodeURIComponent(updateError.message));
+    redirect("/dashboard/profile?avatar_error=" + encodeURIComponent(friendly(updateError)));
   }
 
   // Best-effort cleanup of the previous photo, if any - not awaited-critical,
@@ -555,7 +556,7 @@ export async function submitCredentialVerification(formData: FormData) {
     state: String(formData.get("state") || "") || null,
     license_number: String(formData.get("license_number") || ""),
   });
-  if (error) profileError(error.message);
+  if (error) profileError(friendly(error));
 
   revalidatePath("/dashboard/profile");
 }

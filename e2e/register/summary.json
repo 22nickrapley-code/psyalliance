@@ -1,0 +1,29 @@
+{
+  "generatedAt": "2026-10-17T01:47:47.306Z",
+  "runs": [
+    "final2-staging",
+    "final2-phone",
+    "final2-routes"
+  ],
+  "routeDefinitions": 88,
+  "pages": 79,
+  "handlers": 9,
+  "items": 144,
+  "itemStatus": {
+    "Pass": 124,
+    "Open: intermittent": 1,
+    "Code reviewed": 1,
+    "Nick to confirm": 3,
+    "Not run on staging": 2,
+    "See load report": 1,
+    "See restore report": 1,
+    "Not run": 1,
+    "Fail": 1,
+    "Covered by journeys": 9
+  },
+  "tests": 595,
+  "testStatus": {
+    "passed": 594,
+    "failed": 1
+  }
+}

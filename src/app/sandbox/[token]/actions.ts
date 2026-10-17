@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { IS_DEMO_SITE } from "@/lib/env";
+import { friendly } from "@/lib/friendly-error";
 
 // Opens a personal sandbox pass: the database creates a fresh fictional
 // guest account with its own sample activity and returns one-off sign-in
@@ -33,5 +34,5 @@ export async function enterSandboxAction(formData: FormData) {
 export async function resetSandboxAction() {
   const supabase = await createClient();
   const { error } = await supabase.rpc("reset_my_sandbox");
-  redirect(error ? `/dashboard?error=${encodeURIComponent(error.message)}` : "/dashboard?welcome=reset");
+  redirect(error ? `/dashboard?error=${encodeURIComponent(friendly(error))}` : "/dashboard?welcome=reset");
 }

@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition, type ReactNode } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { identifierError } from "@/lib/deidentify";
 import { answerCoverAction } from "./actions";
 
@@ -38,7 +37,6 @@ export function IncomingCase({
   // The conversation so far, when a question was asked earlier.
   children?: ReactNode;
 }) {
-  const router = useRouter();
   const ownerFirst = ownerName.replace(/^(dr\.?)\s+/i, "").split(/[\s,]+/)[0];
   const [status, setStatus] = useState<CaseStatus>(initialStatus);
   const [touched, setTouched] = useState(false);
@@ -48,7 +46,6 @@ export function IncomingCase({
   const [asking, setAsking] = useState(false);
   const [question, setQuestion] = useState("");
   const [sent, setSent] = useState<string | null>(null);
-  const [, startTransition] = useTransition();
   const box = useRef<HTMLTextAreaElement>(null);
 
   // A refresh brings news (for example, someone else took the client).
@@ -91,7 +88,9 @@ export function IncomingCase({
     } else {
       setStatus(response);
     }
-    startTransition(() => router.refresh());
+    // The save itself brings the page's new counts back with it (the action
+    // revalidates /dashboard/cover); a second refresh on top of it raced
+    // and sometimes left the screen waiting (release testing NAV-01).
   };
 
   const facts = details.map(([, v]) => v).filter((v) => v && v !== "Not stated");

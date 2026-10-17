@@ -23,11 +23,14 @@ async function waitFor<T>(fn: () => Promise<T>, ok: (v: T) => boolean, ms = 1500
 test.describe("AUTH sign-up and password reset", () => {
   test("AUTH-02-A signing up again with a registered email tells the owner by email", async ({ page }, info) => {
     const ev = watch(page);
-    const avery = account("avery");
+    // A fresh registered member each run: Auth sends one email a minute per
+    // address, so a shared fixture would make this depend on earlier runs.
+    const owner = await disposableMember("again");
+    const avery = { email: owner.email };
     const before = (await inbox(avery.email)).length;
     await page.goto("/auth/sign-up");
     await page.locator('select[name="qualification"]').selectOption("PsyD");
-    await page.locator('input[name="fullName"]').fill("Avery Quillfeather");
+    await page.locator('input[name="fullName"]').fill("Disposable Again");
     await page.locator('input[name="email"]').fill(avery.email);
     const pw = `Np-${crypto.randomBytes(9).toString("base64url")}`;
     await page.locator('input[name="password"]').fill(pw);
@@ -104,7 +107,8 @@ test.describe("AUTH sign-up and password reset", () => {
 
   test("AUTH-01-C an unknown address gets the same answer as a registered one", async ({ page }, info) => {
     const answers: string[] = [];
-    for (const email of [account("dara").email, `nobody-${Date.now()}@mail.staging.example`]) {
+    const registered = await disposableMember("known");
+    for (const email of [registered.email, `nobody-${Date.now()}@mail.staging.example`]) {
       await page.goto("/auth/forgot-password");
       await page.locator('input[name="email"]').fill(email);
       await page.getByRole("button", { name: "Send reset link" }).click();

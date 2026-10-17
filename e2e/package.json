@@ -9,11 +9,13 @@
     "stage:start": "bash staging/stage.sh start",
     "stage:stop": "bash staging/stage.sh stop",
     "test:staging": "playwright test --project=staging",
-    "test:public:live": "E2E_BASE_URL=https://psyalliance.org playwright test --project=public",
-    "test:public:sandbox": "E2E_BASE_URL=https://sandbox.psyalliance.org playwright test --project=public",
+    "test:public:live": "playwright test --project=public-live",
+    "test:public:sandbox": "playwright test --project=public-sandbox",
     "login:live": "node tools/save-login.mjs",
     "test:live": "playwright test --project=live",
-    "report": "playwright show-report reports/html"
+    "report": "playwright show-report",
+    "test:staging:phone": "playwright test --project=staging-phone",
+    "register": "node tools/build-register.mjs"
   },
   "devDependencies": {
     "@axe-core/playwright": "4.10.2",

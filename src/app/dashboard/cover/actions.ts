@@ -7,6 +7,7 @@ import { createCoveragePlan, sendCoverageRequest, respondToCoverageRequest } fro
 import { logProfessionalEvent } from "@/lib/professional-events";
 import { identifierError } from "@/lib/deidentify";
 import { postToThread } from "@/lib/threads";
+import { friendly } from "@/lib/friendly-error";
 
 // Cover wizard server actions (Product Spec v1, "Cover"):
 // Plan -> Needs -> Candidates -> Invite -> Track. Nothing is sent until
@@ -120,7 +121,7 @@ export async function addCaseAction(formData: FormData) {
     delete row.jurisdiction_state;
     ({ data: added, error } = await supabase.from("coverage_plan_cases").insert(row).select("id").single());
   }
-  if (error) back(path, error.message);
+  if (error) back(path, friendly(error));
   revalidatePath(`/dashboard/cover/${planId}`);
   redirect(`${path}&added=${added?.id ?? ""}`);
 }
@@ -148,7 +149,7 @@ export async function notAFitAction(formData: FormData) {
     coverage_plan_case_id: caseId,
     candidate_profile_id: candidateId,
   });
-  if (error && error.code !== "23505") back(returnTo, error.message);
+  if (error && error.code !== "23505") back(returnTo, friendly(error));
   redirect(returnTo);
 }
 

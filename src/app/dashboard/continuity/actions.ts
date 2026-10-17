@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { CONTINUITY_SECTIONS } from "@/lib/continuity";
 
 import { safeBack } from "@/lib/back";
+import { friendly } from "@/lib/friendly-error";
 
 // Keeps the way back (?back=) across section saves.
 const back = (q: string, keep = ""): never => {
@@ -43,7 +44,7 @@ export async function saveContinuitySection(formData: FormData) {
   row.answers = answers;
 
   const { error } = await supabase.from("continuity_plans").upsert(row, { onConflict: "profile_id" });
-  if (error) to(`?error=${encodeURIComponent(error.message)}#${sectionKey}`);
+  if (error) to(`?error=${encodeURIComponent(friendly(error))}#${sectionKey}`);
   revalidatePath("/dashboard/continuity");
   to(`?saved=${sectionKey}`);
 }
@@ -65,7 +66,7 @@ export async function respondContinuityAction(formData: FormData) {
   const owner = String(formData.get("owner") || "");
   const accept = String(formData.get("accept") || "") === "1";
   const { error } = await supabase.rpc("respond_continuity", { p_owner: owner, p_accept: accept });
-  if (error) redirect(`/dashboard/continuity/duties?error=${encodeURIComponent(error.message)}`);
+  if (error) redirect(`/dashboard/continuity/duties?error=${encodeURIComponent(friendly(error))}`);
   revalidatePath("/dashboard/continuity/duties");
   redirect(`/dashboard/continuity/duties?${accept ? "accepted" : "declined"}=1`);
 }

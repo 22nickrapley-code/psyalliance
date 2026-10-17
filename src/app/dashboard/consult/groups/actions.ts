@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createConsultationGroup, inviteToConsultationGroup, createConsultation } from "@/lib/consult";
+import { friendly } from "@/lib/friendly-error";
 
 // PsyA2 #63-67 (PA-04 closed peer consultation groups) - consult.ts has had
 // createConsultationGroup()/inviteToConsultationGroup() since Phase 4 batch
@@ -114,7 +115,7 @@ export async function respondToGroupInviteAction(formData: FormData) {
     .update({ status, responded_at: new Date().toISOString() })
     .eq("id", membershipId)
     .eq("profile_id", user.id);
-  if (error) groupsError(error.message);
+  if (error) groupsError(friendly(error));
 
   revalidatePath("/dashboard/consult/groups");
   redirect("/dashboard/consult/groups");
@@ -135,7 +136,7 @@ export async function leaveGroupAction(formData: FormData) {
     .update({ status: "left", responded_at: new Date().toISOString() })
     .eq("id", membershipId)
     .eq("profile_id", user.id);
-  if (error) groupError(groupId, error.message);
+  if (error) groupError(groupId, friendly(error));
 
   revalidatePath("/dashboard/consult/groups");
   redirect("/dashboard/consult/groups");
@@ -154,7 +155,7 @@ export async function removeGroupMemberAction(formData: FormData) {
   // RLS ("group creator manages membership") is the real gate here - this
   // delete only succeeds when the caller created the group.
   const { error } = await supabase.from("consultation_group_members").delete().eq("id", membershipId);
-  if (error) groupError(groupId, error.message);
+  if (error) groupError(groupId, friendly(error));
 
   revalidatePath(`/dashboard/consult/groups/${groupId}`);
   redirect(`/dashboard/consult/groups/${groupId}`);
@@ -176,7 +177,7 @@ export async function updateCharterAction(formData: FormData) {
     .update({ charter_body: charterBody, charter_version: (current?.charter_version || 1) + 1 })
     .eq("id", groupId)
     .eq("created_by", user.id);
-  if (error) groupError(groupId, error.message);
+  if (error) groupError(groupId, friendly(error));
 
   revalidatePath(`/dashboard/consult/groups/${groupId}`);
   redirect(`/dashboard/consult/groups/${groupId}`);

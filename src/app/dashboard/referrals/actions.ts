@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { friendly } from "@/lib/friendly-error";
 
 // A plain `throw` inside a server action wired to a bare <form action={fn}>
 // crashes the whole page with Next.js's generic error screen instead of showing
@@ -37,7 +38,7 @@ export async function createReferralRequest(formData: FormData) {
     insurance: String(formData.get("insurance") || "") || null,
     notes: String(formData.get("notes") || "") || null,
   });
-  if (error) referralsError(error.message);
+  if (error) referralsError(friendly(error));
 
   revalidatePath("/dashboard/referrals");
 }
@@ -56,7 +57,7 @@ export async function offerToHelp(formData: FormData) {
     responding_profile_id: user.id,
     message: String(formData.get("message") || "") || null,
   });
-  if (error) referralsError(error.message);
+  if (error) referralsError(friendly(error));
 
   revalidatePath("/dashboard/referrals");
   revalidatePath("/dashboard/messages");
@@ -71,7 +72,7 @@ export async function acceptResponse(formData: FormData) {
     .from("referral_responses")
     .update({ status: "accepted", responded_at: new Date().toISOString() })
     .eq("id", responseId);
-  if (acceptError) messagesError(acceptError.message);
+  if (acceptError) messagesError(friendly(acceptError));
 
   await supabase
     .from("referral_responses")
@@ -83,7 +84,7 @@ export async function acceptResponse(formData: FormData) {
     .from("referral_requests")
     .update({ status: "matched" })
     .eq("id", requestId);
-  if (matchError) messagesError(matchError.message);
+  if (matchError) messagesError(friendly(matchError));
 
   revalidatePath("/dashboard/messages");
   revalidatePath("/dashboard/referrals");
@@ -97,7 +98,7 @@ export async function closeReferralRequest(formData: FormData) {
     .from("referral_requests")
     .update({ status: "closed", closed_at: new Date().toISOString() })
     .eq("id", id);
-  if (error) referralsError(error.message);
+  if (error) referralsError(friendly(error));
 
   revalidatePath("/dashboard/referrals");
 }
@@ -116,7 +117,7 @@ export async function acknowledgeProviderReferral(formData: FormData) {
     .from("provider_referrals")
     .update({ status: "acknowledged", status_note: note, responded_at: new Date().toISOString() })
     .eq("id", id);
-  if (error) messagesError(error.message);
+  if (error) messagesError(friendly(error));
 
   revalidatePath("/dashboard/messages");
 }
@@ -130,7 +131,7 @@ export async function declineProviderReferral(formData: FormData) {
     .from("provider_referrals")
     .update({ status: "declined", status_note: note, responded_at: new Date().toISOString() })
     .eq("id", id);
-  if (error) messagesError(error.message);
+  if (error) messagesError(friendly(error));
 
   revalidatePath("/dashboard/messages");
 }

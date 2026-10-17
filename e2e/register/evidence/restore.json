@@ -1,0 +1,8 @@
+{
+  "run": "candidate-restore",
+  "damageWasVisible": true,
+  "restoredMatchesSnapshot": true,
+  "restoreSeconds": 4,
+  "consistencyBefore": "rows_without_bytes=0 bytes_without_rows=0 ",
+  "consistencyAfter": "rows_without_bytes=0 bytes_without_rows=0 "
+}

@@ -32,7 +32,7 @@ http
         try {
           const f = JSON.parse(body || "{}");
           if (f.clear) faults.length = 0;
-          else faults.push({ path: f.path, method: f.method || null, status: f.status || 503, times: f.times ?? 1, delayMs: f.delayMs || 0 });
+          else faults.push({ path: f.path, method: f.method || null, status: f.status || 503, times: f.times ?? 1, delayMs: f.delayMs || 0, pass: !!f.pass });
           res.writeHead(200, { "content-type": "application/json" }).end(JSON.stringify({ faults }));
         } catch (e) {
           res.writeHead(400).end(String(e));
@@ -54,12 +54,27 @@ http
     res.on("close", () => inflight.delete(id));
     const path = req.url.slice(route[0].length) || "/";
     const fault = faults.find((f) => f.times > 0 && req.url.startsWith(f.path) && (!f.method || f.method === req.method));
-    if (fault) {
+    if (fault && !fault.pass) {
       fault.times--;
       stats.faults++;
       const fail = () => res.writeHead(fault.status, { ...cors, "content-type": "application/json" }).end(JSON.stringify({ message: "Injected failure (staging)", code: "STAGING_FAULT" }));
       return fault.delayMs ? setTimeout(fail, fault.delayMs) : fail();
     }
+    // A slow service: the request goes through, late ({"pass": true, "delayMs": 3000}).
+    if (fault && fault.pass) {
+      fault.times--;
+      stats.faults++;
+      req.pause();
+      return setTimeout(() => {
+        req.resume();
+        forward(req, res, route, path, id);
+      }, fault.delayMs);
+    }
+    forward(req, res, route, path, id);
+  })
+  .listen(54321, "127.0.0.1", () => console.log("gateway on :54321"));
+
+function forward(req, res, route, path, id) {
     const upstream = http.request(
       { host: "127.0.0.1", port: route[1], method: req.method, path, headers: { ...req.headers, host: `127.0.0.1:${route[1]}`, "x-forwarded-host": "127.0.0.1:54321", "x-forwarded-proto": "http", "x-forwarded-prefix": route[0] } },
       (up) => {
@@ -77,5 +92,4 @@ http
       res.end(JSON.stringify({ message: `gateway: ${e.message}` }));
     });
     req.pipe(upstream);
-  })
-  .listen(54321, "127.0.0.1", () => console.log("gateway on :54321"));
+}

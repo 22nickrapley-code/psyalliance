@@ -65,7 +65,7 @@ export async function clearInbox() {
   await fetch(`${MAILPIT}/api/v1/messages`, { method: "DELETE" });
 }
 
-export async function gatewayFault(fault: { path: string; method?: string; status?: number; times?: number; delayMs?: number } | { clear: true }) {
+export async function gatewayFault(fault: { path: string; method?: string; status?: number; times?: number; delayMs?: number; pass?: boolean } | { clear: true }) {
   await fetch("http://127.0.0.1:54321/__fault", { method: "POST", body: JSON.stringify(fault) });
 }
 

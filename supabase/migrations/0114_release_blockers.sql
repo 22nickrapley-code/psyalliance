@@ -12,6 +12,9 @@
 --           saved value is returned.
 --   R04     erasure: an account can't be deleted while its stored files
 --           remain, so a direct call can't orphan them.
+--   SEC-01  only admins can put files in the shared Library folder.
+--   EMAIL-01 a temporary email provider failure is tried again (three
+--           more tries) instead of being marked failed at once.
 --   parity  guard_licence_review and the planner cleanup as they already are
 --           on both hosted projects, so a fresh database matches them.
 --
@@ -576,6 +579,63 @@ $function$;
 
 revoke all on function private.demo_autorespond() from public, anon, authenticated;
 
+-- ------------------------------------------------------------------ EMAIL-01
+-- A temporary failure at the email provider (rate limit, provider error,
+-- no answer) puts the email back in the queue, up to three more tries
+-- (after about 5, 15 and 45 minutes). A refusal (bad key, unverified
+-- sender) fails at once, as before.
+create or replace function public.reconcile_email_outbox()
+returns integer
+language plpgsql
+security definer
+set search_path = public, extensions
+as $$
+declare n int; m int;
+begin
+  update notification_deliveries nd
+  set status = 'pending',
+      provider_request_id = null,
+      retry_count = nd.retry_count + 1,
+      send_after = now() + interval '5 minutes' * power(3, nd.retry_count),
+      error = left('Retrying: ' || coalesce(resp.content, resp.error_msg, 'HTTP ' || resp.status_code), 500)
+  from net._http_response resp
+  where nd.provider_request_id = resp.id
+    and nd.status = 'sent'
+    and (resp.status_code is null or resp.status_code = 429 or resp.status_code >= 500)
+    and nd.retry_count < 3;
+  get diagnostics m = row_count;
+  update notification_deliveries nd
+  set status = 'failed', error = left(coalesce(resp.content, resp.error_msg, 'HTTP ' || resp.status_code), 500)
+  from net._http_response resp
+  where nd.provider_request_id = resp.id
+    and nd.status = 'sent'
+    and (resp.status_code is null or resp.status_code >= 300);
+  get diagnostics n = row_count;
+  return n + m;
+end;
+$$;
+
+-- ------------------------------------------------------------------ SEC-01
+-- Only admins put files in the shared Library folder (the app's only use
+-- of it). Any signed-in account could upload there before; none has on the
+-- real site (checked 16 Oct: 22 shared files, all from admins).
+drop policy if exists "shared documents are writable only by their uploader" on storage.objects;
+create policy "shared documents are writable only by their uploader" on storage.objects
+  for insert with check (
+    bucket_id = 'documents'
+    and (storage.foldername(name))[1] = 'shared'
+    and owner = (select auth.uid())
+    and private.is_admin_user((select auth.uid()))
+  );
+drop policy if exists "shared documents are only editable by their uploader" on storage.objects;
+create policy "shared documents are only editable by their uploader" on storage.objects
+  for update using (
+    bucket_id = 'documents'
+    and (storage.foldername(name))[1] = 'shared'
+    and owner = (select auth.uid())
+    and private.is_admin_user((select auth.uid()))
+  );
+
 -- ------------------------------------------------------------------ check
 -- Expect: one row, every column true.
 select
@@ -587,4 +647,6 @@ select
   to_regprocedure('public.raise_notification(text,text,text,text,jsonb,text,jsonb)') is not null as notify_rpc,
   to_regprocedure('public.set_response_useful(bigint,boolean)') is not null as useful_rpc,
   pg_get_constraintdef((select oid from pg_constraint where conname = 'valid_digest_frequency')) like '%fortnightly%' as fortnightly_ok,
-  position('storage.objects' in pg_get_functiondef('public.delete_my_account'::regproc)) > 0 as erasure_guard;
+  position('storage.objects' in pg_get_functiondef('public.delete_my_account'::regproc)) > 0 as erasure_guard,
+  position('retry_count < 3' in pg_get_functiondef('public.reconcile_email_outbox'::regproc)) > 0 as email_retry,
+  (select with_check from pg_policies where schemaname = 'storage' and tablename = 'objects' and policyname = 'shared documents are writable only by their uploader') like '%is_admin_user%' as shared_admin_only;

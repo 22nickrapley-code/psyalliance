@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { createConsultation, respondToConsultation, resolveConsultation, setResponseUseful, type ConsultationType } from "@/lib/consult";
 import { raiseNotification } from "@/lib/notifications-v2";
 import { identifierError } from "@/lib/deidentify";
+import { friendly } from "@/lib/friendly-error";
 
 // Consult (Product Spec v1): one feature at four audience sizes. Every
 // question is saved as a draft first and shown on a review screen with its
@@ -95,7 +96,7 @@ export async function publishConsultAction(formData: FormData) {
   const { data: c } = await supabase.from("consultations").select("*").eq("id", id).eq("author_profile_id", userId).maybeSingle();
   if (!c) back("/dashboard/consult", "Question not found.");
   const { error } = await supabase.from("consultations").update({ status: "open" }).eq("id", id);
-  if (error) back(`/dashboard/consult/${id}`, error.message);
+  if (error) back(`/dashboard/consult/${id}`, friendly(error));
 
   let recipients: string[] = [];
   if (c.group_id) {
