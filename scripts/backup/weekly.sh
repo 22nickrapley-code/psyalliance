@@ -13,6 +13,7 @@
 #
 # Prints counts only: never file names, keys or data.
 set -euo pipefail
+export RCLONE_CONFIG=/dev/null # remotes come from RCLONE_CONFIG_* variables
 
 : "${SUPABASE_DB_URL:?missing}" "${R2_BUCKET:?missing}"
 KEEP_WEEKS=${KEEP_WEEKS:-12}
@@ -52,7 +53,7 @@ buckets=$(rclone lsf --dirs-only supa: | sed 's:/$::')
 [ -n "$buckets" ] || fail "no buckets found in Storage"
 for b in $buckets; do
   log "Copying bucket $b"
-  rclone copy "supa:$b" "$DEST/files/$b" --transfers 8 --retries 3 --low-level-retries 3
+  rclone copy "supa:$b" "$DEST/files/$b" --transfers 8 --retries 3 --low-level-retries 3 --no-update-modtime
   # Byte-for-byte comparison of what was copied with the source.
   rclone check "supa:$b" "$DEST/files/$b" --one-way --download --log-level ERROR \
     || fail "copied files in $b don't match Storage"
@@ -76,7 +77,7 @@ extra=$(comm -13 "$WORK/db-files.txt" "$WORK/copied.txt" | wc -l)
   (cd "$WORK/db" && sha256sum roles.sql schema.sql data.sql)
 } > "$WORK/db/manifest.txt"
 log "Uploading the database dump"
-rclone copy "$WORK/db" "$DEST/db" --retries 3 --low-level-retries 3
+rclone copy "$WORK/db" "$DEST/db" --retries 3 --low-level-retries 3 --no-update-modtime
 rclone check "$WORK/db" "$DEST/db" --one-way --download --log-level ERROR || fail "uploaded dump doesn't match"
 
 # 5. Keep the last $KEEP_WEEKS weeks. Only dated folders older than the cutoff

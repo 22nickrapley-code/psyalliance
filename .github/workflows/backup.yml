@@ -37,7 +37,6 @@ jobs:
       RCLONE_CONFIG_R2_PROVIDER: Cloudflare
       RCLONE_CONFIG_R2_ENDPOINT: https://${{ secrets.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com
       RCLONE_CONFIG_R2_REGION: auto
-      RCLONE_CONFIG_R2_ACL: private
       RCLONE_CONFIG_R2_NO_CHECK_BUCKET: "true"
       RCLONE_CONFIG_R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
       RCLONE_CONFIG_R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
@@ -47,9 +46,13 @@ jobs:
         with:
           version: 2.119.0
       - name: Install rclone and psql
+        # A current rclone: the Ubuntu package (1.60) trips over R2 on every
+        # first attempt (501 Not Implemented) and only gets through on retry.
         run: |
+          curl -fsSL -o /tmp/rclone.deb https://github.com/rclone/rclone/releases/download/v1.68.2/rclone-v1.68.2-linux-amd64.deb
+          sudo dpkg -i /tmp/rclone.deb > /dev/null
           sudo apt-get update -qq
-          sudo apt-get install -y -qq rclone postgresql-client > /dev/null
+          sudo apt-get install -y -qq postgresql-client > /dev/null
           rclone version | head -1
       - name: Back up the database and files
         run: bash scripts/backup/weekly.sh
