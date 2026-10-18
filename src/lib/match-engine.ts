@@ -28,7 +28,7 @@ export type MatchNeed = {
   prescribing?: boolean;
 };
 
-export type RelationshipTier = "trusted" | "worked_with" | "saved" | "none";
+export type RelationshipTier = "trusted" | "worked_with" | "none";
 export type Freshness = "fresh" | "stale" | "unconfirmed";
 
 export type Match = {
@@ -114,13 +114,20 @@ export async function findMatches(
     { data: workedRows },
     { data: ratingRows },
     { data: blockRows },
+    { data: affinityRows },
   ] = await Promise.all([
     supabase.rpc("match_pool", { p_state: needState, p_focus: focusIds, p_telehealth: allowsTelehealth }),
     supabase.from("trusted_colleagues").select("colleague_id").eq("profile_id", requesterId),
     supabase.from("worked_with_before").select("colleague_id, interaction_count").eq("profile_id", requesterId),
     supabase.from("collaboration_ratings").select("colleague_profile_id, would_work_again").eq("rater_profile_id", requesterId),
     supabase.from("do_not_work_with").select("blocked_profile_id").eq("profile_id", requesterId),
+    // Your own reactions and "useful" marks (migration 0116); before it
+    // runs this is an error and simply adds nothing.
+    supabase.rpc("my_colleague_affinity"),
   ]);
+  // A small private nudge (Nick, 18 Oct): never enough to outrank a trusted
+  // colleague or to hide anyone.
+  const affinity = new Map<string, number>(((affinityRows as any[]) || []).map((a: any) => [String(a.colleague_id), Math.max(-6, Math.min(6, Number(a.score) || 0))]));
   const candidates = ((pool as any[]) || []).filter((p) => p.id !== requesterId && (!opts.only || opts.only.includes(p.id)));
 
   const licenceStates = new Map<string, Set<string>>();
@@ -130,7 +137,6 @@ export async function findMatches(
 
   // Trusted colleagues are the people this member chose (migration 0107).
   const trusted = new Set<string>((trustedRows || []).map((t: any) => t.colleague_id));
-  const saved = new Set<string>();
   const worked = new Map<string, number>((workedRows || []).map((w: any) => [w.colleague_id, Number(w.interaction_count) || 0]));
   const wouldWorkAgain = new Map<string, boolean>();
   for (const r of ratingRows || []) {
@@ -196,13 +202,10 @@ export async function findMatches(
       tier = "worked_with";
       score += 25;
       reasons.push("Worked together before");
-    } else if (saved.has(p.id)) {
-      tier = "saved";
-      score += 15;
-      reasons.push("Saved clinician");
     }
     if (worked.has(p.id)) score += Math.min(15, (worked.get(p.id)! - 1) * 5);
     if (wouldWorkAgain.get(p.id) === false) score -= 30;
+    score += affinity.get(p.id) || 0;
     if (tier === "trusted" && worked.has(p.id)) reasons.push("Worked together before");
 
     // Stage 2: fit.

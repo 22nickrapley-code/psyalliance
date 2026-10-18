@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { loadNeedOptions, parseNeed } from "@/lib/need-options";
 import { findMatches, assessColleague } from "@/lib/match-engine";
 import { resolveAvatarUrls } from "@/lib/avatars";
+import { redirect } from "next/navigation";
 import { ReferNeedView, ReferShortlistView, ReferReviewView, type DirectColleague } from "../views";
 
 export const metadata = { title: "New referral" };
@@ -24,6 +25,10 @@ export default async function NewReferralPage(props: { searchParams: Promise<SP>
   };
   const need = parseNeed(get, getAll);
   const step = get("step");
+  // One way in (Nick, 18 Oct): a new referral starts on the Refer home's
+  // green box, wherever it was started from. Only a referral to a named
+  // colleague, or a step already under way, stays here.
+  if (!step && !get("to") && Object.keys(sp).length === 0) redirect("/dashboard/refer#start-referral");
   const supabase = await createClient();
   const {
     data: { user },

@@ -64,7 +64,7 @@ export default async function ConsultPage(props: { searchParams: Promise<{ tab?:
   } else {
     let q = supabase
       .from("consultations")
-      .select("id, kind, question, context, tags, audience_type, audience_profile_ids, group_id, status, created_at, author_profile_id, author:author_profile_id(full_name, credential_prefix, qualification_level, is_demo), consultation_responses(count)")
+      .select("id, kind, question, context, tags, audience_type, audience_profile_ids, group_id, status, created_at, author_profile_id, author:author_profile_id(full_name, credential_prefix, qualification_level, is_demo), consultation_responses(id)")
       .order("created_at", { ascending: false })
       .limit(60);
     if (tab === "mine") q = q.eq("author_profile_id", myself);
@@ -88,7 +88,9 @@ export default async function ConsultPage(props: { searchParams: Promise<{ tab?:
           audienceLabel: audienceLabel(c),
           authorName: c.author_profile_id === myself ? "You" : nameOf(c.author),
           createdAt: c.created_at,
-          replies: c.consultation_responses?.[0]?.count ?? 0,
+          // Counted from the ids: replies are readable column by column only
+          // (migration 0115), which an embedded count can't use.
+          replies: (c.consultation_responses || []).length,
           status: c.status,
           mine: c.author_profile_id === myself,
           why,

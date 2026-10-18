@@ -2,12 +2,14 @@ import { redirect } from "next/navigation";
 import { loadInvite } from "@/lib/invite";
 import { loadLedger, ledgerItems } from "@/lib/ledger";
 import { effectiveReferral, effectiveCover } from "@/lib/availability";
+import { fetchConsultFeedRows, rankConsultFeed } from "@/lib/consult-feed";
+import { ensureFreshSuggestions } from "@/lib/suggestions";
 import { createClient } from "@/lib/supabase/server";
 import { loadNeedOptions } from "@/lib/need-options";
 import { resolveAvatarUrls } from "@/lib/avatars";
 import { clinicianName } from "@/lib/profession";
 import { IS_DEMO_SITE } from "@/lib/env";
-import { HomeView, type HomeData, type NextStep, type CircleNode } from "./home-view";
+import { HomeView, type HomeData, type NextStep } from "./home-view";
 
 export const metadata = { title: "Home" };
 
@@ -26,8 +28,8 @@ const AVAIL = {
 
 const nameOf = (p: any) => (p ? clinicianName(p.full_name, p.qualification_level, p.credential_prefix) : "A colleague");
 
-export default async function HomePage(props: { searchParams: Promise<{ reconfirmed?: string; welcome?: string; sandbox_error?: string; invite?: string }> }) {
-  const { reconfirmed, welcome, sandbox_error, invite } = await props.searchParams;
+export default async function HomePage(props: { searchParams: Promise<{ reconfirmed?: string; welcome?: string; sandbox_error?: string; invite?: string; saved?: string; error?: string }> }) {
+  const { reconfirmed, welcome, sandbox_error, invite, saved, error } = await props.searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -66,7 +68,7 @@ export default async function HomePage(props: { searchParams: Promise<{ reconfir
     { data: myLicences },
     { data: myFocusRows },
     { data: conversationRows },
-    { data: resourceRows },
+    feedRows,
   ] = await Promise.all([
     supabase.rpc("my_profile").maybeSingle<any>(),
     supabase.rpc("my_network_status").maybeSingle<any>(),
@@ -116,7 +118,11 @@ export default async function HomePage(props: { searchParams: Promise<{ reconfir
       .from("conversation_participants")
       .select("last_read_at, conversation:conversation_id(last_message_at)")
       .eq("profile_id", myself),
-    supabase.from("documents").select("id, title, library_code, review_status").eq("owner_scope", "world").in("review_status", ["published", "provisional"]),
+    // The consultation feed (Nick, 18 Oct): ranked once the rest is in.
+    fetchConsultFeedRows(supabase, myself),
+    // "Suggested by PsyAlliance" kept fresh for every page's avatars; a
+    // day-old list is recomputed here, in parallel with the rest.
+    ensureFreshSuggestions(supabase, myself).catch(() => false),
   ]);
   if (!profile) redirect("/dashboard/profile");
   // Admin-only logins have no practice: their home is the admin overview.
@@ -153,7 +159,7 @@ export default async function HomePage(props: { searchParams: Promise<{ reconfir
       key: `cover-${key}`,
       title: `${nameOf(p?.owner)} asked you to cover ${g.count === 1 ? "a client" : `${g.count} clients`}`,
       detail: [g.focus.join(" and "), ABSENCE_LABEL[p?.absence_type] || p?.title, p?.jurisdiction_state, shortRange(p?.starts_on, p?.ends_on)].filter(Boolean).join(" · "),
-      href: "/dashboard/cover",
+      href: p?.id ? `/dashboard/cover/requests/${p.id}` : "/dashboard/cover",
       action: "Review request",
       person: p?.profile_id ? { id: p.profile_id, name: nameOf(p?.owner) } : undefined,
       urgent: p?.absence_type === "unexpected",
@@ -286,33 +292,12 @@ export default async function HomePage(props: { searchParams: Promise<{ reconfir
   }
 
 
-  // ---- Circle (counted for getting started; drawn on Network) ----
   const trustedIds: string[] = [...myTrusted];
 
-  // ---- Circle snapshot: who in the trusted circle is open right now ----
-  const { data: circlePeople } = trustedIds.length
-    ? await supabase
-        .from("profiles")
-        .select("id, full_name, credential_prefix, qualification_level, avatar_path, referral_availability, coverage_availability, availability_confirmed_at, availability_paused_until")
-        .in("id", trustedIds.slice(0, 60))
-    : { data: [] as any[] };
-  // Your own photo and the circle's in one request.
-  const circleUrls = await resolveAvatarUrls(supabase, [profile.avatar_path, ...(circlePeople || []).map((p: any) => p.avatar_path)]);
-  const myAvatar = circleUrls.get(profile.avatar_path || "") || null;
-  const circleRows = (circlePeople || []).map((p: any) => ({
-    id: p.id as string,
-    name: clinicianName(p.full_name, p.qualification_level, p.credential_prefix),
-    avatarUrl: circleUrls.get(p.avatar_path || "") || null,
-    referrals: effectiveReferral(p.referral_availability, p.availability_confirmed_at, p.availability_paused_until).open,
-    cover: effectiveCover(p.coverage_availability, p.availability_confirmed_at, p.availability_paused_until).open,
-  }));
-  circleRows.sort((a, b) => Number(b.referrals || b.cover) - Number(a.referrals || a.cover) || a.name.localeCompare(b.name));
-  const circleSnapshot = {
-    trusted: trustedIds.length,
-    referrals: circleRows.filter((r) => r.referrals).length,
-    cover: circleRows.filter((r) => r.cover).length,
-    people: circleRows.slice(0, 7).map((r) => ({ id: r.id, name: r.name, avatarUrl: r.avatarUrl, open: r.referrals || r.cover })),
-  };
+  // ---- Consultation feed ----
+  const specialtyNames = (myFocusRows || []).map((r: any) => options.focus.find((f) => f.id === Number(r.lookup_value_id))?.value).filter(Boolean) as string[];
+  const feedItems = rankConsultFeed(feedRows, myself, myTrusted, specialtyNames);
+  const feedUrls = await resolveAvatarUrls(supabase, feedItems.map((f) => f.authorAvatarPath));
 
   // ---- Getting started (new members) ----
   // Not yet in the network: the steps that get them verified.
@@ -374,7 +359,7 @@ export default async function HomePage(props: { searchParams: Promise<{ reconfir
           waitlist: ((access?.waitlist as any[]) || []).map((w) => ({ state: String(w.state), position: Number(w.position), waiting: Number(w.waiting) })),
         }
       : null,
-    error: sandbox_error || null,
+    error: sandbox_error || error || null,
     availability: {
       referrals: effectiveReferral(profile.referral_availability, profile.availability_confirmed_at, profile.availability_paused_until).label,
       cover: effectiveCover(profile.coverage_availability, profile.availability_confirmed_at, profile.availability_paused_until).label,
@@ -389,18 +374,38 @@ export default async function HomePage(props: { searchParams: Promise<{ reconfir
         consult: profile.consultation_availability === "yes" ? "open" : profile.consultation_availability ? "closed" : "unset",
       },
     },
-    circleSnapshot,
+    feed: {
+      quiet: profile.consultation_availability === "no",
+      items: feedItems.map((f) => ({
+        id: f.id,
+        question: f.question,
+        authorId: f.authorId,
+        authorName: f.authorName,
+        authorAvatarUrl: feedUrls.get(f.authorAvatarPath || "") || null,
+        // Worked out here, once, so the page and the browser agree.
+        when: ago(f.lastActivity),
+        replies: f.replies,
+        open: f.open,
+        mine: f.mine,
+        reason: f.reason,
+        trustedJoined: f.trustedJoined,
+      })),
+      // Only members in the network see colleagues' discussions.
+      shown: !!status?.is_member || IS_DEMO_SITE,
+    },
     invite: inviteInfo,
     ledger: ledgerItems(ledger),
     ledgerYear: ledger.year,
     sandbox: IS_DEMO_SITE,
     options,
-    notice: invite === "waiting"
+    notice: saved === "consult"
+      ? "You're open to consult again. Discussions for you are back below."
+      : invite === "waiting"
       ? "Invitation accepted. You'll be connected as soon as both of you are verified."
       : reconfirmed
       ? "Availability reconfirmed. Colleagues will see it as current."
       : welcome === "reset"
-        ? "Your sandbox is back to the start. Everything you did has been cleared; colleagues will start getting in touch again in a minute or two."
+        ? "Your sandbox is back to the start. Everything you did has been cleared; colleagues will start getting in touch again in a few minutes."
         : undefined,
   };
 
@@ -413,17 +418,18 @@ function shortRange(start?: string | null, end?: string | null) {
   return end ? `${f(start)} to ${f(end)}` : `From ${f(start)}`;
 }
 
+function ago(iso: string) {
+  const mins = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60_000));
+  if (mins < 60) return mins <= 1 ? "just now" : `${mins} min ago`;
+  const hours = Math.round(mins / 60);
+  if (hours < 24) return `${hours} h ago`;
+  const days = Math.round(hours / 24);
+  if (days === 1) return "yesterday";
+  if (days < 7) return `${days} days ago`;
+  return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "America/New_York" });
+}
+
 function greetingFor(now: Date) {
   const h = Number(now.toLocaleString("en-US", { timeZone: "America/New_York", hour: "numeric", hour12: false }));
   return h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening";
-}
-
-function initialsOf(name: string | null) {
-  return String(name || "")
-    .replace(/^(dr\.?)\s+/i, "")
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((p) => p[0]?.toUpperCase())
-    .join("");
 }

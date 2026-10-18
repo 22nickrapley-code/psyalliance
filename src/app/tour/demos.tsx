@@ -2,12 +2,13 @@ import type { ReactNode } from "react";
 import type { Match } from "@/lib/match-engine";
 import type { NeedOptions } from "@/lib/need-options";
 import { US_STATES } from "@/lib/us-states";
-import { CoverIndexView, CoverCandidatesView, CoverTrackView, CoverPlanStepView, CoverNeedsView, CoverInviteView, type CaseItem, type PlanSummary } from "../dashboard/cover/views";
+import { PdfPreview } from "./pdf-preview";
+import { ChatThread } from "../dashboard/_components/chat-thread";
+import { CoverIndexView, CoverRequestView, CoverCandidatesView, CoverTrackView, CoverPlanStepView, CoverNeedsView, CoverInviteView, type CaseItem, type PlanSummary } from "../dashboard/cover/views";
 import { ReferIndexView, ReferShortlistView, ReferReviewView, ReferTrackView } from "../dashboard/refer/views";
 import { ConsultComposeView, ConsultDetailView } from "../dashboard/consult/views";
 import { ConversationList, MessagesShell } from "../dashboard/messages/views";
 import { HomeView } from "../dashboard/home-view";
-import { MessageReactions } from "../dashboard/messages/reactions";
 import type { SceneAction } from "./scene-timing";
 import { CliniciansView, type Person } from "../dashboard/clinicians/views";
 import { NetworkView } from "../dashboard/network/views";
@@ -156,6 +157,13 @@ const ALEX_CIRCLE = {
     { id: "noah", name: "Noah Wrenmoor, PsyD", kind: "suggested", avatarUrl: AV.noah },
   ] as { id: string; name: string; kind: "trusted" | "worked" | "suggested"; avatarUrl: string | null }[],
 };
+// Who everyone is to Alex, so the demos colour avatars as the app does.
+export const DEMO_RELATIONSHIPS = {
+  me: "alex",
+  trusted: ALEX_CIRCLE.nodes.filter((n) => n.kind === "trusted").map((n) => n.id),
+  worked: ALEX_CIRCLE.nodes.filter((n) => n.kind === "worked").map((n) => n.id),
+  suggested: ALEX_CIRCLE.nodes.filter((n) => n.kind === "suggested").map((n) => n.id),
+};
 const ALEX_SUGGESTIONS = ALEX_CIRCLE.nodes.map((n) => ({
   id: n.id,
   name: n.name,
@@ -229,6 +237,7 @@ const libDoc = (code: string, title: string, summary: string, contents: string[]
   tags: ["leave", "coverage", "continuity of care"],
   version: 1,
   reviewed: false,
+  available: true,
   reviewDate: null,
   nextReviewDate: null,
   storagePath: "",
@@ -362,30 +371,31 @@ const DETAIL: Demo[] = [
         focus: "Accept Client 1",
         focusNote: "Maya accepts both of hers. Back to you next.",
         render: () => (
-          <CoverIndexView
-            plans={[]}
-            incoming={[
-              {
-                planId: 1,
-                ownerId: "alex",
-                ownerName: "Your Name, PsyD",
-                ownerRole: "Clinical psychologist · Brooklyn, NY",
-                ownerAvatar: AV.alex,
-                absence: "Extended leave",
-                planTitle: PLAN_TITLE,
-                dates: leave.range,
-                length: "6 weeks",
-                location: "Brooklyn, New York",
-                outreach: "You are asked in turn; others follow if you decline",
-                note: "Two clients below. A joint handoff call the week before I go would suit me best.",
-                urgent: false,
-                sentAt: null,
-                cases: [
-                  { requestId: 11, reference: "Client 1", focus: "Trauma/PTSD", details: [["Age band", "Adults"], ["Setting", "Virtual or in person"], ["Insurance", "Aetna"], ["Frequency", "Weekly"], ["Prescribing", "Not needed"]] },
-                  { requestId: 12, reference: "Client 2", focus: "Anxiety/Panic Disorders", details: [["Age band", "Adolescents"], ["Setting", "Virtual"], ["Insurance", "Self-pay (out of network)"], ["Frequency", "Weekly"], ["Prescribing", "Not needed"]] },
-                ],
-              },
-            ]}
+          <CoverRequestView
+            r={{
+              planId: 1,
+              ownerId: "alex",
+              ownerName: "Your Name, PsyD",
+              ownerRole: "Clinical psychologist · Brooklyn, NY",
+              ownerAvatar: AV.alex,
+              absenceType: "extended_leave",
+              absence: "Extended leave",
+              planTitle: PLAN_TITLE,
+              planStatus: "active",
+              startsOn: null,
+              endsOn: null,
+              dates: leave.range,
+              length: "6 weeks",
+              location: "Brooklyn, New York",
+              outreach: "You're asked in turn; others follow if you can't",
+              note: "Two clients below. A joint handoff call the week before I go would suit me best.",
+              urgent: false,
+              sentAt: new Date().toISOString(),
+              cases: [
+                { requestId: 11, caseId: 1, status: "sent", threadTitle: "demo-1", reference: "Client 1", focus: "Trauma/PTSD", details: [["Age band", "Adults"], ["Setting", "Virtual or in person"], ["Insurance", "Aetna"], ["Frequency", "Weekly"], ["Prescribing", "Not needed"]] },
+                { requestId: 12, caseId: 2, status: "sent", threadTitle: "demo-2", reference: "Client 2", focus: "Anxiety/Panic Disorders", details: [["Age band", "Adolescents"], ["Setting", "Virtual"], ["Insurance", "Self-pay (out of network)"], ["Frequency", "Weekly"], ["Prescribing", "Not needed"]] },
+              ],
+            }}
           />
         ),
       },
@@ -670,7 +680,7 @@ const DETAIL: Demo[] = [
     minutes: "2 minutes",
     outcome: "A clear morning, and colleagues you can reach.",
     learned: [
-      "Home is four jobs, one Actions tile, your availability and your circle today.",
+      "Home is four jobs, one Actions tile, the discussions most relevant to you and your availability.",
       "Search the network by need; trusted colleagues come first, with reasons.",
       "Profiles show facts on file with dates, not testimonials.",
       "Every conversation shows what it's about.",
@@ -680,7 +690,7 @@ const DETAIL: Demo[] = [
         slug: "home",
         perspective: "alex",
         title: "Your morning",
-        what: "Home asks one question: what would you like to do? Four jobs, and a fifth tile that counts what's waiting for you and opens the list in place. Underneath: what colleagues see of your availability, and which of your trusted colleagues are open today.",
+        what: "Home asks one question: what would you like to do? Four jobs, and a fifth tile that counts what's waiting for you and opens the list in place. Underneath: consultation discussions ranked for you (replies to your questions, then your trusted colleagues, then your specialties), and a narrow box with what colleagues see of your availability.",
         focus: "Find a clinician",
         focusNote: "Next, find a colleague in the network.",
         render: () => (
@@ -699,11 +709,15 @@ const DETAIL: Demo[] = [
               ],
               gettingStarted: null,
               availability: { referrals: "Selected referrals only", cover: "Cover: ask me", consult: "Open to consult", confirmedLabel: "Confirmed 3 days ago", stale: false, canReconfirm: true, tones: { referrals: "limited", cover: "limited", consult: "open" } },
-              circleSnapshot: {
-                trusted: 7,
-                referrals: 4,
-                cover: 3,
-                people: ALEX_CIRCLE.nodes.filter((n) => n.kind === "trusted").map((n, i) => ({ id: n.id, name: n.name, avatarUrl: n.avatarUrl, open: i < 4 })),
+              feed: {
+                quiet: false,
+                shown: true,
+                items: [
+                  { id: 1, question: "Panic attacks only at night, no daytime symptoms: would you start with CBT for panic, or ask for a medication review first?", authorId: "alex", authorName: "You", authorAvatarUrl: AV.alex, when: "2 h ago", replies: 2, open: true, mine: true, reason: "2 replies to your question", trustedJoined: [{ id: "maya", name: "Maya Calderwick, PsyD" }] },
+                  { id: 2, question: "Telehealth under PSYPACT: how are you recording where the client is at the start of each session?", authorId: "t5", authorName: "Adrian Ivorwick, PsyD", authorAvatarUrl: null, when: "5 h ago", replies: 3, open: true, mine: false, reason: "From a trusted colleague", trustedJoined: [{ id: "sam", name: "Samuel Brindlemoor, PhD" }] },
+                  { id: 3, question: "ERP with a teenager whose parents accommodate the rituals: where do you start, with the parents or the teen?", authorId: "lena", authorName: "Lena Larkhollow, PsyD", authorAvatarUrl: AV.lena, when: "yesterday", replies: 4, open: false, mine: false, reason: "Answered · Obsessive/Compulsive Disorder", trustedJoined: [] },
+                  { id: 4, question: "Sliding-scale fees: do you keep a fixed number of reduced-fee slots, or decide case by case?", authorId: "imani", authorName: "Imani Ambershaw, PhD", authorAvatarUrl: AV.imani, when: "2 days ago", replies: 0, open: true, mine: false, reason: "Open question", trustedJoined: [] },
+                ],
               },
               options,
             }}
@@ -751,9 +765,9 @@ const DETAIL: Demo[] = [
               <ConversationList
                 activeId={1}
                 items={[
-                  { id: 1, title: "Maya Calderwick, PsyD", context: `Cover · ${PLAN_TITLE}`, preview: "A joint handoff call the week before works for me.", when: "9:14 AM", unread: false, avatarName: "Maya Calderwick", avatarUrl: AV.maya },
-                  { id: 2, title: "Samuel Brindlemoor, PhD", context: "Referral · Obsessive/Compulsive Disorder · Brooklyn", preview: "Happy to. I run ERP weekly.", when: "Yesterday", unread: false, avatarName: "Samuel Brindlemoor", avatarUrl: AV.samuel },
-                  { id: 3, title: "Eli Kestrelby, MD", context: "Referral · Trauma/PTSD · Manhattan", preview: "Needs someone soon; current clinician is relocating.", when: "Mon", unread: true, avatarName: "Eli Kestrelby", avatarUrl: AV.eli },
+                  { id: 1, title: "Maya Calderwick, PsyD", context: `Cover · ${PLAN_TITLE}`, preview: "A joint handoff call the week before works for me.", when: "9:14 AM", unread: false, avatarName: "Maya Calderwick", avatarUrl: AV.maya, avatarId: "maya" },
+                  { id: 2, title: "Samuel Brindlemoor, PhD", context: "Referral · Obsessive/Compulsive Disorder · Brooklyn", preview: "Happy to. I run ERP weekly.", when: "Yesterday", unread: false, avatarName: "Samuel Brindlemoor", avatarUrl: AV.samuel, avatarId: "sam" },
+                  { id: 3, title: "Eli Kestrelby, MD", context: "Referral · Trauma/PTSD · Manhattan", preview: "Needs someone soon; current clinician is relocating.", when: "Mon", unread: true, avatarName: "Eli Kestrelby", avatarUrl: AV.eli, avatarId: "eli" },
                 ]}
               />
             }
@@ -766,15 +780,15 @@ const DETAIL: Demo[] = [
                 </div>
                 <a className="btn secondary small-btn" href="#">View context</a>
               </div>
-              <div className="message-scroll">
-                <div className="bubble">Congratulations again! I&rsquo;ve kept two cover slots free for {leave.range}. Send the plan over when it&rsquo;s ready.<small>Maya &middot; Yesterday, 4:10 PM</small></div>
-                <div className="bubble me">Thank you. I&rsquo;ll set it up this week: three clients, no identifiers, and I&rsquo;ll use the Extended Leave Pack.<small>You &middot; Yesterday, 4:25 PM</small><MessageReactions messageId={2} counts={{ heart: 1 }} names={{ heart: ["Maya"] }} mine={null} canReact={false} /></div>
-                <div className="bubble">Perfect. A joint handoff call the week before works for me.<small>Maya &middot; 9:14 AM</small><MessageReactions messageId={3} counts={{ like: 1 }} names={{ like: ["You"] }} mine="like" canReact /></div>
-              </div>
-              <div className="message-compose">
-                <textarea placeholder="Write a professional message..." aria-label="Message" />
-                <button className="btn lg" type="button">Send</button>
-              </div>
+              <ChatThread
+                className="in-messages"
+                showMessagesLink={false}
+                messages={[
+                  { id: 1, mine: false, author: "Maya Calderwick, PsyD", authorId: "maya", body: `Congratulations again! I've kept two cover slots free for ${leave.range}. Send the plan over when it's ready.`, at: daysAgo(1), atLabel: "Yesterday, 4:10 PM", reactions: { counts: {}, names: {}, mine: null } },
+                  { id: 2, mine: true, author: "You", authorId: "alex", body: "Thank you. I'll set it up this week: three clients, no identifiers, and I'll use the Extended Leave Pack.", at: daysAgo(1), atLabel: "Yesterday, 4:25 PM", reactions: { counts: { heart: 1 }, names: { heart: ["Maya"] }, mine: null } },
+                  { id: 3, mine: false, author: "Maya Calderwick, PsyD", authorId: "maya", body: "Perfect. A joint handoff call the week before works for me.", at: daysAgo(0), atLabel: "9:14 AM", reactions: { counts: { like: 1 }, names: { like: ["You"] }, mine: "like" } },
+                ]}
+              />
               <p className="micro-note" style={{ marginTop: 8 }}>{HANDOFF_RULE}</p>
             </section>
           </MessagesShell>
@@ -860,49 +874,69 @@ const DETAIL: Demo[] = [
   {
     key: "library",
     title: "Find the right template",
-    blurb: "You're planning leave. Find the template for it, see what's inside and save the PDF to your private library.",
-    minutes: "1 minute",
+    blurb: "You're planning leave. Search for the template, see what's inside, open the PDF and save it to your own private library.",
+    minutes: "1½ minutes",
     outcome: "The right template, in the moment you need it.",
     learned: [
       "Twenty templates for independent practice, each placed beside the work it supports.",
-      "Every template shows its version and whether it has been independently reviewed.",
-      "Saved templates are private to you, ready to print or fill in.",
+      "Each template says what's inside and who it's for before you open it.",
+      "Open the PDF to read it through, then save a copy.",
+      "Saved templates are private to you in My Library, ready to print or fill in.",
     ],
     steps: [
       {
         slug: "search",
         perspective: "alex",
-        title: "You search for leave",
-        what: "The Extended Leave Pack, the Professional Will and the Reciprocal Coverage Agreement come up. Each template shows its version and whether it has been independently reviewed.",
+        title: "1. You search for leave",
+        what: "You're planning time away. Search the Practice Library for leave: the Extended Leave Pack, the Professional Will and the Reciprocal Coverage Agreement come up, each placed beside the work it supports.",
         focus: "Explore",
         focusIndex: 1,
-        focusNote: "You open the Extended Leave pack.",
+        focusNote: "You open the Extended Leave Pack.",
         actions: [{ do: "type", target: 'input[name="q"]', text: "leave" }],
         render: () => <LibraryView resources={LIB_LEAVE} q="leave" category="" mineCount={0} />,
       },
       {
         slug: "template",
         perspective: "alex",
-        title: "What's inside the Extended Leave Pack",
-        what: "What's inside, who it's for and the cover plan it supports. It's still in review, and it says so.",
-        focus: "Save PDF to My Library",
-        focusNote: "You save a private copy to print and complete.",
+        title: "2. What's inside the template",
+        what: "Before you open it: what's inside, who it's for and the part of PsyAlliance it supports, here your cover plan.",
+        focus: "Open the PDF",
+        focusNote: "You open the PDF to read it through.",
         render: () => <ResourceDetailView r={LIB_PA02} url="#" />,
+      },
+      {
+        slug: "pdf",
+        perspective: "alex",
+        title: "3. Reading the PDF",
+        what: "The pack opens as a PDF: how to use it, the letter for clients, who does what, and the handoff summary you complete with your covering colleague, outside PsyAlliance.",
+        focus: "Save PDF to My Library",
+        focusNote: "You keep a private copy.",
+        actions: [
+          { do: "scroll", target: "#pdf-p2" },
+          { do: "scroll", target: "#pdf-p3" },
+        ],
+        render: () => <PdfPreview title={LIB_PA02.title} fileName="Extended Leave Pack.pdf" />,
       },
       {
         slug: "mine",
         perspective: "alex",
-        title: "A private copy, ready to fill in",
-        what: "The saved PDF sits in My Library. Only you can see it, and it never holds client details.",
-        focus: "Practice Library",
-        focusNote: "Back to the Library whenever you need the next template.",
+        title: "4. Your own library",
+        what: "The copy sits in My Library, in a folder if you like. Only you can see it. Print it or fill it in outside PsyAlliance; it never holds client details.",
+        focus: "Leave planning",
+        focusNote: "Your templates, sorted the way you work.",
         render: () => (
           <MyLibraryView
-            docs={[{ id: 1, title: "Extended Leave Coverage Plan & Clinical Handoff Pack (your copy)", storagePath: "", folderId: null, createdAt: daysAgo(0), source: "Your copy of the Extended Leave Pack, version 1", url: "#" }]}
-            folders={[]}
+            docs={[
+              { id: 1, title: "Extended Leave Coverage Plan & Clinical Handoff Pack (your copy)", storagePath: "", folderId: 1, createdAt: daysAgo(0), source: "Your copy of the Extended Leave Pack, version 1", url: "#" },
+              { id: 2, title: "Professional Will & Succession Plan (your copy)", storagePath: "", folderId: 2, createdAt: daysAgo(12), source: "Your copy of the Professional Will, version 1", url: "#" },
+            ]}
+            folders={[
+              { id: 1, name: "Leave planning" },
+              { id: 2, name: "Continuity" },
+            ]}
             folder="all"
-            folderCounts={{ unfiled: 1 }}
-            total={1}
+            folderCounts={{ "1": 1, "2": 1 }}
+            total={2}
             notice="The Extended Leave Pack is saved to My Library. Only you can see it."
           />
         ),

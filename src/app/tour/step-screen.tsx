@@ -1,7 +1,7 @@
 import PremiumShell from "../dashboard/premium-shell";
 import { JOIN_HREF } from "@/lib/env";
 import { buildNavGroups } from "../dashboard/nav-groups";
-import { PEOPLE, type Demo } from "./demos";
+import { PEOPLE, DEMO_RELATIONSHIPS, type Demo } from "./demos";
 import { TourFrame } from "./sandbox-frame";
 
 async function noopSignOut() {
@@ -125,6 +125,7 @@ export function DemoStepScreen({ demo, index: i }: { demo: Demo; index: number }
           unreadNotifications={1}
           signOutAction={noopSignOut}
           activeHref={active}
+          relationships={s.perspective === "alex" ? DEMO_RELATIONSHIPS : null}
           homeHref="/tour"
         >
           <div data-tour-screen data-step={`${demo.key}-${s.slug}`}>{s.render()}</div>

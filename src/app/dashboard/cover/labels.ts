@@ -10,3 +10,12 @@ export function coverThreadTitle(planTitle: string, reference: string | null, fo
 }
 
 export const stateName = (code: string | null | undefined) => (code ? US_STATES.find((s) => s.code === code)?.name || code : null);
+
+// The kinds of absence, in a word or two.
+export const ABSENCE_LABELS: Record<string, string> = {
+  short_planned: "Short planned absence",
+  extended_leave: "Extended leave",
+  unexpected: "Unexpected absence",
+  closing_practice: "Closing or reducing practice",
+  reciprocal: "Reciprocal arrangement",
+};

@@ -2,9 +2,8 @@ import { redirect } from "next/navigation";
 import { loadInvite } from "@/lib/invite";
 import { createClient } from "@/lib/supabase/server";
 import { resolveAvatarUrls } from "@/lib/avatars";
-import { findMatches } from "@/lib/match-engine";
+import { computeSuggestions, saveSuggestions } from "@/lib/suggestions";
 import { clinicianName } from "@/lib/profession";
-import { getTrustedIds, getTrustedByIds } from "@/lib/trusted";
 import { cliniciansHref } from "../clinicians/views";
 import { NetworkView, type Colleague } from "./views";
 import type { CircleNode } from "../_components/orbit";
@@ -31,30 +30,22 @@ export default async function NetworkPage(props: { searchParams: Promise<Record<
   } = await supabase.auth.getUser();
   const me = user!.id;
 
-  const [trusted, trustedBy, { data: workedRows }, { data: myProfile }, { data: myFocusRows }, invite] = await Promise.all([
-    getTrustedIds(supabase, me),
-    getTrustedByIds(supabase, me),
-    supabase.from("worked_with_before").select("colleague_id, interaction_count").eq("profile_id", me),
+  const [suggestions, { data: myProfile }, { data: myFocusRows }, invite] = await Promise.all([
+    // Suggested: people who added you first, then the best matches for your
+    // practice that aren't already trusted (the same list everywhere).
+    computeSuggestions(supabase, me),
     supabase.rpc("my_profile").select("primary_state, full_name, avatar_path").maybeSingle<any>(),
     supabase
       .from("profile_lookup_values")
-      .select("lookup_value_id, rank, lookup_values!inner(category)")
+      .select("lookup_value_id, lookup_values!inner(category)")
       .eq("profile_id", me)
       .eq("lookup_values.category", "treatment_specialism")
-      .order("rank"),
+      .limit(1),
     loadInvite(supabase),
   ]);
-  const worked = new Map<string, number>((workedRows || []).map((w: any) => [w.colleague_id as string, Number(w.interaction_count) || 1]));
-
-  // Suggested: people who added you first, then the best matches for your
-  // practice that aren't already trusted.
-  const addedYou = [...trustedBy].filter((id) => !trusted.has(id));
-  const { matches } = await findMatches(
-    supabase,
-    me,
-    { kind: "discovery", focusIds: (myFocusRows || []).slice(0, 3).map((r: any) => Number(r.lookup_value_id)), state: myProfile?.primary_state || null },
-    { exclude: [...trusted, ...addedYou, ...worked.keys()], limit: 10 }
-  );
+  const { trusted, worked, addedYou, matches } = suggestions;
+  // Kept for every other page's avatars.
+  await saveSuggestions(supabase, suggestions.ids);
 
   const ids = Array.from(new Set([...trusted, ...worked.keys(), ...addedYou]));
   const { data: people } = ids.length

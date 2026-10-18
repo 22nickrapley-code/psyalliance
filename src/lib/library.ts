@@ -1,4 +1,5 @@
 import { APP_TIME_ZONE } from "./dates";
+import { IS_DEMO_SITE } from "./env";
 // Practice Library (Product Spec v1). Curated, reviewed resources, each a
 // card with a PA number, purpose, who it applies to, version, review date
 // and a route into the workflow it supports.
@@ -13,6 +14,9 @@ export type LibraryResource = {
   tags: string[];
   version: number;
   reviewed: boolean;
+  // Ready to open and save (Nick, 18 Oct). Members never see review
+  // wording: a resource is either available or "coming soon".
+  available: boolean;
   reviewDate: string | null;
   nextReviewDate: string | null;
   storagePath: string;
@@ -22,14 +26,14 @@ export type LibraryResource = {
 // The seven workflow placements from the spec, plus PA-03 and PA-06 which
 // sit naturally beside Cover and Supervision.
 export const WORKFLOW: Record<string, { label: string; href: string }> = {
-  "PA-01": { label: "Go to Cover", href: "/dashboard/cover/new" },
-  "PA-02": { label: "Plan cover", href: "/dashboard/cover/new" },
+  "PA-01": { label: "Go to Cover", href: "/dashboard/cover" },
+  "PA-02": { label: "Plan cover", href: "/dashboard/cover" },
   "PA-03": { label: "Continuity plan", href: "/dashboard/continuity" },
   "PA-04": { label: "Consultation groups", href: "/dashboard/consult/groups" },
   "PA-05": { label: "Ask a question", href: "/dashboard/consult/new" },
   "PA-06": { label: "Supervision", href: "/dashboard/consult?tab=supervision" },
-  "PA-07": { label: "Refer a client", href: "/dashboard/refer/new" },
-  "PA-08": { label: "Refer a client", href: "/dashboard/refer/new" },
+  "PA-07": { label: "Refer a client", href: "/dashboard/refer" },
+  "PA-08": { label: "Refer a client", href: "/dashboard/refer" },
   "PA-19": { label: "Your credentials", href: "/dashboard/credentials" },
 };
 
@@ -138,15 +142,25 @@ export function cleanTitle(title: string) {
   return title.replace(/^PA-\d+:\s*/, "");
 }
 
-// Members see published resources (independently reviewed, with a review
-// date) and provisional ones, which are always labelled as not yet
-// independently reviewed. Drafts and hidden resources stay hidden.
+// Members see published resources and the ones waiting for review; the
+// latter only as "coming soon" titles unless LIBRARY_PREVIEW (below).
+// Drafts and hidden resources stay hidden.
 export function isMemberVisible(d: { review_status?: string | null; review_date?: string | null }) {
   return (d.review_status === "published" && !!d.review_date) || d.review_status === "provisional";
 }
 
 export function isReviewed(d: { review_status?: string | null; review_date?: string | null }) {
   return d.review_status === "published" && !!d.review_date;
+}
+
+// For testing (Nick, 18 Oct): in the sandbox, and on a staging build with
+// NEXT_PUBLIC_LIBRARY_PREVIEW=1, the templates waiting for review count as
+// ready, so every flow can be tried. On psyalliance.org they stay "coming
+// soon" until an admin publishes each one after review.
+export const LIBRARY_PREVIEW = IS_DEMO_SITE || process.env.NEXT_PUBLIC_LIBRARY_PREVIEW === "1";
+
+export function isAvailable(d: { review_status?: string | null; review_date?: string | null }) {
+  return isReviewed(d) || (LIBRARY_PREVIEW && d.review_status === "provisional");
 }
 
 export function toResource(d: any): LibraryResource {
@@ -160,6 +174,7 @@ export function toResource(d: any): LibraryResource {
     tags: d.tags || [],
     version: d.version || 1,
     reviewed: isReviewed(d),
+    available: isAvailable(d),
     reviewDate: d.review_date || null,
     nextReviewDate: d.next_review_date || null,
     storagePath: d.storage_path,

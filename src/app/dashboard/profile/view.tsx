@@ -155,7 +155,7 @@ export function ProfileView({
         <div className="split">
           <section className="card roomy">
             <div className="row" style={{ gap: 18, alignItems: "center" }}>
-              <PersonAvatar name={name} url={avatarUrl} size={76} />
+              <PersonAvatar name={name} url={avatarUrl} size={76} rel="you" />
               <div style={{ minWidth: 0 }}>
                 <h2 className="serif-title" style={{ fontSize: 32, margin: 0 }}>{display}</h2>
                 <p style={{ margin: "4px 0 10px", fontSize: 15 }}>{roleLabel(profile?.qualification_level)}{where ? ` · ${where}` : ""}</p>
@@ -244,7 +244,7 @@ export function ProfileView({
             <div className="card-title"><h3>Photo</h3>{profile?.avatar_path ? <Status>Done</Status> : <Status tone="warn">To do</Status>}</div>
             <p className="small">A professional headshot. Only verified, signed-in members see it.</p>
             <div className="row wrap" style={{ gap: 16, alignItems: "center" }}>
-              <span data-self-avatar="" data-size="72"><PersonAvatar name={name} url={avatarUrl} size={72} /></span>
+              <span data-self-avatar="" data-size="72"><PersonAvatar name={name} url={avatarUrl} size={72} rel="you" /></span>
               <AvatarPicker action={uploadAvatar} hasPhoto={!!avatarUrl} />
             </div>
           </section>
@@ -469,7 +469,7 @@ export function ProfileView({
             <div className="eyebrow">How colleagues see you</div>
             <div className="preview-frame" style={{ marginTop: 10 }}>
               <div className="row" style={{ alignItems: "flex-start", gap: 12 }}>
-                <span data-self-avatar="" data-size="48"><PersonAvatar name={name} url={avatarUrl} size={48} /></span>
+                <span data-self-avatar="" data-size="48"><PersonAvatar name={name} url={avatarUrl} size={48} rel="you" /></span>
                 <div style={{ minWidth: 0 }}>
                   <strong data-self-name="">{display}</strong>
                   <p className="small" style={{ margin: "2px 0 0" }}>

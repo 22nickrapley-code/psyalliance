@@ -4,6 +4,7 @@ import type { InviteInfo } from "@/lib/invite";
 import { Orbit, type CircleNode } from "../_components/orbit";
 import { removeTrustedAction } from "./actions";
 import { TrustButton } from "../clinicians/views";
+import type { Rel } from "@/lib/relationship-map";
 
 // Your network, the way a group practice feels: the colleagues you've
 // chosen (Trusted), the people you've worked with (built automatically),
@@ -15,10 +16,12 @@ const BACK = "/dashboard/network";
 
 // A colleague in one of the three lists. A button sits under the name so
 // the name and details keep the full width of the column.
-function Row({ c, action, below = false, why = false }: { c: Colleague; action: React.ReactNode; below?: boolean; why?: boolean }) {
+// Each list says which colour its avatars take, so a list worked out on this
+// visit matches its colour even before the menu's map catches up.
+function Row({ c, action, below = false, why = false, rel }: { c: Colleague; action: React.ReactNode; below?: boolean; why?: boolean; rel?: Rel }) {
   return (
     <div className={`net-row${below ? " action-below" : ""}`}>
-      <PersonAvatar name={c.name} url={c.avatarUrl} />
+      <PersonAvatar name={c.name} url={c.avatarUrl} id={c.id} rel={rel} />
       <div className="net-row-text">
         <a href={`/dashboard/people/${c.id}?back=${encodeURIComponent(BACK)}`}><strong>{c.name}</strong></a>
         {c.where && <small>{c.where}</small>}
@@ -88,7 +91,7 @@ export function NetworkView({
           </a>
           <a href="#suggested" className="net-legend-item">
             <i className="dot suggested" />
-            <span><b>{suggested.length}</b> Suggested for you</span>
+            <span><b>{suggested.length}</b> Suggested by PsyAlliance</span>
             <small>People who added you, and colleagues whose practice fits yours.</small>
           </a>
           <a className="btn secondary small-btn" href="/dashboard/clinicians" style={{ marginTop: 6 }}>Search all clinicians &rarr;</a>
@@ -108,6 +111,7 @@ export function NetworkView({
               <Row
                 key={c.id}
                 c={c}
+                rel="trusted"
                 below
                 action={
                   <form action={removeTrustedAction} className="inline">
@@ -129,12 +133,12 @@ export function NetworkView({
               under Trusted colleagues.
             </p>
           ) : (
-            worked.map((c) => <Row key={c.id} c={c} below action={<TrustButton id={c.id} trusted={c.trusted} back={`${BACK}#worked`} />} />)
+            worked.map((c) => <Row key={c.id} c={c} rel={c.trusted ? "trusted" : "worked"} below action={<TrustButton id={c.id} trusted={c.trusted} back={`${BACK}#worked`} />} />)
           )}
         </section>
 
         <section className="card" id="suggested">
-          <div className="card-title"><h3>Suggested for you</h3></div>
+          <div className="card-title"><h3>Suggested by PsyAlliance</h3></div>
           {suggested.length === 0 ? (
             ranked ? (
               <p className="small">
@@ -148,7 +152,7 @@ export function NetworkView({
               </p>
             )
           ) : (
-            suggested.map((c) => <Row key={c.id} c={c} below why action={<TrustButton id={c.id} trusted={c.trusted} back={`${BACK}#suggested`} />} />)
+            suggested.map((c) => <Row key={c.id} c={c} rel={c.trusted ? "trusted" : "suggested"} below why action={<TrustButton id={c.id} trusted={c.trusted} back={`${BACK}#suggested`} />} />)
           )}
         </section>
       </div>

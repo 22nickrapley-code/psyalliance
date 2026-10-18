@@ -1,7 +1,7 @@
 "use server";
 import { docName, cleanTitle } from "@/lib/library";
 
-import { isMemberVisible } from "@/lib/library";
+import { isMemberVisible, isAvailable } from "@/lib/library";
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
@@ -265,8 +265,8 @@ export async function saveWorkingCopyAction(formData: FormData) {
     .select("id, title, library_code, version, storage_path, review_status, review_date, owner_scope")
     .eq("id", id)
     .maybeSingle();
-  if (!doc || doc.owner_scope !== "world" || !isMemberVisible(doc)) {
-    documentsError("That resource isn't available");
+  if (!doc || doc.owner_scope !== "world" || !isMemberVisible(doc) || !isAvailable(doc)) {
+    documentsError("That resource isn't available yet");
   }
 
   const fileName = String(doc.storage_path).split("/").pop() || "resource.pdf";

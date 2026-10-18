@@ -80,6 +80,7 @@ export default async function ConsultDetailPage(props: { params: Promise<{ id: s
         recipients: (recipients || []).map(nameOf),
         responses: (responses || []).map((r: any) => ({
           id: r.id,
+          profileId: r.responder_profile_id,
           name: nameOf(r.responder),
           body: r.body,
           type: r.response_type,

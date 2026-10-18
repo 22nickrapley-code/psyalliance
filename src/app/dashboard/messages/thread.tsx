@@ -1,17 +1,13 @@
 import { createClient } from "@/lib/supabase/server";
 import { clinicianName } from "@/lib/profession";
-import { sendMessage, removeMessageAction } from "./actions";
-import { ReportContent } from "../_components/report-content";
 import { splitContext } from "./data";
 import { HANDOFF_RULE } from "../_components/ui";
-import { MessageReactions, type Reaction } from "./reactions";
+import { ChatThread } from "../_components/chat-thread";
+import { loadChatMessages } from "@/lib/threads";
 
 type Supabase = Awaited<ReturnType<typeof createClient>>;
 
 const nameOf = (p: any) => (p ? clinicianName(p.full_name, p.qualification_level, p.credential_prefix) : "Colleague");
-const firstOf = (p: any) => String(p?.full_name || "").replace(/^(dr\.?)\s+/i, "").split(/\s+/)[0] || "Colleague";
-const when = (d: string) =>
-  new Date(d).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: "America/New_York" });
 
 // Where "View context" goes: the referral or cover plan this thread is
 // about, found from the people in it.
@@ -45,29 +41,12 @@ async function contextHref(supabase: Supabase, myself: string, other: string | n
 // reply box. Used by the thread page and as the default Messages view.
 export async function ThreadPanel({ id, myself, error, draft }: { id: number; myself: string; error?: string; draft?: string }) {
   const supabase = await createClient();
-  const [{ data: conversation }, { data: participants }, { data: messages }] = await Promise.all([
+  const [{ data: conversation }, { data: participants }, messages] = await Promise.all([
     supabase.from("conversations").select("id, title").eq("id", id).maybeSingle(),
     supabase.from("conversation_participants").select("profile_id, profile:profile_id(id, full_name, credential_prefix, qualification_level)").eq("conversation_id", id),
-    supabase
-      .from("conversation_messages")
-      .select("id, author_id, body, created_at, deleted_at, author:author_id(full_name, credential_prefix, qualification_level)")
-      .eq("conversation_id", id)
-      .order("created_at", { ascending: true }),
+    loadChatMessages(supabase, myself, id),
   ]);
   if (!conversation) return null;
-  const { data: reactionRows } = await supabase.from("message_reactions").select("message_id, profile_id, reaction").eq("conversation_id", id);
-  const firstName = new Map<string, string>((participants || []).map((p: any) => [p.profile_id, p.profile_id === myself ? "You" : firstOf(p.profile)]));
-  const reactionsFor = (messageId: number) => {
-    const rows = (reactionRows || []).filter((r: any) => r.message_id === messageId);
-    const counts: Partial<Record<Reaction, number>> = {};
-    const names: Partial<Record<Reaction, string[]>> = {};
-    for (const r of rows as any[]) {
-      counts[r.reaction as Reaction] = (counts[r.reaction as Reaction] || 0) + 1;
-      names[r.reaction as Reaction] = [...(names[r.reaction as Reaction] || []), firstName.get(r.profile_id) || "Colleague"];
-    }
-    const mine = ((rows as any[]).find((r) => r.profile_id === myself)?.reaction as Reaction) || null;
-    return { counts, names, mine };
-  };
   const others = (participants || []).filter((p: any) => p.profile_id !== myself);
   const { context, detail } = splitContext(conversation.title);
   const heading = others.map((p: any) => nameOf(p.profile)).join(", ") || detail || "Conversation";
@@ -92,47 +71,19 @@ export async function ThreadPanel({ id, myself, error, draft }: { id: number; my
         {href && <a className="btn secondary small-btn" href={href}>View context</a>}
       </div>
       {error && <div className="banner error">{error}</div>}
-      <div className="message-scroll">
-        {(messages || []).length === 0 && <p className="small">No messages yet. Say hello.</p>}
-        {(messages || []).map((m: any) => {
-          const mine = m.author_id === myself;
-          return (
-            <div key={m.id} className={`bubble${mine ? " me" : ""}`}>
-              {m.deleted_at ? (
-                <em>{m.body && m.body.startsWith("[Removed by PsyAlliance") ? "Removed by PsyAlliance: it contained client information" : "Message removed"}</em>
-              ) : (
-                <span style={{ whiteSpace: "pre-wrap" }}>{m.body}</span>
-              )}
-              <small>
-                {mine ? "You" : firstOf(m.author)} &middot; {when(m.created_at)}
-                {!m.deleted_at && (
-                  <span style={{ display: "inline-block", marginLeft: 8 }}>
-                    {mine ? (
-                      <form action={removeMessageAction} className="inline">
-                        <input type="hidden" name="message_id" value={m.id} />
-                        <input type="hidden" name="conversation_id" value={id} />
-                        <button type="submit" className="plain-button small">Remove</button>
-                      </form>
-                    ) : (
-                      <ReportContent targetType="message" targetId={m.id} returnTo={`/dashboard/messages/${id}`} />
-                    )}
-                  </span>
-                )}
-              </small>
-              {!m.deleted_at && (() => {
-                const r = reactionsFor(m.id);
-                return <MessageReactions messageId={m.id} counts={r.counts} names={r.names} mine={r.mine} canReact={!mine} />;
-              })()}
-            </div>
-          );
-        })}
-      </div>
-      <form action={sendMessage} className="message-compose" data-deidentify="" data-draft={`thread-${id}`}>
-        <input type="hidden" name="conversation_id" value={id} />
-        <textarea name="body" required placeholder="Write a professional message..." aria-label="Message" defaultValue={(messages || []).length === 0 ? draft || "" : ""} />
-        <button type="submit" className="btn lg">Send</button>
-      </form>
-      {draft && (messages || []).length === 0 && <p className="micro-note" style={{ marginTop: 8 }}>A suggested opening. Edit it before you send; nothing is sent until you do.</p>}
+      {/* The same chat as everywhere else (Nick, 18 Oct): send, edit for 15
+          minutes, remove, react; replies arrive without reloading. */}
+      <ChatThread
+        messages={messages}
+        conversationId={id}
+        showMessagesLink={false}
+        returnTo={`/dashboard/messages/${id}`}
+        emptyText="No messages yet. Say hello."
+        placeholder="Write a professional message…"
+        draft={messages.length === 0 ? draft || "" : ""}
+        className="in-messages"
+      />
+      {draft && messages.length === 0 && <p className="micro-note" style={{ marginTop: 8 }}>A suggested opening. Edit it before you send; nothing is sent until you do.</p>}
       <p className="micro-note" style={{ marginTop: 8 }}>{HANDOFF_RULE}</p>
     </section>
   );

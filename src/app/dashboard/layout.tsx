@@ -13,6 +13,8 @@ import "../premium.css";
 import { resolveAvatarUrl } from "@/lib/avatars";
 import { getUnreadNotificationCount } from "@/lib/notifications-v2";
 import { SandboxNudge } from "./_components/sandbox-nudge";
+import { loadRelationshipMap } from "@/lib/relationship-map";
+import { computeHubStates } from "@/lib/hub-states";
 
 export default async function DashboardLayout({
   children,
@@ -37,7 +39,7 @@ export default async function DashboardLayout({
   const [
     { data: profile },
     { data: status },
-    { count: licenceCount },
+    { data: licenceRows },
     { data: accessData },
     { data: sandbox },
     { data: myConversationRows },
@@ -47,13 +49,16 @@ export default async function DashboardLayout({
     { count: pendingCoverageRequestCount },
     notificationPipelineUnreadCount,
     cookieJar,
+    relationships,
+    { data: myLookupRows },
+    { data: myPlan },
   ] = await Promise.all([
     supabase
       .rpc("my_profile")
-      .select("full_name, verification_status, is_admin, avatar_path, demo_view, account_kind, qualification_level, credential_prefix, primary_practice_city, primary_state")
+      .select("full_name, verification_status, is_admin, avatar_path, demo_view, account_kind, qualification_level, credential_prefix, primary_practice_city, primary_state, bio, availability_confirmed_at")
       .maybeSingle<any>(),
     supabase.rpc("my_network_status").maybeSingle<any>(),
-    supabase.from("licenses").select("id", { count: "exact", head: true }).eq("profile_id", user.id),
+    supabase.from("licenses").select("status, expiration_date, reviewed_at").eq("profile_id", user.id),
     IS_DEMO_SITE ? Promise.resolve({ data: null }) : supabase.rpc("my_access"),
     IS_DEMO_SITE ? supabase.rpc("my_sandbox").maybeSingle<any>() : Promise.resolve({ data: null }),
     supabase
@@ -88,7 +93,20 @@ export default async function DashboardLayout({
     // Messages badge, unchanged - this is its own destination now).
     getUnreadNotificationCount(supabase, user.id),
     cookies(),
+    // Who everyone is to this member, for every avatar on every page.
+    loadRelationshipMap(supabase, user.id),
+    // For colouring Profile's four parts by how complete they are.
+    supabase.from("profile_lookup_values").select("lookup_values!inner(category)").eq("profile_id", user.id).in("lookup_values.category", ["treatment_specialism", "insurance"]),
+    supabase.from("continuity_plans").select("answers, backup_profile_id").eq("profile_id", user.id).maybeSingle(),
   ]);
+  const licenceCount = (licenceRows || []).length;
+  const hub = computeHubStates({
+    profile,
+    specialties: ((myLookupRows as any[]) || []).filter((r) => r.lookup_values?.category === "treatment_specialism").length,
+    insurance: ((myLookupRows as any[]) || []).filter((r) => r.lookup_values?.category === "insurance").length,
+    licences: (licenceRows as any[]) || [],
+    plan: (myPlan as any) || null,
+  });
 
   // A referring provider (GP/physician portal account) has no `profiles`
   // row at all - that's what keeps them out of Network/Messages/Town Hall/
@@ -210,6 +228,8 @@ export default async function DashboardLayout({
           : null
       }
       resetSandboxAction={IS_DEMO_SITE ? resetSandboxAction : undefined}
+      relationships={relationships}
+      hub={hub}
     >
       {children}
       {IS_DEMO_SITE && sandbox?.label && !isOperator && (

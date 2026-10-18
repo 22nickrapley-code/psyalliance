@@ -3,31 +3,19 @@ import { JOIN_HREF, TOUR_URL } from "@/lib/env";
 import { FOUNDING_LINE } from "@/lib/founding";
 import { SectionReel } from "../tour/story-reel";
 import { findDemo } from "../tour/demos";
-import { CATEGORIES, PUBLIC_WORKFLOW, SHORT_CATEGORY, monthYear, docName, publicLibraryHref, type PublicDoc } from "@/lib/library";
-import { LeadForm } from "./lead-form";
+import { CATEGORIES, PUBLIC_WORKFLOW, SHORT_CATEGORY, docName, publicLibraryHref, type PublicDoc } from "@/lib/library";
 
-// The public Practice Library: every listed template, what's in it and
-// whether it has been independently reviewed. Provisional templates are
-// always labelled "In review"; only reviewed ones can be downloaded.
-
-const DEMO_HREF = TOUR_URL;
+// The public Practice Library (Nick, 18 Oct): every listed template's
+// title, what's in it and who it's for. Opening and downloading templates
+// is for members: a verified account. No review wording is shown here.
 
 export const joinFrom = (code: string) => `${JOIN_HREF}?from=library-${code}`;
+void TOUR_URL;
 
-function reviewLine(d: PublicDoc) {
-  if (!d.reviewed) return "In review";
-  const names = (d.reviewers || []).join(" and ");
-  return `Reviewed ${monthYear(d.review_date)}${names ? ` by ${names}` : ""}`;
-}
-
-function Badges({ d }: { d: PublicDoc }) {
+function Badges() {
   return (
     <div className="lib-badges">
-      {d.downloadable ? <span className="lib-badge free">Free download</span> : <span className="lib-badge">Members</span>}
-      <span className={`lib-badge review${d.reviewed ? " ok" : ""}`}>
-        <span className={`review-dot${d.reviewed ? " ok" : ""}`} aria-hidden="true" />
-        {reviewLine(d)}
-      </span>
+      <span className="lib-badge">Members</span>
     </div>
   );
 }
@@ -43,7 +31,6 @@ export function PublicLibraryView({ docs, q }: { docs: PublicDoc[]; q: string })
   const groups = CATEGORIES.map((c) => ({ c, items: shown.filter((d) => d.category === c) })).filter((g) => g.items.length > 0);
   const other = shown.filter((d) => !CATEGORIES.includes(d.category));
   if (other.length) groups.push({ c: "More templates", items: other });
-  const free = docs.filter((d) => d.downloadable).length;
 
   return (
     <div className="pa">
@@ -55,8 +42,8 @@ export function PublicLibraryView({ docs, q }: { docs: PublicDoc[]; q: string })
               <div className="eyebrow">Practice Library</div>
               <h1>The Practice Library.</h1>
               <p>
-                Templates and checklists for independent practice, written for psychologists and psychiatrists. Each one shows whether it has been independently
-                reviewed, and by whom.
+                Templates and checklists for independent practice, written for psychologists and psychiatrists. See what&rsquo;s in each one here; members open,
+                download and save every template.
               </p>
             </div>
             <form method="get" action="/library" className="searchbar lib-search">
@@ -64,9 +51,7 @@ export function PublicLibraryView({ docs, q }: { docs: PublicDoc[]; q: string })
               <input type="search" name="q" defaultValue={q} placeholder="Search a topic, such as leave, consent or subpoena" aria-label="Search the library" />
               <button type="submit" className="btn small-btn">Search</button>
             </form>
-            <p className="lib-count micro-note">
-              {docs.length} templates{free > 0 ? `, ${free} free to download` : ""}. Members get every template now, beside the work it supports. Each becomes a free download for everyone once it has been independently reviewed.
-            </p>
+            <p className="lib-count micro-note">{docs.length} templates. Members get every template, beside the work it supports.</p>
           </div>
         </section>
 
@@ -108,7 +93,7 @@ export function PublicLibraryView({ docs, q }: { docs: PublicDoc[]; q: string })
                       <div className="lib-code">{SHORT_CATEGORY[d.category] || d.category}</div>
                       <h3><a href={publicLibraryHref(d.code)}>{d.title}</a></h3>
                       <p>{d.summary}</p>
-                      <Badges d={d} />
+                      <Badges />
                     </article>
                   ))}
                 </div>
@@ -122,7 +107,7 @@ export function PublicLibraryView({ docs, q }: { docs: PublicDoc[]; q: string })
           <div className="section-inner pa-cta">
             <div>
               <div className="eyebrow" style={{ color: "#e2c49c" }}>Members get every template</div>
-              <h2>Be one of the first 50 in your state.</h2>
+              <h2>Be one of the first 40 in your state.</h2>
               <p>{FOUNDING_LINE} For doctoral-level psychologists and psychiatrists, opening state by state.</p>
             </div>
             <a className="btn" href={`${JOIN_HREF}?from=library-index`}>Create your account &rarr;</a>
@@ -134,7 +119,7 @@ export function PublicLibraryView({ docs, q }: { docs: PublicDoc[]; q: string })
   );
 }
 
-export function PublicResourceView({ d, related, preview = false }: { d: PublicDoc; related: PublicDoc[]; preview?: boolean }) {
+export function PublicResourceView({ d, related }: { d: PublicDoc; related: PublicDoc[]; preview?: boolean }) {
   const used = PUBLIC_WORKFLOW[d.code];
   const join = joinFrom(d.code);
   return (
@@ -150,7 +135,7 @@ export function PublicResourceView({ d, related, preview = false }: { d: PublicD
               <div>
                 <h1>{d.title}</h1>
                 <p className="lead">{d.summary}</p>
-                <Badges d={d} />
+                <Badges />
 
                 {d.contents.length > 0 && (
                   <div className="lib-block">
@@ -166,43 +151,17 @@ export function PublicResourceView({ d, related, preview = false }: { d: PublicD
                     {d.audience && <li><span>Who it&rsquo;s for</span><strong>{d.audience}</strong></li>}
                     {used && <li><span>In PsyAlliance</span><strong>Used with {used}</strong></li>}
                     <li><span>Version</span><strong>{d.version}</strong></li>
-                    <li>
-                      <span>Review</span>
-                      <strong>
-                        {d.reviewed
-                          ? `Independently reviewed ${monthYear(d.review_date)}${d.reviewers?.length ? ` by ${d.reviewers.join(" and ")}` : ""}`
-                          : "In review: not yet independently reviewed"}
-                      </strong>
-                    </li>
                   </ul>
                 </div>
                 <p className="micro-note">Templates and guidance, not legal advice. Adapt each one to your state and practice.</p>
               </div>
 
               <aside className="lib-cta card">
-                {d.downloadable ? (
-                  <>
-                    <div className="eyebrow">Free download</div>
-                    <h3>Get the {docName(d.code)}</h3>
-                    <LeadForm code={d.code} name={docName(d.code)} intent="download" joinHref={join} demoHref={DEMO_HREF} preview={preview} />
-                  </>
-                ) : (
-                  <>
-                    <div className="eyebrow">Members</div>
-                    <h3>Members get it now.</h3>
-                    <p className="small">
-                      Members get every template in the Library, beside the work it supports. It becomes a free download for everyone once it has been independently reviewed.
-                    </p>
-                    <a className="btn" href={join}>Create your account</a>
-                    <details className="lib-notify">
-                      <summary>Email me when it&rsquo;s reviewed and free to download</summary>
-                      <LeadForm code={d.code} name={docName(d.code)} intent="notify" joinHref={join} demoHref={DEMO_HREF} preview={preview} />
-                    </details>
-                  </>
-                )}
-                <p className="lib-who micro-note">
-                  Master&rsquo;s-level clinicians are welcome to download templates. Membership is for doctoral-level psychologists and psychiatrists.
-                </p>
+                <div className="eyebrow">Members</div>
+                <h3>Members get it now.</h3>
+                <p className="small">Members get every template in the Library, beside the work it supports: open the {docName(d.code)}, download it and keep a private copy.</p>
+                <a className="btn" href={join}>Create your account</a>
+                <p className="lib-who micro-note">For doctoral-level psychologists and psychiatrists. Templates open once your license is verified.</p>
               </aside>
             </div>
           </div>
@@ -218,7 +177,7 @@ export function PublicResourceView({ d, related, preview = false }: { d: PublicD
                     <div className="lib-code">{SHORT_CATEGORY[r.category] || r.category}</div>
                     <h3><a href={publicLibraryHref(r.code)}>{r.title}</a></h3>
                     <p>{r.summary}</p>
-                    <Badges d={r} />
+                    <Badges />
                   </article>
                 ))}
               </div>

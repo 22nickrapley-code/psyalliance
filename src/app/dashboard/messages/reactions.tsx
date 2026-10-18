@@ -19,12 +19,15 @@ export function MessageReactions({
   mine,
   names,
   canReact,
+  refresh = true,
 }: {
   messageId: number;
   counts: Partial<Record<Reaction, number>>;
   mine: Reaction | null;
   names: Partial<Record<Reaction, string[]>>;
   canReact: boolean;
+  // Chat threads keep their own state and don't reload the page.
+  refresh?: boolean;
 }) {
   const router = useRouter();
   const [current, setCurrent] = useState<Reaction | null>(mine);
@@ -45,7 +48,7 @@ export function MessageReactions({
     start(async () => {
       const res = await reactToMessageAction(messageId, r);
       if (!res.ok) setCurrent(mine);
-      router.refresh();
+      if (refresh) router.refresh();
     });
   };
   const chips = REACTIONS.filter((r) => (shown[r.key] || 0) > 0);

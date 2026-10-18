@@ -13,6 +13,8 @@ export type ConversationItem = {
   unread: boolean;
   avatarName: string;
   avatarUrl: string | null;
+  // The other person in a one-to-one conversation, for their colour.
+  avatarId?: string | null;
 };
 
 const nameOf = (p: any) => (p ? clinicianName(p.full_name, p.qualification_level, p.credential_prefix) : "Colleague");
@@ -42,7 +44,7 @@ export async function loadConversations(supabase: Supabase, myself: string): Pro
   const others = new Map<number, any[]>();
   for (const p of parts || []) {
     if (p.profile_id === myself) continue;
-    others.set(p.conversation_id, [...(others.get(p.conversation_id) || []), p.profile]);
+    others.set(p.conversation_id, [...(others.get(p.conversation_id) || []), p.profile ? { ...p.profile, id: p.profile_id } : null].filter(Boolean));
   }
   const lastMsg = new Map<number, any>();
   for (const m of msgs || []) if (!lastMsg.has(m.conversation_id)) lastMsg.set(m.conversation_id, m);
@@ -65,6 +67,7 @@ export async function loadConversations(supabase: Supabase, myself: string): Pro
       unread: !!lm && new Date(c.last_message_at) > new Date(lastRead.get(c.id)),
       avatarName: names[0] || "?",
       avatarUrl: o[0] ? urls.get(o[0].avatar_path || "") || null : null,
+      avatarId: o.length === 1 ? o[0].id : null,
     };
   });
 }

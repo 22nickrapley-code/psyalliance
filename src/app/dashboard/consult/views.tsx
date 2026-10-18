@@ -374,7 +374,7 @@ export type ConsultDetail = {
   createdAt: string;
   audienceLabel: string;
   recipients: string[];
-  responses: { id: number; name: string; body: string; type: string; useful: boolean; createdAt: string; avatarUrl: string | null; ownReply?: boolean }[];
+  responses: { id: number; profileId?: string; name: string; body: string; type: string; useful: boolean; createdAt: string; avatarUrl: string | null; ownReply?: boolean }[];
 };
 
 export function ConsultDetailView({ c, ok, error, extra }: { c: ConsultDetail; ok?: string; error?: string; extra?: ReactNode }) {
@@ -437,7 +437,7 @@ export function ConsultDetailView({ c, ok, error, extra }: { c: ConsultDetail; o
               <div className="card-title"><h3>{c.responses.length} repl{c.responses.length === 1 ? "y" : "ies"}</h3></div>
               {c.responses.map((r) => (
                 <div key={r.id} className="item row" style={{ alignItems: "flex-start" }}>
-                  <PersonAvatar name={r.name} url={r.avatarUrl} />
+                  <PersonAvatar name={r.name} url={r.avatarUrl} id={r.profileId} />
                   <div style={{ flex: 1 }}>
                     <div className="row between">
                       <strong>{r.name}{r.type === "clarifying_question" ? " · asked a clarifying question" : ""}</strong>

@@ -1,11 +1,11 @@
 import { stateName } from "@/lib/open-states";
 
-// Founding members (Nick, 11 Oct): the first 50 members in each state, counted
+// Founding members (Nick, 11 Oct; 40 from 18 Oct): the first 40 members in each state, counted
 // when their license is approved, in their main practice state. They never
-// pay for membership. Migration 0112 gives the places; these are the words.
-export const FOUNDING_PLACES = 50;
-export const FOUNDING_LINE = "The first 50 members in each state are founding members, free for life.";
-export const FOUNDING_SHORT = "The first 50 in each state join free for life.";
+// pay for membership. Migrations 0112 and 0116 give the places; these are the words.
+export const FOUNDING_PLACES = 40;
+export const FOUNDING_LINE = "The first 40 members in each state are founding members, free for life.";
+export const FOUNDING_SHORT = "The first 40 in each state join free for life.";
 export const FOUNDING_HOW =
   "A place counts once your license is approved, in your main practice state, and is yours for as long as you remain a member.";
 export const FOUNDING_AFTER = "After a state's founding places are taken, membership there will be paid. We'll publish the price before then.";

@@ -1,4 +1,5 @@
-import { findDemo, PEOPLE, type Demo, type DemoStep } from "./demos";
+import { findDemo, PEOPLE, DEMO_RELATIONSHIPS, type Demo, type DemoStep } from "./demos";
+import { RelationshipProvider } from "../dashboard/_components/relationship";
 import { StoryPlayer, type Scene, type StoryEnd } from "./story-player";
 import { actionsMs } from "./scene-timing";
 
@@ -114,8 +115,15 @@ const BEATS: Beat[] = [
     demo: "library",
     slug: "template",
     chapter: "Templates",
-    caption: "See what's inside before you save it.",
-    sub: "Who it's for, the plan it supports, and whether it has been independently reviewed. A private copy is one click.",
+    caption: "See what's inside before you open it.",
+    sub: "Who it's for and the plan it supports. Open the PDF to read it, and keep a private copy in one click.",
+  },
+  {
+    demo: "library",
+    slug: "pdf",
+    chapter: "Templates",
+    caption: "Read it through.",
+    sub: "The template opens as a PDF: the plan, the letter for clients and the handoff form you complete outside PsyAlliance.",
   },
   {
     demo: "profile",
@@ -175,7 +183,7 @@ export function StoryReel({ tryHref = "#try", end, chapter }: { tryHref?: string
     <StoryPlayer scenes={scenes} tryHref={tryHref} end={end} startAt={startAt}>
       {steps.map(({ beat, step }) => (
         <div key={`${beat.demo}-${beat.slug}`} className="sp-page">
-          {step.render()}
+          <RelationshipProvider value={step.perspective === "alex" ? DEMO_RELATIONSHIPS : null}>{step.render()}</RelationshipProvider>
         </div>
       ))}
     </StoryPlayer>
@@ -220,7 +228,7 @@ export function SectionReel({ demo, tryHref, embed = false, end: customEnd }: { 
     <StoryPlayer scenes={scenes} tryHref={tryHref} label={`${demo.title}: an example`} end={end} embed={embed}>
       {demo.steps.map((step) => (
         <div key={step.slug} className="sp-page">
-          {step.render()}
+          <RelationshipProvider value={step.perspective === "alex" ? DEMO_RELATIONSHIPS : null}>{step.render()}</RelationshipProvider>
         </div>
       ))}
     </StoryPlayer>

@@ -25,9 +25,9 @@ test("CF-01 an inline referral reply settles and shows (R17-03)", async ({ page,
   const text = `QA inline answer ${Date.now()}`;
   const box = page.getByPlaceholder(/Answer Bram/);
   await box.fill(text);
-  await page.locator("form.it-reply").getByRole("button", { name: "Send" }).click();
-  await expect(page.locator(".it-list").getByText(text)).toBeVisible({ timeout: 8000 });
-  await expect(page.locator("form.it-reply button.is-pending")).toHaveCount(0);
+  await page.locator("form.chat-compose").getByRole("button", { name: "Send" }).click();
+  await expect(page.locator(".chat-list").getByText(text)).toBeVisible({ timeout: 8000 });
+  await expect(page.locator(".chat-msg.pending")).toHaveCount(0, { timeout: 8000 });
   await expect(page.getByPlaceholder(/Answer Bram/)).toHaveValue("");
 });
 

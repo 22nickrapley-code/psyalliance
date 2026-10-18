@@ -128,7 +128,7 @@ export default async function ConsultationGroupPage(props: { params: Promise<{ i
             {(members || []).map((m: any) => (
               <div key={m.id} className="item row between">
                 <span className="row" style={{ gap: 10 }}>
-                  {m.profile_id ? <PersonAvatar name={m.member?.full_name || "?"} size={30} /> : null}
+                  {m.profile_id ? <PersonAvatar name={m.member?.full_name || "?"} size={30} id={m.profile_id} /> : null}
                   <span>
                     {m.profile_id ? (
                       <a href={m.profile_id === me ? "/dashboard/profile" : `/dashboard/people/${m.profile_id}`}><strong>{m.profile_id === me ? "You" : nameOf(m.member)}</strong></a>

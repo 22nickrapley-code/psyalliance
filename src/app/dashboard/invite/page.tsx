@@ -43,7 +43,7 @@ export default async function InvitePage() {
                 const name = clinicianName(s.name, s.qualification_level, s.credential_prefix);
                 return (
                   <div key={s.id} className="list-row">
-                    <span className="row"><PersonAvatar name={name} /><span><strong>{name}</strong><small className="micro-note" style={{ display: "block" }}>Joined {shortDate(s.joined)}</small></span></span>
+                    <span className="row"><PersonAvatar name={name} id={s.id} /><span><strong>{name}</strong><small className="micro-note" style={{ display: "block" }}>Joined {shortDate(s.joined)}</small></span></span>
                     {s.connected ? (
                       <a className="btn secondary small-btn" href={`/dashboard/people/${s.id}`}>In your circle</a>
                     ) : (

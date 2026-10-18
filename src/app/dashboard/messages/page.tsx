@@ -9,7 +9,7 @@ import { acknowledgeProviderReferral, declineProviderReferral } from "../referra
 import { loadConversations } from "./data";
 import { ConversationList, MessagesShell } from "./views";
 import { ThreadPanel } from "./thread";
-import { Banner, Empty } from "../_components/ui";
+import { Banner } from "../_components/ui";
 
 export const metadata = { title: "Messages" };
 
@@ -68,19 +68,17 @@ export default async function MessagesPage(props: { searchParams: Promise<{ erro
         <div className="index-thread">
           <ThreadPanel id={openId} myself={myself} />
         </div>
-      ) : items.length === 0 && suggestions.length === 0 ? (
-        <Empty
-          symbol={"✉"}
-          title="No conversations yet."
-          body="Messages start from a colleague's profile, a referral reply or a cover request, and stay attached to what they're about. Start by finding someone in Clinicians."
-          action={<a className="btn secondary small-btn" href="/dashboard/clinicians">Find a colleague</a>}
-        />
       ) : (
       <section className="card compose-card">
         <div className="eyebrow">New message</div>
         <h2 className="serif-title" style={{ fontSize: 26, margin: "6px 0 14px" }}>Write to a colleague</h2>
         <form action={startConversation} data-deidentify="" data-draft="new-message">
-          <ColleaguePicker suggestions={suggestions} name="participant_ids" mode="single" initial={sp.to ? [sp.to] : []} />
+          {/* Anyone in the directory (Nick, 18 Oct): your circle is listed
+              first; typing a name searches every verified member. */}
+          <ColleaguePicker suggestions={suggestions} name="participant_ids" mode="single" initial={sp.to ? [sp.to] : []} placeholder="Type any colleague's name" />
+          <p className="micro-note picker-hint">
+            Recent conversations, trusted colleagues and people you&rsquo;ve worked with are listed first. To write to anyone else in the network, type their name.
+          </p>
           <label className="field grow" style={{ marginTop: 18 }}>
             Message
             <textarea name="body" required maxLength={4000} placeholder="Write a professional message. No client-identifying details." />

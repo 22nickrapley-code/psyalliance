@@ -2,7 +2,7 @@
 // closest, people they've worked with next, and (on the large Network
 // picture) colleagues PsyAlliance suggests on the outer ring.
 
-export type CircleNode = { id: string; name: string; kind: "trusted" | "worked" | "suggested" | "saved"; avatarUrl: string | null };
+export type CircleNode = { id: string; name: string; kind: "trusted" | "worked" | "suggested"; avatarUrl: string | null };
 
 const initials = (name: string) =>
   name
@@ -17,7 +17,7 @@ const initials = (name: string) =>
 export function Orbit({ nodes, me, size = 200 }: { nodes: CircleNode[]; me?: { initials: string; avatarUrl: string | null }; size?: number }) {
   const big = size > 240;
   const inner = nodes.filter((n) => n.kind === "trusted").slice(0, big ? 10 : 8);
-  const middle = nodes.filter((n) => n.kind === "worked" || n.kind === "saved").slice(0, big ? 12 : 10);
+  const middle = nodes.filter((n) => n.kind === "worked").slice(0, big ? 12 : 10);
   const outer = big ? nodes.filter((n) => n.kind === "suggested").slice(0, 14) : [];
   const c = size / 2;
   const rInner = size * (big ? 0.2 : 0.27);
@@ -34,7 +34,7 @@ export function Orbit({ nodes, me, size = 200 }: { nodes: CircleNode[]; me?: { i
       {big && ring(rOuter, "ring-suggested")}
       {ring(rMiddle, "ring-outer")}
       {ring(rInner, "ring-inner")}
-      <span className="me">
+      <span className="me rel-you">
         {me?.avatarUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={me.avatarUrl} alt="" />
@@ -43,7 +43,7 @@ export function Orbit({ nodes, me, size = 200 }: { nodes: CircleNode[]; me?: { i
         )}
       </span>
       {[...place(inner, rInner, -Math.PI / 2), ...place(middle, rMiddle, -Math.PI / 3), ...place(outer, rOuter, -Math.PI / 5)].map(({ n, left, top }) => (
-        <a key={`${n.kind}-${n.id}`} className={`node ${n.kind}`} style={{ left, top }} href={`/dashboard/people/${n.id}`} title={n.name} tabIndex={-1}>
+        <a key={`${n.kind}-${n.id}`} className={`node ${n.kind} rel-${n.kind}`} style={{ left, top }} href={`/dashboard/people/${n.id}`} title={n.name} tabIndex={-1}>
           {n.avatarUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={n.avatarUrl} alt="" />

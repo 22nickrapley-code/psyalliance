@@ -12,7 +12,7 @@ import { FoundingCount } from "./_public/founding-count";
 // what it is and the benefit first, then the three moments it helps with,
 // why it exists, why it's safe, the questions people ask first and one way
 // in. Verification detail lives at /verification and the full rules at
-// /privacy. The first 50 members in each state are founding members.
+// /privacy. The first 40 members in each state are founding members.
 
 const FAQ: [string, string][] = [
   [
@@ -21,11 +21,11 @@ const FAQ: [string, string][] = [
   ],
   [
     "What does it cost?",
-    "The first 50 members in each state are founding members and never pay: membership stays free for as long as you remain a member. A place counts once your license is approved, in your main practice state. After a state's founding places are taken, membership there will be paid; we'll publish the price before then.",
+    "The first 40 members in each state are founding members and never pay: membership stays free for as long as you remain a member. A place counts once your license is approved, in your main practice state. After a state's founding places are taken, membership there will be paid; we'll publish the price before then.",
   ],
   [
     "What's in the Practice Library?",
-    "Twenty templates for independent practice, from a professional will to a reciprocal cover agreement. Members get all of them, placed beside the work they support. Each becomes a free download for everyone once it has been independently reviewed.",
+    "Twenty templates for independent practice, from a professional will to a reciprocal cover agreement. Browse the titles here; members get all of them, placed beside the work they support.",
   ],
   [
     "Do client details go into PsyAlliance?",
@@ -269,7 +269,7 @@ export default async function HomePage() {
           <div className="section-inner pa-cta">
             <div>
               <div className="eyebrow" style={{ color: "#e2c49c" }}>Founding members</div>
-              <h2>Be one of the first 50 in your state.</h2>
+              <h2>Be one of the first 40 in your state.</h2>
               <p>{FOUNDING_LINE} Open now in {open || "the Northeast"}; other states open as colleagues join.</p>
               <FoundingCount className="founding-count on-dark" />
             </div>

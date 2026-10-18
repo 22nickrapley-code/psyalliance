@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { TOUR_ENABLED, IS_DEMO_SITE, REAL_SITE_URL, JOIN_HREF } from "@/lib/env";
 import { PublicNav, PublicFooter } from "../_public/chrome";
 import { StoryReel } from "./story-reel";
+import { FOUNDING_LINE } from "@/lib/founding";
 
 export const metadata = { title: "See PsyAlliance in two minutes", robots: { index: false, follow: false } };
 
@@ -38,20 +39,33 @@ export default async function DemoStoryPage(props: { searchParams: Promise<{ cha
               chapter={chapter || null}
               end={{
                 title: "That’s PsyAlliance.",
-                text: "Create your account for the step-by-step demos and your own sandbox to try everything in.",
+                text: "Next: create your account for longer demos and a fictional sandbox to learn in. Once your license is verified, you use it for real.",
                 tryLabel: "Create your account",
                 otherLabel: "Back to the homepage",
                 otherHref: "/",
               }}
             />
+            {/* What happens next, in order (Nick, 18 Oct). */}
             <section className="card demo-join">
               <div>
-                <div className="eyebrow">Want a closer look, or to try it yourself?</div>
-                <h2>Create your account for the full demos and your own sandbox.</h2>
-                <p>
-                  Inside, every part of PsyAlliance has a short step-by-step demo, and your sandbox is a fully set-up fictional practice, with colleagues,
-                  clients and requests, to learn on at your own pace. Nothing you do there reaches anyone. The first 50 members in each state are founding members, free for life.
-                </p>
+                <div className="eyebrow">How to get started</div>
+                <h2>From first look to using it for real.</h2>
+                <ol className="join-steps">
+                  <li>
+                    <b>You&rsquo;ve seen the homepage and these short demos.</b>
+                  </li>
+                  <li>
+                    <b>Create your account.</b> Inside are longer demos of every part of PsyAlliance, and your own sandbox: a fictional practice with colleagues,
+                    clients and requests to practice on. Nothing you do there reaches anyone.
+                  </li>
+                  <li>
+                    <b>We verify your license.</b>
+                  </li>
+                  <li>
+                    <b>Use PsyAlliance for real:</b> referrals, cover, consults and messages with verified colleagues.
+                  </li>
+                </ol>
+                <p className="join-founding">{FOUNDING_LINE}</p>
               </div>
               <div className="demo-join-actions">
                 <a className="btn lg" href={JOIN_HREF}>Create your account</a>

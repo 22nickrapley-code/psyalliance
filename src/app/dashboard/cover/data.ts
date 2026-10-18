@@ -42,6 +42,7 @@ export function summarise(plan: any, cases: { status: string; jurisdiction_state
     covered: cases.filter((c) => c.status === "confirmed").length,
     invited: cases.filter((c) => c.status === "awaiting_response").length,
     open: cases.filter((c) => c.status === "needs_cover" || c.status === "declined_all").length,
+    declined: cases.filter((c) => c.status === "declined_all").length,
   };
   return {
     id: plan.id,
@@ -53,6 +54,7 @@ export function summarise(plan: any, cases: { status: string; jurisdiction_state
     states: states.length ? states : plan.jurisdiction_state ? [plan.jurisdiction_state] : [],
     status: plan.status,
     counts,
+    createdAt: plan.created_at,
   };
 }
 

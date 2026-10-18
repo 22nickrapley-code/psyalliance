@@ -13,7 +13,7 @@ export function ConversationList({ items, activeId, composing }: { items: Conver
       {items.length === 0 && <p className="small" style={{ padding: "0 8px" }}>No conversations yet.</p>}
       {items.map((c) => (
         <a key={c.id} href={`/dashboard/messages/${c.id}`} className={`conversation-entry${c.id === activeId ? " active" : ""}`} style={{ textDecoration: "none", color: "inherit" }}>
-          <PersonAvatar name={c.avatarName} url={c.avatarUrl} />
+          <PersonAvatar name={c.avatarName} url={c.avatarUrl} id={c.avatarId} />
           <span style={{ minWidth: 0, flex: 1 }}>
             <span className="row between">
               <b style={{ fontWeight: c.unread ? 750 : 600 }}>{c.title}</b>

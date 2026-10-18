@@ -84,6 +84,7 @@ const res = (code: string, title: string, category: string, summary: string): Li
   tags: ["coverage", "continuity of care", "handoff"],
   version: 1,
   reviewed: code === "PA-04",
+  available: true,
   reviewDate: code === "PA-04" ? "2026-09-23" : null,
   nextReviewDate: "2027-09-23",
   storagePath: "",
@@ -111,7 +112,7 @@ const PICK: Suggestion[] = [
   { id: "ar", name: "Adrian Kestrelby, PsyD", avatarUrl: null, where: "Brooklyn, NY", group: "trusted", reason: "Trusted colleague · Selected referrals only", focus: ["HIV & AIDS", "Disability"], trusted: true },
   { id: "aq", name: "Aaron Hollowmere, PsyD", avatarUrl: null, where: "Saratoga Springs, NY", group: "trusted", reason: "Trusted colleague · Selected referrals only", focus: ["Obsessive/Compulsive Disorder", "Eating Disorders"], trusted: true },
   { id: "e", name: "Eli Kestrelby, MD", avatarUrl: null, where: "Manhattan, NY", group: "worked", reason: "Worked with before · Accepting referrals", focus: ["Psychiatry", "Medication management"] },
-  { id: "l", name: "Lena Larkhollow, PsyD", avatarUrl: null, where: "Queens, NY", group: "saved", reason: "Saved", focus: ["Couples", "Perinatal"] },
+  { id: "l", name: "Lena Larkhollow, PsyD", avatarUrl: null, where: "Queens, NY", group: "network", reason: "Verified member", focus: ["Couples", "Perinatal"] },
 ];
 
 const INVITER = { full_name: "Maya Calderwick", credential_prefix: "Dr.", qualification_level: "PsyD", city: "Brooklyn", state: "NY" };
@@ -437,16 +438,20 @@ export const previewScreens: Record<string, () => ReactNode> = {
           ownerName: "Maya Calderwick, PsyD",
           ownerRole: "Clinical psychologist · Brooklyn, NY",
           ownerAvatar: null,
+          absenceType: "unexpected",
           absence: "Unexpected absence",
           planTitle: "Unexpected absence",
+          planStatus: "active",
+          startsOn: null,
+          endsOn: null,
           dates: "Oct 3 to Oct 17",
           length: "2 weeks",
           location: "Brooklyn, New York",
           outreach: "Asked of several colleagues at once",
           note: "Family emergency. Could you hold two sessions?",
           urgent: true,
-          sentAt: null,
-          cases: [{ requestId: 1, reference: "Client 1", focus: "Anxiety", details: [["Age band", "Adults"], ["Setting", "Virtual"], ["Frequency", "Weekly"]] }],
+          sentAt: "2026-10-03T12:00:00Z",
+          cases: [{ requestId: 1, caseId: 1, status: "sent", threadTitle: "preview", reference: "Client 1", focus: "Anxiety", details: [["Age band", "Adults"], ["Setting", "Virtual"], ["Frequency", "Weekly"]] }],
         },
       ]}
     />

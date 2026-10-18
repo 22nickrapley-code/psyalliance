@@ -62,7 +62,7 @@ function RelationshipBand({ p }: { p: ClinicianProfile }) {
   if (p.trusted) return null;
   if (p.trustsMe) {
     return (
-      <div className="rel-band rel-invite">
+      <div className="rel-band rel-invite rel-suggested">
         <span className="rel-icon" aria-hidden="true">&#9733;</span>
         <span className="rel-copy">
           <b>{first} added you as a trusted colleague</b>
@@ -86,7 +86,7 @@ function RelationshipBand({ p }: { p: ClinicianProfile }) {
   }
   const why = (p.why || []).filter((w) => !/^Added you/.test(w));
   return (
-    <div className="rel-band rel-none">
+    <div className={`rel-band rel-none${why.length ? " rel-suggested" : ""}`}>
       <span className="rel-icon" aria-hidden="true">&#9675;</span>
       <span className="rel-copy">
         <b>{why.length ? `Why ${first} is suggested for you` : "Verified member"}</b>
@@ -113,7 +113,7 @@ export function ClinicianProfileView({ p, error, note, back }: { p: ClinicianPro
 
       <section className={`profile-hero rel-${p.trusted ? "trusted" : p.workedWith ? "worked" : "none"}`}>
         <span className={`hero-avatar${p.trusted ? " is-trusted" : ""}`}>
-          <PersonAvatar name={p.name} url={p.avatarUrl} size={88} />
+          <PersonAvatar name={p.name} url={p.avatarUrl} size={88} id={p.id} />
           {p.trusted && (
             <span className="trust-seal" title="Your trusted colleague" aria-hidden="true">&#10003;</span>
           )}

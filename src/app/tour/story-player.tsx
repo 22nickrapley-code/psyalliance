@@ -38,6 +38,7 @@ function resolveAction(root: HTMLElement, a: SceneAction): { el: HTMLInputElemen
 }
 
 function setActionState(root: HTMLElement, a: SceneAction, done: boolean, typed?: string) {
+  if (a.do === "scroll") return;
   const { el } = resolveAction(root, a);
   if (!el) return;
   if (a.do === "pick") (el as HTMLInputElement).checked = done;
@@ -56,13 +57,18 @@ function setActionState(root: HTMLElement, a: SceneAction, done: boolean, typed?
 const DESKTOP_WIDTH = 1100;
 const PHONE_WIDTH = 390;
 
-function findFocus(root: HTMLElement, focus?: string, index = 0): HTMLElement | null {
+// Only something on screen can be clicked: a hidden copy of a button (the
+// phone or desktop version of a control) has no position, and pointing at
+// it put the pointer in an empty corner (Nick, 18 Oct).
+const visible = (el: HTMLElement) => el.offsetWidth > 0 && el.offsetHeight > 0 && el.getClientRects().length > 0;
+
+export function findFocus(root: HTMLElement, focus?: string, index = 0): HTMLElement | null {
   if (!focus) return null;
   // "#rank-confirm" points at an element by id rather than by its text.
   if (focus.startsWith("#")) return root.querySelector<HTMLElement>(focus);
   const want = focus.toLowerCase();
-  const hits = Array.from(root.querySelectorAll<HTMLElement>("a, button, summary, label, h3, strong")).filter((el) =>
-    (el.textContent || "").replace(/\s+/g, " ").trim().toLowerCase().startsWith(want)
+  const hits = Array.from(root.querySelectorAll<HTMLElement>("a, button, summary, label, h3, strong")).filter(
+    (el) => visible(el) && (el.textContent || "").replace(/\s+/g, " ").trim().toLowerCase().startsWith(want)
   );
   return hits[index] || hits[0] || null;
 }
@@ -253,6 +259,17 @@ export function StoryPlayer({
     const screen = screenRefs.current[i];
     const a = actions[k];
     if (!screen || !a) return;
+    if (a.do === "scroll") {
+      // Reading down the page: the screen moves, the pointer stays away.
+      const to = screen.querySelector<HTMLElement>(a.target);
+      const place = to ? placeFor(to) : null;
+      if (place) {
+        setCursor((c) => ({ ...c, on: false, click: false }));
+        panTo(place.x, place.y);
+      }
+      actionsDone.current = Math.max(actionsDone.current, k + 1);
+      return;
+    }
     const { point, el } = resolveAction(screen, a);
     if (!point || !el) {
       actionsDone.current = k + 1;
@@ -286,6 +303,10 @@ export function StoryPlayer({
 
   const reach = (n: number) => {
     reached.current = Math.max(reached.current, n);
+    // Measured again at the moment it's used: choices made earlier in the
+    // scene, fonts and pictures can all move the button after the scene
+    // began, and the pointer must land on it (Nick, 18 Oct).
+    measure();
     const p = plan.current;
     const at = reached.current;
     if (at >= 1) panTo(p.x, p.y);

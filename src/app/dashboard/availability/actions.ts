@@ -65,6 +65,21 @@ export async function confirmAvailability(formData: FormData) {
   redirect(back ? backWith(back, { saved: "availability" }) : "/dashboard/availability?confirmed=1");
 }
 
+// Home's quiet consult feed: "Open to consult" in one tap (Nick, 18 Oct).
+// Only consult changes; the confirmation date is left as it was.
+export async function setConsultOpenAction(formData: FormData) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not signed in");
+  const back = safeBack(formData.get("return_to")) || "/dashboard";
+  const { error } = await supabase.from("profiles").update({ consultation_availability: "yes" }).eq("id", user.id);
+  revalidatePath("/dashboard");
+  revalidatePath("/dashboard/availability");
+  redirect(backWith(back, error ? { error: error.message } : { saved: "consult" }));
+}
+
 // One-tap "nothing's changed" reconfirmation from Home (Product Spec v1,
 // "Reconfirm all in one tap even when nothing has changed"). Only valid
 // once all three statuses have been set at least once.

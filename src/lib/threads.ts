@@ -9,7 +9,69 @@ type Supabase = Awaited<ReturnType<typeof createClient>>;
 // starting a conversation from Messages. It shows in place on the cover
 // request or referral, and in Messages.
 
-export type ThreadMessage = { id: number; mine: boolean; author: string; body: string; at: string };
+export type Reaction = "like" | "dislike" | "heart";
+export type ThreadReactions = { counts: Partial<Record<Reaction, number>>; names: Partial<Record<Reaction, string[]>>; mine: Reaction | null };
+
+// One message as every chat surface shows it (Nick, 18 Oct: Messages, cover
+// and referral threads behave the same): who wrote it, when, whether it was
+// edited or removed, and its reactions.
+export type ThreadMessage = {
+  id: number;
+  mine: boolean;
+  author: string;
+  authorId?: string;
+  body: string;
+  at: string;
+  // "Oct 18, 10:21 AM", worked out on the server so page and browser agree.
+  atLabel?: string;
+  edited?: boolean;
+  // "self" when its author removed it, "admin" when PsyAlliance did.
+  removed?: "" | "self" | "admin";
+  reactions?: ThreadReactions;
+};
+
+export const chatWhen = (d: string) =>
+  new Date(d).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: "America/New_York" });
+
+const firstOf = (p: any) => String(p?.full_name || "").replace(/^(dr\.?)\s+/i, "").split(/\s+/)[0] || "Colleague";
+
+// Every message in a conversation, oldest first, with reactions.
+export async function loadChatMessages(supabase: Supabase, me: string, conversationId: number): Promise<ThreadMessage[]> {
+  const [{ data: rows }, { data: reactionRows }] = await Promise.all([
+    supabase
+      .from("conversation_messages")
+      .select("id, author_id, body, created_at, edited_at, deleted_at, author:author_id(full_name, credential_prefix, qualification_level)")
+      .eq("conversation_id", conversationId)
+      .order("created_at", { ascending: true })
+      .limit(300),
+    supabase.from("message_reactions").select("message_id, profile_id, reaction, who:profile_id(full_name)").eq("conversation_id", conversationId),
+  ]);
+  const reactionsFor = (messageId: number): ThreadReactions => {
+    const list = ((reactionRows as any[]) || []).filter((r) => r.message_id === messageId);
+    const counts: ThreadReactions["counts"] = {};
+    const names: ThreadReactions["names"] = {};
+    for (const r of list) {
+      const k = r.reaction as Reaction;
+      counts[k] = (counts[k] || 0) + 1;
+      names[k] = [...(names[k] || []), r.profile_id === me ? "You" : firstOf(r.who)];
+    }
+    return { counts, names, mine: (list.find((r) => r.profile_id === me)?.reaction as Reaction) || null };
+  };
+  return ((rows as any[]) || [])
+    .filter((m) => m.deleted_at || (m.body || "").trim())
+    .map((m) => ({
+      id: Number(m.id),
+      mine: m.author_id === me,
+      authorId: m.author_id,
+      author: m.author_id === me ? "You" : m.author ? clinicianName(m.author.full_name, m.author.qualification_level, m.author.credential_prefix) : "Colleague",
+      body: m.deleted_at ? "" : m.body,
+      at: m.created_at,
+      atLabel: chatWhen(m.created_at),
+      edited: !!m.edited_at && !m.deleted_at,
+      removed: m.deleted_at ? (String(m.body || "").startsWith("[Removed by PsyAlliance") ? "admin" : "self") : "",
+      reactions: reactionsFor(Number(m.id)),
+    }));
+}
 
 export async function findThread(supabase: Supabase, authorId: string, otherIds: string[], title: string | null): Promise<number | null> {
   const everyone = Array.from(new Set([authorId, ...otherIds.filter(Boolean)]));
@@ -43,25 +105,25 @@ export async function postToThread(
   title: string | null,
   body?: string,
   deepLink?: string
-): Promise<{ conversationId: number | null; error: string | null }> {
+): Promise<{ conversationId: number | null; error: string | null; errorCode?: string }> {
   const everyone = Array.from(new Set([authorId, ...otherIds.filter(Boolean)]));
   if (everyone.length < 2) return { conversationId: null, error: "No one to message." };
 
   let conversationId = await findThread(supabase, authorId, otherIds, title);
   if (!conversationId) {
     const { data: created, error } = await supabase.from("conversations").insert({ created_by: authorId, title }).select("id").single();
-    if (error || !created) return { conversationId: null, error: error?.message || "Couldn't start the conversation." };
+    if (error || !created) return { conversationId: null, error: error?.message || "Couldn't start the conversation.", errorCode: error?.code };
     conversationId = created.id as number;
     const { error: pErr } = await supabase
       .from("conversation_participants")
       .insert(everyone.map((profile_id) => ({ conversation_id: conversationId, profile_id })));
-    if (pErr) return { conversationId: null, error: pErr.message };
+    if (pErr) return { conversationId: null, error: pErr.message, errorCode: pErr.code };
   }
 
   const text = (body || "").trim();
   if (text) {
     const { error } = await supabase.from("conversation_messages").insert({ conversation_id: conversationId, author_id: authorId, body: text, mentioned_profile_ids: [] });
-    if (error) return { conversationId, error: error.message };
+    if (error) return { conversationId, error: error.message, errorCode: error.code };
     const now = new Date().toISOString();
     await supabase.from("conversations").update({ last_message_at: now }).eq("id", conversationId);
     // The author has read their own message.
@@ -90,22 +152,7 @@ export async function loadThread(
 ): Promise<{ conversationId: number | null; messages: ThreadMessage[] }> {
   const conversationId = await findThread(supabase, me, otherIds, title);
   if (!conversationId) return { conversationId: null, messages: [] };
-  const { data: rows } = await supabase
-    .from("conversation_messages")
-    .select("id, author_id, body, created_at, author:author_id(full_name, credential_prefix, qualification_level)")
-    .eq("conversation_id", conversationId)
-    .is("deleted_at", null)
-    .order("created_at", { ascending: true })
-    .limit(200);
-  const messages: ThreadMessage[] = (rows || [])
-    .filter((m: any) => (m.body || "").trim())
-    .map((m: any) => ({
-      id: m.id,
-      mine: m.author_id === me,
-      author: m.author_id === me ? "You" : m.author ? clinicianName(m.author.full_name, m.author.qualification_level, m.author.credential_prefix) : "Colleague",
-      body: m.body,
-      at: m.created_at,
-    }));
+  const messages = await loadChatMessages(supabase, me, conversationId);
   if (messages.some((m) => !m.mine)) {
     await supabase.from("conversation_participants").update({ last_read_at: new Date().toISOString() }).eq("conversation_id", conversationId).eq("profile_id", me);
     await markConversationNotificationsRead(supabase, me, conversationId);

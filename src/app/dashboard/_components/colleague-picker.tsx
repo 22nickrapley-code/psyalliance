@@ -3,12 +3,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Suggestion, SuggestionGroup } from "@/lib/colleague-suggestions";
 import { searchColleaguesAction } from "../colleague-actions";
+import { useRel } from "./relationship";
 
 const GROUPS: { key: SuggestionGroup; title: string }[] = [
   { key: "recent", title: "Recent conversations" },
   { key: "trusted", title: "Your trusted colleagues" },
   { key: "worked", title: "Worked with before" },
-  { key: "saved", title: "Saved" },
   { key: "network", title: "Elsewhere in the network" },
 ];
 
@@ -23,8 +23,9 @@ const initials = (name: string) =>
     .join("");
 
 function Face({ s, size = 38 }: { s: Suggestion; size?: number }) {
+  const rel = useRel(s.id);
   return (
-    <span className={`picker-face g-${s.group}`} style={{ width: size, height: size, flexBasis: size }} aria-hidden="true">
+    <span className={`picker-face g-${s.group} avatar rel-${rel}`} style={{ width: size, height: size, flexBasis: size }} aria-hidden="true">
       {s.avatarUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={s.avatarUrl} alt="" />
@@ -36,8 +37,8 @@ function Face({ s, size = 38 }: { s: Suggestion; size?: number }) {
 }
 
 // Choose colleagues the way you'd think of them: the people you've been
-// talking to, then your trusted circle, colleagues you've worked with and
-// people you saved. Typing searches those first, then the whole network.
+// talking to, then your trusted circle and colleagues you've worked with.
+// Typing a name searches those first, then every verified member.
 export function ColleaguePicker({
   suggestions,
   name,
@@ -47,6 +48,7 @@ export function ColleaguePicker({
   placeholder = "Search by name",
   limitPerGroup = 4,
   clearable = false,
+  purpose,
 }: {
   suggestions: Suggestion[];
   name: string;
@@ -56,6 +58,7 @@ export function ColleaguePicker({
   placeholder?: string;
   limitPerGroup?: number;
   clearable?: boolean;
+  purpose?: "consult";
 }) {
   const [picked, setPicked] = useState<Suggestion[]>(() => suggestions.filter((s) => initial.includes(s.id)));
   const [q, setQ] = useState("");
@@ -78,14 +81,14 @@ export function ColleaguePicker({
     setSearching(true);
     const t = window.setTimeout(async () => {
       try {
-        const res = await searchColleaguesAction(term);
+        const res = await searchColleaguesAction(term, purpose);
         if (n === seq.current) setRemote(res);
       } finally {
         if (n === seq.current) setSearching(false);
       }
     }, 250);
     return () => window.clearTimeout(t);
-  }, [q]);
+  }, [q, purpose]);
 
   const list = useMemo(() => {
     const term = q.trim().toLowerCase();

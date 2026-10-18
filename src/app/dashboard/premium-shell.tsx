@@ -7,6 +7,10 @@ import { useEffect, useRef, useState } from "react";
 import type { NavGroup, NavItem } from "./nav-groups";
 import { MOBILE_PRIMARY } from "./nav-groups";
 import { NavIcon } from "./icons";
+import { RelationshipProvider } from "./_components/relationship";
+import type { RelationshipMap } from "@/lib/relationship-map";
+import type { HubStates } from "@/lib/hub-states";
+import { HubProvider } from "./_components/profile-tabs";
 
 // The member workspace shell from the premium concept: a quiet left rail,
 // a slim top bar with breadcrumbs and the notification bell, and a
@@ -33,6 +37,8 @@ export default function PremiumShell({
   resetSandboxAction,
   homeHref = "/dashboard",
   activeHref,
+  relationships = null,
+  hub = null,
 }: {
   groups: NavGroup[];
   displayName: string;
@@ -48,6 +54,8 @@ export default function PremiumShell({
   resetSandboxAction?: () => Promise<void>;
   homeHref?: string;
   activeHref?: string;
+  relationships?: RelationshipMap | null;
+  hub?: HubStates | null;
 }) {
   const routePath = usePathname();
   const pathname = activeHref || routePath || "/dashboard";
@@ -73,7 +81,6 @@ export default function PremiumShell({
   const current = allItems
     .filter((i) => isActive(pathname, i) || (i.href === "/dashboard/admin" && pathname === "/dashboard/admin"))
     .sort((a, b) => b.href.length - a.href.length)[0];
-  const currentGroup = groups.find((g) => current && g.items.includes(current));
   const primary = MOBILE_PRIMARY.map((href) => allItems.find((i) => i.href === href)).filter((i): i is NavItem => !!i);
   const mobileItems = primary.length ? primary : allItems.slice(0, 5);
 
@@ -109,14 +116,14 @@ export default function PremiumShell({
             ))}
           </nav>
           <div className="rail-bottom">
-            <Link href="/dashboard/profile" className="rail-user">
+            <Link href="/dashboard/profile" className="rail-user" title={displayName}>
               {avatarUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={avatarUrl} alt="" className="avatar" style={{ objectFit: "cover" }} />
+                <img src={avatarUrl} alt="" className="avatar rel-you" style={{ objectFit: "cover" }} />
               ) : (
-                <span className="avatar">{initials}</span>
+                <span className="avatar rel-you">{initials}</span>
               )}
-              <span>
+              <span className="rail-user-text">
                 <b>{displayName}</b>
                 {verificationLabel && <span className="verification-label">{verificationLabel}</span>}
               </span>
@@ -175,15 +182,9 @@ export default function PremiumShell({
                 <path d="M4 7h16M4 12h16M4 17h16" />
               </svg>
             </button>
-            <div className="breadcrumbs">
-              {currentGroup?.label === "Admin" && (
-                <>
-                  <span>Admin</span>
-                  <span aria-hidden="true">&rsaquo;</span>
-                </>
-              )}
-              <b>{current?.label || "PsyAlliance"}</b>
-            </div>
+            {/* No page name up here (Nick, 18 Oct): each page says it in its
+                own heading. The bell, and the menu button on phones, stay. */}
+            <span className="top-spacer" />
             <div className="top-actions">
               <Link
                 href="/dashboard/messages?tab=notifications"
@@ -209,7 +210,11 @@ export default function PremiumShell({
               {gateNotice} <a href="/dashboard/sandbox/open" data-reload="">Your sandbox</a> &middot; <Link href="/dashboard/documents">Practice Library</Link> &middot; <Link href="/dashboard/credentials">Credentials</Link>
             </div>
           )}
-          <main className="page" id="main" tabIndex={-1}>{children}</main>
+          <main className="page" id="main" tabIndex={-1}>
+            <RelationshipProvider value={relationships}>
+              <HubProvider value={hub}>{children}</HubProvider>
+            </RelationshipProvider>
+          </main>
         </div>
       </div>
 

@@ -69,11 +69,14 @@ function ActionRow({ s }: { s: NextStep }) {
   );
 }
 
-const JOBS: { href: string; icon: string; title: string; sub: string; accent: string }[] = [
-  { href: "/dashboard/cover/new", icon: "cover", title: "Find Cover", sub: "Plan time away and caseload coverage", accent: "forest" },
-  { href: "/dashboard/refer/new", icon: "refer", title: "Refer a Client", sub: "Find the right colleague for a single client", accent: "brass" },
-  { href: "/dashboard/consult/new", icon: "consult", title: "Ask Colleagues", sub: "A second opinion on a question you're unsure about", accent: "blue" },
-  { href: "/dashboard/clinicians", icon: "network", title: "Find a Clinician", sub: "Search the verified network", accent: "sage" },
+// The four jobs go to each part's own home (Nick, 18 Oct: Find Cover and
+// Refer a Client land where the menu does). Actions share the brand colour;
+// relationship and status colours are kept for people and progress.
+const JOBS: { href: string; icon: string; title: string; sub: string }[] = [
+  { href: "/dashboard/cover", icon: "cover", title: "Find Cover", sub: "Plan time away and caseload coverage" },
+  { href: "/dashboard/refer", icon: "refer", title: "Refer a Client", sub: "Find the right colleague for a single client" },
+  { href: "/dashboard/consult/new", icon: "consult", title: "Ask Colleagues", sub: "A second opinion on a question you're unsure about" },
+  { href: "/dashboard/clinicians", icon: "network", title: "Find a Clinician", sub: "Search the verified network" },
 ];
 
 // The four jobs, and a fifth tile for anything waiting. Actions opens its
@@ -86,7 +89,7 @@ export function HomeTiles({ steps }: { steps: NextStep[] }) {
     <>
       <div className="home-tiles">
         {JOBS.map((j) => (
-          <a key={j.href} className={`home-tile accent-${j.accent}`} href={j.href}>
+          <a key={j.href} className="home-tile accent-brand" href={j.href}>
             <span className="symbol"><NavIcon name={j.icon} size={22} /></span>
             <b>{j.title}</b>
             <span className="tile-sub">{j.sub}</span>

@@ -24,7 +24,7 @@ export default async function NewConsultPage(props: { searchParams: Promise<{ ki
   const [{ data: areas }, { data: memberships }, suggestions] = await Promise.all([
     supabase.from("lookup_values").select("value").eq("category", "treatment_specialism").order("value"),
     supabase.from("consultation_group_members").select("group_id, consultation_groups(id, name, charter_body)").eq("profile_id", myself).eq("status", "joined"),
-    loadColleagueSuggestions(supabase, myself, sp.to || null),
+    loadColleagueSuggestions(supabase, myself, sp.to || null, { purpose: "consult" }),
   ]);
   const groupIds = (memberships || []).filter((m: any) => m.consultation_groups?.charter_body).map((m: any) => m.group_id as number);
   const { data: memberRows } = groupIds.length

@@ -1,9 +1,7 @@
-import { clinicianName } from "@/lib/profession";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { LIBRARY_SELECT, isMemberVisible, toResource, codeFromSlug } from "@/lib/library";
 import { ResourceDetailView } from "../views";
-import { REVIEWER_ROLE_LABELS, type ReviewerRole } from "@/lib/library-governance";
 
 export const metadata = { title: "Practice Library" };
 
@@ -27,21 +25,7 @@ export default async function ResourcePage(props: {
   if (!doc || !isMemberVisible(doc)) notFound();
 
   const r = toResource(doc);
-  const [{ data: signed }, { data: reviews }] = await Promise.all([
-    supabase.storage.from("documents").createSignedUrl(r.storagePath, 60 * 60),
-    r.reviewed
-      ? supabase
-          .from("document_reviews")
-          .select("reviewer_role, approved, reviewer:reviewer_profile_id(full_name, credential_prefix, qualification_level)")
-          .eq("document_id", r.id)
-          .eq("document_version", r.version)
-          .eq("approved", true)
-          .is("invalidated_at", null)
-      : Promise.resolve({ data: [] as any[] }),
-  ]);
-  const reviewers = (reviews || []).map((rv: any) => ({
-    role: REVIEWER_ROLE_LABELS[rv.reviewer_role as ReviewerRole] || rv.reviewer_role,
-    name: rv.reviewer ? clinicianName(rv.reviewer?.full_name, rv.reviewer?.qualification_level, rv.reviewer?.credential_prefix) : "Appointed reviewer",
-  }));
-  return <ResourceDetailView r={r} url={signed?.signedUrl || null} error={sp.error} reviewers={reviewers} />;
+  // Only a template that's ready opens (Nick, 18 Oct: "coming soon" otherwise).
+  const { data: signed } = r.available ? await supabase.storage.from("documents").createSignedUrl(r.storagePath, 60 * 60) : { data: null };
+  return <ResourceDetailView r={r} url={signed?.signedUrl || null} error={sp.error} />;
 }

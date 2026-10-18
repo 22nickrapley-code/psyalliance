@@ -25,20 +25,9 @@ export function initialsOf(name: string) {
   );
 }
 
-const AVATAR_TONES = ["", "gold", "blue", "lilac"];
-export function PersonAvatar({ name, url, size }: { name: string; url?: string | null; size?: number }) {
-  const tone = AVATAR_TONES[name.length % AVATAR_TONES.length];
-  const style = size ? { width: size, height: size, flexBasis: size, fontSize: Math.round(size * 0.38) } : undefined;
-  if (url) {
-    // eslint-disable-next-line @next/next/no-img-element
-    return <img src={url} alt="" className="avatar" style={{ ...style, objectFit: "cover" }} />;
-  }
-  return (
-    <span className={`avatar ${tone}`} style={style} aria-hidden="true">
-      {initialsOf(name)}
-    </span>
-  );
-}
+// Every avatar is coloured by who the person is to you (relationship.tsx).
+import { PersonAvatar, RelTag } from "./relationship";
+export { PersonAvatar, RelTag };
 
 export function PageHead({
   eyebrow,
@@ -110,11 +99,10 @@ export function Status({ tone = "", children }: { tone?: "" | "warn" | "danger" 
   return <span className={`status ${tone}`}>{children}</span>;
 }
 
-const TIER_LABEL: Record<Match["tier"], string> = {
-  trusted: "Trusted colleague",
-  worked_with: "Worked with before",
-  saved: "Saved",
-  none: "Verified network",
+const TIER_REL: Record<Match["tier"], "trusted" | "worked" | "other"> = {
+  trusted: "trusted",
+  worked_with: "worked",
+  none: "other",
 };
 
 // The relationship is already shown as the pill, so it isn't repeated
@@ -122,7 +110,6 @@ const TIER_LABEL: Record<Match["tier"], string> = {
 const TIER_REASON: Record<Match["tier"], string> = {
   trusted: "Trusted colleague",
   worked_with: "Worked together before",
-  saved: "Saved clinician",
   none: "",
 };
 
@@ -153,14 +140,14 @@ export function MatchCard({
   const where = [m.city, m.state].filter(Boolean).join(", ");
   const body = (
     <>
-      <PersonAvatar name={m.fullName} url={avatarUrl} />
+      <PersonAvatar name={m.fullName} url={avatarUrl} id={m.profileId} />
       <div className="content">
         <div className="row between">
           <h3>
             {rank ? <span className="rank">{rank}</span> : null}
             <a href={`/dashboard/people/${m.profileId}`}>{displayName(m)}</a>
           </h3>
-          <Status tone={m.tier === "none" ? "neutral" : ""}>{TIER_LABEL[m.tier]}</Status>
+          <RelTag id={m.profileId} fallback={TIER_REL[m.tier]} showOther />
         </div>
         {flag && <span className="match-flag">{flag}</span>}
         <p>
@@ -472,5 +459,73 @@ export function ListItem({
     </a>
   ) : (
     <div className="lp-item">{inner}</div>
+  );
+}
+
+// A colour-coded history (Nick, 18 Oct): referrals and cover requests, sent
+// or received, newest first under month headings. Amber is waiting, green
+// is confirmed, red is a clear no, grey is finished or closed. The latest
+// ten show; the rest are one tap away.
+export type HistoryTone = "amber" | "green" | "red" | "grey";
+export type HistoryItem = {
+  key: string | number;
+  href: string;
+  title: ReactNode;
+  meta: ReactNode[];
+  tone: HistoryTone;
+  label: string;
+  action: string;
+  date: string;
+};
+
+const monthOf = (iso: string) => new Date(iso).toLocaleDateString("en-US", { month: "long", year: "numeric", timeZone: "America/New_York" });
+
+function HistoryRows({ items }: { items: HistoryItem[] }) {
+  let last = "";
+  return (
+    <>
+      {items.map((h) => {
+        const month = monthOf(h.date);
+        const heading = month !== last ? <div className="hist-month">{month}</div> : null;
+        last = month;
+        return (
+          <div key={h.key}>
+            {heading}
+            <a className={`hist-row tone-${h.tone}`} href={h.href}>
+              <span className="hist-main">
+                <strong>{h.title}</strong>
+                <span className="hist-meta">
+                  {h.meta.filter(Boolean).map((m, i) => (
+                    <span key={i}>{m}</span>
+                  ))}
+                </span>
+              </span>
+              <span className="hist-side">
+                <span className={`hist-chip tone-${h.tone}`}>{h.label}</span>
+                <span className="hist-go">
+                  {h.action} <span aria-hidden="true">&rarr;</span>
+                </span>
+              </span>
+            </a>
+          </div>
+        );
+      })}
+    </>
+  );
+}
+
+export function HistoryList({ items, first = 10 }: { items: HistoryItem[]; first?: number }) {
+  const shown = items.slice(0, first);
+  const rest = items.slice(first);
+  return (
+    <div className="hist-list">
+      <HistoryRows items={shown} />
+      {rest.length > 0 && (
+        <details className="hist-more">
+          <summary>Show all {items.length}</summary>
+          <HistoryRows items={rest} />
+        </details>
+      )}
+    </div>
   );
 }

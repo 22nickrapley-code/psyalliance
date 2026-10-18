@@ -13,58 +13,67 @@ function countLoads(page: Page) {
   return box;
 }
 
+// Updated for 18 Oct: a cover request sent to you has its own page; the
+// answers are Accept, Ask a question (a chat in place) and Can't take this.
 test.describe("R13-05 incoming cover answered in place", () => {
-  test("R13-05-A Accept folds the client into a short line with Message, without a reload", async ({ page, context, baseURL }, info) => {
+  test("R13-05-A Accept folds the client with Message, without a reload", async ({ page, context, baseURL }, info) => {
     const ev = watch(page);
     const plan = await coverPlan("avery", ["bram"], ["Client A", "Client B"]);
     await signInAs(context, "bram", baseURL!);
     const loads = countLoads(page);
-    await page.goto("/dashboard/cover");
+    await page.goto(`/dashboard/cover/requests/${plan.planId}`);
     const first = page.locator(`#request-${plan.cases[0].requests.bram}`);
     await expect(first).toBeVisible();
     await shot(page, info, "1-incoming");
     const before = loads.n;
     await first.getByRole("button", { name: "Accept Client A" }).click();
-    await expect(first).toHaveClass(/is-accepted/);
+    await expect(first).toHaveClass(/is-answered/);
     await expect(first.getByText(/Accepted\. Avery will be in touch/)).toBeVisible();
     await expect(first.getByRole("link", { name: /Message Avery/ })).toHaveAttribute("href", `/dashboard/messages?to=${account("avery").id}`);
     await shot(page, info, "2-accepted-folded");
     const saved = await one(`select status::text from coverage_requests where id = $1`, [plan.cases[0].requests.bram]);
-    // The other client is still there to answer.
     await expect(page.locator(`#request-${plan.cases[1].requests.bram}`).getByRole("button", { name: "Accept Client B" })).toBeVisible();
-    // Still on screen after a reload (answered in the last 12 hours).
     await page.reload();
-    await expect(page.locator(`#request-${plan.cases[0].requests.bram}`)).toHaveClass(/is-accepted/);
+    await expect(page.locator(`#request-${plan.cases[0].requests.bram}`)).toHaveClass(/tone-green/);
     await attachEvidence(info, ev);
     expect(saved.status).toBe("accepted");
-    // One load is the reload this test asked for. A second one means the
-    // NAV-01 watchdog had to recover a stuck screen: allowed, but recorded.
     const recovered = loads.n - before - 1;
     if (recovered > 0) info.annotations.push({ type: "NAV-01", description: "screen recovered by a full page load" });
     expect(recovered, "at most one recovery load").toBeLessThanOrEqual(1);
   });
 
-  test("R13-05-B Ask a question first: inline box, Sent note, and the question reaches the owner", async ({ page, context, baseURL }, info) => {
+  test("R13-05-B Ask a question opens the chat; the question shows above the box and reaches the owner", async ({ page, context, baseURL }, info) => {
     const ev = watch(page);
     const plan = await coverPlan("avery", ["cass"], ["Client Q"]);
     const id = plan.cases[0].requests.cass;
     await signInAs(context, "cass", baseURL!);
-    await page.goto("/dashboard/cover");
+    const loads = countLoads(page);
+    await page.goto(`/dashboard/cover/requests/${plan.planId}`);
+    const before = loads.n;
     const box = page.locator(`#request-${id}`);
-    await box.getByRole("button", { name: "+ Ask a question first" }).click();
+    await box.getByRole("button", { name: "Ask a question" }).click();
     const question = `QA question ${Date.now()}: could we talk through the schedule?`;
-    await box.getByLabel(/Your question for Avery/).fill(question);
+    await box.locator(".chat-compose textarea").fill(question);
     await shot(page, info, "1-asking");
-    await box.getByRole("button", { name: "Send question" }).click();
-    await expect(box.getByText("✓ Sent")).toBeVisible();
-    await expect(box.getByText(question)).toBeVisible();
+    await box.locator(".chat-compose").getByRole("button", { name: "Send" }).click();
+    await expect(box.locator(".chat-msg.mine").getByText(question)).toBeVisible();
+    await expect(box.locator(".chat-msg.pending")).toHaveCount(0, { timeout: 10_000 });
+    // The box stays, empty and ready for another message.
+    await expect(box.locator(".chat-compose textarea")).toHaveValue("");
+    await expect(box.getByText("✓ Sent")).toHaveCount(0);
     await shot(page, info, "2-sent");
     const status = await one(`select status::text from coverage_requests where id = $1`, [id]);
     const msg = await q(`select 1 from conversation_messages where body like $1`, [`%${question.slice(0, 30)}%`]);
-    // Accept and Decline are still offered.
     await expect(box.getByRole("button", { name: "Accept Client Q" })).toBeVisible();
-    await expect(box.getByRole("button", { name: "Decline" })).toBeVisible();
+    await expect(box.getByRole("button", { name: "Can't take this" })).toBeVisible();
+    // A second message, with Enter, as in a chat app.
+    const second = `QA follow-up ${Date.now()}`;
+    await box.locator(".chat-compose textarea").fill(second);
+    await box.locator(".chat-compose textarea").press("Enter");
+    await expect(box.locator(".chat-msg.mine").getByText(second)).toBeVisible();
+    await expect(box.locator(".chat-msg.pending")).toHaveCount(0, { timeout: 10_000 });
     await attachEvidence(info, ev);
+    expect(loads.n - before, "no page loads while chatting").toBe(0);
     expect(status.status).toBe("discussing");
     expect(msg.length, "the question is in a conversation with the owner").toBeGreaterThan(0);
   });
@@ -73,43 +82,43 @@ test.describe("R13-05 incoming cover answered in place", () => {
     const plan = await coverPlan("avery", ["fenn"], ["Client D"]);
     const id = plan.cases[0].requests.fenn;
     await signInAs(context, "fenn", baseURL!);
-    await page.goto("/dashboard/cover");
+    await page.goto(`/dashboard/cover/requests/${plan.planId}`);
     const box = page.locator(`#request-${id}`);
-    await box.getByRole("button", { name: "+ Ask a question first" }).click();
-    await box.getByLabel(/Your question for Avery/).fill("Can I call the client on 212-555-0143 first?");
-    await box.getByRole("button", { name: "Send question" }).click();
-    await expect(box.locator(".deid-error")).toBeVisible();
+    await box.getByRole("button", { name: "Ask a question" }).click();
+    await box.locator(".chat-compose textarea").fill("Can I call the client on 212-555-0143 first?");
+    await box.locator(".chat-compose").getByRole("button", { name: "Send" }).click();
+    await expect(box.locator(".chat-error")).toBeVisible();
     await shot(page, info, "held-back");
-    await expect(box.getByLabel(/Your question for Avery/)).toHaveValue(/212-555-0143/);
+    await expect(box.locator(".chat-compose textarea")).toHaveValue(/212-555-0143/);
     const status = await one(`select status::text from coverage_requests where id = $1`, [id]);
     expect(status.status).toBe("sent");
   });
 
-  test("R13-05-D Decline folds the client and the owner's case stays open", async ({ page, context, baseURL }, info) => {
+  test("R13-05-D Can't take this folds the client and the owner's case stays open", async ({ page, context, baseURL }, info) => {
     const plan = await coverPlan("avery", ["dara"], ["Client E"], "MA");
     const id = plan.cases[0].requests.dara;
     await signInAs(context, "dara", baseURL!);
-    await page.goto("/dashboard/cover");
+    await page.goto(`/dashboard/cover/requests/${plan.planId}`);
     const box = page.locator(`#request-${id}`);
-    await box.getByRole("button", { name: "Decline" }).click();
-    await expect(box).toHaveClass(/is-declined/);
+    await box.getByRole("button", { name: "Can't take this" }).click();
+    await expect(box).toHaveClass(/tone-red/);
     await shot(page, info, "declined");
     const status = await one(`select status::text from coverage_requests where id = $1`, [id]);
     expect(status.status).toBe("declined");
   });
 
-  test("R13-05-E Covering for colleagues lists the accepted client with a Message button", async ({ page, context, baseURL }, info) => {
+  test("R13-05-E the Cover home lists a request you accepted in green", async ({ page, context, baseURL }, info) => {
     const plan = await coverPlan("avery", ["bram"], ["Client F"]);
     const bram = await (await import("../../lib/auth")).memberClient("bram");
     const { error } = await bram.rpc("respond_to_cover_request", { p_request: plan.cases[0].requests.bram, p_response: "accepted" });
     expect(error, error?.message).toBeNull();
     await signInAs(context, "bram", baseURL!);
     await page.goto("/dashboard/cover");
-    const panel = page.locator("section.covering-panel");
-    await expect(panel).toBeVisible();
-    await expect(panel.getByText("Client F").first()).toBeVisible();
-    await expect(panel.getByRole("link", { name: /Message/ }).first()).toBeVisible();
-    await shot(page, info, "covering-panel");
+    const row = page.locator(`a.hist-row[href="/dashboard/cover/requests/${plan.planId}"]`);
+    await expect(row).toBeVisible();
+    await expect(row).toHaveClass(/tone-green/);
+    await expect(row).toContainText("You're covering");
+    await shot(page, info, "covering");
   });
 });
 

@@ -49,7 +49,7 @@ export default async function SignInPage(props: { searchParams: Promise<{ error?
                 </>
               ) : (
                 <>
-                  <p className="small">New to PsyAlliance? The first 50 members in each state join free for life.</p>
+                  <p className="small">New to PsyAlliance? The first 40 members in each state join free for life.</p>
                   <a className="btn secondary block" href={JOIN_HREF}>Create your account</a>
                 </>
               )}

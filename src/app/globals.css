@@ -33,8 +33,9 @@
   --tier-partner-soft: #e6edf9;
   --tier-bench: #7a3fa0;
   --tier-bench-soft: #f2e8f7;
-  --tier-recommended: #b3591a;
-  --tier-recommended-soft: #fbeee1;
+  /* Suggested by PsyAlliance: teal, as in the relationship colours (18 Oct). */
+  --tier-recommended: #0f766e;
+  --tier-recommended-soft: #dcf0ec;
   /* A "this is a match" signal - specialism/insurance overlap, ranked
      candidates, single-patient-referral results - is a different concept
      from the Recommended connection tier and needs its own color so the

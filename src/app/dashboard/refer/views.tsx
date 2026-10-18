@@ -24,6 +24,8 @@ import {
   SummaryList,
   PersonAvatar,
   HANDOFF_RULE,
+  HistoryList,
+  type HistoryTone,
 } from "../_components/ui";
 import {
   sendReferralAction,
@@ -46,7 +48,7 @@ function ColleagueCard({ c, children }: { c: DirectColleague; children?: ReactNo
     <section className="card direct-colleague">
       <div className="eyebrow">Referring to</div>
       <div className="dc-person">
-        <PersonAvatar name={c.name} url={c.avatarUrl} size={52} />
+        <PersonAvatar name={c.name} url={c.avatarUrl} size={52} id={c.id} />
         <div>
           <h3><a href={`/dashboard/people/${c.id}`}>{c.name}</a></h3>
           <p className="small">{c.role}</p>
@@ -480,7 +482,48 @@ export type ReferralListItem = {
   responses: number;
   audience: string;
   audienceCount?: number | null;
+  // A colleague was chosen at some point (for "Completed" once closed).
+  placed?: boolean;
 };
+
+export type ReceivedItem = ReferralListItem & { from: string; myResponse: string | null };
+
+// Where a referral you sent stands (Nick, 18 Oct): amber while you're
+// waiting or choosing, green once a colleague is chosen, red when no one
+// could take it, grey when it's finished or closed.
+export function sentState(r: ReferralListItem): { tone: HistoryTone; label: string; action: string } {
+  const open = r.status === "sent" || r.status === "open";
+  if (open) {
+    const everyone = !!r.audienceCount && r.responses >= r.audienceCount;
+    if (r.interested > 0 && everyone) return { tone: "amber", label: "Ready to choose", action: "Choose a colleague" };
+    if (r.interested > 0) return { tone: "amber", label: `${r.interested} interested`, action: "Review replies" };
+    if (everyone) return { tone: "red", label: "No one available", action: "Widen the search" };
+    if (r.responses > 0) return { tone: "amber", label: "Replies coming in", action: "View replies" };
+    return { tone: "amber", label: "Waiting for replies", action: "View" };
+  }
+  if (r.status === "connected") return { tone: "green", label: "Colleague chosen", action: "Complete handoff" };
+  if (r.status === "handoff") return { tone: "green", label: "Handoff under way", action: "Open handoff" };
+  if (r.status === "matched" || (r.status === "closed" && r.placed)) return { tone: "grey", label: "Completed", action: "View" };
+  return { tone: "grey", label: "Closed", action: "View" };
+}
+
+// Where a referral sent to you stands: amber while it needs your reply or
+// you're waiting for their choice, green when they chose you, red when you
+// said you're not available, grey once it's finished, closed or went to
+// someone else.
+export function receivedState(r: ReceivedItem): { tone: HistoryTone; label: string; action: string } {
+  const open = r.status === "sent" || r.status === "open";
+  const resp = r.myResponse;
+  if (resp === "accepted") {
+    if (r.status === "matched" || r.status === "closed") return { tone: "grey", label: "Completed", action: "View" };
+    return { tone: "green", label: "They chose you", action: "Open" };
+  }
+  if (resp === "unavailable" || resp === "declined") return { tone: "red", label: "You said not available", action: "View" };
+  if (resp === "withdrawn") return { tone: "grey", label: "You withdrew", action: "View" };
+  if (!open) return { tone: "grey", label: resp && r.status !== "closed" ? "They chose someone else" : "Closed", action: "View" };
+  if (!resp) return { tone: "amber", label: "Needs your reply", action: "Reply" };
+  return { tone: "amber", label: resp === "question" ? "You asked a question" : "You replied, waiting", action: "View" };
+}
 
 // Precise status with the next action beside it. "Awaiting" only while the
 // member is genuinely waiting; once colleagues have answered, the decision
@@ -525,7 +568,7 @@ export function ReferIndexView({
   start?: NeedValues;
   options: NeedOptions;
   mine: ReferralListItem[];
-  offered: (ReferralListItem & { from: string; myResponse: string | null })[];
+  offered: ReceivedItem[];
   ok?: string;
   error?: string;
 }) {
@@ -555,26 +598,29 @@ export function ReferIndexView({
           count={mine.length}
           empty={<QuietEmpty title="No referrals yet." body="When you can't take a client, start above: describe the need and PsyAlliance shortlists the right colleagues." />}
         >
-          {mine.length > 0 &&
-            mine.map((r) => {
-              const s = referralStatus(r);
-              return (
-                <ListItem
-                  key={r.id}
-                  href={`/dashboard/refer/${r.id}`}
-                  title={r.focus}
-                  meta={[r.where, `${r.responses}${r.audienceCount ? ` of ${r.audienceCount}` : ""} replied`, `Sent ${shortDate(r.createdAt)}`]}
-                  status={<Status tone={s.tone}>{s.label}</Status>}
-                  action={<>{s.next} &rarr;</>}
-                />
-              );
-            })}
+          {mine.length > 0 && (
+            <HistoryList
+              items={mine.map((r) => {
+                const s = sentState(r);
+                return {
+                  key: r.id,
+                  href: `/dashboard/refer/${r.id}`,
+                  title: r.focus,
+                  meta: [r.where, `${r.responses}${r.audienceCount ? ` of ${r.audienceCount}` : ""} replied`, `Sent ${shortDate(r.createdAt)}`],
+                  tone: s.tone,
+                  label: s.label,
+                  action: s.action,
+                  date: r.createdAt,
+                };
+              })}
+            />
+          )}
         </ListPanel>
         <ListPanel
           icon={<NavIcon name="messages" size={19} />}
           tone="brass"
           title="Referrals You’ve Received"
-          description="Clients colleagues have asked you to take, matched to your practice."
+          description="Clients colleagues asked you to take, and what happened."
           count={offered.length}
           empty={
             <QuietEmpty
@@ -584,17 +630,23 @@ export function ReferIndexView({
             />
           }
         >
-          {offered.length > 0 &&
-            offered.map((r) => (
-              <ListItem
-                key={r.id}
-                href={`/dashboard/refer/${r.id}`}
-                title={r.focus}
-                meta={[`From ${r.from}`, r.where, shortDate(r.createdAt)]}
-                status={r.myResponse ? <Status tone="neutral">You replied</Status> : <Status tone="warn">Needs your reply</Status>}
-                action={<>{r.myResponse ? "View" : "Reply"} &rarr;</>}
-              />
-            ))}
+          {offered.length > 0 && (
+            <HistoryList
+              items={offered.map((r) => {
+                const s = receivedState(r);
+                return {
+                  key: r.id,
+                  href: `/dashboard/refer/${r.id}`,
+                  title: r.focus,
+                  meta: [`From ${r.from}`, r.where, shortDate(r.createdAt)],
+                  tone: s.tone,
+                  label: s.label,
+                  action: s.action,
+                  date: r.createdAt,
+                };
+              })}
+            />
+          )}
         </ListPanel>
       </div>
     </>
@@ -631,14 +683,18 @@ export type ReferralDetail = {
   meId?: string;
 };
 
+// Interested is green, a question amber, not available red: the same
+// colours as availability (Nick, 18 Oct).
 const RESPONSE_LABEL: Record<string, { label: string; tone: "" | "warn" | "neutral" | "danger" }> = {
-  interested: { label: "Interested", tone: "warn" },
-  accepted: { label: "Accepted", tone: "" },
+  interested: { label: "Interested", tone: "" },
+  accepted: { label: "Chosen", tone: "" },
   question: { label: "Has a question", tone: "warn" },
-  unavailable: { label: "Not available", tone: "neutral" },
+  unavailable: { label: "Not available", tone: "danger" },
   offered: { label: "Offered to help", tone: "" },
-  declined: { label: "Declined", tone: "neutral" },
+  declined: { label: "Declined", tone: "danger" },
+  withdrawn: { label: "Withdrawn", tone: "neutral" },
 };
+const ANSWER_TONE: Record<string, string> = { interested: "green", accepted: "green", offered: "green", question: "amber", unavailable: "red", declined: "red" };
 
 // "final": after a question, the answer is Interested or Not available.
 function ReplyForm({ id, current, heading, threadTitle, final = false }: { id: number; current: string; heading?: string; threadTitle: string; final?: boolean }) {
@@ -647,11 +703,12 @@ function ReplyForm({ id, current, heading, threadTitle, final = false }: { id: n
       <input type="hidden" name="referral_request_id" value={id} />
       <input type="hidden" name="thread_title" value={threadTitle} />
       {heading && <h3>{heading}</h3>}
-      <label className="radio-card"><input type="radio" name="response" value="interested" defaultChecked={current === "interested"} /><span><b>Interested</b><span>I have capacity and this fits my practice.</span></span></label>
+      {/* The same colours as setting your availability (Nick, 18 Oct). */}
+      <label className="radio-card answer-green"><input type="radio" name="response" value="interested" defaultChecked={current === "interested"} /><span><b>Interested</b><span>I have capacity and this fits my practice.</span></span></label>
       {!final && (
-        <label className="radio-card"><input type="radio" name="response" value="question" defaultChecked={current === "question"} /><span><b>I have a question</b><span>Ask before deciding. The conversation stays here, on this referral.</span></span></label>
+        <label className="radio-card answer-amber"><input type="radio" name="response" value="question" defaultChecked={current === "question"} /><span><b>I have a question</b><span>Ask before deciding. The conversation stays here, on this referral.</span></span></label>
       )}
-      <label className="radio-card"><input type="radio" name="response" value="unavailable" defaultChecked={current === "unavailable"} /><span><b>Not available</b><span>No capacity right now.</span></span></label>
+      <label className="radio-card answer-red"><input type="radio" name="response" value="unavailable" defaultChecked={current === "unavailable"} /><span><b>Not available</b><span>No capacity right now.</span></span></label>
       <label className="field" style={{ marginTop: 10 }}>
         {final ? "Message (optional)" : "Message or question"}
         <textarea name="message" maxLength={500} placeholder={final ? "e.g. I have two openings on Tuesday evenings." : "e.g. I have two openings on Tuesday evenings. Or your question."} />
@@ -715,7 +772,7 @@ export function ReferTrackView({ r, ok, error }: { r: ReferralDetail; ok?: strin
                   const rl = RESPONSE_LABEL[resp.status] || { label: resp.status, tone: "neutral" as const };
                   return (
                     <div key={resp.profileId} className="mini-person" id={`resp-${resp.profileId}`}>
-                      <PersonAvatar name={resp.name} url={resp.avatarUrl} />
+                      <PersonAvatar name={resp.name} url={resp.avatarUrl} id={resp.profileId} />
                       <div className="content">
                         <div className="row between">
                           <h3><a href={`/dashboard/people/${resp.profileId}`}>{resp.name}</a></h3>
@@ -764,8 +821,8 @@ export function ReferTrackView({ r, ok, error }: { r: ReferralDetail; ok?: strin
               {r.myResponse && r.myResponse.status === "question" && open && !r.chosen ? (
                 // After a question: the conversation with the colleague who
                 // referred, in place, and (folded away) the final answer.
-                <div className="reply-summary is-question">
-                  <h3>Your question was sent to {r.requesterName}</h3>
+                <div className="reply-summary is-question tone-amber">
+                  <h3>You asked {firstOf(r.requesterName)} a question</h3>
                   {r.requesterId ? (
                     <InlineThread
                       messages={
@@ -794,7 +851,7 @@ export function ReferTrackView({ r, ok, error }: { r: ReferralDetail; ok?: strin
                   </details>
                 </div>
               ) : r.myResponse ? (
-                <div className="reply-summary">
+                <div className={`reply-summary tone-${ANSWER_TONE[r.myResponse.status] || "grey"}`}>
                   <h3>You replied: {(RESPONSE_LABEL[r.myResponse.status] || { label: r.myResponse.status }).label}</h3>
                   {r.myResponse.message && <blockquote className="reply-quote">&ldquo;{r.myResponse.message}&rdquo;</blockquote>}
                   {r.requesterId && (r.threads?.[r.requesterId]?.messages.length || 0) > 0 && (

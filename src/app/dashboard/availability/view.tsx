@@ -131,7 +131,7 @@ export function AvailabilityView({ p, sp, back }: { p: AvailabilityData; sp: { c
           <Signal
             name="consultation_availability"
             title="Consult"
-            help="Answering colleagues' client questions and joining consultations."
+            help="Answering colleagues' client questions and joining consultations. Not now means colleagues can't pick you, you get no consult alerts and Home's discussions go quiet; you can still ask your own questions."
             options={CONSULT}
             value={p?.consultation_availability}
             preselect={preselect}

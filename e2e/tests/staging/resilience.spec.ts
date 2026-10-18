@@ -29,7 +29,7 @@ test.describe("RES-CONC two people, one moment", () => {
       const c = await browser.newContext();
       await signInAs(c, k, baseURL!);
       const p = await c.newPage();
-      await p.goto("/dashboard/cover");
+      await p.goto(`/dashboard/cover/requests/${plan.planId}`);
       await expect(p.locator(`#request-${plan.cases[0].requests[k]}`)).toBeVisible();
       pages.push(p);
     }
@@ -84,7 +84,7 @@ test.describe("RES-FAULT the database or a service fails mid-save", () => {
     const plan = await coverPlan("avery", ["fenn"], ["Client F2"]);
     const id = plan.cases[0].requests.fenn;
     await signInAs(context, "fenn", baseURL!);
-    await page.goto("/dashboard/cover");
+    await page.goto(`/dashboard/cover/requests/${plan.planId}`);
     const box = page.locator(`#request-${id}`);
     await gatewayFault({ path: "/rest/v1/rpc/respond_to_cover_request", method: "POST", status: 503, times: 1 });
     await box.getByRole("button", { name: /^Accept/ }).click();
@@ -92,7 +92,7 @@ test.describe("RES-FAULT the database or a service fails mid-save", () => {
     await shot(page, info, "1-error");
     expect((await one(`select status::text from coverage_requests where id = $1`, [id])).status).toBe("sent");
     await box.getByRole("button", { name: /^Accept/ }).click();
-    await expect(box).toHaveClass(/is-accepted/);
+    await expect(box).toHaveClass(/tone-green/);
     await shot(page, info, "2-retried");
     expect((await one(`select status::text from coverage_requests where id = $1`, [id])).status).toBe("accepted");
   });

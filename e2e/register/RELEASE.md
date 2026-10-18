@@ -1,5 +1,21 @@
 # Release testing, 16 October 2026
 
+## Update, 18 October 2026: branch `fixes-1018`
+
+Two commits on top of `master` (92ebcab): the external retest fixes (R17-01 to R17-09, PERF-01) and Nick's 18 Oct feedback round (spec in the project doc `psyalliance-feedback-1018-spec.md`). Migrations 0115 and 0116 go with them.
+
+**Tested on the disposable copy (fictional people only):**
+- Full suite (630) on the final build: **621 pass**, 3 skipped (need special set-ups). The 6 failures are `/sandbox/request`, which forwards to the real site, unreachable from the test machine (same as 16 Oct). The first full run found 12 more: tests written for screens this round replaced (the old Cover home, the old Library wording) and new colour contrast; all fixed.
+- New checks: R18-01 to R18-16 (the 18 Oct round), R17-01 to R17-09, CF-01 to CF-03 in Cloudflare mode, phone (3), accessibility (28 pages, none serious).
+- Demos: every scene of the seven section demos, stepped by hand at 1280 and 390 px wide, and every click while each plays: the pointer's tip is on the button each time (`tests/diagnostics/demo-cursor.spec.ts`).
+- 0115 and 0116 each run twice on the copy; both end with a row of checks that must all be `true`.
+- The window between deploy and SQL: with 0115's and 0116's new pieces removed, the new app's pages load for a member and an admin, and a message sends (`tests/diagnostics/compat-pre-sql.spec.ts`).
+
+**Order:** deploy both Workers first, then run 0115 and then 0116 in both SQL editors. The new app works before and after the SQL; the deployed app's Consult reply counts break once 0115 is in, so the SQL comes second.
+
+
+## 16 October release
+
 **Released 17 October 2026.** Migration 0114 is on both projects, both Workers are deployed from `master` (7c6e482), the email key and the psyalliance.org domain are set up, and the live checks LIVE-01 to LIVE-04 pass.
 
 **Recommendation: release the candidate (branch `candidate-1016`) once the four steps under "Before and after deploying" are done, and LIVE-03 then shows no stuck sends on psyalliance.org.** The deployed build has seven High or Medium defects that lose work or mislead members, and the candidate fixes all of them on staging. What remains open is low risk and can't lose data.

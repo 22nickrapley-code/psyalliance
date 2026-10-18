@@ -87,9 +87,11 @@ export async function sendCoverageRequest(
       sequence_order: sequenceOrder,
       message: message ?? null,
     })
-    .select("id")
+    .select("id, coverage_plan_cases(coverage_plan_id)")
     .single();
   if (error) return { requestId: null, error: error.message };
+  // The colleague's notification opens this request's own page (18 Oct).
+  const planId = (data as any)?.coverage_plan_cases?.coverage_plan_id;
 
   await Promise.all([
     supabase.from("coverage_plan_cases").update({ status: "awaiting_response" }).eq("id", coveragePlanCaseId),
@@ -106,7 +108,7 @@ export async function sendCoverageRequest(
       actorProfileId,
       actorType: "member_web",
       summary: "sent you a coverage request",
-      deepLink: "/dashboard/cover",
+      deepLink: planId ? `/dashboard/cover/requests/${planId}` : "/dashboard/cover",
       dedupKey: `coverage_request:${data.id}`,
       metadata: { coveragePlanCaseId, coverageRequestId: data.id },
     }),
@@ -185,7 +187,7 @@ export async function respondToCoverageRequest(
       actorProfileId: requestedProfileId,
       actorType: "member_web",
       summary: response === "accepted" ? "confirmed they can cover your client" : `responded "${response}" to your coverage request`,
-      deepLink: "/dashboard/cover",
+      deepLink: (request as any).coverage_plan_cases?.coverage_plan_id ? `/dashboard/cover/${(request as any).coverage_plan_cases.coverage_plan_id}?step=track` : "/dashboard/cover",
       dedupKey: `coverage_response:${coverageRequestId}`,
       metadata: { coverageRequestId, response },
     });

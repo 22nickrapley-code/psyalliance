@@ -61,7 +61,7 @@ export default function VerificationPage() {
           <div className="section-inner pa-cta">
             <div>
               <div className="eyebrow" style={{ color: "#e2c49c" }}>Founding members</div>
-              <h2>Be one of the first 50 in your state.</h2>
+              <h2>Be one of the first 40 in your state.</h2>
               <p>{FOUNDING_LINE} Opening state by state, starting with New York and Massachusetts.</p>
               <FoundingCount className="founding-count on-dark" />
             </div>

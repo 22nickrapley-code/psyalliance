@@ -7,7 +7,9 @@
 export type SceneAction =
   | { do: "pick"; target: string }
   | { do: "type"; target: string; text: string }
-  | { do: "select"; target: string; value: string };
+  | { do: "select"; target: string; value: string }
+  // Scroll the screen to show something, without clicking (a PDF's pages).
+  | { do: "scroll"; target: string };
 
 // Typing longer than this lands at once, like a paste.
 export const TYPE_LIMIT = 80;
@@ -16,6 +18,7 @@ export const typeStep = (text: string) => Math.max(18, Math.min(55, 700 / Math.m
 // Each action: move there, click, a moment to see it. Typing adds the time
 // the letters take beyond the first moment.
 export function actionMs(a: SceneAction) {
+  if (a.do === "scroll") return 2800;
   if (a.do === "type" && a.text.length <= TYPE_LIMIT) return 1800 + Math.max(0, Math.round(typeStep(a.text) * a.text.length) - 600);
   return 1800;
 }

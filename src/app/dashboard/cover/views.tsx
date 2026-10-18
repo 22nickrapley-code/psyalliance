@@ -6,7 +6,8 @@ import type { Match } from "@/lib/match-engine";
 import type { NeedOptions } from "@/lib/need-options";
 import { FirstVisit } from "../_components/first-visit";
 import { TOUR_URL } from "@/lib/env";
-import { QuietEmpty, PageHead, Banner, Progress, Empty, Status, MatchCard, SummaryList, PersonAvatar, HANDOFF_RULE, ListPanel, ListItem } from "../_components/ui";
+import { QuietEmpty, PageHead, Banner, Progress, Empty, Status, MatchCard, SummaryList, PersonAvatar, HANDOFF_RULE, ListPanel, HistoryList, type HistoryTone } from "../_components/ui";
+import { incomingState, type IncomingRequest } from "./incoming-data";
 import { NavIcon } from "../icons";
 import {
   createPlanAction,
@@ -62,7 +63,8 @@ export type PlanSummary = {
   // Every state the plan's clients are in.
   states?: string[];
   status: string;
-  counts: { total: number; covered: number; invited: number; open: number };
+  counts: { total: number; covered: number; invited: number; open: number; declined?: number };
+  createdAt?: string;
 };
 
 // One vocabulary for cover, used on every screen: asked, awaiting reply,
@@ -144,238 +146,221 @@ function PlanHead({ plan, step, lead }: { plan: PlanSummary; step: number; lead:
   );
 }
 
-// ---------- Index ----------
-export type IncomingPlan = {
-  planId: number;
-  ownerId: string;
-  ownerName: string;
-  ownerRole: string;
-  ownerAvatar: string | null;
-  absence: string;
-  planTitle: string;
-  dates: string;
-  length: string;
-  location: string;
-  outreach: string;
-  note: string | null;
-  urgent: boolean;
-  sentAt: string | null;
-  cases: {
-    requestId: number;
-    caseId?: number;
-    status?: string;
-    reference: string | null;
-    focus: string;
-    details: [string, string][];
-    // The conversation about this client, once a question has been asked.
-    thread?: { conversationId: number | null; messages: ThreadMessage[] };
-  }[];
-};
-
-function IncomingCard({ r }: { r: IncomingPlan }) {
-  const n = r.cases.length;
-  const open = r.cases.filter((c) => (c.status || "sent") === "sent").length;
-  const discussing = r.cases.filter((c) => c.status === "discussing").length;
-  return (
-    <section className={`card incoming-cover${r.urgent ? " urgent" : ""}`}>
-      <div className="incoming-head">
-        <PersonAvatar name={r.ownerName} url={r.ownerAvatar} size={48} />
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div className="row between wrap" style={{ gap: 8 }}>
-            <h3 style={{ margin: 0 }}>
-              <a href={`/dashboard/people/${r.ownerId}`}>{r.ownerName}</a> asked you to cover {n === 1 ? "one client" : `${n} clients`}
-            </h3>
-            <span className="row" style={{ gap: 6 }}>
-              {r.urgent && open > 0 && <Status tone="danger">Urgent</Status>}
-              {open > 0 ? <Status tone="warn">Needs your reply</Status> : discussing > 0 ? <Status tone="neutral">In discussion</Status> : <Status>Answered</Status>}
-            </span>
-          </div>
-          <p className="small" style={{ margin: "3px 0 0" }}>{r.ownerRole}</p>
-        </div>
-      </div>
-      <ul className="glance incoming-glance">
-        <li><span>Clients</span><strong>{n}</strong></li>
-        <li><span>Client location</span><strong>{r.location}</strong></li>
-        <li><span>Absence</span><strong>{r.absence}</strong></li>
-        <li><span>Dates</span><strong>{r.dates}{r.length ? ` · ${r.length}` : ""}</strong></li>
-        <li><span>How colleagues are asked</span><strong>{r.outreach}</strong></li>
-      </ul>
-      {r.note && <blockquote className="request-note">&ldquo;{r.note}&rdquo;</blockquote>}
-      <div className="incoming-cases">
-        {r.cases.map((c, i) => {
-          // Keep the owner's numbering, so "Client 2" stays Client 2 after Client 1 is answered.
-          const label = c.reference ? c.reference.trim().replace(/^case\s*(\d+)$/i, "Client $1") : `Client ${i + 1}`;
-          const ownerFirst = r.ownerName.replace(/^(dr\.?)\s+/i, "").split(/[\s,]+/)[0];
-          const threadTitle = coverThreadTitle(r.planTitle, label, c.focus);
-          return (
-            <IncomingCase
-              key={c.requestId}
-              requestId={c.requestId}
-              label={label}
-              focus={c.focus}
-              details={c.details}
-              ownerId={r.ownerId}
-              ownerName={r.ownerName}
-              threadTitle={threadTitle}
-              initialStatus={(c.status as CaseStatus) || "sent"}
-            >
-              {c.status === "discussing" && (
-                <div className="reply-summary is-question">
-                  <InlineThread
-                    messages={c.thread?.messages || []}
-                    conversationId={c.thread?.conversationId}
-                    otherName={r.ownerName}
-                    otherIds={[r.ownerId]}
-                    title={threadTitle}
-                    heading={`Your conversation with ${ownerFirst} about ${label}`}
-                    returnTo="/dashboard/cover"
-                    anchor={`request-${c.requestId}`}
-                    link={c.caseId ? `/dashboard/cover/${r.planId}?step=track#case-${c.caseId}` : undefined}
-                  />
-                  <p className="micro-note">Once you&rsquo;ve talked it through, give your answer below.</p>
-                </div>
-              )}
-            </IncomingCase>
-          );
-        })}
-      </div>
-      <p className="micro-note" style={{ margin: "12px 0 0" }}>{HANDOFF_RULE}</p>
-    </section>
-  );
-}
-
+// ---------- Index (the Cover home) ----------
+// Kept for the demos' older fixtures; the home now takes IncomingRequest.
+export type IncomingPlan = IncomingRequest;
 export type CoveringItem = { planId: number; ownerId: string; ownerName: string; ownerAvatar?: string | null; dates: string; clients: string[] };
 
+// Where one of your own plans stands: amber while it needs work or replies,
+// green when every client is covered, red when someone has no one left to
+// ask, grey once it's completed or cancelled.
+export function planState(p: PlanSummary): { tone: HistoryTone; label: string; action: string } {
+  if (p.status === "draft") return { tone: "amber", label: "Draft, not sent yet", action: "Continue" };
+  if (p.status === "completed") return { tone: "grey", label: "Completed", action: "View" };
+  if (p.status === "cancelled") return { tone: "grey", label: "Cancelled", action: "View" };
+  if (p.counts.total > 0 && p.counts.covered === p.counts.total) return { tone: "green", label: "All covered", action: "Open" };
+  if ((p.counts.declined || 0) > 0) return { tone: "red", label: `No one left to ask for ${p.counts.declined === 1 ? "1 client" : `${p.counts.declined} clients`}`, action: "Find someone" };
+  if (p.counts.open > 0 && p.counts.invited === 0) return { tone: "amber", label: "Choose who to ask", action: "Continue" };
+  return { tone: "amber", label: `${p.counts.covered} of ${p.counts.total} covered`, action: "Open" };
+}
+
+// The Cover home mirrors Refer (Nick, 18 Oct): a green box to plan cover,
+// then cover requests sent to you and the plans you've set up, each a
+// colour-coded history. Nothing opens a request by itself; each row opens
+// its own page.
 export function CoverIndexView({
   plans,
   incoming,
-  covering = [],
   ok,
   error,
+  start,
 }: {
   plans: PlanSummary[];
-  incoming: IncomingPlan[];
+  incoming: IncomingRequest[];
   covering?: CoveringItem[];
   ok?: string;
   error?: string;
+  // Values for the green box (the demos use this).
+  start?: { absence?: string; starts?: string; ends?: string };
 }) {
-  const active = plans.filter((p) => p.status === "draft" || p.status === "active");
-  const past = plans.filter((p) => p.status === "completed" || p.status === "cancelled");
+  const waiting = incoming.filter((r) => incomingState(r).label.includes("answer")).length;
   return (
     <>
       <FirstVisit id="cover" what="Cover" length="90-second" exampleHref={`${TOUR_URL}/cover`} />
       <PageHead
         eyebrow="Cover"
         title="Cover"
-        lead="Plan time away, describe the clients who need cover by need, then choose which colleagues are asked. Nothing is sent until you confirm. You'll also answer colleagues who need cover here."
-        actions={<a className="btn" href="/dashboard/cover/new">Plan cover</a>}
+        lead="Plan time away, describe each client by need, then choose which colleagues are asked. Nothing is sent until you confirm. Colleagues' requests for cover are here too."
       />
       <Banner ok={ok} error={error} />
-      {incoming.length > 0 && (
-        <>
-          <div className="section-heading" style={{ marginTop: 0 }}>
-            <h2>Cover requests for you</h2>
-            {(() => {
-              const waiting = incoming.reduce((n, r) => n + r.cases.filter((c) => (c.status || "sent") === "sent").length, 0);
-              const talking = incoming.reduce((n, r) => n + r.cases.filter((c) => c.status === "discussing").length, 0);
-              return waiting > 0 ? <Status tone="warn">{waiting} waiting</Status> : talking > 0 ? <Status tone="neutral">In discussion</Status> : <Status>All answered</Status>;
-            })()}
-          </div>
-          <div className="stack" style={{ marginBottom: 26 }}>
-            {incoming.map((r) => <IncomingCard key={r.planId} r={r} />)}
-          </div>
-        </>
+      {waiting > 0 && (
+        <a className="cover-waiting" href={incoming.length ? `/dashboard/cover/requests/${incoming.find((r) => incomingState(r).label.includes("answer"))!.planId}` : "#requests"}>
+          <span className="cover-waiting-dot" aria-hidden="true" />
+          <b>{waiting === 1 ? "A colleague is waiting for your answer on a cover request." : `${waiting} colleagues are waiting for your answer on cover requests.`}</b>
+          <span className="cover-waiting-go">Answer &rarr;</span>
+        </a>
       )}
-      {covering.length > 0 && (
-        <section className="card covering-panel" aria-labelledby="covering-title" style={{ marginBottom: 26 }}>
-          <div className="list-panel-head">
-            <span className="lp-icon" aria-hidden="true"><NavIcon name="network" size={19} /></span>
-            <div className="lp-title">
-              <h3 id="covering-title">Covering for colleagues</h3>
-              <p>Clients you&rsquo;ve agreed to see while a colleague is away.</p>
-            </div>
-            <span className="lp-count" aria-label={`${covering.reduce((n, c) => n + c.clients.length, 0)} clients`}>{covering.reduce((n, c) => n + c.clients.length, 0)}</span>
-          </div>
-          <ul className="covering-list">
-            {covering.map((c) => (
-              <li key={c.planId} className="covering-item">
-                <PersonAvatar name={c.ownerName} url={c.ownerAvatar ?? null} size={40} />
-                <div className="covering-main">
-                  <div className="covering-top">
-                    <a href={`/dashboard/people/${c.ownerId}`}>{c.ownerName}</a>
-                    <span className="covering-dates">Away {c.dates}</span>
-                  </div>
-                  <ul className="covering-clients" aria-label="Clients">
-                    {c.clients.map((cl) => {
-                      const [ref, ...rest] = cl.split(" · ");
-                      return (
-                        <li key={cl}>
-                          <b>{ref}</b>
-                          {rest.length > 0 && <span>{rest.join(" · ")}</span>}
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </div>
-                <a className="btn secondary small-btn covering-msg" href={`/dashboard/messages?to=${c.ownerId}`}>Message</a>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-      <div className="split">
+      <form className="quick-search cover-start" method="get" action="/dashboard/cover/new" id="plan-cover">
+        <h3>Plan cover for time away</h3>
+        <div className="cover-start-fields">
+          <label className="field">
+            Reason
+            <select name="absence" defaultValue={start?.absence || "short_planned"}>
+              {Object.entries(ABSENCE).map(([k, v]) => (
+                <option key={k} value={k}>
+                  {v.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="field">
+            First day away
+            <input type="date" name="starts" defaultValue={start?.starts} />
+          </label>
+          <label className="field">
+            Back on
+            <input type="date" name="ends" defaultValue={start?.ends} />
+          </label>
+        </div>
+        <div className="row wrap" style={{ marginTop: 14, gap: 12 }}>
+          <button type="submit" className="btn">Plan cover</button>
+        </div>
+        <p className="small" style={{ color: "#cfe0d4", margin: "10px 0 0" }}>Next you describe each client by need, with no identifying details. Nothing is sent until you review.</p>
+      </form>
+      <div className="split equal list-pair" style={{ marginTop: 20 }}>
+        <ListPanel
+          id="requests"
+          icon={<NavIcon name="messages" size={19} />}
+          tone="brass"
+          title="Cover Requests Sent to You"
+          description="Colleagues who asked you to cover their clients, and what you said."
+          count={incoming.length}
+          empty={<QuietEmpty title="No cover requests yet." body="When a colleague asks you to cover a client while they're away, it appears here." />}
+        >
+          {incoming.length > 0 && (
+            <HistoryList
+              items={incoming.map((r) => {
+                const s = incomingState(r);
+                const n = r.cases.length;
+                return {
+                  key: r.planId,
+                  href: `/dashboard/cover/requests/${r.planId}`,
+                  title: `${r.ownerName}, ${n === 1 ? "1 client" : `${n} clients`}`,
+                  meta: [r.absence, r.dates, `Asked ${shortDate(r.sentAt)}`],
+                  tone: s.tone,
+                  label: s.label,
+                  action: s.action,
+                  date: r.sentAt,
+                };
+              })}
+            />
+          )}
+        </ListPanel>
         <ListPanel
           icon={<NavIcon name="cover" size={19} />}
-          title="Your time away"
-          description="Plans for your own leave, and who’s covering your clients."
-          count={active.length}
-          footer={
-            past.length > 0 && (
-              <details className="lp-past">
-                <summary>Past plans ({past.length})</summary>
-                {past.map((p) => (
-                  <ListItem
-                    key={p.id}
-                    href={`/dashboard/cover/${p.id}?step=track`}
-                    title={p.title}
-                    meta={[`${fmt(p.starts)} – ${fmt(p.ends)}`]}
-                    status={<Status tone="neutral">{p.status === "completed" ? "Completed" : "Cancelled"}</Status>}
-                  />
-                ))}
-              </details>
-            )
-          }
-          empty={
-            <QuietEmpty
-              title="No cover planned."
-              body="Going away, closing a practice, or just want a backup? A plan tracks every client from need to a confirmed colleague."
-              action={<a className="btn secondary small-btn" href="/dashboard/cover/new">Plan cover</a>}
-            />
-          }
+          title="Cover Plans You’ve Set Up"
+          description="Your own time away, and who's covering your clients."
+          count={plans.length}
+          empty={<QuietEmpty title="No cover planned." body="Going away, closing a practice, or just want a backup? Start above: a plan tracks every client from need to a confirmed colleague." />}
         >
-          {active.length > 0 &&
-            active.map((p) => (
-              <ListItem
-                key={p.id}
-                href={`/dashboard/cover/${p.id}?step=${p.status === "draft" ? "needs" : "track"}`}
-                title={p.title}
-                meta={[ABSENCE[p.absenceType || ""]?.label || "Cover", `${fmt(p.starts)} – ${fmt(p.ends)}`]}
-                status={
-                  p.status === "draft" ? (
-                    <Status tone="neutral">Draft</Status>
-                  ) : (
-                    <Status tone={p.counts.open > 0 || p.counts.invited > 0 ? "warn" : ""}>{p.counts.covered} of {p.counts.total} covered</Status>
-                  )
-                }
-                action={<>{p.status === "draft" ? "Continue" : "Open"} &rarr;</>}
-              />
-            ))}
+          {plans.length > 0 && (
+            <HistoryList
+              items={plans.map((p) => {
+                const s = planState(p);
+                return {
+                  key: p.id,
+                  href: `/dashboard/cover/${p.id}?step=${p.status === "draft" ? "needs" : "track"}`,
+                  title: p.title,
+                  meta: [ABSENCE[p.absenceType || ""]?.label || "Cover", `${fmt(p.starts)} to ${fmt(p.ends)}`, `${p.counts.total} client${p.counts.total === 1 ? "" : "s"}`],
+                  tone: s.tone,
+                  label: s.label,
+                  action: s.action,
+                  date: p.createdAt || p.starts || new Date().toISOString(),
+                };
+              })}
+            />
+          )}
         </ListPanel>
+      </div>
+    </>
+  );
+}
+
+// ---------- A cover request sent to you ----------
+// The same family as an incoming referral (the need first, then the
+// details), with a band that says this is temporary (Nick, 18 Oct).
+export function CoverRequestView({ r, error }: { r: IncomingRequest; error?: string }) {
+  const first = r.ownerName.replace(/^(dr\.?)\s+/i, "").split(/[\s,]+/)[0];
+  const n = r.cases.length;
+  const permanent = r.absenceType === "closing_practice";
+  return (
+    <>
+      <PageHead
+        eyebrow={`Cover / from ${r.ownerName}`}
+        title={n === 1 ? "Cover for one client" : `Cover for ${n} clients`}
+        lead={`${r.location} · asked ${shortDate(r.sentAt)}`}
+        actions={<a className="btn secondary" href="/dashboard/cover">All cover</a>}
+      />
+      <Banner error={error} />
+      <div className={`cover-band${permanent ? " permanent" : ""}`} role="note">
+        <span className="cover-band-icon" aria-hidden="true">
+          <NavIcon name="cover" size={22} />
+        </span>
+        <span className="cover-band-copy">
+          <b>{permanent ? "Long-term: moving clients on" : "Temporary cover"}</b>
+          <span>
+            {permanent
+              ? `${first} is closing or reducing their practice. Each client you accept would move to you.`
+              : `${r.dates}${r.length ? ` (${r.length})` : ""}. Clients go back to ${first} afterwards.`}
+          </span>
+        </span>
+        {r.urgent && <span className="hist-chip tone-red">Urgent</span>}
+      </div>
+      <div className="split">
+        <div className="stack">
+          {r.cases.map((c) => (
+            <IncomingCase
+              key={c.requestId}
+              requestId={c.requestId}
+              label={c.reference}
+              focus={c.focus}
+              details={c.details}
+              ownerId={r.ownerId}
+              ownerName={r.ownerName}
+              threadTitle={c.threadTitle}
+              initialStatus={(c.status as CaseStatus) || "sent"}
+              thread={c.thread}
+              link={`/dashboard/cover/${r.planId}?step=track#case-${c.caseId}`}
+              returnTo={`/dashboard/cover/requests/${r.planId}`}
+            />
+          ))}
+          <p className="micro-note">{HANDOFF_RULE}</p>
+        </div>
         <aside className="stack">
-          <section className="card dark">
-            <div className="eyebrow" style={{ color: "#e2c49c" }}>How it works</div>
-            <h3>Plan, invite, confirm.</h3>
-            <p className="small">Describe each client by need, without identifiers. PsyAlliance suggests colleagues with the right license, focus and fresh availability. You choose who&rsquo;s asked, and in what order. A case only counts as covered when someone accepts.</p>
+          <section className="card tint">
+            <div className="eyebrow">About the absence</div>
+            <div className="row" style={{ gap: 12, margin: "6px 0 12px" }}>
+              <PersonAvatar name={r.ownerName} url={r.ownerAvatar} size={44} id={r.ownerId} />
+              <span>
+                <a href={`/dashboard/people/${r.ownerId}`}><b>{r.ownerName}</b></a>
+                <small className="micro-note" style={{ display: "block" }}>{r.ownerRole}</small>
+              </span>
+            </div>
+            <SummaryList
+              rows={[
+                ["Reason", r.absence],
+                ["Dates", r.dates],
+                ["Clients", n],
+                ["How colleagues are asked", r.outreach],
+              ]}
+            />
+            {r.note && <blockquote className="request-note">&ldquo;{r.note}&rdquo;</blockquote>}
+          </section>
+          <section className="card">
+            <div className="eyebrow">From the Practice Library</div>
+            <h3>Reciprocal Coverage Agreement</h3>
+            <p className="small">Agree roles and response times with the colleague you cover for, with a per-client summary.</p>
+            <a className="btn secondary small-btn" href={libraryHref("PA-01")}>View the template</a>
           </section>
         </aside>
       </div>
@@ -868,7 +853,7 @@ export function CoverTrackView({
                           heading={`${first} has a question about ${c.reference || "this client"}`}
                           returnTo={`/dashboard/cover/${plan.id}?step=track`}
                           anchor={`case-${c.id}`}
-                          link={`/dashboard/cover#request-${t.requestId}`}
+                          link={`/dashboard/cover/requests/${plan.id}#request-${t.requestId}`}
                           placeholder={`Answer ${first}…`}
                         />
                         <p className="micro-note">{first} accepts or declines once you&rsquo;ve talked it through.</p>
@@ -937,7 +922,7 @@ export function CoverTrackView({
                   <input type="hidden" name="context_id" value={plan.id} />
                   <input type="hidden" name="colleague_id" value={p.id} />
                   <input type="hidden" name="return_to" value={`/dashboard/cover/${plan.id}?step=track`} />
-                  <span className="row"><PersonAvatar name={p.name} /><strong>{p.name}</strong></span>
+                  <span className="row"><PersonAvatar name={p.name} id={p.id} /><strong>{p.name}</strong></span>
                   <span className="row">
                     <button type="submit" name="would_work_again" value="yes" className="btn small-btn">Yes</button>
                     <button type="submit" name="would_work_again" value="no" className="btn secondary small-btn">Not again</button>

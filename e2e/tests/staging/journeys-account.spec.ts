@@ -118,7 +118,9 @@ test("J-PENDING-01 a member whose license is being checked can't see colleagues'
   expect(visible, "no colleague names on the page").toEqual([]);
 });
 
-test("J-LIB-01 the public Library labels provisional templates as not yet reviewed", async ({ page }, info) => {
+// 18 Oct (Nick): visitors see every title but no review wording, and a
+// title asks them to join. Nothing claims a review that hasn't happened.
+test("J-LIB-01 the public Library lists titles, asks visitors to join, and never claims a review", async ({ page }, info) => {
   await page.goto("/library");
   await shot(page, info, "1-library");
   const text = await page.locator("main, body").first().innerText();
@@ -127,7 +129,9 @@ test("J-LIB-01 the public Library labels provisional templates as not yet review
   await shot(page, info, "2-template");
   const t = await page.locator("main, body").first().innerText();
   await info.attach("text.txt", { body: t.slice(0, 3000), contentType: "text/plain" });
-  expect(t, "says it is not yet reviewed").toMatch(/not yet reviewed|provisional|in review|being reviewed|awaiting review/i);
+  expect(t, "asks visitors to join").toMatch(/Members get it now/);
+  await expect(page.getByRole("link", { name: /Create your account/ }).first()).toBeVisible();
+  expect(t, "no review wording").not.toMatch(/not yet (independently )?reviewed|after independent review|provisional/i);
   expect(t, "never claims a review").not.toMatch(/Reviewed by|Clinically reviewed/i);
 });
 

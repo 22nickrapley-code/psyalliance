@@ -57,9 +57,11 @@ test.describe("J-COVER plan cover from start to covered", () => {
     const cc = await browser.newContext();
     const cp = await cc.newPage();
     await signInAs(cc, key, baseURL!);
+    // The Cover home lists the request; each request opens its own page (18 Oct).
     await cp.goto("/dashboard/cover");
+    await cp.locator(`a[href="/dashboard/cover/requests/${planId}"]`).first().click();
     await cp.locator(`#request-${reqs[0].id}`).getByRole("button", { name: /^Accept/ }).click();
-    await expect(cp.locator(`#request-${reqs[0].id}`)).toHaveClass(/is-accepted/);
+    await expect(cp.locator(`#request-${reqs[0].id}`)).toHaveClass(/tone-green/);
     await cc.close();
     await page.reload();
     await shot(page, info, "6-owner-sees-cover");

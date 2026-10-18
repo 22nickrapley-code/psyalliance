@@ -5,7 +5,7 @@ import { effectiveReferral } from "@/lib/availability";
 
 type Supabase = Awaited<ReturnType<typeof createClient>>;
 
-export type SuggestionGroup = "recent" | "trusted" | "worked" | "saved" | "network";
+export type SuggestionGroup = "recent" | "trusted" | "worked" | "network";
 
 export type Suggestion = {
   id: string;
@@ -25,12 +25,13 @@ const shortDate = (d: string) => new Date(d).toLocaleDateString("en-US", { month
 // whoever they've been talking to, their trusted colleagues, then
 // colleagues they've worked with. Each person appears once, under the
 // strongest reason.
-export async function loadColleagueSuggestions(supabase: Supabase, myself: string, include?: string | null): Promise<Suggestion[]> {
-  const [{ data: parts }, { data: conns }, { data: worked }, { data: saved }] = await Promise.all([
+// For a consult question (purpose "consult"), colleagues who set consult to
+// Not now aren't offered (Nick, 18 Oct), unless they were named directly.
+export async function loadColleagueSuggestions(supabase: Supabase, myself: string, include?: string | null, opts: { purpose?: "consult" } = {}): Promise<Suggestion[]> {
+  const [{ data: parts }, { data: conns }, { data: worked }] = await Promise.all([
     supabase.from("conversation_participants").select("conversation_id, conversation:conversation_id(last_message_at)").eq("profile_id", myself),
     supabase.from("trusted_colleagues").select("colleague_id").eq("profile_id", myself),
     supabase.from("worked_with_before").select("colleague_id").eq("profile_id", myself),
-    Promise.resolve({ data: [] as any[] }),
   ]);
 
   // Recent: the other person in my latest one-to-one conversations.
@@ -52,14 +53,13 @@ export async function loadColleagueSuggestions(supabase: Supabase, myself: strin
 
   const trusted = new Set((conns || []).map((c: any) => c.colleague_id as string));
   const workedSet = new Set((worked || []).map((w: any) => w.colleague_id as string));
-  const savedSet = new Set((saved || []).map((s: any) => s.clinician_id as string));
-  const ids = Array.from(new Set([...recent.keys(), ...trusted, ...workedSet, ...savedSet, ...(include ? [include] : [])])).slice(0, 80);
+  const ids = Array.from(new Set([...recent.keys(), ...trusted, ...workedSet, ...(include ? [include] : [])])).slice(0, 80);
   if (!ids.length) return [];
 
   const [{ data: profiles }, { data: focusRows }] = await Promise.all([
     supabase
       .from("profiles")
-      .select("id, full_name, credential_prefix, qualification_level, avatar_path, primary_practice_city, primary_state, referral_availability, availability_confirmed_at, availability_paused_until")
+      .select("id, full_name, credential_prefix, qualification_level, avatar_path, primary_practice_city, primary_state, referral_availability, consultation_availability, availability_confirmed_at, availability_paused_until")
       .in("id", ids),
     supabase.from("profile_lookup_values").select("profile_id, rank, lookup:lookup_value_id(value, category)").in("profile_id", ids).not("rank", "is", null).order("rank"),
   ]);
@@ -76,6 +76,7 @@ export async function loadColleagueSuggestions(supabase: Supabase, myself: strin
   const add = (id: string, group: SuggestionGroup, reason: string) => {
     const p: any = byId.get(id);
     if (!p || out.some((s) => s.id === id)) return;
+    if (opts.purpose === "consult" && p.consultation_availability === "no" && id !== include) return;
     const avail = effectiveReferral(p.referral_availability, p.availability_confirmed_at, p.availability_paused_until);
     out.push({
       id,
@@ -92,6 +93,5 @@ export async function loadColleagueSuggestions(supabase: Supabase, myself: strin
   for (const [id, at] of recent) add(id, "recent", `${trusted.has(id) ? "Trusted · " : ""}Last message ${shortDate(at)}`);
   for (const id of trusted) add(id, "trusted", "Trusted colleague");
   for (const id of workedSet) add(id, "worked", "Worked with before");
-  for (const id of savedSet) add(id, "saved", "Saved");
   return out;
 }

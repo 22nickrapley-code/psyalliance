@@ -22,10 +22,10 @@ export default function TermsPage() {
             </p>
             <p>
               Keep client-identifying information out of PsyAlliance, act within your license and your state&rsquo;s rules, and treat what colleagues share as confidential.
-              Practice Library templates show whether they have been independently reviewed; adapt any template with your own advisers before you rely on it.
+              Practice Library templates are general guidance; adapt any template with your own advisers before you rely on it.
             </p>
             <p>
-              <b>Founding members.</b> The first 50 members in each state whose license PsyAlliance approves are founding members. Places are counted in the
+              <b>Founding members.</b> The first 40 members in each state whose license PsyAlliance approves are founding members. Places are counted in the
               order licenses are approved, in each member&rsquo;s main practice state, one place per person. Founding members never pay for membership, for as long
               as they remain members, including if PsyAlliance introduces fees later. A place can&rsquo;t be transferred and isn&rsquo;t reused if a member
               leaves. After a state&rsquo;s founding places are taken, membership in that state will be paid; PsyAlliance will publish the price before then.

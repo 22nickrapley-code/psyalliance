@@ -10,8 +10,9 @@ function shareHref(code: string) {
 }
 import { uploadDocument, deleteDocument, createFolder, deleteFolder, moveDocumentToFolder, saveWorkingCopyAction } from "./actions";
 
-// Practice Library (Product Spec v1). Two tabs: the curated, reviewed
-// Practice Library and the member's private My Library.
+// Practice Library (Product Spec v1). Two tabs: the curated Practice
+// Library and the member's private My Library. Members never see review
+// status (Nick, 18 Oct): a resource is ready to use, or "coming soon".
 
 export type MyDoc = {
   id: number;
@@ -40,10 +41,7 @@ export function ResourceCard({ r }: { r: LibraryResource }) {
       </h3>
       <p>{r.summary}</p>
       <div className="foot">
-        <span className="micro-note">
-          <span className={`review-dot${r.reviewed ? " ok" : ""}`} aria-hidden="true" />
-          v{r.version} &middot; {r.reviewed ? `reviewed ${formatDate(r.reviewDate)}` : "provisional, review pending"}
-        </span>
+        {r.available ? <span className="micro-note">Version {r.version}</span> : <span className="soon-chip">Coming soon</span>}
         <a className="text-arrow" href={libraryHref(r.code)}>Explore &rarr;</a>
       </div>
     </article>
@@ -81,7 +79,7 @@ export function LibraryView({
       <PageHead
         eyebrow="Practice resources"
         title="Practice Library"
-        lead="Templates placed near the work they support. Each one shows whether it has been independently reviewed. Adapt any template to your state and practice before you rely on it."
+        lead="Templates placed near the work they support. Adapt any template to your state and practice before you rely on it."
         actions={
           <>
             {isReviewer && <a className="btn ghost" href="/dashboard/documents/review">Review desk</a>}
@@ -126,10 +124,10 @@ export function LibraryView({
         </div>
         <aside className="stack">
           <section className="card tint">
-            <div className="eyebrow">Editorial standard</div>
+            <div className="eyebrow">How to use them</div>
             <h3>A library with context.</h3>
             <p className="small">
-              Every resource shows its version and its review status. Provisional ones are usable templates still waiting for independent review by an appointed clinician, lawyer or privacy reviewer. Each one links to the part of PsyAlliance where it helps.
+              Each resource links to the part of PsyAlliance where it helps. Save a PDF to My Library to keep a private copy, and fill it in outside PsyAlliance.
             </p>
             <p className="small" style={{ marginBottom: 0 }}>
               These are templates and guidance, not legal advice. Check your state&rsquo;s rules before you use one with clients.
@@ -177,11 +175,13 @@ export function ResourceDetailView({
         lead={r.summary}
         actions={
           <>
-            {url && <a className="btn" href={url} target="_blank" rel="noopener noreferrer">Open the PDF</a>}
-            <form action={saveWorkingCopyAction} className="inline">
-              <input type="hidden" name="document_id" value={r.id} />
-              <button type="submit" className="btn secondary">Save PDF to My Library</button>
-            </form>
+            {r.available && url && <a className="btn" href={url} target="_blank" rel="noopener noreferrer">Open the PDF</a>}
+            {r.available && (
+              <form action={saveWorkingCopyAction} className="inline">
+                <input type="hidden" name="document_id" value={r.id} />
+                <button type="submit" className="btn secondary">Save PDF to My Library</button>
+              </form>
+            )}
           </>
         }
       />
@@ -190,13 +190,12 @@ export function ResourceDetailView({
         <section className="card">
           <div className="card-title">
             <h3>About this resource</h3>
-            {r.reviewed ? <Status>Independently reviewed</Status> : <Status tone="warn">Provisional</Status>}
+            {!r.available && <span className="soon-chip">Coming soon</span>}
           </div>
-          {!r.reviewed && (
-            <div className="tone-panel" style={{ marginBottom: 14 }}>
-              <b>Not yet independently reviewed.</b>
-              <p>This is a working template from PsyAlliance. No clinician, lawyer or privacy specialist has signed off this version yet. Check it against your state&rsquo;s rules and your own advisers before you use it.</p>
-            </div>
+          {!r.available && (
+            <p className="small" style={{ marginTop: 0 }}>
+              This template is coming soon. You&rsquo;ll be able to open it and save a copy here as soon as it&rsquo;s ready.
+            </p>
           )}
           {(r.contents || []).length > 0 && (
             <>
@@ -209,11 +208,6 @@ export function ResourceDetailView({
           <ul className="summary-list">
             <li><span>Applies to</span><strong>{r.audience}</strong></li>
             <li><span>Version</span><strong>{r.version}</strong></li>
-            {r.reviewed && <li><span>Last reviewed</span><strong>{formatDate(r.reviewDate)}</strong></li>}
-            {r.reviewed && reviewers.map((rv) => (
-              <li key={rv.role}><span>{rv.role} review</span><strong>{rv.name}</strong></li>
-            ))}
-            {r.nextReviewDate && <li><span>Next review</span><strong>{formatDate(r.nextReviewDate)}</strong></li>}
           </ul>
           {r.tags.length > 0 && (
             <div className="chip-row" style={{ marginTop: 16 }}>
@@ -223,7 +217,7 @@ export function ResourceDetailView({
             </div>
           )}
           <p className="small" style={{ marginTop: 16, marginBottom: 0 }}>
-            Save PDF to My Library keeps a private copy that only you can see. Print it or fill it in outside PsyAlliance, especially if it will hold client details. Never upload a completed form that identifies a client.
+            {r.available ? "" : "When it's ready: "}Save PDF to My Library keeps a private copy that only you can see. Print it or fill it in outside PsyAlliance, especially if it will hold client details. Never upload a completed form that identifies a client.
           </p>
         </section>
         <aside className="stack">
@@ -246,9 +240,7 @@ export function ResourceDetailView({
           <section className="card">
             <div className="eyebrow">Not legal advice</div>
             <p className="small" style={{ marginBottom: 0 }}>
-              {r.reviewed
-                ? "Templates reflect general US practice at the date of their last review. State law, payer rules and your licensing board's requirements come first."
-                : "A working template, not yet independently reviewed. State law, payer rules and your licensing board's requirements come first; check it with your own advisers before relying on it."}
+              Templates reflect general US practice. State law, payer rules and your licensing board&rsquo;s requirements come first; check a template with your own advisers before relying on it.
             </p>
           </section>
         </aside>

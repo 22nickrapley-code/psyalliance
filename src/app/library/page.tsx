@@ -7,7 +7,7 @@ import { PublicLibraryView } from "./view";
 export const metadata = {
   title: "Practice Library: templates for psychologists and psychiatrists",
   description:
-    "Twenty templates for independent practice, from a professional will to a reciprocal cover agreement, informed consent and HIPAA. Each shows whether it has been independently reviewed.",
+    "Twenty templates for independent practice, from a professional will to a reciprocal cover agreement, informed consent and HIPAA. Members open, download and save every one.",
   alternates: { canonical: "/library" },
 };
 

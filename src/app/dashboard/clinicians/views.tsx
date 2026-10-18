@@ -1,4 +1,4 @@
-import { PageHead, Empty, Status, PersonAvatar, Banner } from "../_components/ui";
+import { PageHead, Empty, Status, PersonAvatar, RelTag, Banner } from "../_components/ui";
 import { InviteBox } from "../_components/invite-box";
 import type { InviteInfo } from "@/lib/invite";
 import { addTrustedAction } from "../network/actions";
@@ -40,11 +40,6 @@ export type Filters = {
   psypact?: boolean;
 };
 
-const REL_LABEL: Record<Person["relationship"], string> = {
-  trusted: "Trusted colleague",
-  worked_with: "Worked with before",
-  none: "",
-};
 
 const stateName = (code: string) => US_STATES.find((s) => s.code === code)?.name || code;
 
@@ -78,7 +73,7 @@ export function PersonCard({ p, back }: { p: Person; back: string }) {
   const paused = /^Paused/.test(p.availability);
   return (
     <article className={`person-card${p.relationship === "trusted" ? " is-trusted" : ""}`}>
-      <PersonAvatar name={p.name} url={p.avatarUrl} />
+      <PersonAvatar name={p.name} url={p.avatarUrl} id={p.id} />
       <div className="content">
         <div className="top">
           <div>
@@ -90,8 +85,8 @@ export function PersonCard({ p, back }: { p: Person; back: string }) {
         <p className="facts">{facts.map((f) => <span key={f}>{f}</span>)}</p>
         <p className="meta">
           {confirmedLabel(p.confirmedDaysAgo)}
-          {p.relationship !== "none" && <> &middot; <span className="rel">{REL_LABEL[p.relationship]}</span></>}
         </p>
+        <p className="meta-rel"><RelTag id={p.id} fallback={p.relationship === "trusted" ? "trusted" : p.relationship === "worked_with" ? "worked" : undefined} /></p>
         <div className="actions">
           <a className="text-arrow" href={`/dashboard/people/${p.id}?back=${encodeURIComponent(back)}`}>View profile &rarr;</a>
           <TrustButton id={p.id} trusted={p.relationship === "trusted"} back={back} />

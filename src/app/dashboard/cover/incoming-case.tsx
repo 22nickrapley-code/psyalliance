@@ -1,17 +1,17 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
-import { identifierError } from "@/lib/deidentify";
+import { useEffect, useState } from "react";
+import type { ThreadMessage } from "@/lib/threads";
 import { answerCoverAction } from "./actions";
+import { ChatThread } from "../_components/chat-thread";
 
-// One client on an incoming cover request. Accept, Decline and "+ Ask a
-// question first" answer it in place, without reloading (Nick, 13 Oct):
-// - Accepted or declined, the client folds into a short line with what
-//   happened, and stays on screen.
-// - A question opens a box under the client; once sent it turns into a
-//   "Sent" note and stays, so the member can move on to the next client.
-// - If someone else took the client first, the database says so and the
-//   card shows it (release review N16-02).
+// One client on an incoming cover request (Nick, 18 Oct): the need, then
+// three answers in the availability colours: Accept (green), Ask a question
+// (amber) and Can't (red). Asking opens the chat with the colleague right
+// here; it works like a text message and stays open, so you can talk it
+// through and answer when you're ready. Nothing reloads.
+// If someone else took the client first, the database says so and the card
+// shows it (release review N16-02).
 
 export type CaseStatus = "sent" | "discussing" | "accepted" | "declined" | "expired";
 
@@ -24,7 +24,9 @@ export function IncomingCase({
   ownerName,
   threadTitle,
   initialStatus,
-  children,
+  thread,
+  link,
+  returnTo,
 }: {
   requestId: number;
   label: string;
@@ -34,44 +36,33 @@ export function IncomingCase({
   ownerName: string;
   threadTitle: string;
   initialStatus: CaseStatus;
-  // The conversation so far, when a question was asked earlier.
-  children?: ReactNode;
+  // The conversation so far about this client, if there is one.
+  thread?: { conversationId: number | null; messages: ThreadMessage[] };
+  // Where the colleague lands from their notification.
+  link?: string;
+  returnTo: string;
 }) {
   const ownerFirst = ownerName.replace(/^(dr\.?)\s+/i, "").split(/[\s,]+/)[0];
   const [status, setStatus] = useState<CaseStatus>(initialStatus);
   const [touched, setTouched] = useState(false);
-  const [busy, setBusy] = useState<null | "accepted" | "declined" | "discussing">(null);
+  const [busy, setBusy] = useState<null | "accepted" | "declined">(null);
   const [error, setError] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
   const [asking, setAsking] = useState(false);
-  const [question, setQuestion] = useState("");
-  const [sent, setSent] = useState<string | null>(null);
-  const box = useRef<HTMLTextAreaElement>(null);
 
   // A refresh brings news (for example, someone else took the client).
   useEffect(() => {
     if (!touched) setStatus(initialStatus);
   }, [initialStatus, touched]);
 
-  useEffect(() => {
-    if (asking) box.current?.focus();
-  }, [asking]);
-
-  const answer = async (response: "accepted" | "declined" | "discussing") => {
+  const answer = async (response: "accepted" | "declined") => {
     if (busy) return;
     setError(null);
-    if (response === "discussing") {
-      const q = question.trim();
-      if (!q) return setError("Write your question first.");
-      const idErr = identifierError(q);
-      if (idErr) return setError(`${idErr} Everything else you wrote is still here.`);
-    }
     setBusy(response);
-    const res = await answerCoverAction({ requestId, response, question: response === "discussing" ? question : undefined, threadTitle });
+    const res = await answerCoverAction({ requestId, response, threadTitle });
     setBusy(null);
     if (!res.ok) {
       setError(res.error);
-      // The request closed meanwhile: show it as closed.
       if (/already taken on|closed|ended/i.test(res.error)) {
         setTouched(true);
         setStatus("expired");
@@ -80,61 +71,37 @@ export function IncomingCase({
     }
     setTouched(true);
     if (res.note) setNote(res.note);
-    if (response === "discussing") {
-      setSent(question.trim());
-      setAsking(false);
-      setQuestion("");
-      setStatus("discussing");
-    } else {
-      setStatus(response);
-    }
-    // The save itself brings the page's new counts back with it (the action
-    // revalidates /dashboard/cover); a second refresh on top of it raced
-    // and sometimes left the screen waiting (release testing NAV-01).
+    setStatus(response);
   };
 
-  const facts = details.map(([, v]) => v).filter((v) => v && v !== "Not stated");
+  // The first message also records "asked a question" on the request.
+  const firstQuestion = async (body: string) => {
+    const res = await answerCoverAction({ requestId, response: "discussing", question: body, threadTitle });
+    if (!res.ok) return { ok: false as const, error: res.error };
+    setTouched(true);
+    setStatus("discussing");
+    if (res.note) setNote(res.note);
+    if (!res.conversationId || !res.message) return { ok: false as const, error: res.note || "Your question is saved, but it didn't reach the chat. Send it again." };
+    return { ok: true as const, message: res.message, conversationId: res.conversationId };
+  };
 
-  if (status === "accepted" || status === "declined" || status === "expired") {
-    const text =
-      status === "accepted"
-        ? `Accepted. ${ownerFirst} will be in touch about the handoff.`
-        : status === "declined"
-          ? `Declined. Thanks for letting ${ownerFirst} know.`
-          : error || "Closed: another colleague has taken on this client, or the plan has ended. Nothing more is needed from you.";
-    return (
-      <div id={`request-${requestId}`} className={`incoming-case is-answered is-${status}`} role="status">
-        <span className="answered-mark" aria-hidden="true">{status === "accepted" ? "✓" : status === "declined" ? "–" : "·"}</span>
-        <div className="answered-body">
-          <div className="answered-top">
-            <strong>
-              {label} &middot; {focus}
-            </strong>
-            <span className={`status ${status === "accepted" ? "" : "neutral"}`}>{status === "accepted" ? "Accepted" : status === "declined" ? "Declined" : "Closed"}</span>
-          </div>
-          <p className="answered-text">{text}</p>
-          {facts.length > 0 && <p className="answered-facts">{facts.join(" · ")}</p>}
-          {note && <p className="micro-note">{note}</p>}
-          {status === "accepted" && (
-            <a className="text-arrow small" href={`/dashboard/messages?to=${ownerId}`}>
-              Message {ownerFirst} &rarr;
-            </a>
-          )}
-        </div>
-      </div>
-    );
-  }
+  const answered = status === "accepted" || status === "declined" || status === "expired";
+  const hasChat = (thread?.messages.length || 0) > 0;
+  const chatOpen = asking || status === "discussing" || hasChat;
+  const tone = status === "accepted" ? "green" : status === "declined" ? "red" : status === "expired" ? "grey" : "amber";
+  const chip =
+    status === "accepted" ? "You accepted" : status === "declined" ? "You can't take this" : status === "expired" ? "Closed" : status === "discussing" ? "In discussion" : "Needs your answer";
 
-  const discussing = status === "discussing";
   return (
-    <div id={`request-${requestId}`} className={`incoming-case${discussing ? " is-discussing" : ""}`}>
-      <div className="row between wrap" style={{ gap: 8 }}>
-        <strong>
-          {label} &middot; {focus}
-        </strong>
-        {discussing && <span className="status warn">In discussion</span>}
+    <section id={`request-${requestId}`} className={`card cover-need tone-${tone}${answered ? " is-answered" : ""}`}>
+      <div className="cover-need-head">
+        <div>
+          <div className="eyebrow">The need &middot; {label}</div>
+          <h3>{focus}</h3>
+        </div>
+        <span className={`hist-chip tone-${tone}`}>{chip}</span>
       </div>
-      <dl className="case-facts">
+      <dl className="need-rows">
         {details.map(([k, v]) => (
           <div key={k}>
             <dt>{k}</dt>
@@ -143,64 +110,62 @@ export function IncomingCase({
         ))}
       </dl>
 
-      {discussing && !sent && children}
-
-      {sent && (
-        <div className="ask-box is-sent" role="status">
-          <span className="ask-sent-tag">&#10003; Sent</span>
-          <p className="ask-sent-text">&ldquo;{sent}&rdquo;</p>
-          <small>
-            Sent to {ownerName}. Their reply appears here, under {label}, and in Messages. You can still accept or decline whenever you&rsquo;re ready.
-          </small>
-        </div>
+      {answered && (
+        <p className="answered-text" role="status">
+          {status === "accepted"
+            ? `Accepted. ${ownerFirst} will be in touch about the handoff.`
+            : status === "declined"
+              ? `You said you can't take ${label}. Thanks for letting ${ownerFirst} know.`
+              : error || "Closed: another colleague has taken on this client, or the plan has ended. Nothing more is needed from you."}
+        </p>
       )}
 
-      <div className="cover-reply-row" role="group" aria-label={`Your answer for ${label}`}>
-        <button type="button" data-acts="" className="btn small-btn resp-accept" disabled={!!busy} aria-busy={busy === "accepted"} onClick={() => answer("accepted")}>
-          {busy === "accepted" ? "Accepting…" : `Accept ${label}`}
-        </button>
-        <button type="button" data-acts="" className="btn small-btn resp-decline" disabled={!!busy} aria-busy={busy === "declined"} onClick={() => answer("declined")}>
-          {busy === "declined" ? "Declining…" : "Decline"}
-        </button>
-        {!discussing && !sent && !asking && (
-          <button type="button" className="btn small-btn resp-discuss" disabled={!!busy} aria-expanded={false} onClick={() => setAsking(true)}>
-            + Ask a question first
-          </button>
-        )}
-      </div>
-
-      {asking && (
-        <div className="ask-box">
-          <label className="field" htmlFor={`q-${requestId}`}>
-            Your question for {ownerFirst}
-          </label>
-          <textarea
-            ref={box}
-            id={`q-${requestId}`}
-            rows={3}
-            maxLength={600}
-            value={question}
-            onChange={(e) => setQuestion(e.target.value)}
-            placeholder={`e.g. Could we talk through the schedule for ${label} and how you'd like the handoff to work?`}
+      {chatOpen && (
+        <div className="inline-thread">
+          <ChatThread
+            messages={thread?.messages || []}
+            conversationId={thread?.conversationId ?? null}
+            otherIds={[ownerId]}
+            title={threadTitle}
+            link={link || null}
+            heading={`Your conversation with ${ownerFirst} about ${label}`}
+            placeholder={status === "sent" ? `Your question for ${ownerFirst}…` : "Write a message…"}
+            returnTo={returnTo}
+            autoFocus={asking && status === "sent"}
+            emptyText={`Ask ${ownerFirst} anything about ${label} before you answer.`}
+            onSend={status === "sent" ? firstQuestion : undefined}
+            canSend={status !== "expired"}
           />
-          <small>No client-identifying details. {ownerFirst}&rsquo;s reply appears here, under {label}.</small>
-          <div className="row wrap" style={{ gap: 8, marginTop: 10 }}>
-            <button type="button" data-acts="" className="btn small-btn" disabled={!!busy} aria-busy={busy === "discussing"} onClick={() => answer("discussing")}>
-              {busy === "discussing" ? "Sending…" : "Send question"}
-            </button>
-            <button type="button" className="btn ghost small-btn" disabled={!!busy} onClick={() => { setAsking(false); setError(null); }}>
-              Cancel
-            </button>
-          </div>
         </div>
       )}
 
-      {error && (
+      {!answered && (
+        <div className="cover-answers" role="group" aria-label={`Your answer for ${label}`}>
+          <button type="button" data-acts="" className="btn small-btn answer-btn answer-green" disabled={!!busy} aria-busy={busy === "accepted"} onClick={() => answer("accepted")}>
+            {busy === "accepted" ? "Accepting…" : `Accept ${label}`}
+          </button>
+          {!chatOpen && (
+            <button type="button" className="btn small-btn answer-btn answer-amber" disabled={!!busy} onClick={() => setAsking(true)}>
+              Ask a question
+            </button>
+          )}
+          <button type="button" data-acts="" className="btn small-btn answer-btn answer-red" disabled={!!busy} aria-busy={busy === "declined"} onClick={() => answer("declined")}>
+            {busy === "declined" ? "Saving…" : "Can't take this"}
+          </button>
+        </div>
+      )}
+      {status === "accepted" && (
+        <a className="text-arrow small" href={`/dashboard/messages?to=${ownerId}`}>
+          Message {ownerFirst} &rarr;
+        </a>
+      )}
+
+      {error && !answered && (
         <p className="deid-error" role="alert">
           {error}
         </p>
       )}
       {note && <p className="micro-note">{note}</p>}
-    </div>
+    </section>
   );
 }

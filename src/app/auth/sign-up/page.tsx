@@ -14,7 +14,7 @@ import { FoundingCount } from "../../_public/founding-count";
 
 export const metadata = {
   title: "Create your account",
-  description: "Join PsyAlliance, the verified network for doctoral psychologists and psychiatrists in private practice. The first 50 members in each state are founding members, free for life.",
+  description: "Join PsyAlliance, the verified network for doctoral psychologists and psychiatrists in private practice. The first 40 members in each state are founding members, free for life.",
 };
 
 const NORTHEAST = ["NY", "MA", "NJ", "CT", "RI", "VT", "NH", "ME", "PA"];
@@ -51,7 +51,7 @@ export default async function SignUpPage(props: {
                   <b>{inviterName}</b> invited you. Create your account and you&rsquo;ll be each other&rsquo;s trusted colleagues once you&rsquo;re verified.
                 </p>
               )}
-              <div className="eyebrow">Founding places: the first 50 in each state</div>
+              <div className="eyebrow">Founding places: the first 40 in each state</div>
               <h1>Create your account.</h1>
               <p className="lead">
                 For doctoral psychologists and psychiatrists in private practice. Open now in {openText || "the Northeast"}; other states open as colleagues
@@ -141,7 +141,7 @@ export default async function SignUpPage(props: {
                 </fieldset>
                 <button type="submit" className="btn lg block">Create your account</button>
                 <p className="micro-note" style={{ margin: 0, textAlign: "center" }}>
-                  The first 50 members in each state are founding members, free for life. See <a href="/privacy">Privacy</a> and <a href="/terms">Terms</a>. Already have an account?{" "}
+                  The first 40 members in each state are founding members, free for life. See <a href="/privacy">Privacy</a> and <a href="/terms">Terms</a>. Already have an account?{" "}
                   <a href="/auth/sign-in">Sign in</a>.
                 </p>
                 </div>

@@ -24,10 +24,10 @@ export async function generateMetadata(props: { params: Promise<{ slug: string }
   };
 }
 
-// One public template page: what's inside, who it's for, its review
-// status, and a download (once reviewed and turned on) or a way to hear
-// when it's free. Addressed by name (/library/professional-will); older
-// links by PA number land on the named address.
+// One public template page: what's inside and who it's for, and a way to
+// join: members open and download every template (Nick, 18 Oct). Addressed
+// by name (/library/professional-will); older links by PA number land on
+// the named address.
 export default async function PublicResourcePage(props: { params: Promise<{ slug: string }> }) {
   const { slug } = await props.params;
   if (IS_DEMO_SITE && process.env.NODE_ENV === "production") redirect(`${REAL_SITE_URL}/library/${encodeURIComponent(slug)}`);

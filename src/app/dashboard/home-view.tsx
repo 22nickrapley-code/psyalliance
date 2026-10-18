@@ -8,14 +8,12 @@ import { Banner, Status } from "./_components/ui";
 import { reconfirmAvailability } from "./availability/actions";
 import { HomeTiles } from "./home-client";
 import { OnceNote } from "./_components/once-note";
-import type { CircleNode } from "./_components/orbit";
+import { ConsultFeed, type HomeFeedItem } from "./home-feed";
 
-export type { CircleNode };
-
-// Home answers two questions and nothing else: what would you like to do,
-// and does anything need you? Five tiles carry both. The four jobs lead;
-// the fifth, Actions, shows how many things are waiting and opens the
-// list in place. Availability sits underneath as one line.
+// Home: what would you like to do, and does anything need you? Five tiles
+// carry both: the four jobs lead, and the fifth, Actions, opens the list in
+// place. Underneath (Nick, 18 Oct): the consultation discussions most
+// relevant to this member, with a narrow availability box beside them.
 
 export type NextStep = {
   key: string;
@@ -31,12 +29,6 @@ export type NextStep = {
 
 export type Tone = "open" | "limited" | "closed" | "unset";
 
-export type CircleSnapshot = {
-  trusted: number;
-  referrals: number;
-  cover: number;
-  people: { id: string; name: string; avatarUrl: string | null; open: boolean }[];
-};
 
 export type HomeData = {
   firstName: string;
@@ -59,7 +51,7 @@ export type HomeData = {
     canReconfirm: boolean;
     tones?: { referrals: Tone; cover: Tone; consult: Tone };
   };
-  circleSnapshot?: CircleSnapshot;
+  feed?: { quiet: boolean; shown: boolean; items: HomeFeedItem[] };
   ledger?: string[];
   ledgerYear?: number;
   invite?: InviteInfo;
@@ -72,16 +64,6 @@ export type HomeData = {
   circle?: unknown;
   resources?: unknown;
 };
-
-const initialsOf = (name: string) =>
-  name
-    .replace(/^(dr\.?)\s+/i, "")
-    .replace(/,.*$/, "")
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((p) => p[0]?.toUpperCase())
-    .join("");
 
 // "Cover: ask me" reads oddly beside a "Cover" label.
 const plain = (label: string) => {
@@ -96,14 +78,9 @@ function AvailabilityCard({ a }: { a: HomeData["availability"] }) {
     ["Consult", plain(a.consult), a.tones?.consult || "unset"],
   ];
   return (
-    <section className="card home-card avail-card" aria-labelledby="avail-title">
-      <div className="home-card-head">
-        <div>
-          <div className="eyebrow">What colleagues see</div>
-          <h3 id="avail-title">Your availability</h3>
-        </div>
-        <span className={`avail-when${a.stale ? " stale" : ""}`}>{a.confirmedLabel}</span>
-      </div>
+    <section className="card home-card avail-card compact" aria-labelledby="avail-title">
+      <div className="eyebrow">What colleagues see</div>
+      <h3 id="avail-title">Your availability</h3>
       <ul className="avail-rows">
         {rows.map(([k, v, tone]) => (
           <li key={k}>
@@ -113,6 +90,7 @@ function AvailabilityCard({ a }: { a: HomeData["availability"] }) {
           </li>
         ))}
       </ul>
+      <p className={`avail-when${a.stale ? " stale" : ""}`}>{a.confirmedLabel}</p>
       <div className="home-card-actions">
         {a.canReconfirm && (
           <form action={reconfirmAvailability} className="inline">
@@ -121,54 +99,6 @@ function AvailabilityCard({ a }: { a: HomeData["availability"] }) {
           </form>
         )}
         <a className="btn ghost small-btn" href="/dashboard/availability?back=%2Fdashboard">Update &rarr;</a>
-      </div>
-    </section>
-  );
-}
-
-function CircleCard({ c }: { c?: CircleSnapshot }) {
-  if (!c || c.trusted === 0) {
-    return (
-      <section className="card home-card circle-snap empty" aria-labelledby="circle-title">
-        <div className="eyebrow">Your network</div>
-        <h3 id="circle-title">Start with the colleagues you already trust</h3>
-        <p className="small">Trusted colleagues come first in every match, for referrals, cover and questions. Add two or three to begin, the way you&rsquo;d count the colleagues in a group practice.</p>
-        <div className="home-card-actions">
-          <a className="btn small-btn" href="/dashboard/clinicians">Find clinicians</a>
-        </div>
-      </section>
-    );
-  }
-  const extra = c.trusted - c.people.length;
-  return (
-    <section className="card home-card circle-snap" aria-labelledby="circle-title">
-      <div className="home-card-head">
-        <div>
-          <div className="eyebrow">Your network today</div>
-          <h3 id="circle-title">
-            {c.trusted} trusted colleague{c.trusted === 1 ? "" : "s"}
-          </h3>
-        </div>
-      </div>
-      <div className="face-stack" aria-hidden="true">
-        {c.people.map((p) => (
-          <span key={p.id} className={`face${p.open ? " open" : ""}`} title={p.name}>
-            {p.avatarUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={p.avatarUrl} alt="" />
-            ) : (
-              initialsOf(p.name)
-            )}
-          </span>
-        ))}
-        {extra > 0 && <span className="face more">+{extra}</span>}
-      </div>
-      <ul className="circle-facts">
-        <li><b>{c.referrals}</b> taking referrals</li>
-        <li><b>{c.cover}</b> open for cover</li>
-      </ul>
-      <div className="home-card-actions">
-        <a className="btn ghost small-btn" href="/dashboard/network">See your network &rarr;</a>
       </div>
     </section>
   );
@@ -305,9 +235,9 @@ export function HomeView({ d }: { d: HomeData }) {
         </section>
       )}
 
-      <div className="home-lower">
+      <div className={`home-lower${d.feed?.shown ? " with-feed" : ""}`}>
+        {d.feed?.shown && <ConsultFeed items={d.feed.items} quiet={d.feed.quiet} />}
         <AvailabilityCard a={d.availability} />
-        <CircleCard c={d.circleSnapshot} />
       </div>
       {d.invite && <InviteBox info={d.invite} id="home-invite" />}
     </div>

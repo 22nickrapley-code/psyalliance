@@ -6,7 +6,7 @@ import { redirect } from "next/navigation";
 import { createCoveragePlan, sendCoverageRequest, respondToCoverageRequest } from "@/lib/coverage";
 import { logProfessionalEvent } from "@/lib/professional-events";
 import { identifierError } from "@/lib/deidentify";
-import { postToThread } from "@/lib/threads";
+import { postToThread, chatWhen, type ThreadMessage } from "@/lib/threads";
 import { friendly } from "@/lib/friendly-error";
 
 // Cover wizard server actions (Product Spec v1, "Cover"):
@@ -261,7 +261,9 @@ export async function respondCoverAction(formData: FormData) {
 
 // Answering a cover request without leaving the page (Nick, 13 Oct): the
 // card changes in place. Returns what happened instead of redirecting.
-export type CoverAnswer = { ok: true; status: "accepted" | "declined" | "discussing"; note?: string } | { ok: false; error: string };
+export type CoverAnswer =
+  | { ok: true; status: "accepted" | "declined" | "discussing"; note?: string; conversationId?: number; message?: ThreadMessage }
+  | { ok: false; error: string };
 
 export async function answerCoverAction(input: {
   requestId: number;
@@ -286,6 +288,8 @@ export async function answerCoverAction(input: {
   const { error } = await respondToCoverageRequest(supabase, user.id, requestId, response);
   if (error) return { ok: false, error };
   let note: string | undefined;
+  let conversationId: number | undefined;
+  let message: ThreadMessage | undefined;
   if (response === "discussing") {
     const { data: req } = await supabase
       .from("coverage_requests")
@@ -298,9 +302,22 @@ export async function answerCoverAction(input: {
     const sent = ownerId ? await postToThread(supabase, user.id, [ownerId], String(input.threadTitle || "Cover request"), question, link) : null;
     revalidatePath("/dashboard/messages");
     if (!sent || sent.error) note = "Your answer is saved, but the question didn't reach Messages. Send it from Messages instead.";
+    else if (sent.conversationId) {
+      // The question as the first message of the chat (Nick, 18 Oct).
+      conversationId = sent.conversationId;
+      const { data: row } = await supabase
+        .from("conversation_messages")
+        .select("id, created_at")
+        .eq("conversation_id", sent.conversationId)
+        .eq("author_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (row) message = { id: Number(row.id), mine: true, author: "You", authorId: user.id, body: question, at: row.created_at, atLabel: chatWhen(row.created_at), edited: false, removed: "", reactions: { counts: {}, names: {}, mine: null } };
+    }
   }
   revalidatePath("/dashboard/cover");
-  return { ok: true, status: response, note };
+  return { ok: true, status: response, note, conversationId, message };
 }
 
 export async function completePlanAction(formData: FormData) {

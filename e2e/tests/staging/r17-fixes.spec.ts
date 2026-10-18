@@ -176,3 +176,22 @@ test("R17-09 Network health counts members' referrals and cover, not zeros", asy
   // The cover response-rate card isn't "-" (which means nothing counted).
   expect(body).not.toMatch(/Cover requests\s*\n\s*0\b/);
 });
+
+test("R17-02-D the Consult list and Home feed still show questions and reply counts", async ({ page, context, baseURL }) => {
+  const question = `QA R17-02-D ${Date.now()}: a fictional question for everyone.`;
+  const bram = await memberClient("bram");
+  const { data: c, error } = await bram
+    .from("consultations")
+    .insert({ author_profile_id: account("bram").id, question, status: "open", audience_type: "wider_network", tags: [] })
+    .select("id")
+    .single();
+  expect(error, error?.message).toBeNull();
+  const cass = await memberClient("cass");
+  await cass.from("consultation_responses").insert({ consultation_id: c!.id, responder_profile_id: account("cass").id, body: "QA reply.", response_type: "reply" });
+  await signInAs(context, "avery", baseURL!);
+  await page.goto("/dashboard/consult");
+  const row = page.getByText(question).first();
+  await expect(row).toBeVisible();
+  await page.goto("/dashboard");
+  await expect(page.locator(".home-feed")).toBeVisible();
+});

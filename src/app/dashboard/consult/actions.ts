@@ -108,6 +108,12 @@ export async function publishConsultAction(formData: FormData) {
     const { data: conns } = await supabase.from("trusted_colleagues").select("colleague_id").eq("profile_id", userId);
     recipients = (conns || []).map((x: any) => x.colleague_id);
   }
+  // Colleagues who set consult to Not now get no consult alerts (Nick, 18 Oct).
+  if (recipients.length) {
+    const { data: quiet } = await supabase.from("profiles").select("id").in("id", recipients).eq("consultation_availability", "no");
+    const skip = new Set(((quiet as any[]) || []).map((r: any) => r.id));
+    recipients = recipients.filter((id) => !skip.has(id));
+  }
   if (recipients.length) {
     await raiseNotification(supabase, {
       eventType: "consultation_invite",

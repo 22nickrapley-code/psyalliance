@@ -38,8 +38,8 @@ function buildMessage(info: InviteInfo, name: string) {
       : "I'm on PsyAlliance, a private network for doctoral psychologists and psychiatrists in private practice: cover when you're away, referrals that fit, and trusted colleagues to ask.";
   const ask =
     info.mode === "member"
-      ? "I'd like you as one of my trusted colleagues there. Join through my link and we're connected once you're verified. The first 50 members in each state are founding members, free for life."
-      : "Have a look. The first 50 members in each state are founding members, free for life.";
+      ? "I'd like you as one of my trusted colleagues there. Join through my link and we're connected once you're verified. The first 40 members in each state are founding members, free for life."
+      : "Have a look. The first 40 members in each state are founding members, free for life.";
   const sign = info.mode !== "sandbox" && info.firstName ? `\n\n${info.firstName}` : "";
   return { body: `${hi} ${what} ${ask}`, sign };
 }

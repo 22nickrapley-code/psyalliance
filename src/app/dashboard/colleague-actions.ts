@@ -7,7 +7,7 @@ import type { Suggestion } from "@/lib/colleague-suggestions";
 
 // Searches the verified network by name for the colleague picker. Uses the
 // same directory function as Network, so blocks and eligibility apply.
-export async function searchColleaguesAction(q: string): Promise<Suggestion[]> {
+export async function searchColleaguesAction(q: string, purpose?: "consult"): Promise<Suggestion[]> {
   const term = String(q || "").trim().slice(0, 60);
   if (term.length < 2) return [];
   const supabase = await createClient();
@@ -16,7 +16,13 @@ export async function searchColleaguesAction(q: string): Promise<Suggestion[]> {
   } = await supabase.auth.getUser();
   if (!user) return [];
   const { data } = await supabase.rpc("network_directory", { p: { q: term, limit: 8, offset: 0 } });
-  const rows: any[] = ((data as any)?.people || []).filter((p: any) => p.id !== user.id);
+  let rows: any[] = ((data as any)?.people || []).filter((p: any) => p.id !== user.id);
+  // Consult questions skip colleagues who set consult to Not now.
+  if (purpose === "consult" && rows.length) {
+    const { data: quiet } = await supabase.from("profiles").select("id").in("id", rows.map((p) => p.id)).eq("consultation_availability", "no");
+    const skip = new Set(((quiet as any[]) || []).map((r) => r.id));
+    rows = rows.filter((p) => !skip.has(p.id));
+  }
   const urls = await resolveAvatarUrls(supabase, rows.map((p) => p.avatar_path));
   return rows.map((p) => ({
     id: p.id,

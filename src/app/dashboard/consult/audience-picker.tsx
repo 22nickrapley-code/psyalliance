@@ -140,6 +140,7 @@ export function AudiencePicker({
             initial={initialRecipients?.length ? initialRecipients : preselect ? [preselect] : []}
             label={audience === "one" ? "Ask" : "Ask these colleagues"}
             limitPerGroup={3}
+            purpose="consult"
           />
         )}
       </div>

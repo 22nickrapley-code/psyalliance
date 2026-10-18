@@ -23,9 +23,26 @@ Severity: **High** stops a core promise (cover, referral, notification, data); *
 | DEMO-01 | Low | Demos | Escape didn't close a demo when focus was inside it | Fails | Pass | Player passes Escape to the dialog |
 | DEMO-02 | Low | Demos | Demos page sent members to a sandbox control that wasn't there | Fails | Pass | "Open your sandbox" on Demos |
 | R16-A | Low | Platform | `X-Powered-By: Next.js` header | Fails | Pass | `poweredByHeader: false` |
-| HYD-01 | Low | Whole app | React hydration error on 1 to 6 of 474 page loads when four browsers load pages at once; not reproduced in 72 loads on a development build; React redraws the page, nothing is lost | Seen | Open | Watch for it in live error logs; revisit with the Next 16 upgrade |
-| PERF-01 | Low | Performance | Home waits on several database round trips one after another (19 s with 3 s per round trip injected) | Same | Open | Batch Home's queries; low priority at today's latency |
+| HYD-01 | Low | Whole app | React hydration error on 1 to 6 of 474 page loads when four browsers load pages at once; not reproduced in 72 loads on a development build; React redraws the page, nothing is lost | Seen | Open (parked 18 Oct: not seen in the 18 Oct route sweep) | Watch for it in live error logs; revisit with the Next 16 upgrade |
+| PERF-01 | Low | Performance | Home waits on several database round trips one after another (19 s with 3 s per round trip injected) | Same | Fixed 18 Oct (`fixes-1018`) | Home and the menu load in parallel: 2.7 s to 1.2 s at 300 ms per call |
 | AUTH-05 | Low | Sign-in | Asking for a second reset within a minute shows the one-a-minute message, which an unknown address never gets | n/a | Accepted | Trade-off for Nick's 15 Oct problem; wording stays conditional |
+
+## External retest, 17 Oct, and the 18 Oct round (branch `fixes-1018`)
+
+| ID | Sev | Area | What happens | Before | `fixes-1018` | Fix |
+|---|---|---|---|---|---|---|
+| R17-01 | High | Eligibility | A member suspended (or whose license expired) after being asked could still choose a referral colleague, change a reply, react, agree to continuity or mark a reply useful. Accepting cover was already refused: the report's cover path wasn't reproduced | Reported; cover path not reproduced | Pass (R17-01-A to J) | 0115: network-member checks in each function and table guard |
+| R17-02 | Medium | Privacy | A reply's author could read the asker's private "useful" mark | Reported | Pass (R17-02-A to C) | 0115: column revoked; asker reads marks through `consultation_useful_marks()` |
+| R17-02-D | Medium | Consult | Found in testing: after 0115, the Consult list and Home lost their reply counts (`(count)` needs table access) | n/a | Pass | Counts taken from reply ids |
+| R17-03 | Medium | Cloudflare | An inline reply that returns to the same page at a #section didn't settle on Cloudflare | Reported | Pass (CF-01) | `live.tsx` |
+| R17-05 | Medium | Cloudflare | A tab open from before a deploy failed its next save | Reported | Pass (CF-03) | Stale tabs reload once |
+| R17-04 | Low | Cover | Back from review lost the colleagues, how to ask and the message | Reported | Pass | Choices carried on Back |
+| R17-06 | Low | Profile | The import could show setup details to a member | Reported | Pass | Plain wording only |
+| R17-07 | Low | Continuity | Essentials done with blanks said 100% complete | Reported | Pass | Says what's left |
+| R17-08 | Low | Settings | A second menu change (Unblock, Show Demos) didn't show on Cloudflare | Reported | Pass (CF-02) | Same as R17-03 |
+| R17-09 | Low | Admin | Network health showed zeros for referrals and cover | Reported | Pass | 0115 `admin_network_health()` |
+| A11Y-02 | Low | Accessibility | Found in testing: the new amber chip text was 4.4:1, and the numbered join steps were dark on dark | n/a | Pass (A11Y, 28 pages) | Amber `#94590d`; light steps on the dark card |
+| R18-15 | Low | Network | Found in testing: on a first visit, Network's suggested faces were grey until the next page | n/a | Pass | Each list sets its own colour |
 
 ## For Nick to decide (not defects)
 
