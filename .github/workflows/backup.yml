@@ -1,0 +1,55 @@
+# Weekly backup of psyalliance.org's Supabase project (database and stored
+# files together) into the private R2 bucket. Also runs on demand from the
+# Actions tab ("Run workflow"). What it does: scripts/backup/weekly.sh.
+# Restoring: scripts/backup/README.md.
+name: Weekly backup
+
+on:
+  schedule:
+    - cron: "23 5 * * 0" # Sundays 05:23 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: weekly-backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      R2_BUCKET: psyalliance-backups
+      KEEP_WEEKS: "12"
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+      # Source: Supabase Storage's S3 endpoint (real project).
+      RCLONE_CONFIG_SUPA_TYPE: s3
+      RCLONE_CONFIG_SUPA_PROVIDER: Other
+      RCLONE_CONFIG_SUPA_ENDPOINT: https://vvmulsyvyjsxhcpqfpyo.storage.supabase.co/storage/v1/s3
+      RCLONE_CONFIG_SUPA_REGION: us-east-1
+      RCLONE_CONFIG_SUPA_FORCE_PATH_STYLE: "true"
+      RCLONE_CONFIG_SUPA_ACCESS_KEY_ID: ${{ secrets.SUPABASE_S3_ACCESS_KEY_ID }}
+      RCLONE_CONFIG_SUPA_SECRET_ACCESS_KEY: ${{ secrets.SUPABASE_S3_SECRET_ACCESS_KEY }}
+      # Destination: the private R2 bucket.
+      RCLONE_CONFIG_R2_TYPE: s3
+      RCLONE_CONFIG_R2_PROVIDER: Cloudflare
+      RCLONE_CONFIG_R2_ENDPOINT: https://${{ secrets.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com
+      RCLONE_CONFIG_R2_REGION: auto
+      RCLONE_CONFIG_R2_ACL: private
+      RCLONE_CONFIG_R2_NO_CHECK_BUCKET: "true"
+      RCLONE_CONFIG_R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      RCLONE_CONFIG_R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Install rclone and psql
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq rclone postgresql-client > /dev/null
+          rclone version | head -1
+      - name: Back up the database and files
+        run: bash scripts/backup/weekly.sh
