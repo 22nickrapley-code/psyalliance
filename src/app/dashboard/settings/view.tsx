@@ -37,7 +37,7 @@ export function SettingsView({ sp, email, me, prefs, profile, emergency, exclude
   const listed = profile?.directory_visible !== false;
 
   const okMsg =
-    sp.saved === "demo-on" ? "Demo network on. You're now seeing the fake demo members, not the real network." : sp.saved === "demo-off" ? "Demo network off. You're back on the real network." : sp.saved === "privacy" ? "Privacy setting saved." : sp.saved === "blocked" ? "Blocked. They can't contact you and you're hidden from each other." : sp.saved ? "Notification settings saved." : null;
+    sp.saved === "demo-on" ? "Demo network on. You're now seeing the fake demo members, not the real network." : sp.saved === "demo-off" ? "Demo network off. You're back on the real network." : sp.saved === "privacy" ? "Privacy setting saved." : sp.saved === "unblocked" ? "Unblocked. They can find and contact you again." : sp.saved === "blocked" ? "Blocked. They can't contact you and you're hidden from each other." : sp.saved ? "Notification settings saved." : null;
 
   return (
     <>

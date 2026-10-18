@@ -175,6 +175,8 @@ export async function unblockMemberAction(formData: FormData) {
   if (error) settingsError(error.message);
   revalidatePath("/dashboard/settings");
   revalidatePath("/dashboard/network");
+  // Replaces any "Blocked" confirmation still on screen (R17-08).
+  redirect("/dashboard/settings?saved=unblocked#privacy");
 }
 
 // Demo network view (0076). Admins can switch it on; anyone who has it can

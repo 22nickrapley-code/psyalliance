@@ -18,7 +18,9 @@ const DEFAULT_MODEL = "claude-haiku-4-5-20251001"; // cheap/fast - plenty for st
 
 export class AiNotConfiguredError extends Error {
   constructor() {
-    super("AI import isn't configured yet - ask your admin to add an ANTHROPIC_API_KEY.");
+    // Shown to members, so no setup details (R17-06). The server log says
+    // what's missing.
+    super("Importing your details isn't available right now. Please fill in the form below instead.");
     this.name = "AiNotConfiguredError";
   }
 }

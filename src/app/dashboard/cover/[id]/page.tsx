@@ -75,7 +75,11 @@ export default async function CoverPlanPage(props: { params: Promise<{ id: strin
     const every = results.flatMap(([, m]) => m);
     const urls = await resolveAvatarUrls(supabase, every.map((m) => m.avatarPath));
     const avatarUrls = Object.fromEntries(every.map((m) => [m.profileId, urls.get(m.avatarPath || "") || null]));
-    return <CoverCandidatesView plan={summary} cases={cases} suggestions={suggestions} avatarUrls={avatarUrls} preferred={preferred} />;
+    // Back from the review step: the colleagues already picked stay picked.
+    const back = open.some((c: any) => all(`pick_${c.id}`).length > 0);
+    const preselected = back ? Object.fromEntries(open.map((c: any) => [c.id, all(`pick_${c.id}`)])) : undefined;
+    const carry = { mode: one("outreach_mode") || one("mode"), message: one("message") };
+    return <CoverCandidatesView plan={summary} cases={cases} suggestions={suggestions} avatarUrls={avatarUrls} preferred={preferred} preselected={preselected} carry={carry} />;
   }
 
   if (step === "invite") {
@@ -109,7 +113,7 @@ export default async function CoverPlanPage(props: { params: Promise<{ id: strin
       picks: all(`pick_${c.id}`).map((pid) => ({ id: pid, name: nameOf(pid), why: reasons.get(`${c.id}:${pid}`) || [] })),
     }));
     const { data: netStatus } = await supabase.rpc("my_network_status").maybeSingle<any>();
-    return <CoverInviteView plan={summary} rows={rows} error={one("error")} mode={one("mode")} reviewed={one("reviewed") === "1"} fix={one("fix")} canSend={!!netStatus?.is_member} />;
+    return <CoverInviteView plan={summary} rows={rows} error={one("error")} mode={one("mode")} reviewed={one("reviewed") === "1"} fix={one("fix")} canSend={!!netStatus?.is_member} message={one("message")} />;
   }
 
   if (step === "track") {

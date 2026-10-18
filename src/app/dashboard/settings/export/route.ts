@@ -60,7 +60,7 @@ export async function GET(request: Request) {
     own("cover_plans", "coverage_plans", "profile_id", "*, coverage_plan_cases(*, coverage_requests(status, sent_at, responded_at))"),
     own("cover_requests_received", "coverage_requests", "requested_profile_id", "status, message, sent_at, responded_at"),
     own("consultations_asked", "consultations", "author_profile_id", "*, consultation_responses(body, response_type, created_at)"),
-    own("consultation_replies", "consultation_responses", "responder_profile_id"),
+    own("consultation_replies", "consultation_responses", "responder_profile_id", "id, consultation_id, response_type, body, created_at"),
     own("groups", "consultation_group_members", "profile_id", "status, role, invited_at, responded_at, consultation_groups(name, charter_body)"),
     own("continuity_plan", "continuity_plans", "profile_id"),
     read("continuity_duties", () => supabase.rpc("my_continuity_duties")),

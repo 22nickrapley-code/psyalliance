@@ -30,76 +30,32 @@ export default async function DashboardLayout({
     redirect(IS_DEMO_SITE ? "/sandbox/ended" : "/auth/sign-in");
   }
 
-  const { data: profile } = await supabase
-    .rpc("my_profile")
-    .select("full_name, verification_status, is_admin, avatar_path, demo_view, account_kind, qualification_level, credential_prefix, primary_practice_city, primary_state")
-    .maybeSingle<any>();
-
-  // A referring provider (GP/physician portal account) has no `profiles`
-  // row at all - that's what keeps them out of Network/Messages/Town Hall/
-  // Caseload by construction. If one ever lands here (stale link, wrong
-  // sign-in form), send them to their own portal instead of letting them
-  // hit "you haven't set up your profile yet" and wander in.
-  if (!profile) {
-    const { data: provider } = await supabase
-      .from("referring_providers")
-      .select("id")
-      .eq("id", user.id)
-      .maybeSingle();
-    if (provider) redirect("/refer");
-  }
-  const avatarUrl = await resolveAvatarUrl(supabase, profile?.avatar_path);
-
-  // The badge says what's true. Admin-only (operator) logins make no
-  // clinical claim. A clinician is "Verified" only when they are a network
-  // member: verified, active and holding a reviewed, in-date license.
-  const { data: status } = await supabase.rpc("my_network_status").maybeSingle<any>();
-  const { count: licenceCount } = await supabase.from("licenses").select("id", { count: "exact", head: true }).eq("profile_id", user.id);
-  const isOperator = profile?.account_kind === "operator";
-  const verificationLabel = !profile
-    ? null
-    : isOperator
-      ? "Admin"
-      : status?.is_member
-        ? "Verified"
-        : profile.verification_status === "verified" && status?.has_reviewed_licence
-          ? "Verified, state opening soon"
-        : profile.verification_status === "flagged"
-          ? "Action required"
-          : profile.verification_status === "rejected"
-            ? "Not verified"
-            : (licenceCount || 0) === 0
-              ? "Add your license"
-              : status?.has_reviewed_licence
-                ? "Verification pending"
-                : "License awaiting review";
-  const waiting = !!profile && !isOperator && !status?.is_member && !profile.demo_view;
-  const { data: access } = waiting && !IS_DEMO_SITE ? await supabase.rpc("my_access") : { data: null };
-  const queue = ((access as any)?.waitlist as any[]) || [];
-  const gateNotice = !waiting
-    ? null
-    : profile.verification_status === "verified" && status?.has_reviewed_licence
-      ? queue.length
-        ? `You're verified. PsyAlliance opens in ${stateList(queue.map((w) => w.state))} as colleagues join; you're number ${queue[0].position} on the ${stateName(queue[0].state)} list. Meanwhile, your sandbox and the Practice Library are open to you.`
-        : "You're verified. PsyAlliance opens in your state as colleagues join. Meanwhile, your sandbox and the Practice Library are open to you."
-      : (licenceCount || 0) === 0
-        ? "Add a license to be reviewed. You can prepare cover plans and your continuity plan now; sending to colleagues opens once you're verified. Your sandbox and the Practice Library are open too."
-        : "Your license is with us for review. You can prepare cover plans and your continuity plan now; sending to colleagues opens once you're verified. Your sandbox and the Practice Library are open too.";
-
-  const { data: sandbox } = IS_DEMO_SITE ? await supabase.rpc("my_sandbox").maybeSingle<any>() : { data: null };
-
-  // Cheap presence signal used only for match tie-breaking ("last login") -
-  // not awaited-critical, but kept simple and correct rather than clever.
-  supabase.from("profiles").update({ last_active_at: new Date().toISOString() }).eq("id", user.id).then(() => {});
-
+  // Everything this frame needs is asked for at once (PERF-01): one round
+  // trip to the database instead of eight in a row. my_access and
+  // my_sandbox are read-only and cheap, so they're asked for even when the
+  // answer turns out not to be needed.
   const [
+    { data: profile },
+    { data: status },
+    { count: licenceCount },
+    { data: accessData },
+    { data: sandbox },
     { data: myConversationRows },
     { count: unreadNotificationCount },
     { count: pendingProviderReferralCount },
     { data: myOpenRequestsForBadge },
     { count: pendingCoverageRequestCount },
     notificationPipelineUnreadCount,
+    cookieJar,
   ] = await Promise.all([
+    supabase
+      .rpc("my_profile")
+      .select("full_name, verification_status, is_admin, avatar_path, demo_view, account_kind, qualification_level, credential_prefix, primary_practice_city, primary_state")
+      .maybeSingle<any>(),
+    supabase.rpc("my_network_status").maybeSingle<any>(),
+    supabase.from("licenses").select("id", { count: "exact", head: true }).eq("profile_id", user.id),
+    IS_DEMO_SITE ? Promise.resolve({ data: null }) : supabase.rpc("my_access"),
+    IS_DEMO_SITE ? supabase.rpc("my_sandbox").maybeSingle<any>() : Promise.resolve({ data: null }),
     supabase
       .from("conversation_participants")
       .select("last_read_at, conversation:conversation_id(last_message_at)")
@@ -131,7 +87,62 @@ export default async function DashboardLayout({
     // system_notifications count above (that one stays feeding the
     // Messages badge, unchanged - this is its own destination now).
     getUnreadNotificationCount(supabase, user.id),
+    cookies(),
   ]);
+
+  // A referring provider (GP/physician portal account) has no `profiles`
+  // row at all - that's what keeps them out of Network/Messages/Town Hall/
+  // Caseload by construction. If one ever lands here (stale link, wrong
+  // sign-in form), send them to their own portal instead of letting them
+  // hit "you haven't set up your profile yet" and wander in.
+  if (!profile) {
+    const { data: provider } = await supabase
+      .from("referring_providers")
+      .select("id")
+      .eq("id", user.id)
+      .maybeSingle();
+    if (provider) redirect("/refer");
+  }
+  const avatarUrl = await resolveAvatarUrl(supabase, profile?.avatar_path);
+
+  // The badge says what's true. Admin-only (operator) logins make no
+  // clinical claim. A clinician is "Verified" only when they are a network
+  // member: verified, active and holding a reviewed, in-date license.
+  const isOperator = profile?.account_kind === "operator";
+  const verificationLabel = !profile
+    ? null
+    : isOperator
+      ? "Admin"
+      : status?.is_member
+        ? "Verified"
+        : profile.verification_status === "verified" && status?.has_reviewed_licence
+          ? "Verified, state opening soon"
+        : profile.verification_status === "flagged"
+          ? "Action required"
+          : profile.verification_status === "rejected"
+            ? "Not verified"
+            : (licenceCount || 0) === 0
+              ? "Add your license"
+              : status?.has_reviewed_licence
+                ? "Verification pending"
+                : "License awaiting review";
+  const waiting = !!profile && !isOperator && !status?.is_member && !profile.demo_view;
+  const access = waiting ? accessData : null;
+  const queue = ((access as any)?.waitlist as any[]) || [];
+  const gateNotice = !waiting
+    ? null
+    : profile.verification_status === "verified" && status?.has_reviewed_licence
+      ? queue.length
+        ? `You're verified. PsyAlliance opens in ${stateList(queue.map((w) => w.state))} as colleagues join; you're number ${queue[0].position} on the ${stateName(queue[0].state)} list. Meanwhile, your sandbox and the Practice Library are open to you.`
+        : "You're verified. PsyAlliance opens in your state as colleagues join. Meanwhile, your sandbox and the Practice Library are open to you."
+      : (licenceCount || 0) === 0
+        ? "Add a license to be reviewed. You can prepare cover plans and your continuity plan now; sending to colleagues opens once you're verified. Your sandbox and the Practice Library are open too."
+        : "Your license is with us for review. You can prepare cover plans and your continuity plan now; sending to colleagues opens once you're verified. Your sandbox and the Practice Library are open too.";
+
+  // Cheap presence signal used only for match tie-breaking ("last login") -
+  // not awaited-critical, but kept simple and correct rather than clever.
+  supabase.from("profiles").update({ last_active_at: new Date().toISOString() }).eq("id", user.id).then(() => {});
+
   const unreadConversationCount = (myConversationRows || []).filter((r: any) => {
     if (!r.conversation) return false;
     return new Date(r.conversation.last_message_at) > new Date(r.last_read_at);
@@ -173,7 +184,7 @@ export default async function DashboardLayout({
     unreadMessages: unreadConversationCount + (unreadNotificationCount || 0),
     pendingCoverRequests: pendingCoverageRequestCount || 0,
     pendingReferrals: (pendingProviderReferralCount || 0) + pendingPeerOfferCount,
-    hideDemos: (await cookies()).get("pa_hide_demos")?.value === "1",
+    hideDemos: cookieJar.get("pa_hide_demos")?.value === "1",
   });
 
   return (

@@ -1,25 +1,15 @@
-import { readAll } from "@/lib/paged";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { requireAdminOrRedirectPath } from "@/lib/admin";
 
 export const metadata = { title: "Network health" };
 
-// PsyA2 #98/#102: the admin console "must exist from launch" and must
-// include a Network-health dashboard - explicitly "important operationally
-// ... the point is to manage liquidity, not vanity registrations." Every
-// number below is a straight aggregation of data the rebuild already
-// writes (profiles, referral_requests/responses, coverage_requests,
-// profile_lookup_values) - no new schema, read-only.
-//
-// A few #102 line items aren't computed here and are labeled as such
-// rather than faked: "invite conversion" (there's no cold-start invite
-// tracking table yet - see the progress doc's Network cold-start note)
-// and true growth-over-time for Northeast density (no historical
-// snapshot table - this shows current counts, not a trend).
-//
-// NORTHEAST is #103's initial active acquisition cluster; TEXAS is called
-// out separately as the founder-led organic market (#103).
+// Network health: how many eligible members are actually available, how
+// fast requests are answered, and where supply doesn't meet demand. Real
+// members only (no demo accounts or admin logins); members count only while
+// they're eligible (verified, active, reviewed in-date license). Invite
+// conversion and trends over time aren't computed: there's no data for them
+// yet, so they're named as not tracked rather than shown as numbers.
 const NORTHEAST_STATES = ["NY", "NJ", "CT", "RI", "MA", "VT"];
 
 function pct(n: number, d: number): string {
@@ -40,28 +30,31 @@ export default async function NetworkHealthPage() {
   const redirectPath = await requireAdminOrRedirectPath(supabase);
   if (redirectPath) redirect(redirectPath);
 
-  const [
-    { data: verifiedProfiles },
-    { data: referralRequests },
-    { data: referralResponses },
-    { data: coverageCases },
-    { data: coverageRequests },
-    { data: specialismTags },
-    { data: specialisms },
-  ] = await Promise.all([
-    supabase
-      .from("profiles")
-      .select("id, primary_state, qualification_level, referral_availability, coverage_availability")
-      .eq("verification_status", "verified")
-      .eq("is_demo", false)
-      .eq("account_kind", "clinician"),
-    supabase.from("referral_requests").select("id, created_at, specialism_lookup_id, status"),
-    readAll((a, b) => supabase.from("referral_responses").select("referral_request_id, created_at").order("id").range(a, b)).then((data) => ({ data })),
-    supabase.from("coverage_plan_cases").select("id, created_at, specialism_lookup_ids, status"),
-    supabase.from("coverage_requests").select("id, coverage_plan_case_id, sent_at, responded_at, status"),
-    readAll((a, b) => supabase.from("profile_lookup_values").select("profile_id, lookup_value_id").order("profile_id").order("lookup_value_id").range(a, b)).then((data) => ({ data })),
+  // Counted in the database by an admin-only function (R17-09): an admin's
+  // ordinary reads of members' referrals and cover are limited to their
+  // own, so counting them here showed zeros.
+  const [{ data: health, error: healthError }, { data: specialisms }] = await Promise.all([
+    supabase.rpc("admin_network_health"),
     supabase.from("lookup_values").select("id, value").eq("category", "treatment_specialism"),
   ]);
+  if (healthError || !health) {
+    console.error("network health", healthError);
+    return (
+      <div>
+        <h1>Network health</h1>
+        <div className="card">
+          <p>These figures couldn&apos;t be loaded just now, so none are shown rather than zeros. Please try again in a moment.</p>
+        </div>
+      </div>
+    );
+  }
+  const h = health as any;
+  const verifiedProfiles = (h.members || []).map((m: any) => ({ id: m.id, primary_state: m.state, qualification_level: m.qualification, referral_availability: m.referral, coverage_availability: m.coverage }));
+  const referralRequests = (h.referrals || []).map((r: any) => ({ id: r.id, created_at: r.created_at, specialism_lookup_id: r.specialism, status: r.status }));
+  const referralResponses = (h.referral_replies || []).map((r: any) => ({ referral_request_id: r.referral, created_at: r.created_at }));
+  const coverageCases = (h.cover_cases || []).map((c: any) => ({ id: c.id, created_at: c.created_at, specialism_lookup_ids: c.specialisms, status: c.status }));
+  const coverageRequests = (h.cover_requests || []).map((q: any) => ({ id: q.id, coverage_plan_case_id: q.case, sent_at: q.sent_at, responded_at: q.responded_at, status: q.status }));
+  const specialismTags = (h.specialism_tags || []).map((t: any) => ({ profile_id: t.profile, lookup_value_id: t.lookup }));
 
   const verified = verifiedProfiles || [];
   const specialismLabel = new Map((specialisms || []).map((s: any) => [s.id, s.value as string]));
@@ -153,8 +146,8 @@ export default async function NetworkHealthPage() {
     <div>
       <h1>Network health</h1>
       <p className="muted">
-        Liquidity, not vanity registrations (PsyA2 #102) - how many verified members are actually
-        available, how fast requests get answered, and where supply doesn&apos;t meet demand.
+        How many eligible members are actually available, how fast requests get answered, and where
+        supply doesn&apos;t meet demand. Real members only.
       </p>
 
       <div className="card">
@@ -162,7 +155,7 @@ export default async function NetworkHealthPage() {
         <div className="stat-grid">
           <div className="stat">
             <div className="value">{verified.length}</div>
-            <div className="label">Verified members</div>
+            <div className="label">Active verified members</div>
           </div>
           <div className="stat">
             <div className="value">{northeastCount}</div>
@@ -288,10 +281,9 @@ export default async function NetworkHealthPage() {
       <div className="card">
         <h2>Not yet tracked</h2>
         <p className="muted" style={{ fontSize: "0.85rem" }}>
-          Two #102 line items aren&apos;t shown above because there&apos;s nothing to compute them from yet,
-          rather than showing a made-up number: invite conversion (no cold-start invite tracking exists -
-          see the progress doc), and Northeast density as a trend over time (no historical snapshot
-          table - the counts above are current, not a growth curve).
+          Two measures aren&apos;t shown because there&apos;s nothing to compute them from yet, rather than
+          showing a made-up number: invite conversion, and Northeast density as a trend over time. The
+          counts above are current, not a growth curve.
         </p>
       </div>
     </div>

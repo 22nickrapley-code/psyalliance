@@ -174,10 +174,10 @@ export async function setResponseUseful(
   if (!/could not find the function|PGRST202/i.test(`${error.code} ${error.message}`)) {
     return { error: error.code === "P0001" ? error.message : "That didn't save. Please try again." };
   }
-  const { data: rows, error: updErr } = await supabase.from("consultation_responses").update({ marked_useful: useful }).eq("id", responseId).select("marked_useful");
+  const { data: rows, error: updErr } = await supabase.from("consultation_responses").update({ marked_useful: useful }).eq("id", responseId).select("id");
   if (updErr) return { error: updErr.message };
   if (!rows?.length) return { error: "That didn't save. Please try again." };
-  return { error: null, saved: rows[0].marked_useful as boolean };
+  return { error: null, saved: useful };
 }
 
 export async function resolveConsultation(

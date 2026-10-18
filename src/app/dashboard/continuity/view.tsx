@@ -77,8 +77,17 @@ export function ContinuityView({
               <div>
                 <div className="eyebrow">Your plan</div>
                 <h3>
-                  {progress.done === progress.steps ? "Complete. Print it, sign it and give your backup a copy." : `${progress.done} of ${progress.steps} parts done`}
+                  {progress.done < progress.steps
+                    ? `${progress.done} of ${progress.steps} essential parts done`
+                    : progress.optionalBlank > 0
+                      ? "Essentials done. Print it, sign it and give your backup a copy."
+                      : "Complete. Print it, sign it and give your backup a copy."}
                 </h3>
+                {progress.done === progress.steps && progress.optionalBlank > 0 && (
+                  <p className="small" style={{ margin: "4px 0 0" }}>
+                    {progress.optionalBlank} optional detail{progress.optionalBlank === 1 ? " is" : "s are"} still blank and will print as &ldquo;Not yet written&rdquo;. Add {progress.optionalBlank === 1 ? "it" : "them"} if {progress.optionalBlank === 1 ? "it applies" : "they apply"}.
+                  </p>
+                )}
               </div>
               <span className="continuity-pct">{progress.pct}%</span>
             </div>

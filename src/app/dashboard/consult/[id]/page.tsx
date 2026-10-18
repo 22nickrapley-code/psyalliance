@@ -30,10 +30,10 @@ export default async function ConsultDetailPage(props: { params: Promise<{ id: s
       </>
     );
   }
-  const [{ data: responses }, { data: recipients }] = await Promise.all([
+  const [{ data: responses }, { data: recipients }, usefulIds] = await Promise.all([
     supabase
       .from("consultation_responses")
-      .select("id, body, response_type, marked_useful, created_at, responder_profile_id, responder:responder_profile_id(full_name, credential_prefix, qualification_level, avatar_path)")
+      .select("id, body, response_type, created_at, responder_profile_id, responder:responder_profile_id(full_name, credential_prefix, qualification_level, avatar_path)")
       .eq("consultation_id", c.id)
       .order("created_at"),
     (async () => {
@@ -49,6 +49,15 @@ export default async function ConsultDetailPage(props: { params: Promise<{ id: s
       }
       if (!ids.length) return { data: [] as any[] };
       return supabase.from("profiles").select("full_name, credential_prefix, qualification_level").in("id", ids);
+    })(),
+    // Which replies the asker marked useful: private to the asker (R17-02).
+    (async () => {
+      if (c.author_profile_id !== myself) return new Set<number>();
+      const { data, error } = await supabase.rpc("consultation_useful_marks", { p_consultation: c.id });
+      if (!error) return new Set<number>(((data as any[]) || []).map((v: any) => Number(typeof v === "object" ? Object.values(v)[0] : v)));
+      // Before migration 0115 the asker could still read the column itself.
+      const { data: rows } = await supabase.from("consultation_responses").select("id, marked_useful").eq("consultation_id", c.id);
+      return new Set<number>(((rows as any[]) || []).filter((r) => r.marked_useful).map((r) => Number(r.id)));
     })(),
   ]);
   const urls = await resolveAvatarUrls(supabase, (responses || []).map((r: any) => r.responder?.avatar_path));
@@ -74,7 +83,7 @@ export default async function ConsultDetailPage(props: { params: Promise<{ id: s
           name: nameOf(r.responder),
           body: r.body,
           type: r.response_type,
-          useful: !!r.marked_useful,
+          useful: usefulIds.has(Number(r.id)),
           ownReply: r.responder_profile_id === myself,
           createdAt: r.created_at,
           avatarUrl: urls.get(r.responder?.avatar_path || "") || null,

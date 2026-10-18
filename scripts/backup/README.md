@@ -11,7 +11,11 @@ psyalliance-backups/
     files/documents/...
 ```
 
-- **Complete backups only:** a folder is a complete backup only if it has `db/manifest.txt`. That file is written last, after the files have been compared byte for byte with Storage and checked against the database's list of files.
+- **Complete backups only:** a folder is a complete backup only if it has `db/manifest.txt`.
+  - A rerun on the same day deletes that file before doing anything else.
+  - It is uploaded on its own, last, after the files have been compared byte for byte with Storage, every file record in the dump has been found in the copy, and the uploaded dump has been compared with the original.
+  - A run that stops partway therefore leaves a folder without it.
+- **Timing:** the dump and the file copy are taken a minute or two apart, not at one instant. The check above means no file record is restored without its file. A file uploaded in between is copied without a record and does no harm.
 - **Retention:** the last 12 weeks are kept. Older folders are removed only after a new backup has succeeded.
 - **Failures:** a failed run leaves older backups untouched, and GitHub emails whoever last changed the workflow.
 - **Manual run:** Actions > Weekly backup > Run workflow.
@@ -66,3 +70,12 @@ Rehearsed on 17 Oct 2026 against the staging copy, with Storage's S3 endpoint an
 - Two runs on the same day gave one folder.
 - Only dated folders past 12 weeks were removed.
 - Files deleted from Storage were restored from the backup byte for byte, with their records.
+
+The hardened script was rehearsed again on 18 Oct 2026, the same way:
+
+- A full run wrote the manifest last, with every file record matched to its file.
+- A same-day rerun that failed partway left the folder without a manifest, so it can't pass for a good backup.
+- A file deleted from Storage was removed from that day's copy on the next run.
+- A file record that vanished during the run was handled by taking the data again once; the run then passed.
+- A file record whose file never existed failed the run, and no manifest was written.
+- Only dated folders past 12 weeks were pruned; other folders were left alone.

@@ -34,22 +34,26 @@ export default async function HomePage(props: { searchParams: Promise<{ reconfir
   } = await supabase.auth.getUser();
   const myself = user!.id;
 
-  const { data: profile } = await supabase.rpc("my_profile").maybeSingle<any>();
-  if (!profile) redirect("/dashboard/profile");
-  // Admin-only logins have no practice: their home is the admin overview.
-  if (profile.account_kind === "operator") redirect("/dashboard/admin");
-  const [{ data: status }, { count: licenceCount }] = await Promise.all([
-    supabase.rpc("my_network_status").maybeSingle<any>(),
-    supabase.from("licenses").select("id", { count: "exact", head: true }).eq("profile_id", myself),
-  ]);
-
-  const myAvatar = (await resolveAvatarUrls(supabase, [profile.avatar_path])).get(profile.avatar_path || "") || null;
   const monthAgo = new Date(Date.now() - 30 * 86_400_000).toISOString();
   const weekAgo = new Date(Date.now() - 7 * 86_400_000).toISOString();
   const today = new Date().toISOString().slice(0, 10);
   const in90 = new Date(Date.now() + 90 * 86_400_000).toISOString().slice(0, 10);
 
+  // Everything Home reads is asked for at once (PERF-01): these answers
+  // don't depend on each other, so they cost one round trip to the
+  // database instead of one each. A few are only needed for some members
+  // (my_access, the continuity-plan check); they're read-only and cheap, so
+  // they're asked for regardless rather than waited for afterwards.
   const [
+    { data: profile },
+    { data: status },
+    { count: licenceCount },
+    { data: dutyRows },
+    { data: invs },
+    { data: accessRaw },
+    { count: pa03Copies },
+    { data: plan },
+    [ledger, inviteInfo],
     options,
     { data: coverToMe },
     { data: myPlans },
@@ -64,6 +68,17 @@ export default async function HomePage(props: { searchParams: Promise<{ reconfir
     { data: conversationRows },
     { data: resourceRows },
   ] = await Promise.all([
+    supabase.rpc("my_profile").maybeSingle<any>(),
+    supabase.rpc("my_network_status").maybeSingle<any>(),
+    supabase.from("licenses").select("id", { count: "exact", head: true }).eq("profile_id", myself),
+    supabase.rpc("my_continuity_duties"),
+    IS_DEMO_SITE ? Promise.resolve({ data: null }) : supabase.rpc("my_invitations"),
+    IS_DEMO_SITE ? Promise.resolve({ data: null }) : supabase.rpc("my_access"),
+    // A continuity plan counts once it's started, or once they've saved a
+    // working copy of the Professional Will template to write it on paper.
+    supabase.from("documents").select("id", { count: "exact", head: true }).eq("profile_id", myself).eq("owner_scope", "personal").or("sources.like.Working copy of PA-03%,sources.like.Working copy of the Professional Will%,sources.like.Your copy of the Professional Will%"),
+    supabase.from("continuity_plans").select("updated_at").eq("profile_id", myself).maybeSingle(),
+    Promise.all([loadLedger(supabase, myself), loadInvite(supabase)]),
     loadNeedOptions(supabase),
     supabase
       .from("coverage_requests")
@@ -103,6 +118,9 @@ export default async function HomePage(props: { searchParams: Promise<{ reconfir
       .eq("profile_id", myself),
     supabase.from("documents").select("id, title, library_code, review_status").eq("owner_scope", "world").in("review_status", ["published", "provisional"]),
   ]);
+  if (!profile) redirect("/dashboard/profile");
+  // Admin-only logins have no practice: their home is the admin overview.
+  if (profile.account_kind === "operator") redirect("/dashboard/admin");
 
   const focusName = (ids: number[] | null) =>
     (ids || []).map((id) => options.focus.find((f) => f.id === Number(id))?.value).filter(Boolean).join(" + ") || "A referral";
@@ -203,7 +221,6 @@ export default async function HomePage(props: { searchParams: Promise<{ reconfir
   }
   const unread = (conversationRows || []).filter((r: any) => r.conversation && new Date(r.conversation.last_message_at) > new Date(r.last_read_at)).length;
   // Colleagues who named you as their continuity backup.
-  const { data: dutyRows } = await supabase.rpc("my_continuity_duties");
   const askedDuties = ((dutyRows as any[]) || []).filter((d) => d.status === "invited");
   if (askedDuties.length > 0) {
     const who = askedDuties.map((d) => clinicianName(d.owner_name, d.qualification_level, d.credential_prefix));
@@ -243,7 +260,6 @@ export default async function HomePage(props: { searchParams: Promise<{ reconfir
   }
   // Colleagues whose invitation this member accepted, waiting to connect.
   if (!IS_DEMO_SITE) {
-    const { data: invs } = await supabase.rpc("my_invitations");
     const waitingFor = (((invs as any)?.waiting as any[]) || []).map((w) => clinicianName(w.name, w.qualification_level, w.credential_prefix));
     if (waitingFor.length) {
       const line = `You'll be ${waitingFor.length === 1 ? `${waitingFor[0]}'s` : `${waitingFor.length} colleagues'`} trusted colleague as soon as you're verified.`;
@@ -280,7 +296,9 @@ export default async function HomePage(props: { searchParams: Promise<{ reconfir
         .select("id, full_name, credential_prefix, qualification_level, avatar_path, referral_availability, coverage_availability, availability_confirmed_at, availability_paused_until")
         .in("id", trustedIds.slice(0, 60))
     : { data: [] as any[] };
-  const circleUrls = await resolveAvatarUrls(supabase, (circlePeople || []).map((p: any) => p.avatar_path));
+  // Your own photo and the circle's in one request.
+  const circleUrls = await resolveAvatarUrls(supabase, [profile.avatar_path, ...(circlePeople || []).map((p: any) => p.avatar_path)]);
+  const myAvatar = circleUrls.get(profile.avatar_path || "") || null;
   const circleRows = (circlePeople || []).map((p: any) => ({
     id: p.id as string,
     name: clinicianName(p.full_name, p.qualification_level, p.credential_prefix),
@@ -301,8 +319,7 @@ export default async function HomePage(props: { searchParams: Promise<{ reconfir
   const awaitingVerification = !status?.is_member && !IS_DEMO_SITE;
   // Not in the network yet: still being verified, or verified in a state
   // that hasn't opened (my_access, 0102).
-  const { data: accessRaw } = awaitingVerification ? await supabase.rpc("my_access") : { data: null };
-  const access = (accessRaw as any) || null;
+  const access = awaitingVerification ? (accessRaw as any) || null : null;
   const verifiedWaiting = awaitingVerification && profile.verification_status === "verified" && !!status?.has_reviewed_licence;
   let gettingStarted: { label: string; done: boolean; href: string; waiting?: boolean }[] | null = null;
   // Each set-up task returns here when it's saved, so the list carries on.
@@ -328,12 +345,6 @@ export default async function HomePage(props: { searchParams: Promise<{ reconfir
       ];
     }
   } else if (trustedIds.length === 0 && age === null) {
-    // A continuity plan counts once it's started, or once they've saved a
-    // working copy of the Professional Will template to write it on paper.
-    const [{ count: pa03Copies }, { data: plan }] = await Promise.all([
-      supabase.from("documents").select("id", { count: "exact", head: true }).eq("profile_id", myself).eq("owner_scope", "personal").or("sources.like.Working copy of PA-03%,sources.like.Working copy of the Professional Will%,sources.like.Your copy of the Professional Will%"),
-      supabase.from("continuity_plans").select("updated_at").eq("profile_id", myself).maybeSingle(),
-    ]);
     gettingStarted = [
       { label: "Complete your profile", done: myFocus.size > 0 && !!profile.primary_state, href: `/dashboard/profile?edit=1&back=${HOME}` },
       { label: "Confirm your availability", done: age !== null, href: `/dashboard/availability?back=${HOME}` },
@@ -345,7 +356,6 @@ export default async function HomePage(props: { searchParams: Promise<{ reconfir
   const verifiedAt = profile.verified_at as string | null;
   const justVerified = !awaitingVerification && !IS_DEMO_SITE && profile.verification_status === "verified" && !!verifiedAt && Date.now() - new Date(verifiedAt).getTime() < 14 * 86_400_000;
 
-  const [ledger, inviteInfo] = await Promise.all([loadLedger(supabase, myself), loadInvite(supabase)]);
 
   const d: HomeData = {
     firstName: String(profile.full_name || "there").replace(/^(dr\.?)\s+/i, "").split(/[\s,]+/)[0],

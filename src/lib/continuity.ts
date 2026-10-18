@@ -44,7 +44,7 @@ export const CONTINUITY_SECTIONS: Section[] = [
     key: "records",
     title: "Records and access",
     why: "Your backup needs to reach your schedule and client list to contact people, and your records to keep them safe. Write where things are, not the passwords.",
-    required: ["records_system", "access_kept_with"],
+    required: ["records_system", "access_kept_with", "custodian"],
     fields: [
       { key: "records_system", label: "Where client records are kept", placeholder: "e.g. SimplePractice; paper files in the locked cabinet at the office" },
       { key: "schedule_location", label: "Where your schedule and client contact list are", placeholder: "e.g. SimplePractice calendar; contact list exported monthly to ..." },
@@ -84,7 +84,7 @@ export const CONTINUITY_SECTIONS: Section[] = [
     key: "terms",
     title: "Your backup's authority",
     why: "Spell out what your backup may do and how their time is paid, so nobody has to ask in a crisis.",
-    required: ["authority"],
+    required: ["authority", "compensation"],
     fields: [
       { key: "authority", label: "What your backup may do", kind: "long", preset: "Access my schedule, client contact information and records to notify clients, arrange continuity of care, respond to records requests and arrange secure storage or transfer of records, consistent with applicable law." },
       { key: "compensation", label: "How their time is paid", placeholder: "e.g. Their usual hourly rate, paid from the practice account by ..." },
@@ -99,10 +99,14 @@ export function sectionDone(section: Section, a: ContinuityAnswers) {
   return section.required.every((k) => (a[k] || "").trim().length > 0);
 }
 
+// Progress counts the essentials (each part's required answers and a
+// named backup). The other answers are optional, and the summary says how
+// many are still blank rather than calling the plan finished (R17-07).
 export function planProgress(a: ContinuityAnswers, hasBackup: boolean) {
   const steps = CONTINUITY_SECTIONS.length + 1;
   const done = CONTINUITY_SECTIONS.filter((s) => sectionDone(s, a)).length + (hasBackup ? 1 : 0);
-  return { done, steps, pct: Math.round((done / steps) * 100) };
+  const optionalBlank = CONTINUITY_SECTIONS.flatMap((s) => s.fields.filter((f) => !s.required.includes(f.key) && !(a[f.key] || "").trim())).length;
+  return { done, steps, pct: Math.round((done / steps) * 100), optionalBlank };
 }
 
 export const BACKUP_STATUS: Record<string, { label: string; tone: "" | "warn" | "danger" | "neutral" }> = {

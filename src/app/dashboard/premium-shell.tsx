@@ -3,7 +3,7 @@ import { REAL_SITE_URL } from "@/lib/env";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { NavGroup, NavItem } from "./nav-groups";
 import { MOBILE_PRIMARY } from "./nav-groups";
 import { NavIcon } from "./icons";
@@ -54,6 +54,18 @@ export default function PremiumShell({
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   useEffect(() => setDrawerOpen(false), [pathname]);
+  // Escape closes the phone menu and puts focus back on its button (R17-08).
+  const opener = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (!drawerOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      setDrawerOpen(false);
+      opener.current?.focus();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [drawerOpen]);
 
   const allItems = groups.flatMap((g) => g.items);
   // The most specific match names the page: /dashboard/admin/library is
@@ -154,8 +166,10 @@ export default function PremiumShell({
             <button
               type="button"
               className="icon-button mobile-menu"
-              onClick={() => setDrawerOpen(true)}
-              aria-label="Open menu"
+              ref={opener}
+              onClick={() => setDrawerOpen((open) => !open)}
+              aria-label={drawerOpen ? "Close menu" : "Open menu"}
+              aria-expanded={drawerOpen}
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
                 <path d="M4 7h16M4 12h16M4 17h16" />

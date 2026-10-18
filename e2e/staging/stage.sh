@@ -125,6 +125,12 @@ IMAGE_TRANSFORMATION_ENABLED=false
 STORAGE_PUBLIC_URL=http://127.0.0.1:54321/storage/v1
 LOG_LEVEL=info
 EOF
+  # Storage's S3 endpoint (for rehearsing the weekly backup), when this
+  # machine has keys for it: S3_PROTOCOL_ACCESS_KEY_ID/SECRET in
+  # $STAGE/secrets/s3.env. Reached through the gateway, region "stub".
+  if [ -f "$STAGE/secrets/s3.env" ]; then
+    { cat "$STAGE/secrets/s3.env"; echo "S3_PROTOCOL_PREFIX=/storage/v1"; } >> "$STAGE/run/storage.env"
+  fi
   chmod 600 "$STAGE"/run/*.env
 }
 

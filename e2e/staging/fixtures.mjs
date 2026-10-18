@@ -32,6 +32,8 @@ export const PEOPLE = [
   { key: "bram", name: "Bram Tellinghast", prefix: "Dr", q: "PhD", state: "NY", city: "Manhattan", verified: true, focus: [7, 41], insurance: [103, 109] },
   { key: "cass", name: "Cass Morrowgate", prefix: "Dr", q: "PsyD", state: "NY", city: "Queens", verified: true, focus: [7, 61], insurance: [103] },
   { key: "fenn", name: "Fenn Oakhollow", prefix: "Dr", q: "PhD", state: "NY", city: "Rochester", verified: true, focus: [7, 16], insurance: [103] },
+  // Gale is suspended and restored by the eligibility tests (R17-01) only.
+  { key: "gale", name: "Gale Thistlewood", prefix: "Dr", q: "PhD", state: "NY", city: "Ithaca", verified: true, focus: [7, 16], insurance: [103] },
   { key: "dara", name: "Dara Vennholt", prefix: "Dr", q: "PhD", state: "MA", city: "Boston", verified: true, focus: [16, 61], insurance: [109] },
   { key: "pell", name: "Pell Ardenwick", prefix: "Dr", q: "PsyD", state: "NY", city: "Albany", verified: false, licenceReviewed: false, focus: [7] },
   { key: "esme", name: "Esme Lapsworth", prefix: "Dr", q: "PhD", state: "NY", city: "Buffalo", verified: true, licenceExpiry: -1, focus: [7, 16] },

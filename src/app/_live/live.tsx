@@ -71,6 +71,8 @@ function findAnchor(anchor: string): Element | null {
 // is nearly always, this does nothing.
 const NAV_GRACE_MS = 2500;
 let navSeq = 0;
+// Set just before reloading a tab whose version was replaced (R17-05).
+const UPDATED_KEY = "pa-version-updated";
 // True when the screen is waiting on an update that will never arrive:
 // React has work it put aside to wait for data, and nothing is left to
 // wake it. Read defensively; null when it can't tell.
@@ -109,6 +111,39 @@ function installNavigationWatchdog() {
       const isAction = headers.has("next-action");
       const isNav = !isAction && method === "GET" && headers.get("rsc") === "1" && !headers.has("next-router-prefetch") && !headers.has("next-router-segment-prefetch");
       if (!isAction && !isNav) return res;
+      if (isAction) {
+        // R17-05: a tab opened before a new version went live asks for a save
+        // the server no longer has. Nothing was saved, so load the current
+        // version and say so (form drafts are kept, step 0d).
+        if (res.headers.get("x-nextjs-action-not-found") === "1") {
+          try {
+            window.sessionStorage.setItem(UPDATED_KEY, "1");
+          } catch {
+            /* the note is a courtesy */
+          }
+          window.setTimeout(() => window.location.reload(), 0);
+          return res;
+        }
+        // R17-03, R17-08: on Cloudflare a save that moves on arrives without
+        // the next page, and the framework then loads that page in full. When
+        // the next page is this one at a #section, the browser only scrolls
+        // to the section: nothing reloads, and the save looks stuck (an
+        // inline reply "sending" for minutes, a menu change not showing).
+        // Load the page at that section instead.
+        const redirect = res.headers.get("x-action-redirect");
+        const pageData = (res.headers.get("content-type") || "").startsWith("text/x-component");
+        if (redirect && !pageData) {
+          const t = new URL(redirect.split(";")[0], window.location.href);
+          const at = window.location;
+          if (t.origin === at.origin && t.pathname === at.pathname && t.search === at.search && t.hash) {
+            window.setTimeout(() => {
+              window.history.replaceState(window.history.state, "", t.toString());
+              window.location.reload();
+            }, 0);
+            return res;
+          }
+        }
+      }
       let target: URL | null = null;
       if (isAction) {
         // A save that moves on names its next page; one that stays here
@@ -312,6 +347,14 @@ export function Live() {
   // 0c2. Page changes that arrive but never show are completed (NAV-01).
   useEffect(() => {
     installNavigationWatchdog();
+    try {
+      if (window.sessionStorage.getItem(UPDATED_KEY)) {
+        window.sessionStorage.removeItem(UPDATED_KEY);
+        setNote({ text: "PsyAlliance was just updated, so that last step didn't go through. Please do it again.", tone: "error", id: Date.now() });
+      }
+    } catch {
+      /* storage unavailable */
+    }
   }, []);
 
   // 0d. Drafts: a form marked data-draft keeps what was typed and chosen if
@@ -512,6 +555,9 @@ export function Live() {
   useEffect(() => {
     const k = search?.get("saved");
     if (k && SAVED_TEXT[k] && !document.querySelector(".banner.ok")) setNote({ text: SAVED_TEXT[k], tone: "ok", id: Date.now() });
+    // A filed report says so wherever it was filed from (R17-08).
+    if (search?.get("reported") && !document.querySelector(".banner.ok"))
+      setNote({ text: "Thank you. Your report went to the PsyAlliance team, who will review it.", tone: "ok", id: Date.now() });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchStr]);
   useEffect(() => {

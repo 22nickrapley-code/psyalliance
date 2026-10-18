@@ -588,12 +588,16 @@ export function CoverCandidatesView({
   avatarUrls,
   preselected,
   preferred,
+  carry,
 }: {
   plan: PlanSummary;
   cases: CaseItem[];
   suggestions: Record<number, Match[]>;
   avatarUrls: Record<string, string | null>;
   preselected?: Record<number, string[]>;
+  // Coming back from the review step (R17-04): how to ask and the message
+  // travel with the picks, so nothing chosen there is lost.
+  carry?: { mode?: string; message?: string };
   // The colleague chosen from their profile: first for every client, with
   // anything that stops them fitting a client said plainly.
   preferred?: { id: string; perCase: Record<number, { canAsk: boolean; gaps: string[] }> } | null;
@@ -605,6 +609,8 @@ export function CoverCandidatesView({
       <form method="get" action={`/dashboard/cover/${plan.id}`} className="split">
         <input type="hidden" name="step" value="invite" />
         <input type="hidden" name="plan_id" value={plan.id} />
+        {carry?.mode && <input type="hidden" name="mode" value={carry.mode} />}
+        {carry?.message && <input type="hidden" name="message" value={carry.message} />}
         <div className="stack">
           {openCases.length === 0 && (
             <Empty title="Every client already has someone asked or confirmed." body="Track replies on the Track step." action={<a className="btn secondary small-btn" href={`/dashboard/cover/${plan.id}?step=track`}>Track replies</a>} />
@@ -685,8 +691,10 @@ export function CoverInviteView({
   reviewed,
   fix,
   canSend = true,
+  message,
 }: {
   canSend?: boolean;
+  message?: string;
   plan: PlanSummary;
   rows: { caseId: number; reference: string; focus: string; picks: { id: string; name: string; why?: string[] }[] }[];
   error?: string;
@@ -757,6 +765,7 @@ export function CoverInviteView({
               <textarea
                 name="message"
                 maxLength={400}
+                defaultValue={message}
                 placeholder="e.g. Weekly sessions, mostly Tuesday evenings. Happy to talk it through."
                 autoFocus={fix === "message"}
                 aria-invalid={fix === "message" || undefined}
@@ -773,7 +782,10 @@ export function CoverInviteView({
               <input type="checkbox" name="reviewed" required defaultChecked={reviewed} autoFocus={fix === "reviewed"} /> I&rsquo;ve reviewed who receives each request.
             </label>
             <div className="step-actions">
-              <a className="btn ghost" href={`/dashboard/cover/${plan.id}?step=candidates`}>&larr; Candidates</a>
+              {/* Back keeps who was picked, the order, how to ask and the message (R17-04). */}
+              <button type="submit" className="btn ghost" formAction={`/dashboard/cover/${plan.id}`} formMethod="get" formNoValidate name="step" value="candidates">
+                &larr; Candidates
+              </button>
               <button type="submit" className="btn" disabled={total === 0 || !canSend}>Send cover requests</button>
             </div>
           </section>

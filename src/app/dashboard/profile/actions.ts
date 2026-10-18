@@ -470,8 +470,16 @@ export async function parseProfileBio(bioText: string): Promise<{
       rankedSpecialtyIds,
     };
   } catch (err) {
-    if (err instanceof AiNotConfiguredError) return { error: err.message };
-    return { error: err instanceof Error ? err.message : "Something went wrong parsing that text." };
+    if (err instanceof AiNotConfiguredError) {
+      console.error("profile import: no AI key configured on this site");
+      return {
+        error: IS_DEMO_SITE
+          ? "Importing a bio is switched off in the sandbox. On PsyAlliance it reads your bio or website and fills in these fields for you to check. Here, please type them in."
+          : err.message,
+      };
+    }
+    console.error("profile import", err);
+    return { error: "We couldn't read that just now. Please try again, or fill in the form below." };
   }
 }
 
