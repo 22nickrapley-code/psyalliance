@@ -1,0 +1,13 @@
+discovery_category,actual_entry_id,actual_url_or_route,source_or_config_path,persona_or_role,scenario_ids,shared_component_path,fixture_and_isolation,updated_destination,desktop_and_mobile_evidence,status
+Public marketing demo CTA and destination,,,,,,,,,,To discover
+Cover/Referral/Consult feature tours,,,,,,,,,,To discover
+Existing sandbox create/resume/reset/expired routes,,,,,,,,,,To discover
+Role/account-specific examples,,,,,,,,,,To discover
+In-product demo/help links,,,,,,,,,,To discover
+Embedded iframe previews,,,,,,,,,,To discover
+Onboarding walkthroughs and tour anchors,,,,,,,,,,To discover
+Seed scripts and sample-data factories,,,,,,,,,,To discover
+Static screenshots/recordings/promotional UI,,,,,,,,,,To discover
+Legacy URLs and redirects,,,,,,,,,,To discover
+Admin-managed demo configuration,,,,,,,,,,To discover
+Existing demo end-to-end tests,,,,,,,,,,To discover

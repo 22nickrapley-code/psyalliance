@@ -1,0 +1,27 @@
+capture_id,screen_family,required_states,viewports,matching_fixture_or_clock,reference_capture,target_capture,diff_review,exception_id,status
+VIS-01,Hub,"Initial, expanded action list, zero actions and resolved count",1365x900; 1440x1000; 900x760; 390x844; 320x700; 390x390 where keyboard-sensitive,,,,,,Pending
+VIS-02,Hub Consult,"All/Following/empty, next question, latest/new reply",1365x900; 1440x1000; 900x760; 390x844; 320x700; 390x390 where keyboard-sensitive,,,,,,Pending
+VIS-03,Hub colleagues,"Trusted/suggested, first/final windows, stale/full profile, responsive resize",1365x900; 1440x1000; 900x760; 390x844; 320x700; 390x390 where keyboard-sensitive,,,,,,Pending
+VIS-04,Cover overview,Own/incoming active/past plus saved/deleted draft,1365x900; 1440x1000; 900x760; 390x844; 320x700; 390x390 where keyboard-sensitive,,,,,,Pending
+VIS-05,Cover calendar,Month/scope/date/overlap views,1365x900; 1440x1000; 900x760; 390x844; 320x700; 390x390 where keyboard-sensitive,,,,,,Pending
+VIS-06,Cover opening,"All reason choices, states, dates and validation",1365x900; 1440x1000; 900x760; 390x844; 320x700; 390x390 where keyboard-sensitive,,,,,,Pending
+VIS-07,Cover needs,"One/twenty clients, edit/duplicate/remove and long options",1365x900; 1440x1000; 900x760; 390x844; 320x700; 390x390 where keyboard-sensitive,,,,,,Pending
+VIS-08,Cover matching,"By client/by colleague, mixed bulk exclusions and selected counts",1365x900; 1440x1000; 900x760; 390x844; 320x700; 390x390 where keyboard-sensitive,,,,,,Pending
+VIS-09,Cover review,"Recipient order, sequential/parallel, deadline and message/privacy",1365x900; 1440x1000; 900x760; 390x844; 320x700; 390x390 where keyboard-sensitive,,,,,,Pending
+VIS-10,Cover tracking,"Clients/Colleagues/History, unfinished/completed/cancelled",1365x900; 1440x1000; 900x760; 390x844; 320x700; 390x390 where keyboard-sensitive,,,,,,Pending
+VIS-11,Handover,Unchecked/checked checklist and incomplete completion,1365x900; 1440x1000; 900x760; 390x844; 320x700; 390x390 where keyboard-sensitive,,,,,,Pending
+VIS-12,Referral need,"General/targeted, Main/Also menus and detailed criteria",1365x900; 1440x1000; 900x760; 390x844; 320x700; 390x390 where keyboard-sensitive,,,,,,Pending
+VIS-13,Referral matching,"Eligible/ineligible pin, no substitute, audience review",1365x900; 1440x1000; 900x760; 390x844; 320x700; 390x390 where keyboard-sensitive,,,,,,Pending
+VIS-14,Referral tracking,"Outgoing/incoming, waiting/interest/no-offers/placed/withdrawn",1365x900; 1440x1000; 900x760; 390x844; 320x700; 390x390 where keyboard-sensitive,,,,,,Pending
+VIS-15,Consult creation,"All audience choices, recipient review and validation",1365x900; 1440x1000; 900x760; 390x844; 320x700; 390x390 where keyboard-sensitive,,,,,,Pending
+VIS-16,Consult overview/discussion,"Search/Following/empty/pagination, full newest-first replies and Useful",1365x900; 1440x1000; 900x760; 390x844; 320x700; 390x390 where keyboard-sensitive,,,,,,Pending
+VIS-17,Network/profile,"Circle/directory/all filters/no result, person-specific reasons, all profile views/actions",1365x900; 1440x1000; 900x760; 390x844; 320x700; 390x390 where keyboard-sensitive,,,,,,Pending
+VIS-18,Inbox,"Latest own/incoming/media/failed preview, expanded exact contexts, search/unread",1365x900; 1440x1000; 900x760; 390x844; 320x700; 390x390 where keyboard-sensitive,,,,,,Pending
+VIS-19,Conversation,"Long history, separate drafts, Sending/Sent/Failed/retry, options/edit",1365x900; 1440x1000; 900x760; 390x844; 320x700; 390x390 where keyboard-sensitive,,,,,,Pending
+VIS-20,Media composer,"Attachment/audio preview/remove, recording/permission/error and keyboard",1365x900; 1440x1000; 900x760; 390x844; 320x700; 390x390 where keyboard-sensitive,,,,,,Pending
+VIS-21,Library,All/Saved/collection/search/page/no result/resource/PDF,1365x900; 1440x1000; 900x760; 390x844; 320x700; 390x390 where keyboard-sensitive,,,,,,Pending
+VIS-22,Availability,"Fresh/stale/closed, state settings, unsaved edit and reconfirmation",1365x900; 1440x1000; 900x760; 390x844; 320x700; 390x390 where keyboard-sensitive,,,,,,Pending
+VIS-23,Invitation,"Purpose/note form, review/edit/copy and return to workflow",1365x900; 1440x1000; 900x760; 390x844; 320x700; 390x390 where keyboard-sensitive,,,,,,Pending
+VIS-24,Supporting dialogs,"Global search, notifications, group, preferences/settings and draft deletion",1365x900; 1440x1000; 900x760; 390x844; 320x700; 390x390 where keyboard-sensitive,,,,,,Pending
+VIS-25,Closure/recovery dialogs,"Placement, withdrawal, plan cancellation, ask first, additional/replacement colleague",1365x900; 1440x1000; 900x760; 390x844; 320x700; 390x390 where keyboard-sensitive,,,,,,Pending
+VIS-26,Demo controls,"Synthetic responses, 20 clients, busy contexts, failed send, 90/91 days and isolated reset",1365x900; 1440x1000; 900x760; 390x844; 320x700; 390x390 where keyboard-sensitive,,,,,,Pending

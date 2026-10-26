@@ -1,0 +1,258 @@
+{
+  "version_number": 13,
+  "commit_sha": "ceafc8d43f573da9108212d6ee30ea5be26fd99e",
+  "files": [
+    {
+      "original_path": ".openai/hosting.json",
+      "package_path": "provenance/hosting.original-site.json",
+      "size_bytes": 100,
+      "sha256": "a94772504f6aba5a0f693aecdbbce6ec26d317ea0b038c620247843fdd2fbdb1"
+    },
+    {
+      "original_path": "IMPLEMENTATION_HANDOFF.md",
+      "package_path": "reference/archived-notes/IMPLEMENTATION_HANDOFF.md",
+      "size_bytes": 7380,
+      "sha256": "ad309589d6950bbd6aabdbc557de186c5c9809471e2dd0d36e3534dd9e19c6a0"
+    },
+    {
+      "original_path": "QA_REVIEW.md",
+      "package_path": "reference/archived-notes/QA_REVIEW.md",
+      "size_bytes": 14343,
+      "sha256": "7014bb391c8a3986e7019e413c505ab5f7f594b4c3489adcd02f9a99bd6c298c"
+    },
+    {
+      "original_path": "README.md",
+      "package_path": "reference/archived-notes/README.md",
+      "size_bytes": 18702,
+      "sha256": "44d868e0f8ad9a8ef27d9a5c4462e4a59776c6e7bbad7e4c5b14d1ff73c4d387"
+    },
+    {
+      "original_path": "dist/app.js",
+      "package_path": "reference/dist/app.js",
+      "size_bytes": 198256,
+      "sha256": "1c6d82c6f4ed2457cdc6122d8b0f5b9d7eb00e9962a4f09a44f6afc6619f9053"
+    },
+    {
+      "original_path": "dist/assets/favicon.png",
+      "package_path": "reference/dist/assets/favicon.png",
+      "size_bytes": 2887,
+      "sha256": "649e5ab086cb2a046ec7340521250d3a5f7cf04f5ac8f5d903862b602db24a5c"
+    },
+    {
+      "original_path": "dist/assets/library/PA-01_Reciprocal-Coverage-Agreement.pdf",
+      "package_path": "reference/dist/assets/library/PA-01_Reciprocal-Coverage-Agreement.pdf",
+      "size_bytes": 71949,
+      "sha256": "d3e32ef9d7a8ed135e89d6ac687f10b54bd1843252c4a62027c6155a7dab979c"
+    },
+    {
+      "original_path": "dist/assets/library/PA-02_Extended-Leave-Coverage-and-Handoff-Pack.pdf",
+      "package_path": "reference/dist/assets/library/PA-02_Extended-Leave-Coverage-and-Handoff-Pack.pdf",
+      "size_bytes": 69507,
+      "sha256": "9c51f2702fa9be6fbb494e74ee8ed24b19128b35c14588fba49fb58a7b7d7295"
+    },
+    {
+      "original_path": "dist/assets/library/PA-03_Professional-Will-and-Succession-Plan.pdf",
+      "package_path": "reference/dist/assets/library/PA-03_Professional-Will-and-Succession-Plan.pdf",
+      "size_bytes": 73067,
+      "sha256": "c5f2b9ebfbeb65214704017b9c147fef0afa314936f473081cf577858db62694"
+    },
+    {
+      "original_path": "dist/assets/library/PA-04_Peer-Consultation-Group-Charter.pdf",
+      "package_path": "reference/dist/assets/library/PA-04_Peer-Consultation-Group-Charter.pdf",
+      "size_bytes": 69613,
+      "sha256": "75579cd57f48c8da82fd285a429fcc54790efdf4be5934666cd5466b194d65dd"
+    },
+    {
+      "original_path": "dist/assets/library/PA-05_Case-Consultation-Presentation-Template.pdf",
+      "package_path": "reference/dist/assets/library/PA-05_Case-Consultation-Presentation-Template.pdf",
+      "size_bytes": 67613,
+      "sha256": "545059f5d90031fa131c59dc76448006a9c171e6e69bd292c55247341bf79ce5"
+    },
+    {
+      "original_path": "dist/assets/library/PA-06_Clinical-Supervision-Agreement-and-Log.pdf",
+      "package_path": "reference/dist/assets/library/PA-06_Clinical-Supervision-Agreement-and-Log.pdf",
+      "size_bytes": 69833,
+      "sha256": "d4b1c0d5a5a56362ff171c181cda4a4caf6df4a58cc564bfb5f12912737cf149"
+    },
+    {
+      "original_path": "dist/assets/library/PA-07_Referral-Termination-and-Transfer-of-Care-Toolkit.pdf",
+      "package_path": "reference/dist/assets/library/PA-07_Referral-Termination-and-Transfer-of-Care-Toolkit.pdf",
+      "size_bytes": 72288,
+      "sha256": "5fa498bb296dfd00f80231b96c110cfb34e577699b8b99a88bbd7e22aa985e5e"
+    },
+    {
+      "original_path": "dist/assets/library/PA-08_Split-Treatment-Collaboration-Agreement.pdf",
+      "package_path": "reference/dist/assets/library/PA-08_Split-Treatment-Collaboration-Agreement.pdf",
+      "size_bytes": 69648,
+      "sha256": "8a46c24abc1b424dd3facf1d790f80ecdd3d19010468422c5bcfcb3783e63a89"
+    },
+    {
+      "original_path": "dist/assets/library/PA-09_Informed-Consent-for-Psychotherapy.pdf",
+      "package_path": "reference/dist/assets/library/PA-09_Informed-Consent-for-Psychotherapy.pdf",
+      "size_bytes": 71722,
+      "sha256": "25646a9f176c1de60ba2ff40141c7355a2f5abf542e4fd044087f405da56820e"
+    },
+    {
+      "original_path": "dist/assets/library/PA-10_Telepsychology-Consent-and-Multi-State-Checklist.pdf",
+      "package_path": "reference/dist/assets/library/PA-10_Telepsychology-Consent-and-Multi-State-Checklist.pdf",
+      "size_bytes": 67592,
+      "sha256": "d7612cafe95111acee989a61baeeecdf36182c14f8afe47e15f1c1cd25f1df22"
+    },
+    {
+      "original_path": "dist/assets/library/PA-11_AI-Scribe-and-AI-Tools-Consent-Vetting-and-Policy.pdf",
+      "package_path": "reference/dist/assets/library/PA-11_AI-Scribe-and-AI-Tools-Consent-Vetting-and-Policy.pdf",
+      "size_bytes": 68958,
+      "sha256": "0bbfd5be26c8260e8b3b13a7b7f5bce6671e6de0c92bcd0f6fec8f1be5cabd9b"
+    },
+    {
+      "original_path": "dist/assets/library/PA-12_Clinical-Documentation-Pack.pdf",
+      "package_path": "reference/dist/assets/library/PA-12_Clinical-Documentation-Pack.pdf",
+      "size_bytes": 84284,
+      "sha256": "98cb8a9ff3a3d59f5927151d783024e7d8ee5291760b62f581cab2636a755cd7"
+    },
+    {
+      "original_path": "dist/assets/library/PA-13_Suicide-Risk-Safety-Planning-and-Follow-Up-Pack.pdf",
+      "package_path": "reference/dist/assets/library/PA-13_Suicide-Risk-Safety-Planning-and-Follow-Up-Pack.pdf",
+      "size_bytes": 90161,
+      "sha256": "6c893e1d7fef406b3e909dde5d9e5a8a77d2b580f8a8cbf87acc8a24022ee1f7"
+    },
+    {
+      "original_path": "dist/assets/library/PA-14_Telepsychiatry-and-Controlled-Substance-Compliance-Kit.pdf",
+      "package_path": "reference/dist/assets/library/PA-14_Telepsychiatry-and-Controlled-Substance-Compliance-Kit.pdf",
+      "size_bytes": 73667,
+      "sha256": "199a8fec9177d3d274313a7394961daee677dad0fa62bd2d386e2253a1262a2a"
+    },
+    {
+      "original_path": "dist/assets/library/PA-15_Financial-Policy-Good-Faith-Estimate-and-Superbill-Pack.pdf",
+      "package_path": "reference/dist/assets/library/PA-15_Financial-Policy-Good-Faith-Estimate-and-Superbill-Pack.pdf",
+      "size_bytes": 75074,
+      "sha256": "9106e1514e36046ac4a8d3de1ef4896eb33c07b82959d6e4143be0b281e6feca"
+    },
+    {
+      "original_path": "dist/assets/library/PA-16_Group-Practice-Clinician-Agreement-Builder.pdf",
+      "package_path": "reference/dist/assets/library/PA-16_Group-Practice-Clinician-Agreement-Builder.pdf",
+      "size_bytes": 73462,
+      "sha256": "3dca332e292bcb2df25e610b6fb943627ae1844a9727fc6bd5234fd54ba2cd38"
+    },
+    {
+      "original_path": "dist/assets/library/PA-17_Privacy-Notice-and-Release-of-Information-Pack.pdf",
+      "package_path": "reference/dist/assets/library/PA-17_Privacy-Notice-and-Release-of-Information-Pack.pdf",
+      "size_bytes": 85505,
+      "sha256": "28ca417c4f44e08761a221faf214b74f55af8763952fcbca7133c60c5ff5d699"
+    },
+    {
+      "original_path": "dist/assets/library/PA-18_HIPAA-Security-Risk-Analysis-and-Breach-Response-Kit.pdf",
+      "package_path": "reference/dist/assets/library/PA-18_HIPAA-Security-Risk-Analysis-and-Breach-Response-Kit.pdf",
+      "size_bytes": 75108,
+      "sha256": "25a6592c5170ee11ee89b786d2942460c3d417000fbf216dc0ef286bf9b3d9ee"
+    },
+    {
+      "original_path": "dist/assets/library/PA-19_Practice-Compliance-Calendar-and-Renewal-Tracker.pdf",
+      "package_path": "reference/dist/assets/library/PA-19_Practice-Compliance-Calendar-and-Renewal-Tracker.pdf",
+      "size_bytes": 69836,
+      "sha256": "d1089d18ae3fc39421bf8b5b0cd0cc9ef85a88271cec5ec50dbc09fc39e2297e"
+    },
+    {
+      "original_path": "dist/assets/library/PA-20_Subpoena-Court-Order-and-Records-Request-Response-Guide.pdf",
+      "package_path": "reference/dist/assets/library/PA-20_Subpoena-Court-Order-and-Records-Request-Response-Guide.pdf",
+      "size_bytes": 72777,
+      "sha256": "930b33fc58d3da40d66b0e1110a1bb52b25e04e0e7c1fb6d1fb00dc14ed12353"
+    },
+    {
+      "original_path": "dist/assets/logo.svg",
+      "package_path": "reference/dist/assets/logo.svg",
+      "size_bytes": 6634,
+      "sha256": "d204f21a4054fbe82b3f7f2f35851377d2cf88dfd0b6a72fdd065cee2c14ee2f"
+    },
+    {
+      "original_path": "dist/assets/lucide.min.js",
+      "package_path": "reference/dist/assets/lucide.min.js",
+      "size_bytes": 397450,
+      "sha256": "ab85225ecc1daa2033607856f03dd2dabcbc08e2d260a5b97e17c690aa929766"
+    },
+    {
+      "original_path": "dist/data.js",
+      "package_path": "reference/dist/data.js",
+      "size_bytes": 41520,
+      "sha256": "eb22cd720f3e181cf5685915fa10bc63b142741d20708c5e1dd55957fb4eb6af"
+    },
+    {
+      "original_path": "dist/directions.css",
+      "package_path": "reference/dist/directions.css",
+      "size_bytes": 7583,
+      "sha256": "46f5b9b796679179d062f5a215aa64aebe2fdce72789040f7e1aefe88640cfe4"
+    },
+    {
+      "original_path": "dist/feedback.css",
+      "package_path": "reference/dist/feedback.css",
+      "size_bytes": 7223,
+      "sha256": "5242d6acc2405d787dfad169b6ddce93fca043529d66155276e86d5c205db37c"
+    },
+    {
+      "original_path": "dist/home.css",
+      "package_path": "reference/dist/home.css",
+      "size_bytes": 16519,
+      "sha256": "8cb4406fe6bd4b413cc1a2bffecdc13b15fbe78bd0b9875bf3bea004725901cf"
+    },
+    {
+      "original_path": "dist/hub.css",
+      "package_path": "reference/dist/hub.css",
+      "size_bytes": 16512,
+      "sha256": "ee94b600814939af195283f04a2fed53f2b28facef2b9b04d1b52121ac2ef8ee"
+    },
+    {
+      "original_path": "dist/index.html",
+      "package_path": "reference/dist/index.html",
+      "size_bytes": 1274,
+      "sha256": "87fb1d7719067d3565149aca3990ff0b40087b8f431ab34acedaf0a63f0c47a8"
+    },
+    {
+      "original_path": "dist/library-pack.js",
+      "package_path": "reference/dist/library-pack.js",
+      "size_bytes": 4284,
+      "sha256": "6f0005bdf377e065c58fba1e588add857912e571034a2d1a298c103465d33f4c"
+    },
+    {
+      "original_path": "dist/polish.css",
+      "package_path": "reference/dist/polish.css",
+      "size_bytes": 7114,
+      "sha256": "42a683b29993715f846f18b87528688f0db1485fe18936076bf20cabe849e5d8"
+    },
+    {
+      "original_path": "dist/product.css",
+      "package_path": "reference/dist/product.css",
+      "size_bytes": 56968,
+      "sha256": "31397b98825880360379fb370ffbba3585e13f0bd78378e1f070a8be541ccced"
+    },
+    {
+      "original_path": "dist/pulse.css",
+      "package_path": "reference/dist/pulse.css",
+      "size_bytes": 26724,
+      "sha256": "fcb664a952e844121ce29cdb0eac78e892736fc4b621763e4f9e4cb71b9fc2b1"
+    },
+    {
+      "original_path": "dist/refinements.css",
+      "package_path": "reference/dist/refinements.css",
+      "size_bytes": 11931,
+      "sha256": "4dd2e78c8cc86e5acdd41cfa9f0f4a580140ba150b4878230ea29fe2da83ba09"
+    },
+    {
+      "original_path": "dist/styles.css",
+      "package_path": "reference/dist/styles.css",
+      "size_bytes": 54454,
+      "sha256": "9f64b692b2ad7143f3461e159fd1ed58c2037d8c78bcee95c9ab25051a0538b7"
+    },
+    {
+      "original_path": "tests/library-sha256.json",
+      "package_path": "reference/tests/library-sha256.json",
+      "size_bytes": 1363,
+      "sha256": "d73bdce19325577d879234ba492e670f4339ed0b0312467be3298382fc77c004"
+    },
+    {
+      "original_path": "tests/refinements.cjs",
+      "package_path": "reference/tests/refinements.cjs",
+      "size_bytes": 29466,
+      "sha256": "a7cc7edf60306fa96cd6adf50f0dabecd158be0c6e5b09c43584f886af46a560"
+    }
+  ]
+}

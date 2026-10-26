@@ -1,0 +1,14 @@
+concern,required_guarantee,reference_anchor,actual_original_code_or_service,schema_or_api,adapter_or_migration_plan,test_and_rollback_evidence,status
+Actors and licences,Membership/licence verification and account ownership,person; people; state.trust/worked/suggested,,,,,Pending
+Cover plans/clients/requests,Stable plan/client/request records and send-time eligibility,beginRequests; eligibilityExclusions,,,,,Pending
+Acceptance and handover,Transactional one assignee; owner checklist/completion,answerCover; handoverModal,,,,,Pending
+Deadline jobs,"Persisted selected deadline, discussion pause and idempotent scheduling",advanceQueue; processTimeouts,,,,,Pending
+Referrals,"Audience, capacity, interest/placement, additions and withdrawal",answerReferral; withdrawReferral; addReferralColleague,,,,,Pending
+Conversations/messages,"Context/membership IDs, unread/search/notification routing and idempotency",coverConversation; referralConversation; dispatchMessage,,,,,Pending
+Drafts/media,Per-context drafts and protected durable files/audio,drafts; attachmentDrafts; audioDrafts; storeFile,,,,,Pending
+Availability,"One total, per-state settings and confirmation timestamps/search",available; filteredPeople; collectAvailability,,,,,Pending
+Consult/groups,Audience-restricted questions/replies/search/Following/Useful,peerRecipients; discussionModal; consultMatches,,,,,Pending
+Invitations,"Link lifecycle, copy semantics and any original delivery UI gap",invitationText; invitationReview,,,,,Pending
+Library,"Resources, bookmarks, protected access if required and PDF bytes",libraryResults; library-pack.js,,,,,Pending
+Demos,Shared UI with isolated fictional seed/reset/delivery adapters,reviewControls; reset-preview,,,,,Pending
+Migration/rollback,"Original IDs, histories and data compatibility",All existing production schemas and records,,,,,Pending

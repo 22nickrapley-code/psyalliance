@@ -1,0 +1,650 @@
+{
+  "functions": [
+    "persist",
+    "matchPeople",
+    "beginRequests",
+    "advanceQueue",
+    "answerCover",
+    "processTimeouts",
+    "toast",
+    "render",
+    "viewContent",
+    "syncSidebar",
+    "navigate",
+    "circleMarkup",
+    "circleLegend",
+    "nextSteps",
+    "savedDrafts",
+    "inviteNote",
+    "captureInvite",
+    "invitationText",
+    "invitationForm",
+    "invitationReview",
+    "pulseDiscussionList",
+    "pulsePeople",
+    "pulseReason",
+    "pulseFocusReason",
+    "actionItems",
+    "hubPeoplePageSize",
+    "hubInvitation",
+    "hubAvailability",
+    "hubColleague",
+    "hubNetwork",
+    "homeView",
+    "discussionRow",
+    "homeDiscussions",
+    "selectField",
+    "filteredPeople",
+    "relationshipReason",
+    "linkNames",
+    "personCard",
+    "directoryResults",
+    "directoryContent",
+    "networkView",
+    "splitPanel",
+    "incomingCoverStatus",
+    "planRow",
+    "draftBanner",
+    "deleteSavedDraft",
+    "visiblePlans",
+    "coverView",
+    "calendarPlans",
+    "calendarAgenda",
+    "calendarView",
+    "referralStatus",
+    "withdrawReferral",
+    "addReferralColleague",
+    "referralRow",
+    "referralsView",
+    "consultMatches",
+    "consultResults",
+    "consultView",
+    "libraryMatches",
+    "libraryResults",
+    "libraryView",
+    "needFields",
+    "readNeed",
+    "needError",
+    "saveFlow",
+    "startWorkflow",
+    "workflowSteps",
+    "flowError",
+    "unfinishedSummary",
+    "eligibilityExclusions",
+    "bulkSelect",
+    "matchingControls",
+    "colleagueMatching",
+    "coverModal",
+    "allocateClientId",
+    "duplicateClient",
+    "saveClient",
+    "matchList",
+    "referralModal",
+    "referralRecipients",
+    "peerRecipients",
+    "audienceTiles",
+    "peerModal",
+    "invitationPrompt",
+    "workflowResource",
+    "openModal",
+    "closeModal",
+    "modalShell",
+    "planModal",
+    "requestLabel",
+    "handoverModal",
+    "referralJourney",
+    "referralModalDetail",
+    "availabilityModal",
+    "discussionModal",
+    "profileModal",
+    "reviewControls",
+    "renderModal",
+    "globalResults",
+    "openThread",
+    "openPersonMessage",
+    "coverConversation",
+    "referralConversation",
+    "appendConversation",
+    "captureWorkflow",
+    "finishFlow",
+    "collectAvailability",
+    "answerReferral",
+    "readDirectory",
+    "syncViewport",
+    "messagesView",
+    "threadActivity",
+    "messagePreview",
+    "threadTime",
+    "inboxList",
+    "threadContent",
+    "composerContent",
+    "messageBubble",
+    "scrollMessages",
+    "autoGrow",
+    "dispatchMessage",
+    "refreshDelivery",
+    "sendMessage",
+    "cleanupRecorder",
+    "startRecording",
+    "updateComposer",
+    "sendAudio",
+    "saveDownload",
+    "storeFile",
+    "restoreFiles"
+  ],
+  "modal_kinds": [
+    "workflow",
+    "plan",
+    "handover",
+    "profile",
+    "referral",
+    "referral-withdraw",
+    "referral-add",
+    "discussion",
+    "availability",
+    "referral-capacity",
+    "directory",
+    "all-actions",
+    "other-actions",
+    "calendar-day",
+    "draft-delete",
+    "ask-cover",
+    "ask-referral",
+    "confirm-placement",
+    "confirm-cancel",
+    "retry",
+    "review-controls",
+    "new-message",
+    "search",
+    "settings",
+    "confirm-reset",
+    "preferences",
+    "group",
+    "resource",
+    "invite",
+    "invite-ready",
+    "notifications",
+    "message-edit"
+  ],
+  "form_ids": [
+    "invite-form",
+    "directory-form",
+    "cover-plan-form",
+    "client-form",
+    "cover-send-form",
+    "referral-need-form",
+    "referral-send-form",
+    "peer-form",
+    "handover-form",
+    "availability-form",
+    "reply-form",
+    "review-response-form",
+    "referral-add-form",
+    "referral-capacity-form",
+    "ask-form",
+    "retry-form",
+    "edit-message-form",
+    "message-form"
+  ],
+  "click_handler_case_labels": [
+    "toggle-menu",
+    "close-modal",
+    "modal-back",
+    "cover-start",
+    "referral-start",
+    "peer-start",
+    "directory",
+    "network-trusted",
+    "unread-inbox",
+    "invite-purpose",
+    "context-invite",
+    "workflow-resource",
+    "invite",
+    "search",
+    "group",
+    "settings",
+    "preferences",
+    "notifications",
+    "new-message",
+    "all-actions",
+    "other-actions",
+    "review-controls",
+    "profile",
+    "plan",
+    "referral",
+    "discussion",
+    "resource",
+    "match-profile",
+    "profile-referral",
+    "trust",
+    "person-message",
+    "inbox-person",
+    "message-retry",
+    "review-twenty",
+    "review-conversations",
+    "review-boundary",
+    "review-fail-message",
+    "back-inbox",
+    "inbox-filter",
+    "chat-search",
+    "network-tab",
+    "network-tier",
+    "directory-tier",
+    "network-page",
+    "directory-reset",
+    "discussion-tab",
+    "discussion-page",
+    "people-prev",
+    "people-next",
+    "toggle-actions",
+    "defer-step",
+    "restore-steps",
+    "pulse-people",
+    "consult-page",
+    "consult-clear",
+    "follow",
+    "useful",
+    "dismiss",
+    "availability",
+    "availability-reconfirm",
+    "cover-filter",
+    "cover-layout",
+    "referral-filter",
+    "calendar-month",
+    "calendar-today",
+    "calendar-day",
+    "calendar-scope",
+    "draft-delete",
+    "draft-delete-confirm",
+    "flow-back",
+    "save-exit",
+    "client-duplicate",
+    "client-add",
+    "client-edit",
+    "client-cancel",
+    "client-remove",
+    "needs-continue",
+    "match-view",
+    "bulk-apply",
+    "match-client",
+    "cover-review",
+    "referral-review",
+    "pick-up",
+    "pick-down",
+    "peer-post",
+    "ask-group",
+    "plan-tab",
+    "handover",
+    "cover-thread",
+    "cover-answer",
+    "ask-cover",
+    "ask-referral",
+    "plan-cancel",
+    "plan-cancel-confirm",
+    "plan-complete",
+    "retry",
+    "referral-thread",
+    "referral-answer",
+    "referral-withdraw",
+    "referral-add",
+    "referral-withdraw-confirm",
+    "referral-choose",
+    "place",
+    "preference",
+    "review-stale",
+    "review-fresh",
+    "reset-preview",
+    "reset-confirm",
+    "copy-invitation",
+    "resource-filter",
+    "resource-clear",
+    "resource-page",
+    "resource-save",
+    "resource-download",
+    "attach",
+    "attachment-remove",
+    "record-start",
+    "record-stop",
+    "record-cancel",
+    "audio-send",
+    "message-menu",
+    "message-react",
+    "message-edit",
+    "message-delete"
+  ],
+  "stylesheets": [
+    "styles.css",
+    "product.css",
+    "refinements.css",
+    "home.css",
+    "pulse.css",
+    "directions.css",
+    "polish.css",
+    "feedback.css",
+    "hub.css"
+  ],
+  "scripts": [
+    "assets/lucide.min.js",
+    "data.js",
+    "library-pack.js",
+    "app.js"
+  ],
+  "fixture": {
+    "people": 18,
+    "plans": [
+      {
+        "id": 1,
+        "name": "Fall leave cover",
+        "owner": "me",
+        "status": "active",
+        "mode": "sequential",
+        "clients": [
+          {
+            "id": 1,
+            "label": "Client 1",
+            "focus": "Anxiety/Panic Disorders",
+            "state": "MA",
+            "status": "ready",
+            "assignee": "rena",
+            "requests": [
+              {
+                "person": "rena",
+                "status": "accepted"
+              },
+              {
+                "person": "alex",
+                "status": "closed"
+              }
+            ]
+          },
+          {
+            "id": 2,
+            "label": "Client 2",
+            "focus": "Depression",
+            "state": "NY",
+            "status": "agreed",
+            "assignee": "maya",
+            "requests": [
+              {
+                "person": "maya",
+                "status": "accepted"
+              },
+              {
+                "person": "james",
+                "status": "closed"
+              }
+            ]
+          },
+          {
+            "id": 3,
+            "label": "Client 3",
+            "focus": "Trauma/PTSD",
+            "state": "CT",
+            "status": "discussing",
+            "assignee": null,
+            "requests": [
+              {
+                "person": "sophie",
+                "status": "discussing"
+              },
+              {
+                "person": "leila",
+                "status": "queued"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "name": "Conference week",
+        "owner": "me",
+        "status": "active",
+        "mode": "sequential",
+        "clients": [
+          {
+            "id": 1,
+            "label": "Client 1",
+            "focus": "Burnout",
+            "state": "MA",
+            "status": "awaiting",
+            "assignee": null,
+            "requests": [
+              {
+                "person": "alex",
+                "status": "awaiting"
+              },
+              {
+                "person": "rena",
+                "status": "queued"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "name": "Summer leave cover",
+        "owner": "me",
+        "status": "completed",
+        "mode": "parallel",
+        "clients": [
+          {
+            "id": 1,
+            "label": "Client 1",
+            "focus": "Anxiety/Panic Disorders",
+            "state": "MA",
+            "status": "ready",
+            "assignee": "alex",
+            "requests": [
+              {
+                "person": "alex",
+                "status": "accepted"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "name": "October practice cover",
+        "owner": "alex",
+        "status": "active",
+        "mode": "parallel",
+        "clients": [
+          {
+            "id": 1,
+            "label": "Client 1",
+            "focus": "Anxiety/Panic Disorders",
+            "state": "MA",
+            "status": "awaiting",
+            "assignee": null,
+            "requests": [
+              {
+                "person": "me",
+                "status": "awaiting"
+              }
+            ]
+          },
+          {
+            "id": 2,
+            "label": "Client 2",
+            "focus": "Life Transitions",
+            "state": "MA",
+            "status": "agreed",
+            "assignee": "me",
+            "requests": [
+              {
+                "person": "me",
+                "status": "accepted"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": 5,
+        "name": "November peer cover",
+        "owner": "maya",
+        "status": "active",
+        "mode": "sequential",
+        "clients": [
+          {
+            "id": 1,
+            "label": "Client 1",
+            "focus": "Depression",
+            "state": "NY",
+            "status": "ready",
+            "assignee": "me",
+            "requests": [
+              {
+                "person": "me",
+                "status": "accepted"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "referrals": [
+      {
+        "id": 1,
+        "owner": "me",
+        "focus": "Anxiety/Panic Disorders",
+        "state": "NY",
+        "status": "discussion",
+        "placedWith": null
+      },
+      {
+        "id": 2,
+        "owner": "me",
+        "focus": "Life Transitions",
+        "state": "MA",
+        "status": "placed",
+        "placedWith": "alex"
+      },
+      {
+        "id": 3,
+        "owner": "eli",
+        "focus": "Anxiety/Panic Disorders",
+        "state": "MA",
+        "status": "discussion",
+        "placedWith": null
+      },
+      {
+        "id": 4,
+        "owner": "sophie",
+        "focus": "Depression",
+        "state": "MA",
+        "status": "placed",
+        "placedWith": "me"
+      }
+    ],
+    "discussions": [
+      {
+        "id": 1,
+        "title": "How are you approaching burnout in high-functioning adults?",
+        "author": "maya",
+        "audience": "trusted",
+        "replies": 4
+      },
+      {
+        "id": 2,
+        "title": "Making space for reflective practice in a busy week",
+        "author": "alex",
+        "audience": "network",
+        "replies": 5
+      },
+      {
+        "id": 3,
+        "title": "Resources for supporting clients through life transitions",
+        "author": "sophie",
+        "audience": "group",
+        "replies": 6
+      },
+      {
+        "id": 4,
+        "title": "Building a reliable circle of cover colleagues",
+        "author": "rena",
+        "audience": "network",
+        "replies": 4
+      },
+      {
+        "id": 5,
+        "title": "Engaging young adults in collaborative goal setting",
+        "author": "elena",
+        "audience": "group",
+        "replies": 5
+      },
+      {
+        "id": 6,
+        "title": "What makes a peer consultation group work well?",
+        "author": "james",
+        "audience": "network",
+        "replies": 6
+      },
+      {
+        "id": 7,
+        "title": "Small changes that have improved your practice this year",
+        "author": "maya",
+        "audience": "group",
+        "replies": 4
+      },
+      {
+        "id": 8,
+        "title": "A conversation about professional isolation",
+        "author": "alex",
+        "audience": "network",
+        "replies": 5
+      },
+      {
+        "id": 9,
+        "title": "Sharing helpful ACT reading for colleagues",
+        "author": "sophie",
+        "audience": "group",
+        "replies": 6
+      }
+    ],
+    "threads": [
+      {
+        "id": "rena-cover",
+        "person": "rena",
+        "type": "Cover",
+        "context": "Cover \u00b7 Fall leave \u00b7 Client 1",
+        "unread": 2
+      },
+      {
+        "id": "maya-referral",
+        "person": "maya",
+        "type": "Referral",
+        "context": "Referral \u00b7 Anxiety \u00b7 New York",
+        "unread": 1
+      },
+      {
+        "id": "alex-direct",
+        "person": "alex",
+        "type": "Direct",
+        "context": "Direct conversation",
+        "unread": 0
+      },
+      {
+        "id": "sophie-consult",
+        "person": "sophie",
+        "type": "Consult",
+        "context": "Thursday peer consultation",
+        "unread": 0
+      },
+      {
+        "id": "james-direct",
+        "person": "james",
+        "type": "Direct",
+        "context": "Direct conversation",
+        "unread": 0
+      }
+    ]
+  },
+  "notes": [
+    "Static handler inventories can include compatibility/demo-only cases; they are not a demand to expose new buttons.",
+    "All fixture records are fictional. Timestamps and generated request IDs vary per fresh browser session."
+  ]
+}

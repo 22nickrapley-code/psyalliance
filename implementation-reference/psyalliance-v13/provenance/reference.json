@@ -1,0 +1,17 @@
+{
+  "title": "PsyAlliance approved mock-up \u2014 exact implementation handover",
+  "version_number": 13,
+  "commit_sha": "ceafc8d43f573da9108212d6ee30ea5be26fd99e",
+  "site_project_id": "appgprj_6ad6d78790948191b51c200c66bc2569",
+  "saved_version_id": "appgprj_6ad6d78790948191b51c200c66bc2569~appgver_100d029ad8bc8191ad741c14325612fb",
+  "deployment_id": "appgdep_6adfbf3a906c81919aec3623105dbe8d",
+  "preview_url": "https://psyalliance-experience.sandy-ring-2066.chatgpt.site",
+  "publication_status_verified": "succeeded",
+  "audience_verified": "owner-private; one allowed user and no allowed groups",
+  "prepared_at_utc": "2026-10-26T21:22:54.018555+00:00",
+  "original_product_repository_included": false,
+  "original_demo_inventory_completed": false,
+  "supplied_pdf_count": 20,
+  "supplied_pdf_byte_matches_to_attachment": 20,
+  "note": "The original Site hosting manifest is provenance only. Do not deploy the real product using this mock-up project identity."
+}

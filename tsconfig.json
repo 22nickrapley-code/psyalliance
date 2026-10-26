@@ -36,7 +36,8 @@
     ".next/types/**/*.ts"
   ],
   "exclude": [
-    "node_modules",
-    "e2e"
+    "e2e",
+    "implementation-reference",
+    "node_modules"
   ]
 }

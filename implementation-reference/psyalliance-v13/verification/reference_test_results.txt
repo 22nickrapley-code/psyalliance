@@ -1,0 +1,56 @@
+Frozen version 13 reference tests
+Node: v24.22.1
+Commit: ceafc8d43f573da9108212d6ee30ea5be26fd99e
+Not a target/backend certification.
+
+Verified 42 source files from version 13, commit ceafc8d43f573da9108212d6ee30ea5be26fd99e.
+PASS 20 client duplicate cap and unique identifiers after removing highest
+PASS bulk apply independently excludes license, setting, prescribing, language, secondary, insurance and age
+PASS eligibility views agree for all people and varied requirements
+PASS acceptance closes competitors without marking handover ready
+PASS sequential discussion pauses deadline and advancement
+PASS sending revalidates all selected people
+PASS availability inclusive through 90 days; stale profiles still searchable
+PASS referral positive response requires current capacity and never places referral
+PASS same colleague different Cover clients and Referral keep distinct records
+PASS failed retry uses same message ID and cannot double dispatch
+PASS ordinary messages and reactions do not promote Worked with Before
+PASS specific collaboration and suggestion explanations
+PASS newest reply sorts above existing replies
+PASS all seven overview templates render
+PASS Cover, Referral and Peer templates preserve all steps
+PASS Home attention includes actionable arrangements and excludes pending outreach and drafts
+PASS Invitation text is purpose-specific, preserves the personal note and contains no client context
+PASS All twenty supplied PDF resources exist and retain verified original hashes
+PASS Library searches the complete collection and keeps saved resources separate
+PASS Pulse prioritises followed discussions, then trusted authors without mutating source order
+PASS Pulse handles empty following and out-of-range pagination
+PASS Pulse selects actual relationship tiers and explains stale capacity without inventing totals
+PASS Pulse lists every required action, clears after response and escapes plan text
+PASS Pulse count includes the entire list and handles zero, one and multiple actions
+PASS Calendar includes overlapping boundaries, excludes cancelled and filters ownership
+PASS Incoming cover separates pending replies, acceptance and readiness
+PASS Deleting an unsent draft preserves arrangements and restores a parked referral draft
+PASS Legacy deferred reminders remain visible in the complete action list
+PASS Pulse exposes all trusted profiles through correctly counted pages
+PASS Pulse uses product labels and omits the draft-selector strip
+PASS Deferring all legacy reminders cannot create a false caught-up state
+PASS Generated literal actions have handlers
+PASS Static deployment links and script/style references exist
+PASS Referral statuses distinguish decline, discussion, interest and placement
+PASS Withdrawal closes open requests, retains previous replies and cannot place or respond
+PASS Only an active referral owner can withdraw or add a new eligible colleague
+PASS A referral with no open offers becomes actionable on Pulse and clears after withdrawal
+PASS Consult search finds titles, authors, tags and reply history without changing source order
+PASS Consult clamps pagination after removing followed discussions
+PASS Pulse exposes handover and discussion separately for the same plan
+PASS Main and Also treatment menus share all standard options and retain older draft text
+PASS Referral progress separates outreach, interest, no open offers, placement and withdrawal
+PASS Inbox previews latest own and received messages, media and failed sends
+PASS Latest message opens its exact context and changes outer inbox order
+PASS New contextual messages retain a sortable activity timestamp
+PASS Hub colleague windows cover every trusted person at phone, tablet and desktop widths
+PASS Hub previews the actual newest reply without mutating or exposing another discussion
+PASS Hub colleague actions retain person identity and distinguish full, stale and suggested profiles
+PASS Hub availability shows one capacity across state settings and handles freshness and closure
+49 scenario groups passed.
