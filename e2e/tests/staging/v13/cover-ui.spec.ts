@@ -10,6 +10,7 @@ test.describe.configure({ mode: "serial" });
 const avery = account("avery").id, bram = account("bram").id, cass = account("cass").id;
 
 async function wipe() {
+  await q(`delete from workspace_drafts where profile_id = any($1::uuid[])`, [[avery, bram, cass]]);
   await q(`delete from coverage_plans where profile_id = any($1::uuid[])`, [[avery, bram, cass]]);
   await q(`delete from conversations where context_key like 'cover-%'`);
   await q(`delete from notification_events where dedup_key like 'coverage%' or dedup_key like 'cover_%'`);

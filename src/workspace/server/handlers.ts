@@ -111,6 +111,64 @@ export const handlers: Record<string, Handler> = {
     return { ok: true, data, patch: await slices(ctx, ["plans", "known"]) };
   },
 
+  // ---- Referrals ---------------------------------------------------------
+  "referral.create": async (ctx, a) => {
+    const payload = {
+      requestId: /^[0-9a-f-]{36}$/i.test(String(a.requestId || "")) ? String(a.requestId) : null,
+      focus: text(a.focus, 120), secondary: text(a.secondary, 120), state: text(a.state, 2), city: text(a.city, 80), age: text(a.age, 120),
+      setting: text(a.setting, 12), insurance: text(a.insurance, 120), language: text(a.language, 120), prescribing: a.prescribing === true,
+      audience: text(a.audience, 12), selected: idList(a.selected).slice(0, 101), timeframe: text(a.timeframe, 40), message: text(a.message, 700),
+    };
+    // The note and the city never carry client identifiers.
+    const err = [payload.message, payload.city].map(identifierError).find(Boolean);
+    if (err) return bad(err);
+    const { data, error } = await ctx.supabase.rpc("referral_create", { p_payload: payload });
+    if (error) return fail(error, "That didn't send, so nobody was asked. Your referral is kept; please try again.");
+    return { ok: true, data, patch: await slices(ctx, ["referrals", "known"]) };
+  },
+
+  "referral.answer": async (ctx, a) => {
+    const question = text(a.question, 2000);
+    if (a.response === "discussing") {
+      if (!question) return bad("Write your question first.");
+      const err = identifierError(question);
+      if (err) return bad(err);
+    }
+    const { data, error } = await ctx.supabase.rpc("referral_answer", {
+      p_referral: num(a.referral),
+      p_response: String(a.response || ""),
+      p_capacity: a.capacity === true,
+      p_question: question || null,
+      p_client_message_id: /^[0-9a-f-]{36}$/i.test(String(a.clientMessageId || "")) ? String(a.clientMessageId) : null,
+    });
+    if (error) return fail(error, "Your reply didn't save. Nothing was changed; please try again.");
+    return { ok: true, data, patch: await slices(ctx, ["referrals", "known"]) };
+  },
+
+  "referral.place": async (ctx, a) => {
+    const { data, error } = await ctx.supabase.rpc("referral_place", { p_referral: num(a.referral), p_colleague: String(a.person || "") });
+    if (error) return fail(error, "The placement didn't save. Nothing was changed; please try again.");
+    return { ok: true, data, patch: await slices(ctx, ["referrals", "tiers", "known"]) };
+  },
+
+  "referral.withdraw": async (ctx, a) => {
+    const { data, error } = await ctx.supabase.rpc("referral_withdraw", { p_referral: num(a.referral) });
+    if (error) return fail(error);
+    return { ok: true, data, patch: await slices(ctx, ["referrals", "known"]) };
+  },
+
+  "referral.add": async (ctx, a) => {
+    const { data, error } = await ctx.supabase.rpc("referral_add", { p_referral: num(a.referral), p_person: String(a.person || "") });
+    if (error) return fail(error);
+    return { ok: true, data, patch: await slices(ctx, ["referrals", "known"]) };
+  },
+
+  "referral.thread": async (ctx, a) => {
+    const { data, error } = await ctx.supabase.rpc("referral_thread", { p_referral: num(a.referral), p_person: /^[0-9a-f-]{36}$/i.test(String(a.person || "")) ? String(a.person) : null });
+    if (error) return fail(error);
+    return { ok: true, data };
+  },
+
   "draft.save": async (ctx, a) => {
     const kind = String(a.kind || "");
     if (!/^[a-z][a-z0-9:_-]{0,39}$/i.test(kind)) return { ok: false, error: "Unknown draft." };

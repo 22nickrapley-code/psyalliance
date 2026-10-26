@@ -13,7 +13,7 @@ function Host({ boot }: { boot: LiveBoot }) {
   const search = useSearchParams();
   const router = useRouter();
   const engine = useRef<any>(null);
-  const first = useRef({ view: viewOf(pathname), open: openOf(search) });
+  const first = useRef({ view: viewOf(pathname), open: openOf(search, viewOf(pathname)) });
 
   useEffect(() => {
     let cancelled = false;
@@ -42,8 +42,9 @@ function Host({ boot }: { boot: LiveBoot }) {
 
   useEffect(() => {
     if (!engine.current) return;
-    const open = openOf(search);
-    engine.current.route(viewOf(pathname), open);
+    const view = viewOf(pathname);
+    const open = openOf(search, view);
+    engine.current.route(view, open);
     if (open) window.history.replaceState(null, "", window.location.pathname);
   }, [pathname, search]);
 

@@ -13,12 +13,14 @@ type Params = Record<string, string | string[] | undefined>;
 const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v) || "";
 const num = (v: string) => (/^\d{1,12}$/.test(v) ? v : "");
 
-// What a link opens inside a section, from its query: ?plan=7, ?new=1.
-export function openOf(sp: URLSearchParams | Params): { type: string; id?: string | number; sub?: string } | null {
+// What a link opens inside a section, from its query: ?plan=7, ?referral=7, ?new=1.
+export function openOf(sp: URLSearchParams | Params, view: WorkspaceView = "home"): { type: string; id?: string | number; sub?: string } | null {
   const get = (k: string) => (sp instanceof URLSearchParams ? sp.get(k) || "" : one(sp[k]));
   const plan = num(get("plan"));
-  if (plan) return { type: "plan", id: Number(plan) };
-  if (get("new") === "1") return { type: "cover-start" };
+  if (plan && view === "cover") return { type: "plan", id: Number(plan) };
+  const referral = num(get("referral"));
+  if (referral && view === "referrals") return { type: "referral", id: Number(referral) };
+  if (get("new") === "1") return { type: view === "referrals" ? "referral-start" : "cover-start" };
   return null;
 }
 
@@ -30,6 +32,11 @@ export function legacyDestination(section: string[], sp: Params): string | null 
     if (b === "new") return "/dashboard/cover?new=1";
     if (b === "requests" && num(c || "")) return `/dashboard/cover?plan=${c}`;
     if (b && num(b)) return `/dashboard/cover?plan=${b}`;
+  }
+  if (a === "refer") {
+    if (!b) return "/dashboard/referrals";
+    if (b === "new") return "/dashboard/referrals?new=1";
+    if (num(b)) return `/dashboard/referrals?referral=${b}`;
   }
   return null;
 }

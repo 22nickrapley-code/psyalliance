@@ -6,9 +6,15 @@
 --      90-day rule (confirmed through day 90, stale from day 91).
 --   2. Relationships: the four tiers as the workspace reads them.
 --   3. People and "me" read models.
+--   4. Choice lists the screens offer.
+--   5. Drafts and per-member screen state.
+--   6. Cover: plans, clients, requests, deadlines, handover, history.
+--   7. Referrals: who was asked, replies with capacity, placement, withdrawal.
+--   8. Colleagues the screens mention who are no longer in the directory.
+--   9. Slices and the boot snapshot.
 --
--- Later sections (Cover, Referrals, Messages, Consult, Invitations, Library,
--- the boot snapshot) are appended below as they are added.
+-- Later sections (Messages, Consult, Invitations, Library) are appended below
+-- as they are added.
 
 -- 1. Availability ---------------------------------------------------------------
 create table if not exists public.profile_state_settings (
@@ -304,49 +310,6 @@ as $function$
 $function$;
 revoke all on function public.workspace_people() from public, anon;
 grant execute on function public.workspace_people() to authenticated;
-
--- People the screens mention who are not (or are no longer) in the member's
--- directory: a colleague asked earlier who has since left, been paused or
--- blocked. Name and role only, so history stays readable and nothing else leaks.
-create or replace function public.workspace_known()
-returns jsonb
-language sql
-stable
-security definer
-set search_path to 'public'
-as $function$
-  with me as (select auth.uid() as id),
-  refs as (
-    select p.profile_id as id from coverage_plans p, me
-     where p.status <> 'draft' and (p.profile_id = me.id or exists (
-       select 1 from coverage_requests r join coverage_plan_cases c on c.id = r.coverage_plan_case_id
-        where c.coverage_plan_id = p.id and r.requested_profile_id = me.id))
-    union
-    select r.requested_profile_id from coverage_requests r
-      join coverage_plan_cases c on c.id = r.coverage_plan_case_id
-      join coverage_plans p on p.id = c.coverage_plan_id, me
-     where p.profile_id = me.id
-    union
-    select unnest(c.outreach_queue) from coverage_plan_cases c
-      join coverage_plans p on p.id = c.coverage_plan_id, me
-     where p.profile_id = me.id
-    union
-    select c.assigned_clinician_id from coverage_plan_cases c
-      join coverage_plans p on p.id = c.coverage_plan_id, me
-     where p.profile_id = me.id and c.assigned_clinician_id is not null
-  )
-  select coalesce(jsonb_agg(jsonb_build_object(
-    'id', pr.id, 'name', private.member_name(pr.id), 'initials', private.initials(pr.full_name),
-    'credential', coalesce(pr.qualification_level::text, ''), 'role', private.role_label(pr.qualification_level::text),
-    'state', '', 'city', '', 'licenses', '{}'::jsonb, 'specialties', '[]'::jsonb, 'slots', 0, 'confirmedAt', null,
-    'languages', '[]'::jsonb, 'ages', '[]'::jsonb, 'insurance', '[]'::jsonb, 'modalities', '[]'::jsonb, 'sessionTypes', '[]'::jsonb,
-    'psypact', false, 'bio', '', 'avatarPath', null, 'limited', true)), '[]'::jsonb)
-  from refs join profiles pr on pr.id = refs.id, me
-  where me.id is not null and refs.id <> me.id
-    and refs.id not in (select vm.id from private.visible_members(me.id) vm);
-$function$;
-revoke all on function public.workspace_known() from public, anon;
-grant execute on function public.workspace_known() to authenticated;
 
 -- The signed-in member as the workspace's own record.
 create or replace function public.workspace_me()
@@ -1703,6 +1666,716 @@ revoke all on function public.workspace_plans() from public, anon;
 grant execute on function public.workspace_plans() to authenticated;
 
 
+-- 7. Referrals --------------------------------------------------------------------
+-- A referral as the workspace runs it: one client need, asked of chosen
+-- colleagues (or of a trusted circle or the verified network, matched to the
+-- need), each of whom can say they are interested (with their current
+-- capacity confirmed for this referral), ask a question first, or decline.
+-- Interest is an offer to talk: a placement exists only when the referrer
+-- chooses one interested colleague, and that choice closes the rest. Every
+-- change goes through the functions below, so a retry, a second tab or a slow
+-- connection can never send a referral twice, place it twice or skip a check.
+
+-- 7a. What a referral and a reply now carry.
+alter table public.referral_requests
+  add column if not exists prescribing boolean not null default false,
+  add column if not exists client_request_id uuid,
+  add column if not exists withdrawn_at timestamptz;
+create unique index if not exists referral_requests_client_request_idx
+  on public.referral_requests (requesting_profile_id, client_request_id) where client_request_id is not null;
+alter table public.referral_requests drop constraint if exists referral_requests_timeframe_check;
+alter table public.referral_requests add constraint referral_requests_timeframe_check
+  check (timeframe is null or timeframe in ('urgent', 'within_two_weeks', 'within_month', 'flexible'));
+alter table public.referral_responses add column if not exists capacity_confirmed_at timestamptz;
+
+-- Who was asked. A colleague who was asked and has not replied yet has no reply
+-- row, so the asking is recorded here. Read only through the workspace's own
+-- functions, which show each person only what concerns them.
+create table if not exists public.referral_recipients (
+  referral_request_id bigint not null references public.referral_requests (id) on delete cascade,
+  profile_id uuid not null references public.profiles (id) on delete cascade,
+  ord integer not null default 0,
+  sent_at timestamptz not null default now(),
+  primary key (referral_request_id, profile_id)
+);
+create index if not exists referral_recipients_profile_idx on public.referral_recipients (profile_id);
+alter table public.referral_recipients enable row level security;
+revoke all on public.referral_recipients from anon, authenticated;
+
+-- Referrals made, and replies given, anywhere else in the product (the earlier
+-- screens, the practice demos) are counted as asked too, so the workspace shows
+-- every referral a member is part of.
+create or replace function private.referral_recipient_from_response()
+returns trigger
+language plpgsql
+security definer
+set search_path to 'public'
+as $function$
+begin
+  insert into referral_recipients (referral_request_id, profile_id, sent_at)
+  values (new.referral_request_id, new.responding_profile_id, new.created_at)
+  on conflict do nothing;
+  return new;
+end;
+$function$;
+revoke all on function private.referral_recipient_from_response() from public, anon, authenticated;
+drop trigger if exists referral_recipient_from_response on public.referral_responses;
+create trigger referral_recipient_from_response after insert on public.referral_responses
+  for each row execute function private.referral_recipient_from_response();
+
+create or replace function private.referral_recipients_from_audience()
+returns trigger
+language plpgsql
+security definer
+set search_path to 'public'
+as $function$
+begin
+  if new.audience_type = 'selected' and coalesce(array_length(new.audience_profile_ids, 1), 0) > 0 then
+    insert into referral_recipients (referral_request_id, profile_id, ord, sent_at)
+    select new.id, x.id, x.o::integer, case when tg_op = 'INSERT' then new.created_at else now() end
+      from unnest(new.audience_profile_ids) with ordinality as x(id, o)
+     where x.id <> new.requesting_profile_id and exists (select 1 from profiles p where p.id = x.id)
+    on conflict do nothing;
+  end if;
+  return new;
+end;
+$function$;
+revoke all on function private.referral_recipients_from_audience() from public, anon, authenticated;
+drop trigger if exists referral_recipients_from_audience on public.referral_requests;
+create trigger referral_recipients_from_audience after insert or update of audience_profile_ids on public.referral_requests
+  for each row execute function private.referral_recipients_from_audience();
+
+-- Backfill: the colleagues earlier referrals were sent to, and everyone who replied.
+insert into public.referral_recipients (referral_request_id, profile_id, ord, sent_at)
+select rr.id, x.id, x.o::integer, rr.created_at
+  from public.referral_requests rr, unnest(rr.audience_profile_ids) with ordinality as x(id, o)
+ where rr.audience_type = 'selected' and x.id <> rr.requesting_profile_id
+   and exists (select 1 from public.profiles p where p.id = x.id)
+on conflict do nothing;
+insert into public.referral_recipients (referral_request_id, profile_id, sent_at)
+select r.referral_request_id, r.responding_profile_id, r.created_at from public.referral_responses r
+on conflict do nothing;
+
+-- 7b. Who a referral still suits: the same check the screens make, run on the
+-- server at the moment of sending, adding, and placing.
+create or replace function private.referral_exclusions(p_referral bigint, p_candidate uuid)
+returns text[]
+language sql
+stable
+security definer
+set search_path to 'public'
+as $function$
+  select private.cover_exclusions(
+    p_candidate, r.state,
+    case when r.modality in ('virtual', 'telehealth') then 'virtual' when r.modality in ('in_person', 'in-person', 'face_to_face', 'f2f') then 'in_person' else 'either' end,
+    r.prescribing,
+    (select lv.value from lookup_values lv where lv.id = coalesce(r.specialism_lookup_ids[1], r.specialism_lookup_id)),
+    (select lv.value from lookup_values lv where lv.id = r.specialism_lookup_ids[2]),
+    r.age_band, r.insurance,
+    (select lv.value from lookup_values lv where lv.id = r.language_lookup_id),
+    r.city)
+  from referral_requests r where r.id = p_referral;
+$function$;
+revoke all on function private.referral_exclusions(bigint, uuid) from public, anon, authenticated;
+
+create or replace function private.referral_label(p_id bigint)
+returns text
+language sql
+immutable
+as $function$ select 'Referral ' || lpad(p_id::text, 3, '0'); $function$;
+revoke all on function private.referral_label(bigint) from public, anon, authenticated;
+
+-- 7c. Make a referral: the need, the audience, the first requests, in one step.
+-- Safe to send twice with the same requestId.
+create or replace function public.referral_create(p_payload jsonb)
+returns jsonb
+language plpgsql
+security definer
+set search_path to 'public'
+as $function$
+declare
+  me uuid := auth.uid();
+  req_id uuid;
+  ref_id bigint;
+  st text;
+  setting text;
+  focus_name text;
+  sec_name text;
+  focus_id integer;
+  sec_id integer;
+  age_v text;
+  ins_v text;
+  lang_v text;
+  lang_id integer;
+  v_city text;
+  aud text;
+  tf text;
+  msg text;
+  cand uuid[];
+  kept uuid[] := '{}';
+  pid uuid;
+  excl text[];
+  dropped jsonb := '[]'::jsonb;
+  n integer := 0;
+begin
+  if me is null then
+    raise exception 'Please sign in again.' using errcode = 'P0001';
+  end if;
+  if not private.is_network_member(me) then
+    raise exception 'Your account needs to be verified, with a reviewed license, before you can make a referral.' using errcode = 'P0001';
+  end if;
+  req_id := nullif(p_payload ->> 'requestId', '')::uuid;
+  if req_id is not null then
+    perform pg_advisory_xact_lock(hashtext('referral_create:' || me::text || req_id::text));
+    select id into ref_id from referral_requests where requesting_profile_id = me and client_request_id = req_id;
+    if found then
+      return jsonb_build_object('referralId', ref_id, 'unchanged', true, 'dropped', '[]'::jsonb);
+    end if;
+  end if;
+
+  st := upper(coalesce(p_payload ->> 'state', ''));
+  if st !~ '^[A-Z]{2}$' then
+    raise exception 'Choose the client''s state.' using errcode = 'P0001';
+  end if;
+  setting := coalesce(nullif(p_payload ->> 'setting', ''), 'either');
+  if setting not in ('virtual', 'in_person', 'either') then
+    raise exception 'Choose a setting.' using errcode = 'P0001';
+  end if;
+  focus_name := btrim(coalesce(p_payload ->> 'focus', ''));
+  select id into focus_id from lookup_values where category = 'treatment_specialism' and value = focus_name;
+  if focus_id is null then
+    raise exception 'Choose a main treatment area.' using errcode = 'P0001';
+  end if;
+  sec_name := btrim(coalesce(p_payload ->> 'secondary', ''));
+  if sec_name <> '' then
+    select id into sec_id from lookup_values where category = 'treatment_specialism' and value = sec_name;
+    if sec_id is null or sec_name = focus_name then
+      raise exception 'Choose a different second treatment area.' using errcode = 'P0001';
+    end if;
+  end if;
+  age_v := nullif(btrim(coalesce(p_payload ->> 'age', '')), '');
+  if age_v is not null and not exists (select 1 from lookup_values where category = 'age_group_specialism' and value = age_v) then
+    raise exception 'Choose an age group from the list.' using errcode = 'P0001';
+  end if;
+  ins_v := nullif(btrim(coalesce(p_payload ->> 'insurance', '')), '');
+  if ins_v is not null and not exists (select 1 from lookup_values where category = 'insurance' and value = ins_v) then
+    raise exception 'Choose insurance from the list.' using errcode = 'P0001';
+  end if;
+  lang_v := nullif(btrim(coalesce(p_payload ->> 'language', '')), '');
+  if lang_v is not null then
+    select id into lang_id from lookup_values where category = 'language' and value = lang_v;
+    if lang_id is null then
+      raise exception 'Choose a language from the list.' using errcode = 'P0001';
+    end if;
+  end if;
+  v_city := nullif(btrim(coalesce(p_payload ->> 'city', '')), '');
+  if length(coalesce(v_city, '')) > 80 then
+    raise exception 'Shorten the city.' using errcode = 'P0001';
+  end if;
+  aud := coalesce(nullif(p_payload ->> 'audience', ''), 'selected');
+  if aud not in ('selected', 'trusted', 'network') then
+    raise exception 'Choose who receives this referral.' using errcode = 'P0001';
+  end if;
+  tf := case lower(btrim(coalesce(p_payload ->> 'timeframe', '')))
+          when 'as soon as possible' then 'urgent' when 'urgent' then 'urgent'
+          when 'within two weeks' then 'within_two_weeks' when 'within_two_weeks' then 'within_two_weeks'
+          when 'within a month' then 'within_month' when 'within_month' then 'within_month'
+          when 'flexible' then 'flexible' else null end;
+  if tf is null then
+    raise exception 'Choose a timeframe.' using errcode = 'P0001';
+  end if;
+  msg := btrim(coalesce(p_payload ->> 'message', ''));
+  if length(msg) > 600 then
+    raise exception 'Keep the note under 600 characters.' using errcode = 'P0001';
+  end if;
+
+  insert into referral_requests (requesting_profile_id, specialism_lookup_id, specialism_lookup_ids, state, insurance, notes, status, city,
+                                 audience_type, audience_profile_ids, age_band, modality, language_lookup_id, timeframe, prescribing, client_request_id)
+  values (me, focus_id, array_remove(array[focus_id, sec_id], null), st, ins_v, nullif(msg, ''), 'sent', v_city,
+          case aud when 'network' then 'wider_network' else aud end, '{}', age_v, setting, lang_id, tf,
+          coalesce((p_payload ->> 'prescribing')::boolean, false), req_id)
+  returning id into ref_id;
+
+  -- The people the audience names (never the referrer), in the order chosen.
+  if aud = 'selected' then
+    select coalesce(array_agg(x.id order by x.o), '{}') into cand
+      from (select (e.value)::uuid as id, min(e.ordinality) as o
+              from jsonb_array_elements_text(coalesce(p_payload -> 'selected', '[]'::jsonb)) with ordinality e(value, ordinality)
+             where (e.value)::uuid <> me
+             group by (e.value)::uuid) x;
+    if array_length(cand, 1) > 100 then
+      raise exception 'Ask up to 100 colleagues at once.' using errcode = 'P0001';
+    end if;
+  elsif aud = 'trusted' then
+    select coalesce(array_agg(t.colleague_id order by t.created_at, t.colleague_id), '{}') into cand
+      from trusted_colleagues t where t.profile_id = me and t.colleague_id <> me;
+  else
+    select coalesce(array_agg(vm.id order by private.member_name(vm.id), vm.id), '{}') into cand
+      from private.visible_members(me) vm where vm.id <> me;
+  end if;
+  if array_length(cand, 1) > 500 then
+    raise exception 'That audience is too wide to notify at once. Choose selected colleagues or a narrower need.' using errcode = 'P0001';
+  end if;
+
+  -- Each one is checked against this client's needs now, not when they were shown.
+  foreach pid in array cand loop
+    excl := case when exists (select 1 from private.visible_members(me) vm where vm.id = pid)
+                 then private.referral_exclusions(ref_id, pid)
+                 else array['Not a colleague you can ask'] end;
+    if array_length(excl, 1) is null then
+      kept := kept || pid;
+    elsif aud = 'selected' then
+      dropped := dropped || jsonb_build_object('person', pid, 'reasons', to_jsonb(excl));
+    end if;
+  end loop;
+  if aud = 'selected' and array_length(kept, 1) is null then
+    raise exception 'Select at least one eligible colleague, or choose a wider audience.' using errcode = 'P0001';
+  end if;
+
+  if array_length(kept, 1) is not null then
+    insert into referral_recipients (referral_request_id, profile_id, ord, sent_at)
+    select ref_id, k.id, k.o::integer, now() from unnest(kept) with ordinality as k(id, o)
+    on conflict do nothing;
+    if aud = 'selected' then
+      update referral_requests set audience_profile_ids = kept where id = ref_id;
+    end if;
+    foreach pid in array kept loop
+      n := n + 1;
+      perform private.notify_member('referral_sent', pid, me, 'sent you a referral request',
+                                    '/dashboard/referrals?referral=' || ref_id, 'referral:' || ref_id || ':' || pid,
+                                    jsonb_build_object('referralRequestId', ref_id));
+    end loop;
+  end if;
+  perform private.professional_event('referral_sent', me, null, 'sent a referral request',
+                                     jsonb_build_object('referralRequestId', ref_id, 'audienceType', aud));
+  return jsonb_build_object('referralId', ref_id, 'unchanged', false, 'dropped', dropped, 'asked', n);
+end;
+$function$;
+revoke all on function public.referral_create(jsonb) from public, anon;
+grant execute on function public.referral_create(jsonb) to authenticated;
+
+-- 7d. A colleague's reply: interested (capacity confirmed for this referral),
+-- a question first, or not available. They can change their mind until the
+-- referrer has chosen someone.
+create or replace function public.referral_answer(p_referral bigint, p_response text, p_capacity boolean default false, p_question text default null, p_client_message_id uuid default null)
+returns jsonb
+language plpgsql
+security definer
+set search_path to 'public'
+as $function$
+declare
+  me uuid := auth.uid();
+  r referral_requests%rowtype;
+  rc referral_recipients%rowtype;
+  rs referral_responses%rowtype;
+  new_status text;
+  q text := btrim(coalesce(p_question, ''));
+  changed boolean := false;
+  conv bigint;
+  msg bigint;
+  ckey text;
+  secs integer;
+  lic boolean;
+  has_rs boolean;
+  new_id bigint;
+begin
+  if me is null then
+    raise exception 'Please sign in again.' using errcode = 'P0001';
+  end if;
+  if p_response not in ('interested', 'declined', 'discussing') then
+    raise exception 'Choose a response.' using errcode = 'P0001';
+  end if;
+  select * into r from referral_requests where id = p_referral for update;
+  if not found or r.requesting_profile_id = me or public.is_blocked_between(me, r.requesting_profile_id) then
+    raise exception 'Referral not found.' using errcode = 'P0001';
+  end if;
+  select * into rc from referral_recipients where referral_request_id = p_referral and profile_id = me;
+  if not found then
+    raise exception 'Referral not found.' using errcode = 'P0001';
+  end if;
+  select * into rs from referral_responses where referral_request_id = p_referral and responding_profile_id = me;
+  has_rs := found;
+  if has_rs and rs.status::text = 'accepted' then
+    raise exception 'You''ve already been chosen for this referral.' using errcode = 'P0001';
+  end if;
+  if r.status::text not in ('open', 'sent', 'matched') then
+    raise exception 'This referral is no longer taking replies.' using errcode = 'P0001';
+  end if;
+  if not private.is_network_member(me) then
+    raise exception 'Your account isn''t active in the network right now, so you can''t reply to referrals.' using errcode = 'P0001';
+  end if;
+
+  if p_response = 'interested' then
+    if not coalesce(p_capacity, false) then
+      raise exception 'Confirm your current capacity to express interest.' using errcode = 'P0001';
+    end if;
+    select exists (select 1 from private.member_state_settings s where s.profile_id = me and s.state = upper(coalesce(r.state, ''))) into lic;
+    if not lic then
+      raise exception 'You need a reviewed license in % to take this referral.', r.state using errcode = 'P0001';
+    end if;
+  elsif p_response = 'discussing' then
+    if q = '' then
+      raise exception 'Write your question first.' using errcode = 'P0001';
+    end if;
+    if length(q) > 2000 then
+      raise exception 'Keep the question under 2,000 characters.' using errcode = 'P0001';
+    end if;
+  end if;
+
+  new_status := case p_response when 'interested' then 'interested' when 'declined' then 'unavailable' else 'question' end;
+  if not has_rs then
+    insert into referral_responses (referral_request_id, responding_profile_id, status, message, responded_at, capacity_confirmed_at)
+    values (p_referral, me, new_status::referral_response_status, case when p_response = 'discussing' then q end, now(),
+            case when p_response = 'interested' then now() end)
+    on conflict (referral_request_id, responding_profile_id) do nothing
+    returning id into new_id;
+    changed := new_id is not null;
+  elsif rs.status::text <> new_status then
+    update referral_responses
+       set status = new_status::referral_response_status, responded_at = now(),
+           message = case when p_response = 'discussing' then q else message end,
+           capacity_confirmed_at = case when p_response = 'interested' then now() else capacity_confirmed_at end
+     where id = rs.id;
+    changed := true;
+  end if;
+
+  if p_response = 'discussing' then
+    ckey := 'referral-' || p_referral || '-' || me;
+    conv := private.context_conversation(ckey, private.referral_label(p_referral) || ' · ' || coalesce((select lv.value from lookup_values lv where lv.id = coalesce(r.specialism_lookup_ids[1], r.specialism_lookup_id)), 'Client need'),
+                                         array[r.requesting_profile_id, me], me);
+    msg := private.post_message(conv, me, q, p_client_message_id, '/dashboard/messages?thread=' || ckey);
+  end if;
+
+  if changed then
+    secs := greatest(0, extract(epoch from now() - rc.sent_at)::integer);
+    perform private.professional_event('referral_response', me, r.requesting_profile_id, 'responded "' || p_response || '" to a referral request',
+                                       jsonb_build_object('referralRequestId', p_referral, 'response', p_response), secs);
+    perform private.notify_member('referral_response', r.requesting_profile_id, me,
+                                  case p_response when 'interested' then 'is interested in your referral request'
+                                                  when 'discussing' then 'asked a question about your referral request'
+                                                  else 'is not available for your referral request' end,
+                                  '/dashboard/referrals?referral=' || p_referral, 'referral_response:' || p_referral || ':' || me || ':' || p_response,
+                                  jsonb_build_object('referralRequestId', p_referral, 'response', p_response));
+  end if;
+  return jsonb_build_object('status', p_response, 'unchanged', not changed, 'conversationKey', ckey, 'messageId', msg);
+end;
+$function$;
+revoke all on function public.referral_answer(bigint, text, boolean, text, uuid) from public, anon;
+grant execute on function public.referral_answer(bigint, text, boolean, text, uuid) to authenticated;
+
+-- 7e. Choose the colleague: the only way a referral becomes placed. Only the
+-- referrer, only someone who said they are interested, only once; the other
+-- open requests close with it.
+create or replace function public.referral_place(p_referral bigint, p_colleague uuid)
+returns jsonb
+language plpgsql
+security definer
+set search_path to 'public'
+as $function$
+declare
+  me uuid := auth.uid();
+  r referral_requests%rowtype;
+  res jsonb;
+  excl text[];
+begin
+  if me is null then
+    raise exception 'Please sign in again.' using errcode = 'P0001';
+  end if;
+  select * into r from referral_requests where id = p_referral for update;
+  if not found or r.requesting_profile_id <> me then
+    raise exception 'Referral not found.' using errcode = 'P0001';
+  end if;
+  if r.status::text in ('connected', 'handoff') and exists (select 1 from referral_responses where referral_request_id = p_referral and responding_profile_id = p_colleague and status = 'accepted') then
+    return jsonb_build_object('unchanged', true);
+  end if;
+  if r.status::text = 'closed' then
+    raise exception 'This referral is closed.' using errcode = 'P0001';
+  end if;
+  if not exists (select 1 from referral_recipients where referral_request_id = p_referral and profile_id = p_colleague) then
+    raise exception 'You can only choose a colleague you sent this referral to.' using errcode = 'P0001';
+  end if;
+  excl := private.referral_exclusions(p_referral, p_colleague);
+  if excl[1] like 'No reviewed %' then
+    raise exception 'That colleague''s license for % isn''t current, so they can''t take this referral. Please choose another colleague who replied.', r.state using errcode = 'P0001';
+  end if;
+  res := public.choose_referral_colleague(p_referral, p_colleague);
+  if coalesce((res ->> 'already')::boolean, false) then
+    return jsonb_build_object('unchanged', true);
+  end if;
+  perform private.professional_event('professional_relationship_created', me, p_colleague, 'established a professional connection via referral',
+                                     jsonb_build_object('referralRequestId', p_referral));
+  perform private.professional_event('referral_outcome', me, p_colleague, 'placed a referral with a colleague',
+                                     jsonb_build_object('referralRequestId', p_referral));
+  perform private.notify_member('referral_connected', p_colleague, me, 'chose you for a referral',
+                                '/dashboard/referrals?referral=' || p_referral, 'referral_connected:' || p_referral || ':' || p_colleague,
+                                jsonb_build_object('referralRequestId', p_referral));
+  return jsonb_build_object('unchanged', false);
+end;
+$function$;
+revoke all on function public.referral_place(bigint, uuid) from public, anon;
+grant execute on function public.referral_place(bigint, uuid) to authenticated;
+
+-- 7f. Withdraw: only the referrer, only while it is open. Open requests close;
+-- every reply and conversation stays.
+create or replace function public.referral_withdraw(p_referral bigint)
+returns jsonb
+language plpgsql
+security definer
+set search_path to 'public'
+as $function$
+declare
+  me uuid := auth.uid();
+  r referral_requests%rowtype;
+  o record;
+begin
+  if me is null then
+    raise exception 'Please sign in again.' using errcode = 'P0001';
+  end if;
+  select * into r from referral_requests where id = p_referral for update;
+  if not found or r.requesting_profile_id <> me then
+    raise exception 'Referral not found.' using errcode = 'P0001';
+  end if;
+  if r.status::text = 'closed' and r.withdrawn_at is not null then
+    return jsonb_build_object('unchanged', true);
+  end if;
+  if r.status::text <> 'open' and r.status::text <> 'sent' and r.status::text <> 'matched' then
+    raise exception 'This referral has already been placed.' using errcode = 'P0001';
+  end if;
+  update referral_requests set status = 'closed', closed_at = now(), withdrawn_at = now() where id = p_referral;
+  for o in
+    select rc.profile_id from referral_recipients rc
+      left join referral_responses rs on rs.referral_request_id = rc.referral_request_id and rs.responding_profile_id = rc.profile_id
+     where rc.referral_request_id = p_referral and coalesce(rs.status::text, 'offered') not in ('unavailable', 'withdrawn')
+  loop
+    perform private.notify_member('system_notice', o.profile_id, me, 'withdrew a referral request they had sent you',
+                                  '/dashboard/referrals?referral=' || p_referral, 'referral_withdrawn:' || p_referral || ':' || o.profile_id,
+                                  jsonb_build_object('referralRequestId', p_referral), false);
+  end loop;
+  return jsonb_build_object('unchanged', false);
+end;
+$function$;
+revoke all on function public.referral_withdraw(bigint) from public, anon;
+grant execute on function public.referral_withdraw(bigint) to authenticated;
+
+-- 7g. Ask another colleague: the referrer adds one eligible colleague to an
+-- open referral, with the same requirements. Safe to repeat.
+create or replace function public.referral_add(p_referral bigint, p_person uuid)
+returns jsonb
+language plpgsql
+security definer
+set search_path to 'public'
+as $function$
+declare
+  me uuid := auth.uid();
+  r referral_requests%rowtype;
+  excl text[];
+  nxt integer;
+begin
+  if me is null then
+    raise exception 'Please sign in again.' using errcode = 'P0001';
+  end if;
+  select * into r from referral_requests where id = p_referral for update;
+  if not found or r.requesting_profile_id <> me then
+    raise exception 'Referral not found.' using errcode = 'P0001';
+  end if;
+  if r.status::text not in ('open', 'sent', 'matched') then
+    raise exception 'This referral is no longer open.' using errcode = 'P0001';
+  end if;
+  if p_person is null or p_person = me then
+    raise exception 'Choose a colleague.' using errcode = 'P0001';
+  end if;
+  if exists (select 1 from referral_recipients where referral_request_id = p_referral and profile_id = p_person) then
+    return jsonb_build_object('unchanged', true);
+  end if;
+  excl := case when exists (select 1 from private.visible_members(me) vm where vm.id = p_person)
+               then private.referral_exclusions(p_referral, p_person)
+               else array['Not a colleague you can ask'] end;
+  if array_length(excl, 1) is not null then
+    raise exception 'That colleague no longer matches this referral: %.', array_to_string(excl, '; ') using errcode = 'P0001';
+  end if;
+  select coalesce(max(ord), 0) + 1 into nxt from referral_recipients where referral_request_id = p_referral;
+  insert into referral_recipients (referral_request_id, profile_id, ord, sent_at) values (p_referral, p_person, nxt, now())
+  on conflict do nothing;
+  if r.audience_type = 'selected' and not (p_person = any (r.audience_profile_ids)) then
+    update referral_requests set audience_profile_ids = audience_profile_ids || p_person where id = p_referral;
+  end if;
+  perform private.notify_member('referral_sent', p_person, me, 'sent you a referral request',
+                                '/dashboard/referrals?referral=' || p_referral, 'referral:' || p_referral || ':' || p_person,
+                                jsonb_build_object('referralRequestId', p_referral));
+  return jsonb_build_object('unchanged', false);
+end;
+$function$;
+revoke all on function public.referral_add(bigint, uuid) from public, anon;
+grant execute on function public.referral_add(bigint, uuid) to authenticated;
+
+-- 7h. The conversation about one colleague's request: one key whoever opens it.
+create or replace function public.referral_thread(p_referral bigint, p_person uuid default null)
+returns jsonb
+language plpgsql
+security definer
+set search_path to 'public'
+as $function$
+declare
+  me uuid := auth.uid();
+  r referral_requests%rowtype;
+  resp uuid;
+  ckey text;
+  conv bigint;
+begin
+  if me is null then
+    raise exception 'Please sign in again.' using errcode = 'P0001';
+  end if;
+  select * into r from referral_requests where id = p_referral;
+  if not found then
+    raise exception 'Referral not found.' using errcode = 'P0001';
+  end if;
+  resp := case when r.requesting_profile_id = me then p_person else me end;
+  if resp is null or resp = r.requesting_profile_id
+     or not exists (select 1 from referral_recipients where referral_request_id = p_referral and profile_id = resp)
+     or public.is_blocked_between(me, case when r.requesting_profile_id = me then resp else r.requesting_profile_id end) then
+    raise exception 'Referral not found.' using errcode = 'P0001';
+  end if;
+  ckey := 'referral-' || p_referral || '-' || resp;
+  conv := private.context_conversation(ckey, private.referral_label(p_referral) || ' · ' || coalesce((select lv.value from lookup_values lv where lv.id = coalesce(r.specialism_lookup_ids[1], r.specialism_lookup_id)), 'Client need'),
+                                       array[r.requesting_profile_id, resp], me);
+  return jsonb_build_object('conversationKey', ckey, 'conversationId', conv);
+end;
+$function$;
+revoke all on function public.referral_thread(bigint, uuid) from public, anon;
+grant execute on function public.referral_thread(bigint, uuid) to authenticated;
+
+-- 7i. What the workspace reads. A colleague sees only their own request and the
+-- referrer's note, never who else was asked, and is not told who a referral
+-- was placed with unless it was them.
+create or replace function private.referral_json(p_referral bigint, p_viewer uuid)
+returns jsonb
+language plpgsql
+stable
+security definer
+set search_path to 'public'
+as $function$
+declare
+  r referral_requests%rowtype;
+  own boolean;
+  st text;
+  chosen uuid;
+  reqs jsonb;
+begin
+  select * into r from referral_requests where id = p_referral;
+  own := r.requesting_profile_id = p_viewer;
+  select responding_profile_id into chosen from referral_responses where referral_request_id = r.id and status = 'accepted' limit 1;
+  st := case when r.status::text in ('connected', 'handoff') then 'placed'
+             when r.status::text = 'closed' then case when chosen is not null then 'placed' else 'withdrawn' end
+             else 'discussion' end;
+  select coalesce(jsonb_agg(x.j order by x.ord, x.sent, x.k), '[]'::jsonb) into reqs
+    from (
+      select rc.ord, rc.sent_at as sent, rc.profile_id as k,
+             jsonb_build_object(
+               'id', r.id || '-' || rc.profile_id,
+               'person', case when rc.profile_id = p_viewer then 'me' else rc.profile_id::text end,
+               'status', case when b.base in ('awaiting', 'interested', 'discussing') and st <> 'discussion' then 'closed' else b.base end,
+               'order', rc.ord, 'sentAt', rc.sent_at, 'respondedAt', rs.responded_at, 'capacityConfirmedAt', rs.capacity_confirmed_at,
+               'beforeWithdrawal', case when st = 'withdrawn' and b.base in ('awaiting', 'interested', 'discussing') then b.base end) as j
+        from referral_recipients rc
+        left join referral_responses rs on rs.referral_request_id = rc.referral_request_id and rs.responding_profile_id = rc.profile_id
+        cross join lateral (select case rs.status::text when 'accepted' then 'placed' when 'interested' then 'interested' when 'offered' then 'interested'
+                                                       when 'question' then 'discussing' when 'unavailable' then 'declined' when 'withdrawn' then 'declined'
+                                                       else 'awaiting' end as base) b
+       where rc.referral_request_id = r.id and (own or rc.profile_id = p_viewer)
+    ) x;
+  return jsonb_build_object(
+    'id', r.id,
+    'owner', case when own then 'me' else r.requesting_profile_id::text end,
+    'focus', coalesce((select lv.value from lookup_values lv where lv.id = coalesce(r.specialism_lookup_ids[1], r.specialism_lookup_id)), ''),
+    'secondary', coalesce((select lv.value from lookup_values lv where lv.id = r.specialism_lookup_ids[2]), ''),
+    'state', upper(coalesce(r.state, '')),
+    'city', coalesce(r.city, ''),
+    'age', coalesce(r.age_band, ''),
+    'setting', case when r.modality in ('virtual', 'telehealth') then 'virtual' when r.modality in ('in_person', 'in-person', 'face_to_face', 'f2f') then 'in_person' else 'either' end,
+    'insurance', coalesce(r.insurance, ''),
+    'language', coalesce((select lv.value from lookup_values lv where lv.id = r.language_lookup_id), ''),
+    'prescribing', r.prescribing,
+    'status', st,
+    'audience', case r.audience_type when 'wider_network' then 'network' when 'suggested' then 'selected' else r.audience_type end,
+    'timeframe', case r.timeframe when 'urgent' then 'As soon as possible' when 'within_two_weeks' then 'Within two weeks'
+                                  when 'within_month' then 'Within a month' else 'Flexible' end,
+    'message', coalesce(r.notes, ''),
+    'requests', reqs,
+    'placedWith', case when chosen is null then null when own then chosen::text when chosen = p_viewer then 'me' else null end,
+    'placedElsewhere', (not own and st = 'placed' and chosen is distinct from p_viewer),
+    'createdAt', r.created_at,
+    'withdrawnAt', case when st = 'withdrawn' then coalesce(r.withdrawn_at, r.closed_at) end);
+end;
+$function$;
+revoke all on function private.referral_json(bigint, uuid) from public, anon, authenticated;
+
+create or replace function public.workspace_referrals()
+returns jsonb
+language sql
+stable
+security definer
+set search_path to 'public'
+as $function$
+  select coalesce(jsonb_agg(private.referral_json(r.id, auth.uid()) order by r.created_at desc, r.id desc), '[]'::jsonb)
+    from referral_requests r
+   where auth.uid() is not null
+     and (r.requesting_profile_id = auth.uid()
+          or (exists (select 1 from referral_recipients rc where rc.referral_request_id = r.id and rc.profile_id = auth.uid())
+              and not public.is_blocked_between(auth.uid(), r.requesting_profile_id)));
+$function$;
+revoke all on function public.workspace_referrals() from public, anon;
+grant execute on function public.workspace_referrals() to authenticated;
+
+-- 8. Known people ----------------------------------------------------------------
+-- People the screens mention who are not (or are no longer) in the member's
+-- directory: a colleague asked earlier who has since left, been paused or
+-- blocked. Name and role only, so history stays readable and nothing else leaks.
+create or replace function public.workspace_known()
+returns jsonb
+language sql
+stable
+security definer
+set search_path to 'public'
+as $function$
+  with me as (select auth.uid() as id),
+  refs as (
+    select p.profile_id as id from coverage_plans p, me
+     where p.status <> 'draft' and (p.profile_id = me.id or exists (
+       select 1 from coverage_requests r join coverage_plan_cases c on c.id = r.coverage_plan_case_id
+        where c.coverage_plan_id = p.id and r.requested_profile_id = me.id))
+    union
+    select r.requested_profile_id from coverage_requests r
+      join coverage_plan_cases c on c.id = r.coverage_plan_case_id
+      join coverage_plans p on p.id = c.coverage_plan_id, me
+     where p.profile_id = me.id
+    union
+    select unnest(c.outreach_queue) from coverage_plan_cases c
+      join coverage_plans p on p.id = c.coverage_plan_id, me
+     where p.profile_id = me.id
+    union
+    select c.assigned_clinician_id from coverage_plan_cases c
+      join coverage_plans p on p.id = c.coverage_plan_id, me
+     where p.profile_id = me.id and c.assigned_clinician_id is not null
+    union
+    select rq.requesting_profile_id from referral_requests rq join referral_recipients rc on rc.referral_request_id = rq.id, me
+     where rc.profile_id = me.id
+    union
+    select rc.profile_id from referral_recipients rc join referral_requests rq on rq.id = rc.referral_request_id, me
+     where rq.requesting_profile_id = me.id
+  )
+  select coalesce(jsonb_agg(jsonb_build_object(
+    'id', pr.id, 'name', private.member_name(pr.id), 'initials', private.initials(pr.full_name),
+    'credential', coalesce(pr.qualification_level::text, ''), 'role', private.role_label(pr.qualification_level::text),
+    'state', '', 'city', '', 'licenses', '{}'::jsonb, 'specialties', '[]'::jsonb, 'slots', 0, 'confirmedAt', null,
+    'languages', '[]'::jsonb, 'ages', '[]'::jsonb, 'insurance', '[]'::jsonb, 'modalities', '[]'::jsonb, 'sessionTypes', '[]'::jsonb,
+    'psypact', false, 'bio', '', 'avatarPath', null, 'limited', true)), '[]'::jsonb)
+  from refs join profiles pr on pr.id = refs.id, me
+  where me.id is not null and refs.id <> me.id
+    and refs.id not in (select vm.id from private.visible_members(me.id) vm);
+$function$;
+revoke all on function public.workspace_known() from public, anon;
+grant execute on function public.workspace_known() to authenticated;
+
 -- 9. Slices and boot -------------------------------------------------------------
 -- (This section stays last: it names every read model above it.)
 -- Any part of the workspace on its own, so a save can send back just what it
@@ -1730,6 +2403,7 @@ begin
       when 'drafts' then jsonb_build_object('drafts', public.workspace_drafts_slice())
       when 'plans' then jsonb_build_object('plans', public.workspace_plans())
       when 'known' then jsonb_build_object('known', public.workspace_known())
+      when 'referrals' then jsonb_build_object('referrals', public.workspace_referrals())
       else '{}'::jsonb
     end;
   end loop;
@@ -1766,7 +2440,7 @@ begin
     return jsonb_build_object('gate', 'waiting');
   end if;
   return jsonb_build_object('gate', 'ok', 'serverNow', now(), 'options', public.workspace_options())
-         || public.workspace_slice(array['me', 'people', 'known', 'tiers', 'availability', 'drafts', 'plans']);
+         || public.workspace_slice(array['me', 'people', 'known', 'tiers', 'availability', 'drafts', 'plans', 'referrals']);
 end;
 $function$;
 revoke all on function public.workspace_boot() from public, anon;
