@@ -1,0 +1,20 @@
+// node e2e/tools/live-shot.mjs --base http://127.0.0.1:3611 --as avery --path /dashboard --out shot.png [--vp 1440x1000] [--click "text"]
+import { chromium } from "@playwright/test";
+import { cookiesFor } from "../lib/session.mjs";
+const arg = (n, d) => { const i = process.argv.indexOf("--" + n); return i > 0 ? process.argv[i + 1] : d; };
+const base = arg("base", "http://127.0.0.1:3611"), who = arg("as", "avery"), p = arg("path", "/dashboard"), out = arg("out", "/tmp/shot.png");
+const [w, h] = arg("vp", "1440x1000").split("x").map(Number);
+const browser = await chromium.launch();
+const ctx = await browser.newContext({ viewport: { width: w, height: h }, locale: "en-US", timezoneId: "America/New_York", reducedMotion: "reduce" });
+await ctx.addCookies(await cookiesFor(who, base));
+const page = await ctx.newPage();
+const errors = [];
+page.on("pageerror", (e) => errors.push(String(e)));
+page.on("console", (m) => { if (m.type() === "error") errors.push("console: " + m.text()); });
+await page.goto(base + p, { waitUntil: "networkidle" });
+await page.waitForSelector("#app .workspace", { timeout: 20000 }).catch(() => errors.push("no workspace rendered"));
+await page.waitForTimeout(600);
+await page.screenshot({ path: out, fullPage: true });
+console.log("url:", page.url());
+console.log("errors:", errors.length ? errors.join("\n") : "none");
+await browser.close();

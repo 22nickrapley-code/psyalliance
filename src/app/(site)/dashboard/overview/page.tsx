@@ -9,7 +9,7 @@ import { loadNeedOptions } from "@/lib/need-options";
 import { resolveAvatarUrls } from "@/lib/avatars";
 import { clinicianName } from "@/lib/profession";
 import { IS_DEMO_SITE } from "@/lib/env";
-import { HomeView, type HomeData, type NextStep } from "./home-view";
+import { HomeView, type HomeData, type NextStep } from "../home-view";
 
 export const metadata = { title: "Home" };
 
