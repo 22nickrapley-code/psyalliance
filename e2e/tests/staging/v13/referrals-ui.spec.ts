@@ -117,8 +117,8 @@ test("RFU-03 ask first, then the referrer withdraws; replies and the conversatio
   await c.page.getByRole("button", { name: "Send question" }).click();
   await expect(c.page.locator("#toast")).toContainText("Your question is in");
   expect((await one(`select status from referral_responses where referral_request_id = $1 and responding_profile_id = $2`, [refId, cass])).status).toBe("question");
-  const msgs = await q(`select m.body from conversation_messages m join conversations c on c.id = m.conversation_id where c.context_key = $1`, [`referral-${refId}-${cass}`]);
-  expect(msgs.map((m) => m.body)).toEqual(["Do you need weekday evenings?"]);
+  const msgs = await q(`select m.body from conversation_messages m join conversations c on c.id = m.conversation_id where c.context_key = $1 order by m.created_at, m.id`, [`referral-${refId}-${cass}`]);
+  expect(msgs.map((m) => m.body)).toEqual(["Weekly sessions, evenings preferred.", "Do you need weekday evenings?"]);
 
   await a.page.goto("/dashboard/referrals");
   await a.page.locator(`[data-action="referral:${refId}"]`).first().click();
@@ -129,7 +129,7 @@ test("RFU-03 ask first, then the referrer withdraws; replies and the conversatio
   expect(row.status).toBe("closed");
   expect(row.withdrawn_at).not.toBeNull();
   expect((await q(`select 1 from referral_responses where referral_request_id = $1`, [refId])).length).toBe(1);
-  expect((await q(`select 1 from conversation_messages m join conversations c on c.id = m.conversation_id where c.context_key = $1`, [`referral-${refId}-${cass}`])).length).toBe(1);
+  expect((await q(`select 1 from conversation_messages m join conversations c on c.id = m.conversation_id where c.context_key = $1`, [`referral-${refId}-${cass}`])).length).toBe(2);
   await c.page.goto("/dashboard/referrals");
   await expect(c.page.locator(".arrangement-row", { hasText: "Withdrawn" }).first()).toBeVisible();
   await a.context.close();

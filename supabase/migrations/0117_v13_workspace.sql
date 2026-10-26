@@ -10,10 +10,12 @@
 --   5. Drafts and per-member screen state.
 --   6. Cover: plans, clients, requests, deadlines, handover, history.
 --   7. Referrals: who was asked, replies with capacity, placement, withdrawal.
---   8. Colleagues the screens mention who are no longer in the directory.
---   9. Slices and the boot snapshot.
+--   8. Messages: conversations per client, referral or colleague; files and
+--      voice notes; sending that is safe to retry.
+--   9. Colleagues the screens mention who are no longer in the directory.
+--  10. Slices and the boot snapshot.
 --
--- Later sections (Messages, Consult, Invitations, Library) are appended below
+-- Later sections (Consult, Invitations, Library) are appended below
 -- as they are added.
 
 -- 1. Availability ---------------------------------------------------------------
@@ -469,30 +471,7 @@ create unique index if not exists conversations_context_key_idx on public.conver
 alter table public.conversation_messages add column if not exists client_message_id uuid;
 create unique index if not exists conversation_messages_client_id_idx on public.conversation_messages (author_id, client_message_id) where client_message_id is not null;
 
-create or replace function private.context_conversation(p_key text, p_title text, p_participants uuid[], p_creator uuid)
-returns bigint
-language plpgsql
-security definer
-set search_path to 'public'
-as $function$
-declare v bigint;
-begin
-  select id into v from conversations where context_key = p_key;
-  if v is null then
-    insert into conversations (created_by, title, context_key) values (p_creator, p_title, p_key)
-    on conflict (context_key) where context_key is not null do nothing
-    returning id into v;
-    if v is null then
-      select id into v from conversations where context_key = p_key;
-    end if;
-  end if;
-  insert into conversation_participants (conversation_id, profile_id)
-  select v, x from unnest(p_participants) x
-  on conflict do nothing;
-  return v;
-end;
-$function$;
-revoke all on function private.context_conversation(text, text, uuid[], uuid) from public, anon, authenticated;
+-- (private.context_conversation lives in section 8, with the conversation read model.)
 
 -- One notification in the same transaction as the change that caused it: the
 -- in-app item now, the email queued (each member's switches apply when it is
@@ -1232,7 +1211,8 @@ begin
 
   if p_response = 'discussing' then
     ckey := 'cover-' || pl.id || '-' || cs.id || '-' || me;
-    conv := private.context_conversation(ckey, pl.title || ' · ' || cs.case_reference, array[pl.profile_id, me], me);
+    conv := private.context_conversation(ckey, pl.title || ' · ' || cs.case_reference, array[pl.profile_id, me], me,
+                                         pl.profile_id, private.cover_request_text(pl.id, cs.id), rq.sent_at);
     msg := private.post_message(conv, me, q, p_client_message_id, '/dashboard/messages?thread=' || ckey);
   end if;
 
@@ -2042,7 +2022,8 @@ begin
   if p_response = 'discussing' then
     ckey := 'referral-' || p_referral || '-' || me;
     conv := private.context_conversation(ckey, private.referral_label(p_referral) || ' · ' || coalesce((select lv.value from lookup_values lv where lv.id = coalesce(r.specialism_lookup_ids[1], r.specialism_lookup_id)), 'Client need'),
-                                         array[r.requesting_profile_id, me], me);
+                                         array[r.requesting_profile_id, me], me,
+                                         r.requesting_profile_id, private.referral_request_text(p_referral), rc.sent_at);
     msg := private.post_message(conv, me, q, p_client_message_id, '/dashboard/messages?thread=' || ckey);
   end if;
 
@@ -2237,7 +2218,9 @@ begin
   end if;
   ckey := 'referral-' || p_referral || '-' || resp;
   conv := private.context_conversation(ckey, private.referral_label(p_referral) || ' · ' || coalesce((select lv.value from lookup_values lv where lv.id = coalesce(r.specialism_lookup_ids[1], r.specialism_lookup_id)), 'Client need'),
-                                       array[r.requesting_profile_id, resp], me);
+                                       array[r.requesting_profile_id, resp], me,
+                                       r.requesting_profile_id, private.referral_request_text(p_referral),
+                                       (select rc.sent_at from referral_recipients rc where rc.referral_request_id = p_referral and rc.profile_id = resp));
   return jsonb_build_object('conversationKey', ckey, 'conversationId', conv);
 end;
 $function$;
@@ -2326,7 +2309,587 @@ $function$;
 revoke all on function public.workspace_referrals() from public, anon;
 grant execute on function public.workspace_referrals() to authenticated;
 
--- 8. Known people ----------------------------------------------------------------
+-- 8. Messages -------------------------------------------------------------------
+-- Conversations as the workspace shows them: one conversation per colleague
+-- per thing (a client on a cover plan, a referral, or the two of you directly),
+-- each with its own identity, so the same colleague can be in several without
+-- the threads mixing. A message is stored once however many times the screen
+-- retries it; files and voice notes sit in a private bucket and are only
+-- served to the two people in the conversation.
+
+-- 8a. Files and voice notes.
+create table if not exists public.message_attachments (
+  message_id bigint primary key references public.conversation_messages (id) on delete cascade,
+  conversation_id bigint not null references public.conversations (id) on delete cascade,
+  kind text not null check (kind in ('file', 'audio')),
+  storage_path text not null,
+  file_name text not null,
+  file_size bigint not null check (file_size >= 0 and file_size <= 20971520),
+  mime_type text,
+  duration_seconds integer check (duration_seconds is null or duration_seconds between 0 and 3600)
+);
+create index if not exists message_attachments_conversation_idx on public.message_attachments (conversation_id);
+alter table public.message_attachments enable row level security;
+revoke all on public.message_attachments from anon, authenticated;
+
+insert into storage.buckets (id, name, public, file_size_limit)
+values ('message-files', 'message-files', false, 20971520)
+on conflict (id) do nothing;
+
+-- Path: <conversation id>/<author id>/<file>. Only the two people in a
+-- conversation can add to or read it; only the author can take a file out.
+drop policy if exists "participants add message files" on storage.objects;
+create policy "participants add message files" on storage.objects for insert to authenticated
+  with check (bucket_id = 'message-files'
+              and (storage.foldername(name))[1] ~ '^[0-9]{1,18}$'
+              and (storage.foldername(name))[2] = (select auth.uid())::text
+              and private.is_conversation_participant(((storage.foldername(name))[1])::bigint, (select auth.uid())));
+drop policy if exists "participants read message files" on storage.objects;
+create policy "participants read message files" on storage.objects for select to authenticated
+  using (bucket_id = 'message-files'
+         and (storage.foldername(name))[1] ~ '^[0-9]{1,18}$'
+         and private.is_conversation_participant(((storage.foldername(name))[1])::bigint, (select auth.uid())));
+drop policy if exists "authors remove their message files" on storage.objects;
+create policy "authors remove their message files" on storage.objects for delete to authenticated
+  using (bucket_id = 'message-files' and (storage.foldername(name))[2] = (select auth.uid())::text);
+
+-- 8b. One conversation per context. The first line of a cover or referral
+-- conversation is the request itself, so it opens with what was asked.
+drop function if exists private.context_conversation(text, text, uuid[], uuid);
+create or replace function private.context_conversation(p_key text, p_title text, p_participants uuid[], p_creator uuid,
+                                                         p_seed_author uuid default null, p_seed_body text default null, p_seed_at timestamptz default null)
+returns bigint
+language plpgsql
+security definer
+set search_path to 'public'
+as $function$
+declare v bigint; fresh boolean := false;
+begin
+  select id into v from conversations where context_key = p_key;
+  if v is null then
+    insert into conversations (created_by, title, context_key) values (p_creator, p_title, p_key)
+    on conflict (context_key) where context_key is not null do nothing
+    returning id into v;
+    fresh := v is not null;
+    if v is null then
+      select id into v from conversations where context_key = p_key;
+    end if;
+  end if;
+  insert into conversation_participants (conversation_id, profile_id)
+  select v, x from unnest(p_participants) x
+  on conflict do nothing;
+  if fresh and p_seed_author is not null and nullif(btrim(coalesce(p_seed_body, '')), '') is not null then
+    insert into conversation_messages (conversation_id, author_id, body, client_message_id, created_at)
+    values (v, p_seed_author, left(btrim(p_seed_body), 2000), md5(p_key || ':request')::uuid, coalesce(p_seed_at, now()))
+    on conflict do nothing;
+  end if;
+  return v;
+end;
+$function$;
+revoke all on function private.context_conversation(text, text, uuid[], uuid, uuid, text, timestamptz) from public, anon, authenticated;
+
+-- The first line of a cover or referral conversation is the request itself, in
+-- the words the sender used, or in the usual wording when they wrote nothing.
+create or replace function private.state_name(p_code text)
+returns text
+language sql
+immutable
+as $function$
+  select coalesce((select n from (values
+    ('AL','Alabama'),('AK','Alaska'),('AZ','Arizona'),('AR','Arkansas'),('CA','California'),('CO','Colorado'),('CT','Connecticut'),
+    ('DE','Delaware'),('DC','District of Columbia'),('FL','Florida'),('GA','Georgia'),('HI','Hawaii'),('ID','Idaho'),('IL','Illinois'),
+    ('IN','Indiana'),('IA','Iowa'),('KS','Kansas'),('KY','Kentucky'),('LA','Louisiana'),('ME','Maine'),('MD','Maryland'),
+    ('MA','Massachusetts'),('MI','Michigan'),('MN','Minnesota'),('MS','Mississippi'),('MO','Missouri'),('MT','Montana'),
+    ('NE','Nebraska'),('NV','Nevada'),('NH','New Hampshire'),('NJ','New Jersey'),('NM','New Mexico'),('NY','New York'),
+    ('NC','North Carolina'),('ND','North Dakota'),('OH','Ohio'),('OK','Oklahoma'),('OR','Oregon'),('PA','Pennsylvania'),
+    ('RI','Rhode Island'),('SC','South Carolina'),('SD','South Dakota'),('TN','Tennessee'),('TX','Texas'),('UT','Utah'),
+    ('VT','Vermont'),('VA','Virginia'),('WA','Washington'),('WV','West Virginia'),('WI','Wisconsin'),('WY','Wyoming')
+  ) v(c, n) where v.c = upper(p_code)), p_code);
+$function$;
+revoke all on function private.state_name(text) from public, anon, authenticated;
+
+create or replace function private.cover_request_text(p_plan bigint, p_case bigint)
+returns text
+language sql
+stable
+security definer
+set search_path to 'public'
+as $function$
+  select coalesce(nullif(btrim(pl.notes), ''),
+         c.case_reference || ': '
+         || concat_ws(' + ',
+              (select lv.value from lookup_values lv where lv.id = c.specialism_lookup_ids[1]),
+              case when c.via_hub then (select lv.value from lookup_values lv where lv.id = c.specialism_lookup_ids[2]) end)
+         || '. ' || to_char(coalesce(pl.starts_on, pl.created_at::date), 'Mon FMDD') || ' – '
+         || to_char(coalesce(pl.ends_on, pl.starts_on, pl.created_at::date), 'Mon FMDD')
+         || '. Shall we discuss the cover arrangements?')
+    from coverage_plans pl join coverage_plan_cases c on c.coverage_plan_id = pl.id
+   where pl.id = p_plan and c.id = p_case;
+$function$;
+revoke all on function private.cover_request_text(bigint, bigint) from public, anon, authenticated;
+
+create or replace function private.referral_request_text(p_referral bigint)
+returns text
+language sql
+stable
+security definer
+set search_path to 'public'
+as $function$
+  select coalesce(nullif(btrim(r.notes), ''),
+         'I’d like to discuss a ' || lower(coalesce((select lv.value from lookup_values lv where lv.id = coalesce(r.specialism_lookup_ids[1], r.specialism_lookup_id)), 'client')) || ' referral in '
+         || private.state_name(r.state) || '. '
+         || case when r.modality in ('virtual', 'telehealth') then 'Virtual' when r.modality in ('in_person', 'in-person', 'face_to_face', 'f2f') then 'In person' else 'Virtual or in person' end
+         || ' appointments.')
+    from referral_requests r where r.id = p_referral;
+$function$;
+revoke all on function private.referral_request_text(bigint) from public, anon, authenticated;
+
+-- The conversation a thread key names, if the member is in it. Keys are the
+-- context key, or c-<id> for conversations that began before the workspace.
+create or replace function private.thread_conversation(p_key text, p_viewer uuid)
+returns bigint
+language sql
+stable
+security definer
+set search_path to 'public'
+as $function$
+  select c.id from conversations c
+   where p_viewer is not null and p_key is not null
+     and (c.context_key = p_key or (p_key ~ '^c-[0-9]{1,18}$' and c.id = substr(p_key, 3)::bigint))
+     and exists (select 1 from conversation_participants cp where cp.conversation_id = c.id and cp.profile_id = p_viewer)
+   limit 1;
+$function$;
+revoke all on function private.thread_conversation(text, uuid) from public, anon, authenticated;
+
+-- Open (or find) the conversation for one context. The viewer must be one of
+-- the two people the context is about.
+create or replace function public.conversation_open(p_kind text, p_a bigint default null, p_b bigint default null, p_person uuid default null)
+returns jsonb
+language plpgsql
+security definer
+set search_path to 'public'
+as $function$
+declare
+  me uuid := auth.uid();
+  pl coverage_plans%rowtype;
+  cs coverage_plan_cases%rowtype;
+  rf referral_requests%rowtype;
+  requested uuid;
+  ckey text;
+  conv bigint;
+  body text;
+begin
+  if me is null then
+    raise exception 'Please sign in again.' using errcode = 'P0001';
+  end if;
+  if p_kind = 'direct' then
+    if p_person is null or p_person = me then
+      raise exception 'Choose a colleague.' using errcode = 'P0001';
+    end if;
+    if public.is_blocked_between(me, p_person) then
+      raise exception 'That colleague can''t be messaged.' using errcode = 'P0001';
+    end if;
+    -- A conversation the two of you already have directly is reused.
+    select c.id into conv from conversations c
+     where c.context_key like 'direct-%' and c.context_key = 'direct-' || least(me::text, p_person::text) || '-' || greatest(me::text, p_person::text)
+     limit 1;
+    if conv is null then
+      select c.id into conv from conversations c
+       where c.context_key is null and coalesce(c.title, '') !~* '^(cover|referral)'
+         and (select count(*) from conversation_participants x where x.conversation_id = c.id) = 2
+         and exists (select 1 from conversation_participants x where x.conversation_id = c.id and x.profile_id = me)
+         and exists (select 1 from conversation_participants x where x.conversation_id = c.id and x.profile_id = p_person)
+       order by c.last_message_at desc limit 1;
+      if conv is not null then
+        return jsonb_build_object('key', 'c-' || conv);
+      end if;
+    else
+      return jsonb_build_object('key', 'direct-' || least(me::text, p_person::text) || '-' || greatest(me::text, p_person::text));
+    end if;
+    if not exists (select 1 from private.visible_members(me) vm where vm.id = p_person) then
+      raise exception 'That colleague can''t be messaged.' using errcode = 'P0001';
+    end if;
+    ckey := 'direct-' || least(me::text, p_person::text) || '-' || greatest(me::text, p_person::text);
+    perform private.context_conversation(ckey, 'Direct conversation', array[me, p_person], me);
+    return jsonb_build_object('key', ckey);
+  elsif p_kind = 'cover' then
+    select * into cs from coverage_plan_cases where id = p_b;
+    select * into pl from coverage_plans where id = p_a;
+    if pl.id is null or cs.id is null or cs.coverage_plan_id <> pl.id then
+      raise exception 'Conversation not found.' using errcode = 'P0001';
+    end if;
+    requested := case when pl.profile_id = me then p_person else me end;
+    if requested is null or requested = pl.profile_id
+       or not exists (select 1 from coverage_requests r where r.coverage_plan_case_id = cs.id and r.requested_profile_id = requested)
+       or public.is_blocked_between(me, case when pl.profile_id = me then requested else pl.profile_id end) then
+      raise exception 'Conversation not found.' using errcode = 'P0001';
+    end if;
+    ckey := 'cover-' || pl.id || '-' || cs.id || '-' || requested;
+    body := private.cover_request_text(pl.id, cs.id);
+    perform private.context_conversation(ckey, pl.title || ' · ' || cs.case_reference, array[pl.profile_id, requested], me,
+                                         pl.profile_id, body, (select min(r.sent_at) from coverage_requests r where r.coverage_plan_case_id = cs.id and r.requested_profile_id = requested));
+    return jsonb_build_object('key', ckey);
+  elsif p_kind = 'referral' then
+    return jsonb_build_object('key', public.referral_thread(p_a, p_person) ->> 'conversationKey');
+  end if;
+  raise exception 'Conversation not found.' using errcode = 'P0001';
+end;
+$function$;
+revoke all on function public.conversation_open(text, bigint, bigint, uuid) from public, anon;
+grant execute on function public.conversation_open(text, bigint, bigint, uuid) to authenticated;
+
+-- 8c. Send once, edit, remove, mark useful, mark read.
+create or replace function public.message_send(p_key text, p_body text, p_client_id uuid, p_attachment jsonb default null)
+returns jsonb
+language plpgsql
+security definer
+set search_path to 'public'
+as $function$
+declare
+  me uuid := auth.uid();
+  conv bigint;
+  v bigint;
+  txt text := btrim(coalesce(p_body, ''));
+  att_kind text;
+  att_path text;
+  att_name text;
+  att_size bigint;
+begin
+  if me is null then
+    raise exception 'Please sign in again.' using errcode = 'P0001';
+  end if;
+  if p_client_id is null then
+    raise exception 'That message can''t be sent.' using errcode = 'P0001';
+  end if;
+  conv := private.thread_conversation(p_key, me);
+  if conv is null then
+    raise exception 'Conversation not found.' using errcode = 'P0001';
+  end if;
+  -- Sent twice with the same id (a retry, a second tab, a double click): the
+  -- first one stands, even when both arrive at the same moment.
+  perform pg_advisory_xact_lock(hashtextextended('message:' || me::text || ':' || p_client_id::text, 0));
+  select id into v from conversation_messages where author_id = me and client_message_id = p_client_id;
+  if v is not null then
+    return jsonb_build_object('id', p_client_id, 'dbId', v, 'duplicate', true);
+  end if;
+  if p_attachment is not null and jsonb_typeof(p_attachment) = 'object' then
+    att_kind := p_attachment ->> 'kind';
+    att_path := p_attachment ->> 'path';
+    att_name := left(btrim(coalesce(p_attachment ->> 'name', '')), 200);
+    att_size := coalesce((p_attachment ->> 'size')::bigint, 0);
+    if att_kind not in ('file', 'audio') or att_path is null or att_path not like conv || '/' || me || '/%' or att_name = '' then
+      raise exception 'That attachment can''t be sent.' using errcode = 'P0001';
+    end if;
+    if att_size > 20971520 then
+      raise exception 'Choose a file smaller than 20 MB.' using errcode = 'P0001';
+    end if;
+  elsif txt = '' then
+    raise exception 'Write a message first.' using errcode = 'P0001';
+  end if;
+  if length(txt) > 4000 then
+    raise exception 'Keep the message under 4,000 characters.' using errcode = 'P0001';
+  end if;
+  v := private.post_message(conv, me, txt, p_client_id, '/dashboard/messages?thread=' || coalesce((select context_key from conversations where id = conv), 'c-' || conv));
+  if att_kind is not null then
+    insert into message_attachments (message_id, conversation_id, kind, storage_path, file_name, file_size, mime_type, duration_seconds)
+    values (v, conv, att_kind, att_path, att_name, att_size, left(p_attachment ->> 'mime', 120), nullif(p_attachment ->> 'duration', '')::integer)
+    on conflict do nothing;
+  end if;
+  return jsonb_build_object('id', p_client_id, 'dbId', v, 'duplicate', false);
+end;
+$function$;
+revoke all on function public.message_send(text, text, uuid, jsonb) from public, anon;
+grant execute on function public.message_send(text, text, uuid, jsonb) to authenticated;
+
+-- A message of the member's, named by its id in the thread (the id the screen
+-- sent when it was made, or m<number> for older ones).
+create or replace function private.thread_message(p_conv bigint, p_ref text)
+returns bigint
+language sql
+stable
+security definer
+set search_path to 'public'
+as $function$
+  select m.id from conversation_messages m
+   where m.conversation_id = p_conv
+     and ((p_ref ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' and m.client_message_id = p_ref::uuid)
+          or (p_ref ~ '^m[0-9]{1,18}$' and m.id = substr(p_ref, 2)::bigint))
+   limit 1;
+$function$;
+revoke all on function private.thread_message(bigint, text) from public, anon, authenticated;
+
+create or replace function public.message_edit(p_key text, p_message text, p_body text)
+returns jsonb
+language plpgsql
+security definer
+set search_path to 'public'
+as $function$
+declare
+  me uuid := auth.uid();
+  conv bigint := private.thread_conversation(p_key, me);
+  mid bigint;
+  txt text := btrim(coalesce(p_body, ''));
+begin
+  if conv is null then
+    raise exception 'Conversation not found.' using errcode = 'P0001';
+  end if;
+  mid := private.thread_message(conv, p_message);
+  if mid is null or not exists (select 1 from conversation_messages where id = mid and author_id = me and deleted_at is null) then
+    raise exception 'Message not found.' using errcode = 'P0001';
+  end if;
+  if txt = '' then
+    raise exception 'A message can''t be empty. Remove it instead.' using errcode = 'P0001';
+  end if;
+  if length(txt) > 4000 then
+    raise exception 'Keep the message under 4,000 characters.' using errcode = 'P0001';
+  end if;
+  if exists (select 1 from message_attachments where message_id = mid and kind = 'audio') then
+    raise exception 'A voice note can''t be edited.' using errcode = 'P0001';
+  end if;
+  update conversation_messages set body = txt where id = mid and body is distinct from txt;
+  return jsonb_build_object('ok', true);
+end;
+$function$;
+revoke all on function public.message_edit(text, text, text) from public, anon;
+grant execute on function public.message_edit(text, text, text) to authenticated;
+
+-- Removing clears the text and any file; the file's path comes back so the
+-- server can take it out of storage.
+create or replace function public.message_remove(p_key text, p_message text)
+returns jsonb
+language plpgsql
+security definer
+set search_path to 'public'
+as $function$
+declare
+  me uuid := auth.uid();
+  conv bigint := private.thread_conversation(p_key, me);
+  mid bigint;
+  att_path text;
+begin
+  if conv is null then
+    raise exception 'Conversation not found.' using errcode = 'P0001';
+  end if;
+  mid := private.thread_message(conv, p_message);
+  if mid is null or not exists (select 1 from conversation_messages where id = mid and author_id = me) then
+    raise exception 'Message not found.' using errcode = 'P0001';
+  end if;
+  select storage_path into att_path from message_attachments where message_id = mid;
+  delete from message_attachments where message_id = mid;
+  update conversation_messages set deleted_at = now() where id = mid and deleted_at is null;
+  return jsonb_build_object('ok', true, 'path', att_path);
+end;
+$function$;
+revoke all on function public.message_remove(text, text) from public, anon;
+grant execute on function public.message_remove(text, text) to authenticated;
+
+create or replace function public.message_react(p_key text, p_message text, p_on boolean)
+returns jsonb
+language plpgsql
+security definer
+set search_path to 'public'
+as $function$
+declare
+  me uuid := auth.uid();
+  conv bigint := private.thread_conversation(p_key, me);
+  mid bigint;
+begin
+  if conv is null then
+    raise exception 'Conversation not found.' using errcode = 'P0001';
+  end if;
+  mid := private.thread_message(conv, p_message);
+  if mid is null or not exists (select 1 from conversation_messages where id = mid and deleted_at is null) then
+    raise exception 'Message not found.' using errcode = 'P0001';
+  end if;
+  if coalesce(p_on, false) then
+    insert into message_reactions (message_id, profile_id, conversation_id, reaction) values (mid, me, conv, 'heart')
+    on conflict (message_id, profile_id) do update set reaction = 'heart';
+  else
+    delete from message_reactions where message_id = mid and profile_id = me;
+  end if;
+  return jsonb_build_object('on', coalesce(p_on, false));
+end;
+$function$;
+revoke all on function public.message_react(text, text, boolean) from public, anon;
+grant execute on function public.message_react(text, text, boolean) to authenticated;
+
+create or replace function public.conversation_read(p_key text)
+returns jsonb
+language plpgsql
+security definer
+set search_path to 'public'
+as $function$
+declare
+  me uuid := auth.uid();
+  conv bigint := private.thread_conversation(p_key, me);
+begin
+  if conv is null then
+    return jsonb_build_object('ok', false);
+  end if;
+  update conversation_participants set last_read_at = now() where conversation_id = conv and profile_id = me;
+  return jsonb_build_object('ok', true);
+end;
+$function$;
+revoke all on function public.conversation_read(text) from public, anon;
+grant execute on function public.conversation_read(text) to authenticated;
+
+-- 8d. What the workspace reads: every conversation the member is in with one
+-- other colleague (not blocked), newest first, with its latest 200 messages.
+create or replace function private.thread_json(p_conv bigint, p_viewer uuid)
+returns jsonb
+language plpgsql
+stable
+security definer
+set search_path to 'public'
+as $function$
+declare
+  c conversations%rowtype;
+  other uuid;
+  last_read timestamptz;
+  ty text;
+  msgs jsonb;
+  total integer;
+  unread integer;
+begin
+  select * into c from conversations where id = p_conv;
+  select profile_id into other from conversation_participants where conversation_id = p_conv and profile_id <> p_viewer limit 1;
+  select cp.last_read_at into last_read from conversation_participants cp where cp.conversation_id = p_conv and cp.profile_id = p_viewer;
+  ty := case when c.context_key like 'cover-%' then 'Cover' when c.context_key like 'referral-%' then 'Referral'
+             when c.context_key like 'consult-%' then 'Consult' when c.context_key like 'direct-%' then 'Direct'
+             when coalesce(c.title, '') ~* '^cover' then 'Cover' when coalesce(c.title, '') ~* '^referral' then 'Referral' else 'Direct' end;
+  select count(*) into total from conversation_messages where conversation_id = p_conv and deleted_at is null;
+  select count(*) into unread from conversation_messages m
+   where m.conversation_id = p_conv and m.deleted_at is null and m.author_id <> p_viewer and m.created_at > last_read;
+  select coalesce(jsonb_agg(x.j order by x.at, x.k), '[]'::jsonb) into msgs
+    from (
+      select m.created_at as at, m.id as k,
+             jsonb_strip_nulls(jsonb_build_object(
+               'id', coalesce(m.client_message_id::text, 'm' || m.id),
+               'dbId', m.id,
+               'text', m.body,
+               'own', m.author_id = p_viewer,
+               'createdAt', m.created_at,
+               'edited', m.edited_at is not null,
+               'reaction', case when exists (select 1 from message_reactions r where r.message_id = m.id and r.profile_id = p_viewer) then '♥' end,
+               'audio', case when a.kind = 'audio' then jsonb_build_object(
+                           'duration', (a.duration_seconds / 60) || ':' || lpad((a.duration_seconds % 60)::text, 2, '0'),
+                           'url', '/dashboard/message-files/' || m.id) end,
+               'attachment', case when a.kind = 'file' then jsonb_build_object(
+                           'name', a.file_name,
+                           'size', case when a.file_size < 1048576 then ceil(a.file_size / 1024.0)::integer || ' KB' else round(a.file_size / 1048576.0, 1) || ' MB' end,
+                           'url', '/dashboard/message-files/' || m.id) end)) as j
+        from conversation_messages m
+        left join message_attachments a on a.message_id = m.id
+       where m.conversation_id = p_conv and m.deleted_at is null
+       order by m.created_at desc, m.id desc
+       limit 200
+    ) x;
+  return jsonb_build_object(
+    'id', coalesce(c.context_key, 'c-' || c.id),
+    'convId', c.id,
+    'person', other,
+    'context', coalesce(nullif(c.title, ''), 'Direct conversation'),
+    'type', ty,
+    'coverId', nullif(substring(c.context_key from '^cover-([0-9]+)-'), '')::bigint,
+    'clientId', nullif(substring(c.context_key from '^cover-[0-9]+-([0-9]+)-'), '')::bigint,
+    'referralId', nullif(substring(c.context_key from '^referral-([0-9]+)-'), '')::bigint,
+    'unread', unread,
+    'activityAt', c.last_message_at,
+    'more', total > 200,
+    'messages', msgs);
+end;
+$function$;
+revoke all on function private.thread_json(bigint, uuid) from public, anon, authenticated;
+
+create or replace function public.workspace_threads()
+returns jsonb
+language sql
+stable
+security definer
+set search_path to 'public'
+as $function$
+  select coalesce(jsonb_agg(private.thread_json(v.id, auth.uid()) order by v.last_message_at desc, v.id desc), '[]'::jsonb)
+    from (
+      select c.id, c.last_message_at
+        from conversations c
+        join conversation_participants mp on mp.conversation_id = c.id and mp.profile_id = auth.uid()
+       where auth.uid() is not null
+         and (select count(*) from conversation_participants x where x.conversation_id = c.id) = 2
+         and not public.is_blocked_between(auth.uid(), (select x.profile_id from conversation_participants x where x.conversation_id = c.id and x.profile_id <> auth.uid() limit 1))
+    ) v;
+$function$;
+revoke all on function public.workspace_threads() from public, anon;
+grant execute on function public.workspace_threads() to authenticated;
+
+-- Older messages in one conversation, 100 at a time before a given message.
+create or replace function public.thread_older(p_key text, p_before bigint)
+returns jsonb
+language plpgsql
+stable
+security definer
+set search_path to 'public'
+as $function$
+declare
+  me uuid := auth.uid();
+  conv bigint := private.thread_conversation(p_key, me);
+  msgs jsonb;
+  more boolean;
+begin
+  if conv is null then
+    return jsonb_build_object('messages', '[]'::jsonb, 'more', false);
+  end if;
+  select coalesce(jsonb_agg(x.j order by x.at, x.k), '[]'::jsonb) into msgs
+    from (
+      select m.created_at as at, m.id as k,
+             jsonb_strip_nulls(jsonb_build_object(
+               'id', coalesce(m.client_message_id::text, 'm' || m.id), 'dbId', m.id, 'text', m.body, 'own', m.author_id = me,
+               'createdAt', m.created_at, 'edited', m.edited_at is not null,
+               'reaction', case when exists (select 1 from message_reactions r where r.message_id = m.id and r.profile_id = me) then '♥' end,
+               'audio', case when a.kind = 'audio' then jsonb_build_object('duration', (a.duration_seconds / 60) || ':' || lpad((a.duration_seconds % 60)::text, 2, '0'), 'url', '/dashboard/message-files/' || m.id) end,
+               'attachment', case when a.kind = 'file' then jsonb_build_object('name', a.file_name,
+                  'size', case when a.file_size < 1048576 then ceil(a.file_size / 1024.0)::integer || ' KB' else round(a.file_size / 1048576.0, 1) || ' MB' end,
+                  'url', '/dashboard/message-files/' || m.id) end)) as j
+        from conversation_messages m left join message_attachments a on a.message_id = m.id
+       where m.conversation_id = conv and m.deleted_at is null and m.id < coalesce(p_before, 9223372036854775807)
+       order by m.created_at desc, m.id desc
+       limit 100
+    ) x;
+  select exists (select 1 from conversation_messages m where m.conversation_id = conv and m.deleted_at is null
+                  and m.id < coalesce((select min((e ->> 'dbId')::bigint) from jsonb_array_elements(msgs) e), p_before)) into more;
+  return jsonb_build_object('messages', msgs, 'more', more);
+end;
+$function$;
+revoke all on function public.thread_older(text, bigint) from public, anon;
+grant execute on function public.thread_older(text, bigint) to authenticated;
+
+-- A file the member may open: its storage path, name and kind.
+create or replace function public.message_file(p_message bigint)
+returns jsonb
+language sql
+stable
+security definer
+set search_path to 'public'
+as $function$
+  select jsonb_build_object('path', a.storage_path, 'name', a.file_name, 'mime', a.mime_type, 'kind', a.kind, 'size', a.file_size)
+    from message_attachments a
+    join conversation_messages m on m.id = a.message_id and m.deleted_at is null
+   where a.message_id = p_message and private.is_conversation_participant(a.conversation_id, auth.uid());
+$function$;
+revoke all on function public.message_file(bigint) from public, anon;
+grant execute on function public.message_file(bigint) to authenticated;
+
+-- The conversation (by key) a new file belongs in, if the member is in it.
+create or replace function public.message_upload_target(p_key text)
+returns bigint
+language sql
+stable
+security definer
+set search_path to 'public'
+as $function$ select private.thread_conversation(p_key, auth.uid()); $function$;
+revoke all on function public.message_upload_target(text) from public, anon;
+grant execute on function public.message_upload_target(text) to authenticated;
+
+-- 9. Known people ----------------------------------------------------------------
 -- People the screens mention who are not (or are no longer) in the member's
 -- directory: a colleague asked earlier who has since left, been paused or
 -- blocked. Name and role only, so history stays readable and nothing else leaks.
@@ -2362,6 +2925,10 @@ as $function$
     union
     select rc.profile_id from referral_recipients rc join referral_requests rq on rq.id = rc.referral_request_id, me
      where rq.requesting_profile_id = me.id
+    union
+    select o.profile_id from conversation_participants mine
+      join conversation_participants o on o.conversation_id = mine.conversation_id and o.profile_id <> mine.profile_id, me
+     where mine.profile_id = me.id
   )
   select coalesce(jsonb_agg(jsonb_build_object(
     'id', pr.id, 'name', private.member_name(pr.id), 'initials', private.initials(pr.full_name),
@@ -2376,7 +2943,7 @@ $function$;
 revoke all on function public.workspace_known() from public, anon;
 grant execute on function public.workspace_known() to authenticated;
 
--- 9. Slices and boot -------------------------------------------------------------
+-- 10. Slices and boot -------------------------------------------------------------
 -- (This section stays last: it names every read model above it.)
 -- Any part of the workspace on its own, so a save can send back just what it
 -- changed. Unknown names are ignored.
@@ -2404,6 +2971,7 @@ begin
       when 'plans' then jsonb_build_object('plans', public.workspace_plans())
       when 'known' then jsonb_build_object('known', public.workspace_known())
       when 'referrals' then jsonb_build_object('referrals', public.workspace_referrals())
+      when 'threads' then jsonb_build_object('threads', public.workspace_threads())
       else '{}'::jsonb
     end;
   end loop;
@@ -2440,7 +3008,7 @@ begin
     return jsonb_build_object('gate', 'waiting');
   end if;
   return jsonb_build_object('gate', 'ok', 'serverNow', now(), 'options', public.workspace_options())
-         || public.workspace_slice(array['me', 'people', 'known', 'tiers', 'availability', 'drafts', 'plans', 'referrals']);
+         || public.workspace_slice(array['me', 'people', 'known', 'tiers', 'availability', 'drafts', 'plans', 'referrals', 'threads']);
 end;
 $function$;
 revoke all on function public.workspace_boot() from public, anon;

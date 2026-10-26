@@ -168,9 +168,10 @@ test("RF-06 a colleague can decline, change their mind, or ask first in the requ
   const again = await answer(cass, r.referralId, "discussing", false, "Do you need weekday evenings?", cid);
   expect(again.unchanged).toBe(true);
   expect(again.messageId).toBe(a.messageId);
-  const msgs = await q(`select m.body, m.author_id from conversation_messages m join conversations c on c.id = m.conversation_id where c.context_key = $1`, [a.conversationKey]);
-  expect(msgs).toHaveLength(1);
-  expect(msgs[0].author_id).toBe(cass);
+  const msgs = await q(`select m.body, m.author_id from conversation_messages m join conversations c on c.id = m.conversation_id where c.context_key = $1 order by m.created_at, m.id`, [a.conversationKey]);
+  // Opens with the request itself (the referrer's words), then the question.
+  expect(msgs.map((m) => m.body)).toEqual(["Weekly sessions, no identifying details.", "Do you need weekday evenings?"]);
+  expect(msgs.map((m) => m.author_id)).toEqual([avery, cass]);
   const parts = await q(`select profile_id from conversation_participants p join conversations c on c.id = p.conversation_id where c.context_key = $1`, [a.conversationKey]);
   expect(parts.map((x) => x.profile_id).sort()).toEqual([avery, cass].sort());
   expect((await mine(avery, r.referralId)).requests.find((x: any) => x.person === cass).status).toBe("discussing");

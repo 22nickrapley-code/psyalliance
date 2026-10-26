@@ -201,8 +201,11 @@ test("CV-07 a colleague who is discussing pauses the sequence until they answer"
   expect(key).toBe(`cover-${r.planId}-${(await caseOf(r.planId)).id}-${bram}`);
   const again = await answer(bram, b1.id, "discussing", "Could we talk about timing first?", cid);
   expect(again.messageId).toBe(a.messageId);
-  const msgs = await q(`select m.body, m.author_id from conversation_messages m join conversations c on c.id = m.conversation_id where c.context_key = $1`, [key]);
-  expect(msgs).toHaveLength(1);
+  const msgs = await q(`select m.body, m.author_id from conversation_messages m join conversations c on c.id = m.conversation_id where c.context_key = $1 order by m.created_at, m.id`, [key]);
+  // The conversation opens with the request itself (the organiser's words), then the question.
+  expect(msgs).toHaveLength(2);
+  expect(msgs.map((m) => m.body)).toEqual(["Weekly appointments.", "Could we talk about timing first?"]);
+  expect(msgs.map((m) => m.author_id)).toEqual([avery, bram]);
   const parts = await q(`select p.profile_id from conversation_participants p join conversations c on c.id = p.conversation_id where c.context_key = $1`, [key]);
   expect(parts.map((x) => x.profile_id).sort()).toEqual([avery, bram].sort());
   // The final answer resumes it: a decline asks the next colleague.
