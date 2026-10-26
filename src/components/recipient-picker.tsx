@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import Avatar from "@/app/dashboard/avatar";
+import Avatar from "@/app/(site)/dashboard/avatar";
 
 // Client-side "Send a New Message" recipient picker. The full contact list
 // (every colleague, already loaded server-side with zero extra queries per
