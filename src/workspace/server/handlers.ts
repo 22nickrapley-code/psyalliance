@@ -18,6 +18,14 @@ export async function slices(ctx: Ctx, names: string[]) {
 }
 
 
+// The one conversation a reply opened, so it is there when the screen goes to it.
+async function threadPatch(ctx: Ctx, data: any) {
+  const key = data?.conversationKey;
+  if (!key) return {};
+  const { data: thread } = await ctx.supabase.rpc("workspace_thread", { p_key: key });
+  return thread ? { thread } : {};
+}
+
 const text = (v: unknown, max: number) => String(v ?? "").trim().slice(0, max);
 const idList = (v: unknown) => (Array.isArray(v) ? v.map((x) => String(x)).filter((x) => /^[0-9a-f-]{36}$/i.test(x)) : []);
 const num = (v: unknown) => Number(v);
@@ -27,7 +35,7 @@ const fail = (error: any, fallback?: string): Result => ({ ok: false, error: fri
 export const handlers: Record<string, Handler> = {
   // Any slices, for polling and for returning to a screen.
   refresh: async (ctx, a) => {
-    const allowed = ["me", "people", "known", "tiers", "availability", "plans", "referrals", "threads", "discussions", "resources", "drafts", "preferences"];
+    const allowed = ["me", "people", "known", "tiers", "availability", "plans", "referrals", "threads", "pulse", "discussions", "resources", "drafts", "preferences"];
     const names = (Array.isArray(a?.names) ? a.names : []).filter((n: string) => allowed.includes(n));
     return { ok: true, patch: await slices(ctx, names) };
   },
@@ -82,7 +90,7 @@ export const handlers: Record<string, Handler> = {
       p_client_message_id: /^[0-9a-f-]{36}$/i.test(String(a.clientMessageId || "")) ? String(a.clientMessageId) : null,
     });
     if (error) return fail(error, "Your answer didn't save. Nothing was changed; please try again.");
-    return { ok: true, data, patch: await slices(ctx, ["plans", "tiers", "known"]) };
+    return { ok: true, data, patch: { ...(await slices(ctx, ["plans", "tiers", "known"])), ...(await threadPatch(ctx, data)) } };
   },
 
   "cover.ask": async (ctx, a) => {
@@ -142,7 +150,7 @@ export const handlers: Record<string, Handler> = {
       p_client_message_id: /^[0-9a-f-]{36}$/i.test(String(a.clientMessageId || "")) ? String(a.clientMessageId) : null,
     });
     if (error) return fail(error, "Your reply didn't save. Nothing was changed; please try again.");
-    return { ok: true, data, patch: await slices(ctx, ["referrals", "known"]) };
+    return { ok: true, data, patch: { ...(await slices(ctx, ["referrals", "known"])), ...(await threadPatch(ctx, data)) } };
   },
 
   "referral.place": async (ctx, a) => {
@@ -165,6 +173,90 @@ export const handlers: Record<string, Handler> = {
 
   "referral.thread": async (ctx, a) => {
     const { data, error } = await ctx.supabase.rpc("referral_thread", { p_referral: num(a.referral), p_person: /^[0-9a-f-]{36}$/i.test(String(a.person || "")) ? String(a.person) : null });
+    if (error) return fail(error);
+    return { ok: true, data };
+  },
+
+  // ---- Messages ----------------------------------------------------------
+  // A conversation is named by its key (see conversation_open). Every call
+  // runs as the member; the database decides whether they are in it.
+  "conversation.open": async (ctx, a) => {
+    const kind = String(a.kind || "");
+    if (!["direct", "cover", "referral"].includes(kind)) return bad("That conversation can't be opened.");
+    const { data, error } = await ctx.supabase.rpc("conversation_open", {
+      p_kind: kind,
+      p_a: a.a == null ? null : num(a.a),
+      p_b: a.b == null ? null : num(a.b),
+      p_person: /^[0-9a-f-]{36}$/i.test(String(a.person || "")) ? String(a.person) : null,
+    });
+    if (error) return fail(error);
+    const key = (data as any)?.key as string;
+    const { data: thread } = await ctx.supabase.rpc("workspace_thread", { p_key: key });
+    return { ok: true, data, patch: { thread: thread || null, ...(await slices(ctx, ["known"])) } };
+  },
+
+  "message.send": async (ctx, a) => {
+    const body = text(a.text, 4000);
+    const att = a.attachment && typeof a.attachment === "object" ? a.attachment : null;
+    if (!body && !att) return bad("Write a message first.");
+    if (body) {
+      const err = identifierError(body);
+      if (err) return bad(err);
+    }
+    if (!/^[0-9a-f-]{36}$/i.test(String(a.clientId || ""))) return bad("That message can't be sent.");
+    const { data, error } = await ctx.supabase.rpc("message_send", {
+      p_key: String(a.key || ""),
+      p_body: body,
+      p_client_id: String(a.clientId),
+      p_attachment: att
+        ? { kind: text(att.kind, 8), path: text(att.path, 300), name: text(att.name, 200), size: Math.max(0, Math.round(Number(att.size) || 0)), mime: text(att.mime, 120), duration: att.duration == null ? null : Math.max(0, Math.round(Number(att.duration) || 0)) }
+        : null,
+    });
+    if (error) return fail(error, "That message didn't send. You can try again.");
+    return { ok: true, data };
+  },
+
+  "message.edit": async (ctx, a) => {
+    const body = text(a.text, 4000);
+    if (!body) return bad("A message can't be empty. Remove it instead.");
+    const err = identifierError(body);
+    if (err) return bad(err);
+    const { error } = await ctx.supabase.rpc("message_edit", { p_key: String(a.key || ""), p_message: String(a.message || ""), p_body: body });
+    if (error) return fail(error);
+    return { ok: true };
+  },
+
+  "message.remove": async (ctx, a) => {
+    const { data, error } = await ctx.supabase.rpc("message_remove", { p_key: String(a.key || ""), p_message: String(a.message || "") });
+    if (error) return fail(error);
+    const path = (data as any)?.path as string | null;
+    // The file goes with the message; the message is already gone either way.
+    if (path) await ctx.supabase.storage.from("message-files").remove([path]).catch(() => null);
+    return { ok: true };
+  },
+
+  "message.react": async (ctx, a) => {
+    const { error } = await ctx.supabase.rpc("message_react", { p_key: String(a.key || ""), p_message: String(a.message || ""), p_on: a.on === true });
+    if (error) return fail(error);
+    // A colleague whose message you mark useful joins Suggested for you.
+    return { ok: true, patch: await slices(ctx, ["tiers"]) };
+  },
+
+  "conversation.read": async (ctx, a) => {
+    const { error } = await ctx.supabase.rpc("conversation_read", { p_key: String(a.key || "") });
+    if (error) return fail(error);
+    return { ok: true };
+  },
+
+  // One conversation, read again (after the pulse says it changed).
+  "thread.get": async (ctx, a) => {
+    const { data, error } = await ctx.supabase.rpc("workspace_thread", { p_key: String(a.key || "") });
+    if (error) return fail(error);
+    return { ok: true, patch: { thread: data || null } };
+  },
+
+  "thread.older": async (ctx, a) => {
+    const { data, error } = await ctx.supabase.rpc("thread_older", { p_key: String(a.key || ""), p_before: a.before == null ? null : num(a.before) });
     if (error) return fail(error);
     return { ok: true, data };
   },

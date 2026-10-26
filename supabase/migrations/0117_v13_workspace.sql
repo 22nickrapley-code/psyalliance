@@ -356,13 +356,25 @@ as $function$
   with vm as (select id from private.visible_members(auth.uid())),
   trusted as (select t.colleague_id from trusted_colleagues t where t.profile_id = auth.uid() and t.colleague_id in (select id from vm)),
   worked as (select w.colleague_id, w.reason, w.at from private.workspace_worked(auth.uid()) w where w.colleague_id in (select id from vm) and w.colleague_id not in (select colleague_id from trusted)),
-  suggested as (select s.colleague_id, s.position from suggested_colleagues s
-                 where s.profile_id = auth.uid() and s.colleague_id in (select id from vm)
-                   and s.colleague_id not in (select colleague_id from trusted) and s.colleague_id not in (select colleague_id from worked))
+  -- PsyAlliance's own suggestions, then colleagues whose messages the member has marked useful.
+  suggested as (
+    select s.colleague_id, 0 as grp, s.position::numeric as ord from suggested_colleagues s
+     where s.profile_id = auth.uid() and s.colleague_id in (select id from vm)
+       and s.colleague_id not in (select colleague_id from trusted) and s.colleague_id not in (select colleague_id from worked)
+    union all
+    select h.colleague_id, 1, -extract(epoch from h.at)
+      from (select m.author_id as colleague_id, max(r.created_at) as at
+              from message_reactions r join conversation_messages m on m.id = r.message_id
+             where r.profile_id = auth.uid() and r.reaction = 'heart' and m.author_id <> auth.uid() and m.deleted_at is null
+             group by m.author_id) h
+     where h.colleague_id in (select id from vm)
+       and h.colleague_id not in (select colleague_id from trusted) and h.colleague_id not in (select colleague_id from worked)
+       and h.colleague_id not in (select s2.colleague_id from suggested_colleagues s2 where s2.profile_id = auth.uid())
+  )
   select jsonb_build_object(
     'trust', coalesce((select jsonb_agg(colleague_id order by created_at) from (select t2.colleague_id, t2.created_at from trusted_colleagues t2 where t2.profile_id = auth.uid() and t2.colleague_id in (select id from vm)) q), '[]'::jsonb),
     'worked', coalesce((select jsonb_agg(colleague_id order by at desc) from worked), '[]'::jsonb),
-    'suggested', coalesce((select jsonb_agg(colleague_id order by position) from suggested), '[]'::jsonb),
+    'suggested', coalesce((select jsonb_agg(colleague_id order by grp, ord) from suggested), '[]'::jsonb),
     'workedReasons', coalesce((select jsonb_object_agg(colleague_id, reason) from worked), '{}'::jsonb)
   )
   where auth.uid() is not null;
@@ -2701,11 +2713,15 @@ begin
   if mid is null or not exists (select 1 from conversation_messages where id = mid and deleted_at is null) then
     raise exception 'Message not found.' using errcode = 'P0001';
   end if;
+  if not private.can_view_network(me)
+     and not exists (select 1 from conversations c where c.id = conv and private.is_admin_user(c.created_by)) then
+    raise exception 'Your account isn''t active in the network right now.' using errcode = 'P0001';
+  end if;
   if coalesce(p_on, false) then
     insert into message_reactions (message_id, profile_id, conversation_id, reaction) values (mid, me, conv, 'heart')
-    on conflict (message_id, profile_id) do update set reaction = 'heart';
+    on conflict (message_id, profile_id) do update set reaction = 'heart', created_at = now();
   else
-    delete from message_reactions where message_id = mid and profile_id = me;
+    delete from message_reactions where message_id = mid and profile_id = me and reaction = 'heart';
   end if;
   return jsonb_build_object('on', coalesce(p_on, false));
 end;
@@ -2727,6 +2743,13 @@ begin
     return jsonb_build_object('ok', false);
   end if;
   update conversation_participants set last_read_at = now() where conversation_id = conv and profile_id = me;
+  -- The notices that pointed at this conversation are read with it.
+  update notification_deliveries d set read_at = now()
+    from notification_events e
+   where e.id = d.notification_event_id and d.recipient_profile_id = me and d.channel = 'in_app' and d.read_at is null
+     and (e.metadata ->> 'conversationId' = conv::text
+          or e.deep_link = '/dashboard/messages/' || conv
+          or e.deep_link = '/dashboard/messages?thread=' || p_key);
   return jsonb_build_object('ok', true);
 end;
 $function$;
@@ -2750,8 +2773,10 @@ declare
   msgs jsonb;
   total integer;
   unread integer;
+  changed timestamptz;
 begin
   select * into c from conversations where id = p_conv;
+  select greatest(max(edited_at), max(deleted_at)) into changed from conversation_messages where conversation_id = p_conv;
   select profile_id into other from conversation_participants where conversation_id = p_conv and profile_id <> p_viewer limit 1;
   select cp.last_read_at into last_read from conversation_participants cp where cp.conversation_id = p_conv and cp.profile_id = p_viewer;
   ty := case when c.context_key like 'cover-%' then 'Cover' when c.context_key like 'referral-%' then 'Referral'
@@ -2770,7 +2795,8 @@ begin
                'own', m.author_id = p_viewer,
                'createdAt', m.created_at,
                'edited', m.edited_at is not null,
-               'reaction', case when exists (select 1 from message_reactions r where r.message_id = m.id and r.profile_id = p_viewer) then '♥' end,
+               'request', case when c.context_key is not null and m.client_message_id = md5(c.context_key || ':request')::uuid then true end,
+               'reaction', case when exists (select 1 from message_reactions r where r.message_id = m.id and r.profile_id = p_viewer and r.reaction = 'heart') then '♥' end,
                'audio', case when a.kind = 'audio' then jsonb_build_object(
                            'duration', (a.duration_seconds / 60) || ':' || lpad((a.duration_seconds % 60)::text, 2, '0'),
                            'url', '/dashboard/message-files/' || m.id) end,
@@ -2796,6 +2822,7 @@ begin
     'unread', unread,
     'activityAt', c.last_message_at,
     'more', total > 200,
+    'pulse', jsonb_build_object('activityAt', c.last_message_at, 'count', total, 'changedAt', changed, 'unread', unread),
     'messages', msgs);
 end;
 $function$;
@@ -2821,6 +2848,51 @@ $function$;
 revoke all on function public.workspace_threads() from public, anon;
 grant execute on function public.workspace_threads() to authenticated;
 
+-- A light check the open screen makes every few seconds: for each conversation,
+-- how much is in it and when it last changed, so only the ones that moved are read again.
+create or replace function public.workspace_pulse()
+returns jsonb
+language sql
+stable
+security definer
+set search_path to 'public'
+as $function$
+  select coalesce(jsonb_object_agg(coalesce(v.context_key, 'c-' || v.id), jsonb_build_object(
+           'activityAt', v.last_message_at,
+           'count', v.n,
+           'changedAt', v.changed,
+           'unread', v.unread)), '{}'::jsonb)
+    from (
+      select c.id, c.context_key, c.last_message_at,
+             (select count(*) from conversation_messages m where m.conversation_id = c.id and m.deleted_at is null) as n,
+             (select greatest(max(m.edited_at), max(m.deleted_at)) from conversation_messages m where m.conversation_id = c.id) as changed,
+             (select count(*) from conversation_messages m where m.conversation_id = c.id and m.deleted_at is null and m.author_id <> auth.uid() and m.created_at > mp.last_read_at) as unread
+        from conversations c
+        join conversation_participants mp on mp.conversation_id = c.id and mp.profile_id = auth.uid()
+       where auth.uid() is not null
+         and (select count(*) from conversation_participants x where x.conversation_id = c.id) = 2
+         and not public.is_blocked_between(auth.uid(), (select x.profile_id from conversation_participants x where x.conversation_id = c.id and x.profile_id <> auth.uid() limit 1))
+    ) v;
+$function$;
+revoke all on function public.workspace_pulse() from public, anon;
+grant execute on function public.workspace_pulse() to authenticated;
+
+-- One conversation, read again.
+create or replace function public.workspace_thread(p_key text)
+returns jsonb
+language sql
+stable
+security definer
+set search_path to 'public'
+as $function$
+  select private.thread_json(c, auth.uid())
+    from (select private.thread_conversation(p_key, auth.uid()) as c) t
+   where t.c is not null
+     and not public.is_blocked_between(auth.uid(), (select x.profile_id from conversation_participants x where x.conversation_id = t.c and x.profile_id <> auth.uid() limit 1));
+$function$;
+revoke all on function public.workspace_thread(text) from public, anon;
+grant execute on function public.workspace_thread(text) to authenticated;
+
 -- Older messages in one conversation, 100 at a time before a given message.
 create or replace function public.thread_older(p_key text, p_before bigint)
 returns jsonb
@@ -2844,7 +2916,8 @@ begin
              jsonb_strip_nulls(jsonb_build_object(
                'id', coalesce(m.client_message_id::text, 'm' || m.id), 'dbId', m.id, 'text', m.body, 'own', m.author_id = me,
                'createdAt', m.created_at, 'edited', m.edited_at is not null,
-               'reaction', case when exists (select 1 from message_reactions r where r.message_id = m.id and r.profile_id = me) then '♥' end,
+               'request', case when m.client_message_id = md5((select cc.context_key from conversations cc where cc.id = conv) || ':request')::uuid then true end,
+               'reaction', case when exists (select 1 from message_reactions r where r.message_id = m.id and r.profile_id = me and r.reaction = 'heart') then '♥' end,
                'audio', case when a.kind = 'audio' then jsonb_build_object('duration', (a.duration_seconds / 60) || ':' || lpad((a.duration_seconds % 60)::text, 2, '0'), 'url', '/dashboard/message-files/' || m.id) end,
                'attachment', case when a.kind = 'file' then jsonb_build_object('name', a.file_name,
                   'size', case when a.file_size < 1048576 then ceil(a.file_size / 1024.0)::integer || ' KB' else round(a.file_size / 1048576.0, 1) || ' MB' end,
@@ -2888,6 +2961,64 @@ set search_path to 'public'
 as $function$ select private.thread_conversation(p_key, auth.uid()); $function$;
 revoke all on function public.message_upload_target(text) from public, anon;
 grant execute on function public.message_upload_target(text) to authenticated;
+
+-- Whether a stored file has been sent with a message.
+create or replace function public.message_file_in_use(p_path text)
+returns boolean
+language sql
+stable
+security definer
+set search_path to 'public'
+as $function$ select exists (select 1 from message_attachments where storage_path = p_path); $function$;
+revoke all on function public.message_file_in_use(text) from public, anon;
+grant execute on function public.message_file_in_use(text) to authenticated;
+
+-- What waits for the member outside the colleague screens (physician referrals).
+create or replace function public.workspace_inbound()
+returns jsonb
+language sql
+stable
+security definer
+set search_path to 'public'
+as $function$
+  select jsonb_build_object('physician', (select count(*) from provider_referrals where target_profile_id = auth.uid() and status = 'sent'))
+   where auth.uid() is not null;
+$function$;
+revoke all on function public.workspace_inbound() from public, anon;
+grant execute on function public.workspace_inbound() to authenticated;
+
+-- 8e. Files that were added but never sent (a draft dropped, a tab closed) are
+-- listed with the other orphaned files for an admin to remove through the
+-- Storage API, which deletes the file itself.
+create or replace function public.admin_orphaned_files()
+returns table(bucket_id text, name text, size_bytes bigint)
+language sql
+stable security definer
+set search_path to 'public', 'storage'
+as $$
+  select o.bucket_id, o.name, coalesce((o.metadata ->> 'size')::bigint, 0)
+  from storage.objects o
+  where private.is_admin_user(auth.uid())
+    and (
+      (o.bucket_id = 'avatars'
+        and not exists (select 1 from public.profiles p where p.id::text = (storage.foldername(o.name))[1]))
+      or (o.bucket_id = 'documents'
+        and not exists (select 1 from public.documents d where d.storage_path = o.name)
+        and not exists (select 1 from public.profiles p where p.id::text = (storage.foldername(o.name))[2]))
+      or (o.bucket_id = 'message-files'
+        and o.created_at < now() - interval '1 day'
+        and not exists (select 1 from public.message_attachments a where a.storage_path = o.name))
+    );
+$$;
+revoke execute on function public.admin_orphaned_files() from public, anon;
+grant execute on function public.admin_orphaned_files() to authenticated;
+
+drop policy if exists "admins can delete orphaned message files" on storage.objects;
+create policy "admins can delete orphaned message files" on storage.objects for delete to authenticated
+  using (bucket_id = 'message-files'
+         and private.is_admin_user((select auth.uid()))
+         and created_at < now() - interval '1 day'
+         and not public.message_file_in_use(name));
 
 -- 9. Known people ----------------------------------------------------------------
 -- People the screens mention who are not (or are no longer) in the member's
@@ -2972,6 +3103,8 @@ begin
       when 'known' then jsonb_build_object('known', public.workspace_known())
       when 'referrals' then jsonb_build_object('referrals', public.workspace_referrals())
       when 'threads' then jsonb_build_object('threads', public.workspace_threads())
+      when 'pulse' then jsonb_build_object('pulse', public.workspace_pulse())
+      when 'inbound' then jsonb_build_object('inbound', public.workspace_inbound())
       else '{}'::jsonb
     end;
   end loop;
@@ -3008,7 +3141,7 @@ begin
     return jsonb_build_object('gate', 'waiting');
   end if;
   return jsonb_build_object('gate', 'ok', 'serverNow', now(), 'options', public.workspace_options())
-         || public.workspace_slice(array['me', 'people', 'known', 'tiers', 'availability', 'drafts', 'plans', 'referrals', 'threads']);
+         || public.workspace_slice(array['me', 'people', 'known', 'tiers', 'availability', 'drafts', 'plans', 'referrals', 'threads', 'inbound']);
 end;
 $function$;
 revoke all on function public.workspace_boot() from public, anon;

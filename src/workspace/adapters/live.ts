@@ -19,6 +19,7 @@ export type LiveBoot = {
   plans?: any[];
   referrals?: any[];
   threads?: any[];
+  inbound?: { physician?: number };
   discussions?: any[];
   resources?: any[];
   following?: number[];
@@ -54,6 +55,7 @@ export function buildLiveEnv(boot: LiveBoot, view: WorkspaceView) {
       plans: boot.plans || [],
       referrals: boot.referrals || [],
       threads: boot.threads || [],
+      inbound: boot.inbound || {},
       discussions: boot.discussions || [],
       following: boot.following || [],
       useful: boot.useful || [],

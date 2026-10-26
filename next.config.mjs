@@ -23,7 +23,11 @@ const nextConfig = {
   // Don't announce the framework (release testing R16-A).
   poweredByHeader: false,
   async headers() {
-    return [{ source: "/:path*", headers: securityHeaders }];
+    return [
+      { source: "/:path*", headers: securityHeaders },
+      // Voice notes in Messages need the microphone, on the workspace's own pages only.
+      { source: "/dashboard/:path*", headers: [{ key: "Permissions-Policy", value: "camera=(), microphone=(self), geolocation=(), payment=(), usb=()" }] },
+    ];
   },
 };
 

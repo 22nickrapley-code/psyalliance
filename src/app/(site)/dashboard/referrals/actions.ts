@@ -14,6 +14,10 @@ function referralsError(message: string): never {
   redirect(`/dashboard/refer?error=${encodeURIComponent(message)}`);
 }
 
+function physicianError(message: string): never {
+  redirect(`/dashboard/physician-referrals?error=${encodeURIComponent(message)}`);
+}
+
 // Same idea as referralsError, for the three actions below that now run
 // from Messages' "Referral notices" tab instead of this page - a failure
 // should send you back to where the form actually lives.
@@ -117,9 +121,9 @@ export async function acknowledgeProviderReferral(formData: FormData) {
     .from("provider_referrals")
     .update({ status: "acknowledged", status_note: note, responded_at: new Date().toISOString() })
     .eq("id", id);
-  if (error) messagesError(friendly(error));
+  if (error) physicianError(friendly(error));
 
-  revalidatePath("/dashboard/messages");
+  revalidatePath("/dashboard/physician-referrals");
 }
 
 export async function declineProviderReferral(formData: FormData) {
@@ -131,7 +135,7 @@ export async function declineProviderReferral(formData: FormData) {
     .from("provider_referrals")
     .update({ status: "declined", status_note: note, responded_at: new Date().toISOString() })
     .eq("id", id);
-  if (error) messagesError(friendly(error));
+  if (error) physicianError(friendly(error));
 
-  revalidatePath("/dashboard/messages");
+  revalidatePath("/dashboard/physician-referrals");
 }
