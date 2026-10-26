@@ -12,6 +12,7 @@ export type LiveBoot = {
   demo: boolean;
   me: any;
   people: any[];
+  known?: any[];
   tiers: { trust: string[]; worked: string[]; suggested: string[]; workedReasons: Record<string, string> };
   availability: any;
   options: { focus: string[]; insurance: string[]; language: string[]; age: string[]; modality: string[] };
@@ -39,6 +40,7 @@ export function buildLiveEnv(boot: LiveBoot, view: WorkspaceView) {
     previewControls: false,
     data: {
       people,
+      known: boot.known || [],
       discussions: boot.discussions || [],
       resources: boot.resources || [],
       threads: boot.threads || [],
@@ -57,6 +59,7 @@ export function buildLiveEnv(boot: LiveBoot, view: WorkspaceView) {
       useful: boot.useful || [],
       dismissed: boot.dismissed || [],
       preferences: boot.preferences || {},
+      drafts: boot.drafts || {},
     },
   };
 }

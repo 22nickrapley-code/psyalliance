@@ -2,6 +2,7 @@
 import { useEffect } from "react";
 import { REFERENCE_DATA } from "./fixtures/reference-data";
 import { buildLiveEnv, type LiveBoot, type WorkspaceView } from "./adapters/live";
+import { workspaceCall } from "./server/actions";
 
 // Mounts the approved workspace engine into the layout's #app element.
 // "fixture" runs the approved sample data in the browser (tours, previews,
@@ -12,7 +13,7 @@ export default function Workspace({ mode = "fixture", boot, view = "home" }: { m
     let cancelled = false;
     import("./engine").then(({ startWorkspace }) => {
       if (cancelled) return;
-      const env = mode === "live" && boot ? buildLiveEnv(boot, view) : { mode: "fixture", data: REFERENCE_DATA, view };
+      const env = mode === "live" && boot ? { ...buildLiveEnv(boot, view), call: workspaceCall } : { mode: "fixture", data: REFERENCE_DATA, view };
       stop = startWorkspace(env);
     });
     return () => {
