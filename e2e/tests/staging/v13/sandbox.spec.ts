@@ -188,7 +188,7 @@ test.describe("SBX sandbox", () => {
     await context.close();
   });
 
-  test("SBX-08 example response, handover confirmation, 91-day availability and the 20-client draft all work on the saved data", async ({ browser }) => {
+  test("SBX-08 example response, handover confirmation and the 90-day availability rule all work on the saved data", async ({ browser }) => {
     const token = await newPass("controls");
     const { context, page } = await enter(browser, token);
     const gid = await guestOf(token);
@@ -377,6 +377,40 @@ test.describe("SBX sandbox", () => {
     const thread = await q<{ author: string }>("select author_id::text author from conversation_messages where conversation_id=$1 order by id", [sent[0].conversation_id]);
     expect(thread.some((m) => m.author !== gid)).toBe(true);
     expect(thread.filter((m) => m.author === gid).length).toBeGreaterThanOrEqual(1);
+    await context.close();
+  });
+
+  test("SBX-16 the 20-client draft is saved with the member; a removed client's number is never reused; it is still there after a reload", async ({ browser }) => {
+    const token = await newPass("twenty");
+    const { context, page } = await enter(browser, token);
+    const gid = await guestOf(token);
+    await openControls(page);
+    await page.getByRole("button", { name: /Load a 20-client draft/ }).click();
+    await expect(page.locator(".modal")).toContainText("Clients needing cover 20", { timeout: 15000 });
+    await page.waitForTimeout(2000);
+    const saved = async () => (await q<{ n: number }>("select jsonb_array_length(data->'clients') n from workspace_drafts where profile_id=$1 and data ? 'clients'", [gid]))[0]?.n;
+    expect(await saved()).toBe(20);
+    // Remove the highest number, then copy another client: the new one is 21, not 20 again.
+    await click(page, "client-remove:20");
+    await page.waitForTimeout(1200);
+    expect(await saved()).toBe(19);
+    await click(page, "client-duplicate:19");
+    await page.waitForTimeout(1500);
+    const ids = await q<{ ids: string }>("select string_agg(c->>'id', ',' order by (c->>'id')::int) ids from workspace_drafts d, jsonb_array_elements(d.data->'clients') c where d.profile_id=$1 and d.data ? 'clients'", [gid]);
+    const list = (ids[0]?.ids || "").split(",").map(Number);
+    expect(list.length).toBe(20);
+    expect(new Set(list).size).toBe(20);
+    expect(list).toContain(21);
+    expect(list).not.toContain(20);
+    // Close and reload: the draft is still there, on the same clients.
+    await page.keyboard.press("Escape");
+    await page.waitForTimeout(600);
+    await page.reload();
+    await page.waitForSelector(".sidebar", { timeout: 60000 });
+    await click(page, "nav:cover");
+    await page.waitForTimeout(800);
+    await expect(page.locator("#app")).toContainText(/Saved draft|Twenty-client review/);
+    expect(await saved()).toBe(20);
     await context.close();
   });
 

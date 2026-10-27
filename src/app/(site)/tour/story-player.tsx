@@ -497,6 +497,9 @@ export function StoryPlayer({
                 key={`${sc.id}:${epoch[sc.id] || 0}`}
                 ref={(el) => {
                   frames.current[sc.id] = el;
+                  // The video is not a surface to click into: a click or Tab must stay with the player.
+                  // (React 18 does not pass `inert` through, so it is set on the element.)
+                  el?.setAttribute("inert", "");
                 }}
                 src={sc.src}
                 title={`${sc.caption} (a screen of PsyAlliance)`}
@@ -508,8 +511,6 @@ export function StoryPlayer({
                 onLoad={() => {
                   loadedAt.current[sc.id] = Date.now();
                 }}
-                // The video is not a surface to click into. (React 18 drops `inert={true}`, so it is set as an empty string.)
-                {...({ inert: "" } as Record<string, string>)}
               />
             ))}
             {s && !isReady && !ended && <div className="sp-loading" role="status">Opening the screen&hellip;</div>}
