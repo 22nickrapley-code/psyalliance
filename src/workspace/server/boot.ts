@@ -28,7 +28,13 @@ export async function loadWorkspaceBoot(path: string): Promise<LiveBoot> {
   // A light presence signal used only to order equally good matches ("last login"); not awaited.
   supabase.from("profiles").update({ last_active_at: new Date().toISOString() }).eq("id", user.id).then(() => {});
   const { saved, ...rest } = boot;
-  return { ...rest, ...shapeLibrary({ resources: boot.resources, saved }), demo: IS_DEMO_SITE, userId: user.id } as LiveBoot;
+  // On the demo site a guest sees the sandbox's own note and controls.
+  let sandbox: any = null;
+  if (IS_DEMO_SITE) {
+    const { data: info } = await supabase.rpc("sandbox_info");
+    sandbox = info || null;
+  }
+  return { ...rest, ...shapeLibrary({ resources: boot.resources, saved }), demo: IS_DEMO_SITE, sandbox, userId: user.id } as LiveBoot;
 }
 
 export type { WorkspaceView };

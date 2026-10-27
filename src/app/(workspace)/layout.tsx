@@ -1,5 +1,6 @@
 import Script from "next/script";
 import type { Viewport } from "next";
+import { IS_DEMO_SITE } from "@/lib/env";
 
 // The member workspace (version 13). Its own root layout so the approved
 // stylesheet cascade loads on its own, verbatim and in the frozen order, with
@@ -30,6 +31,9 @@ export default function WorkspaceRootLayout({ children }: { children: React.Reac
           // eslint-disable-next-line @next/next/no-css-tags
           <link key={n} rel="stylesheet" href={`/workspace/${n}.css?v=${V}`} />
         ))}
+        {/* The sandbox's own note, chip and arrival notice: a separate sheet after the approved ones, demo site only. */}
+        {/* eslint-disable-next-line @next/next/no-css-tags */}
+        {IS_DEMO_SITE && <link rel="stylesheet" href={`/workspace/sandbox.css?v=${V}`} />}
       </head>
       <body>
         <a className="skip-link" href="#main">Skip to content</a>

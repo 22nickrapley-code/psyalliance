@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { IS_DEMO_SITE, REAL_SITE_URL, TOUR_URL } from "@/lib/env";
 import { PublicNav } from "../../_public/chrome";
 import { enterSandboxAction } from "./actions";
-import { AlexCard } from "../../tour/story";
+import { RachelCard } from "../../tour/story";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata = { title: "Your sandbox", robots: { index: false, follow: false } };
@@ -31,10 +31,11 @@ export default async function SandboxPage(props: { params: Promise<{ token: stri
           <div className="section-inner" style={{ maxWidth: 1040 }}>
             <div className="section-intro">
               <div className="eyebrow">Your personal sandbox</div>
-              <h2>Step into Alex&rsquo;s practice.</h2>
+              <h2>Step into Rachel&rsquo;s practice.</h2>
               <p>
-                A working copy of PsyAlliance with 1,200 fictional colleagues across six Northeast states. It starts quiet; about a minute after you
-                arrive, colleagues start getting in touch. Nothing is emailed and nothing reaches the real network.
+                The real PsyAlliance workspace, set up with Rachel Davis&rsquo;s own Cover plans, referrals, messages and discussions, and 1,200
+                fictional colleagues across six Northeast states. A few minutes in, colleagues start getting in touch. Nothing is emailed and
+                nothing reaches the real network.
               </p>
             </div>
             {error && <div className="banner error" role="alert">{error}</div>}
@@ -44,7 +45,7 @@ export default async function SandboxPage(props: { params: Promise<{ token: stri
                 <form action={enterSandboxAction} className="way primary">
                   <input type="hidden" name="token" value={token} />
                   <h3>Ready when you are</h3>
-                  <p>Your link is personal{until ? ` and works until ${until}` : ""}. Open it again on any device to carry on where you left off; &ldquo;Start the story again&rdquo; inside resets everything.</p>
+                  <p>Your link is personal{until ? ` and works until ${until}` : ""}. Open it again on any device to carry on where you left off; &ldquo;Start the story again&rdquo; in Settings resets everything.</p>
                   <button type="submit" className="btn lg">Enter the sandbox &rarr;</button>
                 </form>
                 ) : (
@@ -58,17 +59,17 @@ export default async function SandboxPage(props: { params: Promise<{ token: stri
                   </div>
                 )}
                 <div style={{ marginTop: 16 }}>
-                  <AlexCard eyebrow="In your sandbox you’re" />
+                  <RachelCard eyebrow="In your sandbox you’re" />
                 </div>
               </div>
               <div>
                 <div className="eyebrow" style={{ marginBottom: 10 }}>A good order to explore</div>
                 <div className="chapter-list">
                   {[
-                    ["Look around", "Home starts quiet. Open your profile and Clinicians; about a minute in, colleagues start getting in touch, one at a time."],
-                    ["Answer what arrives", "A message from Maya, a cover request for two clients, a referral from Eli, a colleague adding you as a trusted colleague, and an invitation to a consultation group."],
-                    ["Plan your leave", "Cover: add your six weeks of parental leave, describe each client by need and invite colleagues in order."],
-                    ["Find the right template", "Open the Practice Library and save the Extended Leave Pack PDF to My Library."],
+                    ["Start on The Hub", "Your actions are waiting: Sophie has a question about Client 3, Alex is asking you about a client, and Eli has sent you a referral."],
+                    ["See Cover as it really is", "Fall leave has three clients in three different places: Handover ready, agreed but not yet ready, and waiting on a question."],
+                    ["Place a referral", "Your New York referral has a colleague who is interested. Interested is not placed: you choose."],
+                    ["Try the whole journey", "In Settings, Sandbox controls let a colleague answer, a response deadline pass, or a handover be confirmed. Colleagues also get in touch on their own, a few minutes apart."],
                   ].map(([t, b], n) => (
                     <div key={t} className="chapter">
                       <div className="chapter-head"><span className="n">{n + 1}</span><h3>{t}</h3></div>
@@ -77,7 +78,7 @@ export default async function SandboxPage(props: { params: Promise<{ token: stri
                   ))}
                 </div>
                 <p className="small" style={{ marginTop: 16 }}>
-                  Prefer to watch first? Once you&rsquo;re inside, Demos in the sandbox bar has a short step-by-step video for each part.
+                  Prefer to watch first? Settings has a link to the demos, with a short step-by-step video for each part.
                 </p>
               </div>
             </div>

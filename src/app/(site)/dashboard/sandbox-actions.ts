@@ -12,7 +12,14 @@ export async function sandboxTickAction(): Promise<SandboxEvent | null> {
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("sandbox_tick");
   if (error || !data || typeof data !== "object") return null;
-  const e = data as Partial<SandboxEvent>;
+  const e = data as { kind?: string; title?: string; body?: string; id?: number | string; key?: string };
   if (!e.title) return null;
-  return { kind: e.kind || "message", title: e.title, body: e.body || "", href: e.href || "/dashboard", action: e.action || "Open" };
+  // Where each kind of arrival opens in the workspace.
+  const href =
+    e.kind === "message" && e.key ? `/dashboard/messages?thread=${encodeURIComponent(e.key)}`
+    : e.kind === "cover" && e.id ? `/dashboard/cover?plan=${e.id}`
+    : e.kind === "referral" && e.id ? `/dashboard/referrals?referral=${e.id}`
+    : e.kind === "consult" && e.id ? `/dashboard/consult?discussion=${e.id}`
+    : "/dashboard";
+  return { kind: e.kind || "message", title: e.title, body: e.body || "", href, action: "Open" };
 }

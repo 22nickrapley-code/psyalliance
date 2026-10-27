@@ -364,6 +364,51 @@ export const handlers: Record<string, Handler> = {
     return { ok: true, data: { link: info.link, first: info.firstName, mode: info.mode } };
   },
 
+  // ---- Sandbox (demo site only; the database refuses anywhere else) --------
+  // A colleague gets in touch (on the clock, or now when asked).
+  "sandbox.tick": async (ctx, a) => {
+    const { data, error } = await ctx.supabase.rpc("sandbox_tick", { p_force: a?.force === true });
+    if (error) return fail(error);
+    if (!data) return { ok: true, data: { arrival: null } };
+    return { ok: true, data: { arrival: data }, patch: await slices(ctx, ["pulse", "plans", "referrals", "threads", "consult", "tiers", "known"]) };
+  },
+
+  // "Try the whole journey": a colleague answers an open request now.
+  "sandbox.respond": async (ctx, a) => {
+    const kind = text(a.kind, 10);
+    if (!["cover", "referral"].includes(kind)) return bad("Choose cover or a referral.");
+    const person = idList([a.person])[0];
+    if (!person) return bad("Choose a colleague.");
+    const { error } = await ctx.supabase.rpc("sandbox_respond", {
+      p_kind: kind, p_ref: num(a.ref), p_case: Number.isFinite(num(a.case)) ? num(a.case) : 0, p_person: person, p_response: text(a.response, 12),
+    });
+    if (error) return fail(error);
+    return { ok: true, patch: await slices(ctx, ["pulse", "plans", "referrals", "threads", "tiers", "known"]) };
+  },
+
+  // The other colleague confirms a handover, so an agreed client shows Handover ready.
+  "sandbox.confirm": async (ctx, a) => {
+    const { error } = await ctx.supabase.rpc("sandbox_confirmation", { p_plan: num(a.plan), p_case: num(a.case) });
+    if (error) return fail(error);
+    return { ok: true, patch: await slices(ctx, ["pulse", "plans", "threads"]) };
+  },
+
+  // Worked examples: availability confirmed N days ago, a reply in a Cover conversation.
+  "sandbox.example": async (ctx, a) => {
+    const name = text(a.name, 20);
+    const { data, error } = await ctx.supabase.rpc("sandbox_example", { p_name: name, p_days: a.days == null ? null : Math.round(num(a.days)) });
+    if (error) return fail(error);
+    const patch = name === "availability" ? await slices(ctx, ["availability", "me"]) : await slices(ctx, ["threads", "pulse"]);
+    return { ok: true, data, patch };
+  },
+
+  // Start the story again.
+  "sandbox.reset": async (ctx) => {
+    const { error } = await ctx.supabase.rpc("reset_my_sandbox");
+    if (error) return fail(error);
+    return { ok: true };
+  },
+
   "draft.save": async (ctx, a) => {
     const kind = String(a.kind || "");
     if (!/^[a-z][a-z0-9:_-]{0,39}$/i.test(kind)) return { ok: false, error: "Unknown draft." };

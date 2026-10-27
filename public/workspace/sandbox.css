@@ -1,0 +1,29 @@
+/* The sandbox (demo site only). A separate sheet, loaded after the approved
+   ones, for the few things only the sandbox has: a note, a chip, a settings
+   panel and the notice when a colleague gets in touch. Same palette, same
+   type, nothing from the approved sheets is changed. */
+.sandbox-note{display:flex;gap:10px;align-items:flex-start;background:#f6f1e3;border:1px solid #e9dfc3;border-radius:11px;padding:11px 12px;margin:22px 3px -8px}
+.sandbox-note .note-icon{display:inline-flex;flex:none;background:#efe6cb;padding:6px;border-radius:7px;color:#8a7133}
+.sandbox-note .note-icon svg{height:14px;width:14px}
+.sandbox-note h3{font-size:12px;letter-spacing:-.1px;margin:0 0 2px;color:#5b4d26}
+.sandbox-note p{font-size:11px;line-height:1.55;margin:0;color:#7a6c43}
+.sandbox-chip{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 11px;border-radius:999px;background:#f6f1e3;border:1px solid #e9dfc3;color:#7a6a3a;font-size:11px;font-weight:600;white-space:nowrap;margin-right:6px}
+.sandbox-chip svg{height:13px;width:13px}
+.sandbox-chip b{font-weight:600}
+.sandbox-panel{background:#f6f1e3;border:1px solid #e9dfc3;border-radius:11px;padding:14px 16px;margin-bottom:12px}
+.sandbox-panel h3{display:flex;align-items:center;gap:7px;font-size:13px;margin:0 0 6px;color:#5b4d26}
+.sandbox-panel h3 svg{height:15px;width:15px}
+.sandbox-panel p{font-size:12px;line-height:1.65;margin:0;color:#6f6240}
+.sandbox-arrival{position:fixed;right:24px;bottom:24px;z-index:140;width:min(390px,calc(100vw - 32px));display:grid;grid-template-columns:auto 1fr auto auto;gap:12px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:12px;padding:13px 12px 13px 14px;box-shadow:0 8px 30px #203b3226;opacity:0;transform:translateY(16px);pointer-events:none;transition:opacity .2s,transform .2s}
+.sandbox-arrival.visible{opacity:1;transform:none;pointer-events:auto}
+.sandbox-arrival .arrival-icon{display:grid;place-items:center;width:34px;height:34px;border-radius:9px;background:var(--sage);color:var(--forest)}
+.sandbox-arrival .arrival-icon svg{height:16px;width:16px}
+.sandbox-arrival strong{display:block;font-size:12px;line-height:1.4;color:var(--ink)}
+.sandbox-arrival p{margin:2px 0 0;font-size:11px;line-height:1.5;color:#6e7768}
+@media(max-width:760px){.sandbox-arrival{left:12px;right:12px;width:auto;bottom:calc(78px + env(safe-area-inset-bottom,0px))}}
+@media(max-width:420px){.sandbox-chip{padding:0 8px;margin-right:2px}.sandbox-chip b{display:none}.sandbox-arrival{grid-template-columns:auto 1fr auto}.sandbox-arrival .icon-button{display:none}}
+@media(prefers-reduced-motion:reduce){.sandbox-arrival{transition:none}}
+
+/* Sandbox controls: spacing between the buttons and their explanations. */
+.sandbox-moves .form-intro{margin:12px 0 10px}
+.sandbox-moves .btn,.sandbox-moves button{margin:0 8px 8px 0}

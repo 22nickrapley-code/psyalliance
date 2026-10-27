@@ -1,48 +1,22 @@
-// The one fictional story the tour and the sandbox share. Keep the facts
-// here identical to private.seed_demo_viewer: Alex Thornvale, PsyD, a
-// clinical psychologist in Brooklyn, licensed in New York and New Jersey,
-// planning six weeks of parental leave that starts on the Monday after
-// the week four weeks from today.
+// The one fictional person the sandbox and the guided demos share: Rachel
+// Davis, PhD, a clinical psychologist in Boston, licensed in Massachusetts,
+// New York and Vermont. Keep the facts here identical to
+// private.seed_demo_viewer (migration 0119) and the demo scenes.
 
-// Fictional people show initials, never illustrated portraits.
-export const AV: Record<"alex" | "maya" | "eli" | "imani" | "samuel" | "lena" | "noah", string | null> = {
-  alex: null,
-  maya: null,
-  eli: null,
-  imani: null,
-  samuel: null,
-  lena: null,
-  noah: null,
-};
-
-// Same rule as the seed: date_trunc('week', today + 28) + 7 days, for six weeks.
-export function leaveDates(today = new Date()) {
-  const d = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate() + 28));
-  const monday = new Date(d);
-  monday.setUTCDate(d.getUTCDate() - ((d.getUTCDay() + 6) % 7) + 7);
-  const end = new Date(monday);
-  end.setUTCDate(monday.getUTCDate() + 41);
-  const iso = (x: Date) => x.toISOString().slice(0, 10);
-  const short = (x: Date) => x.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
-  const long = (x: Date) => x.toLocaleDateString("en-US", { month: "long", day: "numeric", timeZone: "UTC" });
-  return { start: iso(monday), end: iso(end), range: `${short(monday)} to ${short(end)}`, startLong: long(monday) };
-}
-
-export function AlexCard({ compact, eyebrow = "In every demo you’re" }: { compact?: boolean; eyebrow?: string }) {
-  const leave = leaveDates();
+export function RachelCard({ compact, eyebrow = "In every demo you’re" }: { compact?: boolean; eyebrow?: string }) {
   return (
     <div className={`story-alex${compact ? " compact" : ""}`}>
-      <span className="story-initials" aria-hidden="true">AT</span>
+      <span className="story-initials" aria-hidden="true">RD</span>
       <div>
         <div className="eyebrow">{eyebrow}</div>
-        <h3>Alex Thornvale, PsyD</h3>
-        <p>Clinical psychologist in Brooklyn, New York</p>
-        {compact && <p className="story-alex-line">Six weeks of parental leave from {leave.startLong}. Licensed in New York and New Jersey.</p>}
+        <h3>Rachel Davis, PhD</h3>
+        <p>Clinical psychologist in Boston, Massachusetts</p>
+        {compact && <p className="story-alex-line">Cover for the fall, referrals waiting and colleagues to meet. Licensed in Massachusetts, New York and Vermont.</p>}
         {!compact && (
           <ul className="story-facts">
-            <li>Licensed in New York and New Jersey</li>
-            <li>Adults and adolescents: anxiety, trauma and OCD</li>
-            <li>Parental leave for six weeks from {leave.startLong}</li>
+            <li>Licensed in Massachusetts, New York and Vermont</li>
+            <li>Adults and young adults: anxiety, low mood and life transitions</li>
+            <li>Cover for the fall in progress, with colleagues already answering</li>
             <li>1,200 fictional colleagues across NY, NJ, MA, CT, RI and VT</li>
           </ul>
         )}

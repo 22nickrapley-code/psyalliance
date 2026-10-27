@@ -10,6 +10,8 @@ export type LiveBoot = {
   serverNow: string;
   userId: string;
   demo: boolean;
+  // Set only on the demo site, for a sandbox guest.
+  sandbox?: { label: string; expiresAt: string; arrivals: { done: number; total: number } } | null;
   me: any;
   people: any[];
   known?: any[];
@@ -41,7 +43,8 @@ export function buildLiveEnv(boot: LiveBoot, view: WorkspaceView) {
     mode: "live" as const,
     view,
     me: boot.me,
-    previewControls: false,
+    previewControls: !!boot.sandbox,
+    sandbox: boot.sandbox || null,
     account: { admin: !!boot.me?.isAdmin, physician: Number(boot.inbound?.physician || 0), demoSite: !!boot.demo },
     data: {
       people,

@@ -157,12 +157,12 @@ export default function PremiumShell({
                   <a href="/dashboard/demos">Demos</a>
                   {resetSandboxAction && demoSite.label && (
                     <form action={resetSandboxAction}>
-                      <button type="submit" title="Clears everything you have done here and restores Alex's practice">Start the story again</button>
+                      <button type="submit" title="Clears everything you have done here and restores Rachel's practice">Start the story again</button>
                     </form>
                   )}
                   <p>
                     {demoSite.role ? `${demoSite.role}. ` : ""}Everyone here is fictional and nothing is emailed. Colleagues reply to what you send within a minute or two.
-                    {demoSite.label ? " Start the story again clears everything you've done and restores Alex's practice. Leave takes you back to your own account; open the sandbox again from your Home page." : ""}
+                    {demoSite.label ? " Start the story again clears everything you've done and restores Rachel's practice. Leave takes you back to your own account; open the sandbox again from your Home page." : ""}
                   </p>
                   {demoSite.expires && <p>Sandbox for {demoSite.label}, open until {demoSite.expires}.</p>}
                 </div>
