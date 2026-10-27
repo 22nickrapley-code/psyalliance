@@ -15,7 +15,8 @@ export async function enterSandboxAction(formData: FormData) {
   const supabase = await createClient();
   await supabase.auth.signOut();
   const { data, error } = await supabase.rpc("claim_sandbox", { p_token: token }).maybeSingle<any>();
-  if (error || !data) redirect(`/sandbox/${encodeURIComponent(token)}?error=${encodeURIComponent(error?.message || "This sandbox link has expired.")}`);
+  // Our own sentences (a link that has ended) are shown as they are; the database's wording never is.
+  if (error || !data) redirect(`/sandbox/${encodeURIComponent(token)}?error=${encodeURIComponent(error ? friendly(error, "We couldn't set up your sandbox just now. Please try again in a moment.") : "This sandbox link has expired.")}`);
   const { error: signInError } = await supabase.auth.signInWithPassword({ email: data.email, password: data.password });
   if (signInError) redirect(`/sandbox/${encodeURIComponent(token)}?error=${encodeURIComponent("We couldn't open your sandbox. Please try again.")}`);
   // Remember the link on this device, so a dropped session can be restored
