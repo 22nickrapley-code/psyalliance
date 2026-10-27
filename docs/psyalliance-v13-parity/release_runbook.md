@@ -42,7 +42,7 @@ Run `docs/psyalliance-v13-parity/release_checks.sql` in the SQL editor of each p
 
 ### Step 1 and 2: the SQL
 
-For each file: open it from `supabase/migrations/`, paste it whole into the SQL editor and run. Then run `release_checks.sql` again: its column for that migration must say `true`.
+For each file: open it, paste it whole into the SQL editor and run. The five new files (0117, 0118, 0119, 0120, 0121) are delivered next to this runbook; they are also in `supabase/migrations/` once the bundle is fetched (`git fetch C:\Users\Nick\Downloads\psyalliance-v13.bundle v13-port:v13-port` only adds a branch: it does not touch `master` or GitHub). Then run `release_checks.sql` again: its column for that migration must say `true`.
 
 | File | Real project | Sandbox project | Notes |
 | --- | --- | --- | --- |
