@@ -111,7 +111,16 @@ test("CV-04 the server's eligibility rules give the same answers as the screens'
   const m = src.match(/function eligibilityExclusions\(n,p\)\{[\s\S]*?return out;\}/);
   expect(m).toBeTruthy();
   const settingLabel = (s: string) => (s === "virtual" ? "Virtual" : s === "in_person" ? "In person" : "Virtual or in person");
-  const js = new Function("settingLabel", `${m![0]}; return eligibilityExclusions;`)(settingLabel) as (n: any, p: any) => string[];
+  // The helpers the check leans on (PSYPACT states, pause, cover need) come from the same file.
+  const grab = (re: RegExp) => { const x = src.match(re); expect(x, String(re)).toBeTruthy(); return x![0]; };
+  const helpers = [
+    "const formatDate=s=>new Date(`${s}T12:00:00`).toLocaleDateString('en-US',{month:'short',day:'numeric'});",
+    grab(/const PSYPACT=new Set\([^\n]*\);/),
+    grab(/const viaPsypact=[^\n]*;/),
+    grab(/const isCoverNeed=[^\n]*;/),
+    grab(/const todayISO=[^\n]*;/),
+  ].join("\n");
+  const js = new Function("settingLabel", `${helpers}\n${m![0]}; return eligibilityExclusions;`)(settingLabel) as (n: any, p: any) => string[];
   await q(`update profiles set qualification_level = 'MD' where id = $1`, [gale]);
   await q(`insert into profile_lookup_values (profile_id, lookup_value_id) select $1, id from lookup_values where category = 'age_group_specialism' and value = (select min(value) from lookup_values where category = 'age_group_specialism') on conflict do nothing`, [bram]);
   const people = (await asMember(avery, `select public.workspace_people() as r`)).rows[0].r as any[];
