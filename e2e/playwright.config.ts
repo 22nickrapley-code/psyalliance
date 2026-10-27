@@ -3,7 +3,8 @@ import fs from "fs";
 import path from "path";
 
 // Tests of screens the final product replaced are retired, not deleted: docs/psyalliance-v13-parity/legacy_test_triage.csv
-// lists each one with the test that covers it now. Rows marked "Replaced" are left out of a normal run;
+// lists each one with the test that covers it now. Rows whose status starts with "Replaced" are left out of a normal run
+// (a test ported in place keeps running; its row says "In place");
 // E2E_INCLUDE_RETIRED=1 runs them too (they are expected to fail against the new screens).
 function retiredTests(): RegExp | undefined {
   if (process.env.E2E_INCLUDE_RETIRED) return undefined;
@@ -22,10 +23,11 @@ function retiredTests(): RegExp | undefined {
     const head = rows.shift() || [];
     const iTest = head.indexOf("legacy_test"), iStatus = head.indexOf("status");
     // A row names its test by its id (the first word, such as J-COVER-01); the wording after it may differ from the real title.
+    // The id must start a title (follow a space), so a test that only mentions another test's id in brackets is not retired by mistake.
     const names = rows
-      .filter((r) => /^(Replaced|Ported)/.test(r[iStatus]?.trim() || "") && r[iTest])
+      .filter((r) => /^Replaced/.test(r[iStatus]?.trim() || "") && r[iTest])
       .map((r) => r[iTest].trim())
-      .map((t) => (/^[A-Z][A-Z0-9]*(-[A-Z0-9]+)+/.test(t) ? `(?<![\\w-])${t.split(/\s/)[0].replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?![\\w-])` : t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+      .map((t) => (/^[A-Z][A-Z0-9]*(-[A-Z0-9]+)+/.test(t) ? `(?<=\\s)${t.split(/\s/)[0].replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?![\\w-])` : t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
     return names.length ? new RegExp(names.join("|")) : undefined;
   } catch {
     return undefined;

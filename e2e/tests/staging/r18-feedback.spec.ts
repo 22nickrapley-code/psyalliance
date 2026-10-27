@@ -256,7 +256,11 @@ test("R18-13 founding places are 40 everywhere; the privacy policy and join step
 
 test("R18-14 sandbox arrivals are at least 6 minutes apart", async () => {
   const d = await one(`select pg_get_functiondef('public.sandbox_tick'::regproc) d`);
-  expect(d.d).toMatch(/interval '6 minutes'\) then/);
+  // v13 (0119) spaces the next arrivals with a list of gaps; every real gap is 6 minutes or more
+  // (the last entry, 0 seconds, is the step after the final arrival).
+  const gaps = [...String(d.d).matchAll(/interval '(\d+) (minutes|seconds)'/g)].map((m) => Number(m[1]) * (m[2] === "minutes" ? 60 : 1));
+  expect(gaps.length, "the gaps between arrivals are listed").toBeGreaterThanOrEqual(4);
+  for (const g of gaps.filter((x) => x > 0)) expect(g, "each gap between arrivals").toBeGreaterThanOrEqual(6 * 60);
   const seed = await one(`select pg_get_functiondef('private.seed_demo_viewer_story'::regproc) d`);
   expect(seed.d).toMatch(/240 seconds/);
 });

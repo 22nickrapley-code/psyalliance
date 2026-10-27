@@ -60,13 +60,13 @@ test("P13-03 the demo plays slower on a phone than on a computer", async ({ page
   };
   const phone = await sceneSeconds(page);
   await page.waitForTimeout(6000);
-  const style = await page.locator(".sp-screen.on").first().getAttribute("style");
   await shot(page, info, "phone-demo");
   const desk = await browser.newContext({ ...devices["Desktop Chrome"] });
   const deskPage = await desk.newPage();
   const desktop = await sceneSeconds(deskPage);
   await desk.close();
-  await info.attach("timing.json", { body: JSON.stringify({ phoneSceneSeconds: phone, desktopSceneSeconds: desktop, phoneScreenStyle: style }, null, 2), contentType: "application/json" });
+  await info.attach("timing.json", { body: JSON.stringify({ phoneSceneSeconds: phone, desktopSceneSeconds: desktop }, null, 2), contentType: "application/json" });
   expect(phone, "first scene lasts longer on a phone").toBeGreaterThan(desktop + 1.5);
-  expect(style || "", "scrolls take their time on a phone").toMatch(/transition-duration:\s*0\.6s,\s*(1[3-9]\d\d|2[0-2]\d\d)ms/);
+  // In the v13 player the whole scene, scroll and pointer included, runs slower on a phone (story-player.tsx: slow = 1.4, +1.6 s).
+  expect(phone / desktop, "a phone scene is at least 15% longer").toBeGreaterThan(1.15);
 });
