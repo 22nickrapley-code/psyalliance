@@ -53,6 +53,9 @@ export const handlers: Record<string, Handler> = {
       p_open: !!a.open,
       p_spaces: Math.round(Number(a.spaces)),
       p_states: a.states && typeof a.states === "object" ? a.states : {},
+      p_paused_until: typeof a.pausedUntil === "string" && /^\d{4}-\d{2}-\d{2}$/.test(a.pausedUntil) ? a.pausedUntil : null,
+      p_cover: ["yes", "ask", "no"].includes(a.cover) ? a.cover : null,
+      p_consult: a.consult === true ? "yes" : a.consult === false ? "no" : null,
     });
     if (error) return fail(error);
     return { ok: true, patch: await slices(ctx, ["availability", "me"]) };
@@ -134,13 +137,24 @@ export const handlers: Record<string, Handler> = {
       focus: text(a.focus, 120), secondary: text(a.secondary, 120), state: text(a.state, 2), city: text(a.city, 80), age: text(a.age, 120),
       setting: text(a.setting, 12), insurance: text(a.insurance, 120), language: text(a.language, 120), prescribing: a.prescribing === true,
       audience: text(a.audience, 12), selected: idList(a.selected).slice(0, 101), timeframe: text(a.timeframe, 40), message: text(a.message, 700),
+      title: text(a.title, 60),
     };
-    // The note and the city never carry client identifiers.
-    const err = [payload.message, payload.city].map(identifierError).find(Boolean);
+    // The note, the title and the city never carry client identifiers.
+    const err = [payload.message, payload.city, payload.title].map(identifierError).find(Boolean);
     if (err) return bad(err);
     const { data, error } = await ctx.supabase.rpc("referral_create", { p_payload: payload });
     if (error) return fail(error, "That didn't send, so nobody was asked. Your referral is kept; please try again.");
     return { ok: true, data, patch: await slices(ctx, ["referrals", "known"]) };
+  },
+
+  // The referrer's private title for one of their referrals. Empty clears it.
+  "referral.title": async (ctx, a) => {
+    const title = text(a.title, 60);
+    const err = identifierError(title);
+    if (err) return bad(err);
+    const { error } = await ctx.supabase.rpc("referral_set_title", { p_referral: num(a.referral), p_title: title });
+    if (error) return fail(error);
+    return { ok: true, patch: await slices(ctx, ["referrals"]) };
   },
 
   "referral.answer": async (ctx, a) => {
