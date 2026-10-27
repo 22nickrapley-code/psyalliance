@@ -21,7 +21,11 @@ function retiredTests(): RegExp | undefined {
     }
     const head = rows.shift() || [];
     const iTest = head.indexOf("legacy_test"), iStatus = head.indexOf("status");
-    const names = rows.filter((r) => r[iStatus]?.trim() === "Replaced" && r[iTest]).map((r) => r[iTest].trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+    // A row names its test by its id (the first word, such as J-COVER-01); the wording after it may differ from the real title.
+    const names = rows
+      .filter((r) => /^(Replaced|Ported)/.test(r[iStatus]?.trim() || "") && r[iTest])
+      .map((r) => r[iTest].trim())
+      .map((t) => (/^[A-Z][A-Z0-9]*(-[A-Z0-9]+)+/.test(t) ? `(?<![\\w-])${t.split(/\s/)[0].replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?![\\w-])` : t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
     return names.length ? new RegExp(names.join("|")) : undefined;
   } catch {
     return undefined;

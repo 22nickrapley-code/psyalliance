@@ -194,7 +194,8 @@ test("R18-10 Profile's four tabs are coloured by how complete they are", async (
   await q(`delete from continuity_plans where profile_id = $1`, [id("gale")]);
   try {
     await signInAs(context, "gale", baseURL!);
-    await page.goto("/dashboard/availability");
+    // The Availability page is now the Hub's window (D-05); the four tabs live on the profile page and its sisters.
+    await page.goto("/dashboard/profile");
     const tabs = page.locator(".profile-tabs .section-tab");
     await expect(tabs).toHaveCount(4);
     await expect(tabs.nth(3)).toHaveClass(/hub-red/);
@@ -278,11 +279,15 @@ test("R18-16 a long name or email stays inside the menu", async ({ page, context
   try {
     await signInAs(context, "esme", baseURL!);
     await page.setViewportSize({ width: 1280, height: 900 });
-    await page.goto("/dashboard/profile");
-    const rail = await page.locator("aside.sidebar").boundingBox();
-    const name = await page.locator(".rail-user-text b").boundingBox();
-    expect(name!.x + name!.width).toBeLessThanOrEqual(rail!.x + rail!.width);
-    await expect(page.locator(".rail-user")).toHaveAttribute("title", /Wolfeschlegelsteinhausen/);
+    // The menu's name card in both frames: the account pages and the workspace itself.
+    for (const path of ["/dashboard/profile", "/dashboard"]) {
+      await page.goto(path);
+      const rail = await page.locator("aside.sidebar").boundingBox();
+      const name = await page.locator(".sidebar .profile-button strong").boundingBox();
+      expect(name!.x + name!.width, path).toBeLessThanOrEqual(rail!.x + rail!.width);
+      // The account frame also gives the full name on hover; the workspace's approved name card has no title to carry it.
+      if (path !== "/dashboard") await expect(page.locator(".sidebar .profile-button"), path).toHaveAttribute("title", /Wolfeschlegelsteinhausen/);
+    }
   } finally {
     await q(`update profiles set full_name = $2 where id = $1`, [id("esme"), before.full_name]);
   }

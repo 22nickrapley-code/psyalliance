@@ -87,3 +87,8 @@
 .profile-safety .text-link,.report-link{font-size:12px;color:#6c7165;text-decoration:underline;text-underline-offset:2px}
 .report-link{margin-left:10px}
 .physician-list{margin-top:6px}
+
+/* A very long name or role in the menu's name card is cut with an ellipsis instead of running out of the menu (R18-16, carried from the older app). */
+.sidebar .profile-button{min-width:0}
+.sidebar .profile-button>span:not(.avatar){min-width:0;flex:1 1 auto;overflow:hidden}
+.sidebar .profile-button strong,.sidebar .profile-button small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}

@@ -32,6 +32,13 @@ For each line, write Pass, Fail (what you saw) or N/A. A photo or screen recordi
 | 20 | Library: open a resource, tap "Open PDF". It opens in the phone's viewer and Back returns to the workspace. | | |
 | 21 | The two demo videos on /tour play inline, Escape / the close button closes them and the page behind scrolls again. | | |
 | 22 | Sandbox: leave the sandbox open for 3 minutes. Colleagues' replies arrive after about 90 seconds and show up within the next 30 seconds without a manual reload. | | |
+| 23 | Account pages: from the menu open Profile, then Settings, then My documents. Each shows the same sidebar and top bar as the Hub; on a phone, More at the bottom opens the full menu and Escape / tapping outside closes it. | | |
+| 24 | Profile on a phone: the four parts (Profile, Credentials, Continuity plan) are small pills with the status dot after the name, nothing cut off; there is no Supervision question on the profile form. | | |
+| 25 | Availability: tap the availability card on the Hub, set a pause-until date and switch cover off, save. Reopen it: both are still set. The date field opens the phone's calendar, even straight after typing in another field. | | |
+| 26 | Report and Block: open a colleague's profile, tap Report this profile (write two words, send), then tap Block and their name. The profile closes and the colleague no longer appears in Network. | | |
+| 27 | Consult: on a question you asked, tap Mark as resolved. It shows Resolved with a quiet note, and the reply box is replaced by that note. Reopen it again. | | |
+| 28 | Open a conversation and ask a second person (or a second browser) to reply: it appears within a few seconds without a reload; leave the conversation and it checks about every 30 seconds instead (battery). | | |
+| 29 | Messages on a phone: open a conversation and tap the three dots beside a message. The small menu (a heart: mark useful) appears next to that message, not somewhere else on the screen. | | |
 
 ## What to send back
 
