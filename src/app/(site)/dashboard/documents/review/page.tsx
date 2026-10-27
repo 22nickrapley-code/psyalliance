@@ -27,7 +27,7 @@ export default async function LibraryReviewPage(props: { searchParams: Promise<{
   if (myRoles.length === 0) {
     return (
       <>
-        <PageHead eyebrow="Practice Library" title="Resource review" />
+        <PageHead eyebrow="Library" title="Resource review" />
         <Empty symbol={"▤"} title="You aren't appointed as a reviewer." body="Admins appoint reviewers for clinical, prescribing, legal and privacy review. If you've been asked to review, the appointment will show here." />
       </>
     );
@@ -58,7 +58,7 @@ export default async function LibraryReviewPage(props: { searchParams: Promise<{
   return (
     <>
       <PageHead
-        eyebrow="Practice Library"
+        eyebrow="Library"
         title="Resource review"
         lead={`You review as: ${myRoles.map((r) => REVIEWER_ROLE_LABELS[r]).join(", ")}. Read the whole PDF, not just the summary. An approval covers this exact version.`}
       />

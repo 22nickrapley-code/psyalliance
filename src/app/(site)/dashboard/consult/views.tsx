@@ -349,7 +349,7 @@ export function ConsultComposeView({
         </section>
         <aside className="stack">
           <section className="card tint">
-            <div className="eyebrow">Practice Library</div>
+            <div className="eyebrow">Library</div>
             <h3>Case Consultation Template</h3>
             <p className="small">A structure for a concise question and a clear record of the advice you received.</p>
             <a className="btn secondary small-btn" href="/dashboard/documents/case-consultation-template">View the template</a>
@@ -487,7 +487,7 @@ export function ConsultDetailView({ c, ok, error, extra }: { c: ConsultDetail; o
           )}
           {extra}
           <section className="card tint">
-            <div className="eyebrow">Practice Library</div>
+            <div className="eyebrow">Library</div>
             <h3>Case Consultation Template</h3>
             <p className="small">Record the advice you received and your decision.</p>
             <a className="btn secondary small-btn" href="/dashboard/documents/case-consultation-template">View the template</a>

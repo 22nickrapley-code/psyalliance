@@ -151,11 +151,11 @@ export default async function DashboardLayout({
     ? null
     : profile.verification_status === "verified" && status?.has_reviewed_licence
       ? queue.length
-        ? `You're verified. PsyAlliance opens in ${stateList(queue.map((w) => w.state))} as colleagues join; you're number ${queue[0].position} on the ${stateName(queue[0].state)} list. Meanwhile, your sandbox and the Practice Library are open to you.`
-        : "You're verified. PsyAlliance opens in your state as colleagues join. Meanwhile, your sandbox and the Practice Library are open to you."
+        ? `You're verified. PsyAlliance opens in ${stateList(queue.map((w) => w.state))} as colleagues join; you're number ${queue[0].position} on the ${stateName(queue[0].state)} list. Meanwhile, your sandbox and the Library are open to you.`
+        : "You're verified. PsyAlliance opens in your state as colleagues join. Meanwhile, your sandbox and the Library are open to you."
       : (licenceCount || 0) === 0
-        ? "Add a license to be reviewed. You can prepare cover plans and your continuity plan now; sending to colleagues opens once you're verified. Your sandbox and the Practice Library are open too."
-        : "Your license is with us for review. You can prepare cover plans and your continuity plan now; sending to colleagues opens once you're verified. Your sandbox and the Practice Library are open too.";
+        ? "Add a license to be reviewed. You can prepare cover plans and your continuity plan now; sending to colleagues opens once you're verified. Your sandbox and the Library are open too."
+        : "Your license is with us for review. You can prepare cover plans and your continuity plan now; sending to colleagues opens once you're verified. Your sandbox and the Library are open too.";
 
   // Cheap presence signal used only for match tie-breaking ("last login") -
   // not awaited-critical, but kept simple and correct rather than clever.

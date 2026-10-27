@@ -46,7 +46,7 @@ export function backLabel(back: string): string {
     [/^\/dashboard\/clinicians/, "Clinicians"],
     [/^\/dashboard\/messages/, "Messages"],
     [/^\/dashboard\/settings/, "Settings"],
-    [/^\/dashboard\/documents/, "the Practice Library"],
+    [/^\/dashboard\/documents/, "the Library"],
     [/^\/dashboard\/availability/, "Availability"],
     [/^\/dashboard\/credentials/, "Credentials"],
     [/^\/dashboard\/continuity/, "your continuity plan"],

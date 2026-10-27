@@ -208,7 +208,7 @@ export function HomeView({ d }: { d: HomeData }) {
               <a className="btn secondary small-btn" href="/dashboard/demos">Watch the demos</a>
             </div>
           </div>
-          <p className="small" style={{ margin: "16px 0 0" }}>The Practice Library is open to you now. Three templates members start with:</p>
+          <p className="small" style={{ margin: "16px 0 0" }}>The Library is open to you now. Three templates members start with:</p>
           <ul className="while-review-list">
             {WHILE_REVIEW.map(([code, title, line]) => (
               <li key={code}>

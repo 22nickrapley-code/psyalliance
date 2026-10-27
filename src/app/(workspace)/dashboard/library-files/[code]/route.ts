@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { LIBRARY_SELECT, isAvailable, isMemberVisible } from "@/lib/library";
 
-// Opens or downloads one Practice Library template, for a signed-in member.
+// Opens or downloads one Library template, for a signed-in member.
 // A template that is not ready (still waiting for review, and the preview
 // setting is off) has no file here, exactly as on the old Library page.
 export const dynamic = "force-dynamic";

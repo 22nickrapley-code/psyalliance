@@ -1693,7 +1693,7 @@
 .pa .copy-link{display:flex;gap:8px;align-items:center}
 .pa .copy-link input{flex:1;min-width:0;min-height:44px;border:1px solid #cdd7cf;border-radius:10px;padding:0 12px;font:inherit;font-size:14px;color:var(--ink);background:#f8f9f6}
 
-/* ---------- Public Practice Library ---------- */
+/* ---------- Public Library ---------- */
 .pa .lib-hero{padding-bottom:44px}
 .pa .lib-hero .section-intro{margin-bottom:24px}
 .pa .lib-hero h1{font-size:clamp(38px,4.6vw,58px)}
@@ -2769,7 +2769,7 @@
 .pa .policy-list{margin:6px 0 16px;padding-left:20px;line-height:1.7}
 .pa .policy-list li{margin:4px 0}
 .pa .soon-chip{display:inline-flex;align-items:center;padding:4px 10px;border-radius:999px;background:#eef1f5;color:#47586a;font-size:12px;font-weight:700;letter-spacing:.02em;white-space:nowrap}
-/* The PDF in the Practice Library demo. */
+/* The PDF in the Library demo. */
 .pa .pdf-viewer{background:#525659;border-radius:12px;padding:0 0 22px;overflow:hidden}
 .pa .pdf-toolbar{display:flex;align-items:center;gap:16px;padding:12px 18px;background:#323639;color:#e8eaed;font-size:13px}
 .pa .pdf-toolbar a{color:#e8eaed;text-decoration:none;font-weight:600}

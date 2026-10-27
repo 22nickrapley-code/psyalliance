@@ -3,7 +3,7 @@ import { docName } from "@/lib/library";
 import { LIBRARY_SELECT, isMemberVisible, matchesQuery, toResource } from "@/lib/library";
 import { LibraryView, MyLibraryView, type MyDoc } from "./views";
 
-export const metadata = { title: "Practice Library" };
+export const metadata = { title: "Library" };
 
 // Signed links sit on a rendered page, so give them an hour: long enough
 // for a normal browse-then-click, short enough that a leaked link expires.

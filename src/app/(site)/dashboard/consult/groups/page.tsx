@@ -127,7 +127,7 @@ export default async function ConsultationGroupsPage(props: { searchParams: Prom
         </div>
         <aside className="stack">
           <section className="card">
-            <div className="eyebrow">From the Practice Library</div>
+            <div className="eyebrow">From the Library</div>
             <h3>Consultation Group Charter</h3>
             <p className="small">A charter, member agreement, 90-minute agenda and consultation log for a peer group.</p>
             <a className="btn secondary small-btn" href="/dashboard/documents/consultation-group-charter">View the template</a>

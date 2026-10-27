@@ -29,7 +29,7 @@ const STATUS: Record<string, [string, "" | "warn" | "neutral" | "danger"]> = {
   draft: ["Draft", "neutral"],
 };
 
-// Practice Library governance. Admins decide which reviewer roles each
+// Library governance. Admins decide which reviewer roles each
 // resource needs and who is appointed to each role. The appointed
 // reviewers record their own reviews at /dashboard/documents/review; the
 // database only counts independent approvals of the current version

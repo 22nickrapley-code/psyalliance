@@ -60,7 +60,7 @@ export default async function SignUpPage(props: {
               <ol className="join-steps">
                 <li><b>Create your account</b><span>It takes a minute.</span></li>
                 <li><b>Add your license</b><span>A person checks it against the state board before anyone can see you.</span></li>
-                <li><b>Explore while we check</b><span>The Practice Library and a sandbox with fictional colleagues are open to you straight away.</span></li>
+                <li><b>Explore while we check</b><span>The Library and a sandbox with fictional colleagues are open to you straight away.</span></li>
                 <li>
                   <b>You&rsquo;re in</b>
                   <span>
@@ -86,11 +86,11 @@ export default async function SignUpPage(props: {
                 <div className="eyebrow">Membership</div>
                 <h2 className="serif-title" style={{ fontSize: 28, margin: "6px 0 10px" }}>PsyAlliance membership is for doctoral clinicians.</h2>
                 <p>
-                  The network is for psychologists with a PhD, PsyD or EdD and psychiatrists with an MD or DO, licensed in the US. The Practice Library is open to
+                  The network is for psychologists with a PhD, PsyD or EdD and psychiatrists with an MD or DO, licensed in the US. The Library is open to
                   everyone, and every template can be used by master&rsquo;s-level clinicians.
                 </p>
                 <div className="row wrap" style={{ gap: 10 }}>
-                  <a className="btn" href="/library">Browse the Practice Library</a>
+                  <a className="btn" href="/library">Browse the Library</a>
                   <a className="btn secondary" href={`/auth/sign-up${source ? `?from=${source}` : ""}`}>Back</a>
                 </div>
               </div>

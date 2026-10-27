@@ -3,9 +3,9 @@ import { createClient } from "@/lib/supabase/server";
 import { LIBRARY_SELECT, isMemberVisible, toResource, codeFromSlug } from "@/lib/library";
 import { ResourceDetailView } from "../views";
 
-export const metadata = { title: "Practice Library" };
+export const metadata = { title: "Library" };
 
-// One Practice Library resource: the card's facts, the PDF, a private
+// One Library resource: the card's facts, the PDF, a private
 // working copy and the workflow it supports. Addressed by PA number
 // (/dashboard/documents/extended-leave-pack); PA numbers still resolve.
 export default async function ResourcePage(props: {

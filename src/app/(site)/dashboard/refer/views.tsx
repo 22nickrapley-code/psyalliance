@@ -83,7 +83,7 @@ function needRows(need: Need, options: Pick<NeedOptions, "focus" | "language" | 
 function ResourceAside() {
   return (
     <section className="card">
-      <div className="eyebrow">From the Practice Library</div>
+      <div className="eyebrow">From the Library</div>
       <h3>Referral &amp; Transfer Toolkit</h3>
       <p className="small">Record who took the referral and what each of you is responsible for once a colleague agrees.</p>
       <a className="btn secondary small-btn" href="/dashboard/documents/referral-and-termination-letters">View the template</a>

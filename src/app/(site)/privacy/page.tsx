@@ -63,7 +63,7 @@ export default function PrivacyPage() {
                 add as trusted, collaboration ratings, blocks and exclusions, reports you make, and your continuity plan.
               </li>
               <li><b>Invitations:</b> when you invite a colleague, the email address, phone number or profile link you enter for them, and their name if you add it.</li>
-              <li><b>Practice Library requests:</b> on the public Library, your name, email address, role and state, the template you asked about and the page you came from.</li>
+              <li><b>Library requests:</b> on the public Library, your name, email address, role and state, the template you asked about and the page you came from.</li>
               <li><b>Messages to us:</b> anything you send when you contact us.</li>
             </ul>
             <p><b>Information collected automatically.</b></p>
@@ -165,7 +165,7 @@ export default function PrivacyPage() {
                 We keep encrypted weekly backups for 12 weeks, so deleted information can remain in a backup until it ages out. Backups are used only to
                 restore the service.
               </li>
-              <li>Practice Library requests are kept until you ask us to remove them.</li>
+              <li>Library requests are kept until you ask us to remove them.</li>
               <li>Sandbox accounts and everything in them are fictional and end on their own.</li>
               <li>Technical logs are kept by our providers for a limited time for security and troubleshooting.</li>
             </ul>

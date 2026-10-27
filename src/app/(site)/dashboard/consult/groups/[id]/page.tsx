@@ -205,7 +205,7 @@ export default async function ConsultationGroupPage(props: { params: Promise<{ i
             )}
           </section>
           <section className="card">
-            <div className="eyebrow">From the Practice Library</div>
+            <div className="eyebrow">From the Library</div>
             <h3>Consultation Group Charter</h3>
             <p className="small">A model charter, member agreement and 90-minute agenda.</p>
             <a className="btn secondary small-btn" href="/dashboard/documents/consultation-group-charter">View the template</a>

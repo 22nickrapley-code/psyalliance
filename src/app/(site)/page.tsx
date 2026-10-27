@@ -24,7 +24,7 @@ const FAQ: [string, string][] = [
     "The first 40 members in each state are founding members and never pay: membership stays free for as long as you remain a member. A place counts once your license is approved, in your main practice state. After a state's founding places are taken, membership there will be paid; we'll publish the price before then.",
   ],
   [
-    "What's in the Practice Library?",
+    "What's in the Library?",
     "Twenty templates for independent practice, from a professional will to a reciprocal cover agreement. Browse the titles here; members get all of them, placed beside the work they support.",
   ],
   [
@@ -190,7 +190,7 @@ export default async function HomePage() {
         <section className="public-section home-library" id="library">
           <div className="section-inner">
             <div className="section-intro">
-              <div className="eyebrow">Practice Library</div>
+              <div className="eyebrow">Library</div>
               <h2>Templates for the hard moments of independent practice.</h2>
               <p className="lead section-lead">
                 In a group practice, the leave plan, the referral letter and the professional will already exist. On your own, you write them yourself, usually

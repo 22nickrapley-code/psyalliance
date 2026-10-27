@@ -35,10 +35,10 @@ export function DegreeField() {
         <div className="eligibility-note" role="status">
           <b>Membership is for doctoral clinicians.</b>
           <p>
-            The network is for psychologists with a PhD, PsyD or EdD and psychiatrists with an MD or DO. The Practice Library is open to everyone, and every
+            The network is for psychologists with a PhD, PsyD or EdD and psychiatrists with an MD or DO. The Library is open to everyone, and every
             template can be used by master&rsquo;s-level clinicians.
           </p>
-          <a className="btn" href="/library">Browse the Practice Library</a>
+          <a className="btn" href="/library">Browse the Library</a>
         </div>
       )}
     </>

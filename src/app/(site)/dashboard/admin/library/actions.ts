@@ -8,7 +8,7 @@ import { setDocumentGovernance, publishDocument, type ReviewerRole } from "@/lib
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
-// Practice Library governance (admin side): which reviewer roles each
+// Library governance (admin side): which reviewer roles each
 // resource needs, who is appointed to review, and publishing once every
 // required role has an independent approval. Reviews themselves are
 // recorded by the appointed reviewers at /dashboard/documents/review.
@@ -116,7 +116,7 @@ export async function setResourceVisibilityAction(formData: FormData) {
   redirect("/dashboard/admin/library");
 }
 
-// Task #120 (Sept 23 audit): seed the PA-01..20 Practice Library starter set
+// Task #120 (Sept 23 audit): seed the PA-01..20 Library starter set
 // Nick provided. Originally scoped as a standalone script needing
 // SUPABASE_SERVICE_ROLE_KEY to bypass Storage RLS for a bulk upload - but
 // uploadDocument() (documents/actions.ts) already shows that any signed-in

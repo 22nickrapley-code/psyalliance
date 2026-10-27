@@ -22,7 +22,7 @@ export default function TermsPage() {
             </p>
             <p>
               Keep client-identifying information out of PsyAlliance, act within your license and your state&rsquo;s rules, and treat what colleagues share as confidential.
-              Practice Library templates are general guidance; adapt any template with your own advisers before you rely on it.
+              Library templates are general guidance; adapt any template with your own advisers before you rely on it.
             </p>
             <p>
               <b>Founding members.</b> The first 40 members in each state whose license PsyAlliance approves are founding members. Places are counted in the

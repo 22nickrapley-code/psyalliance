@@ -1,6 +1,6 @@
 import { APP_TIME_ZONE } from "./dates";
 import { IS_DEMO_SITE } from "./env";
-// Practice Library (Product Spec v1). Curated, reviewed resources, each a
+// Library (Product Spec v1). Curated, reviewed resources, each a
 // card with a PA number, purpose, who it applies to, version, review date
 // and a route into the workflow it supports.
 
@@ -209,14 +209,14 @@ export const LIBRARY_SELECT =
 export const SHARE_ASK: Record<string, { subject: string; ask: string }> = {
   "PA-01": {
     subject: "Would you be my cover colleague?",
-    ask: "I'm putting a reciprocal cover agreement in place using a template from the PsyAlliance Practice Library. Would you be my cover colleague?",
+    ask: "I'm putting a reciprocal cover agreement in place using a template from the PsyAlliance Library. Would you be my cover colleague?",
   },
   "PA-03": {
     subject: "Would you act as my professional executor?",
-    ask: "I'm writing my professional will with a template from the PsyAlliance Practice Library. Would you consider acting as my professional executor?",
+    ask: "I'm writing my professional will with a template from the PsyAlliance Library. Would you consider acting as my professional executor?",
   },
   "PA-08": {
     subject: "Working together on shared treatment",
-    ask: "I'd like to put a split-treatment collaboration agreement in place for clients we share, using a template from the PsyAlliance Practice Library. Would you look at it with me?",
+    ask: "I'd like to put a split-treatment collaboration agreement in place for clients we share, using a template from the PsyAlliance Library. Would you look at it with me?",
   },
 };

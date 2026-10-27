@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 
-// Canonical Practice Library governance service layer (Addendum A6). The
+// Canonical Library governance service layer (Addendum A6). The
 // actual publish-blocking rule lives in the database itself
 // (enforce_document_publish_requirements(), migration 0049) so it can
 // never be bypassed by a code path that forgets to check - these

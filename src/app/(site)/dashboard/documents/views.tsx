@@ -10,7 +10,7 @@ function shareHref(code: string) {
 }
 import { uploadDocument, deleteDocument, createFolder, deleteFolder, moveDocumentToFolder, saveWorkingCopyAction } from "./actions";
 
-// Practice Library (Product Spec v1). Two tabs: the curated Practice
+// Library (Product Spec v1). Two tabs: the curated Practice
 // Library and the member's private My Library. Members never see review
 // status (Nick, 18 Oct): a resource is ready to use, or "coming soon".
 
@@ -51,7 +51,7 @@ export function ResourceCard({ r }: { r: LibraryResource }) {
 function LibraryTabs({ tab, mineCount }: { tab: "curated" | "mine"; mineCount: number }) {
   return (
     <nav className="tabs" aria-label="Library">
-      <a className={`tab${tab === "curated" ? " active" : ""}`} href="/dashboard/documents">Practice Library</a>
+      <a className={`tab${tab === "curated" ? " active" : ""}`} href="/dashboard/documents">Library</a>
       <a className={`tab${tab === "mine" ? " active" : ""}`} href="/dashboard/documents?tab=mine">
         My Library <span className="micro-note">({mineCount})</span>
       </a>
@@ -78,7 +78,7 @@ export function LibraryView({
     <>
       <PageHead
         eyebrow="Practice resources"
-        title="Practice Library"
+        title="Library"
         lead="Templates placed near the work they support. Adapt any template to your state and practice before you rely on it."
         actions={
           <>
@@ -167,7 +167,7 @@ export function ResourceDetailView({
   return (
     <>
       <div className="breadcrumbs small" style={{ marginBottom: 14 }}>
-        <a href="/dashboard/documents">&larr; Practice Library</a>
+        <a href="/dashboard/documents">&larr; Library</a>
       </div>
       <PageHead
         eyebrow={r.category}
@@ -272,7 +272,7 @@ export function MyLibraryView({
         eyebrow="Private to you"
         title="My Library"
         lead="Your working copies and uploads. Nobody else can see these."
-        actions={<a className="btn secondary" href="/dashboard/documents">Practice Library</a>}
+        actions={<a className="btn secondary" href="/dashboard/documents">Library</a>}
       />
       <Banner error={error} ok={notice} />
       <div className="split">
@@ -295,8 +295,8 @@ export function MyLibraryView({
             <Empty
               symbol={"▧"}
               title={total === 0 ? "Your working copies live here." : "Nothing in this folder."}
-              body={total === 0 ? "Open a Practice Library template and save its PDF, or upload your own practice documents." : "Move documents here from the list, or pick another folder."}
-              action={total === 0 ? <a className="btn secondary small-btn" href="/dashboard/documents">Browse the Practice Library</a> : undefined}
+              body={total === 0 ? "Open a Library template and save its PDF, or upload your own practice documents." : "Move documents here from the list, or pick another folder."}
+              action={total === 0 ? <a className="btn secondary small-btn" href="/dashboard/documents">Browse the Library</a> : undefined}
             />
           ) : (
             <section className="card">

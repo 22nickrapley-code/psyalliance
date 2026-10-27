@@ -116,7 +116,7 @@ function PlanAside({ plan, extra }: { plan: PlanSummary; extra?: ReactNode }) {
         />
       </section>
       <section className="card">
-        <div className="eyebrow">From the Practice Library</div>
+        <div className="eyebrow">From the Library</div>
         <h3>{PLAN_RESOURCE(plan.absenceType).title}</h3>
         <p className="small">{PLAN_RESOURCE(plan.absenceType).purpose}</p>
         <a className="btn secondary small-btn" href={libraryHref(PLAN_RESOURCE(plan.absenceType).code)}>
@@ -357,7 +357,7 @@ export function CoverRequestView({ r, error }: { r: IncomingRequest; error?: str
             {r.note && <blockquote className="request-note">&ldquo;{r.note}&rdquo;</blockquote>}
           </section>
           <section className="card">
-            <div className="eyebrow">From the Practice Library</div>
+            <div className="eyebrow">From the Library</div>
             <h3>Reciprocal Coverage Agreement</h3>
             <p className="small">Agree roles and response times with the colleague you cover for, with a per-client summary.</p>
             <a className="btn secondary small-btn" href={libraryHref("PA-01")}>View the template</a>

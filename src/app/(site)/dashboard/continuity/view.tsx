@@ -209,7 +209,7 @@ export function ContinuityView({
               agreed to act on it mean your clients hear from someone who knows what to do.
             </p>
             <p className="small">
-              Prefer paper? The <a href="/dashboard/documents/professional-will">Professional Will template</a> in the Practice Library covers the same ground,
+              Prefer paper? The <a href="/dashboard/documents/professional-will">Professional Will template</a> in the Library covers the same ground,
               with an executor acceptance form.
             </p>
             <p className="small" style={{ marginBottom: 0 }}>

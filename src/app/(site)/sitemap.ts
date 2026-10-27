@@ -9,7 +9,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   return [
     { url: `${siteUrl}/`, lastModified: now, changeFrequency: "weekly", priority: 1 },
     { url: `${siteUrl}/library`, lastModified: now, changeFrequency: "weekly", priority: 0.9 },
-    // The twenty Practice Library templates each have a public page.
+    // The twenty Library templates each have a public page.
     ...Object.values(LIBRARY_NAMES).map((n) => ({ url: `${siteUrl}/library/${n.slug}`, lastModified: now, changeFrequency: "monthly" as const, priority: 0.7 })),
     { url: `${siteUrl}/verification`, lastModified: now, changeFrequency: "monthly", priority: 0.6 },
     { url: `${siteUrl}/auth/sign-up`, lastModified: now, changeFrequency: "monthly", priority: 0.9 },

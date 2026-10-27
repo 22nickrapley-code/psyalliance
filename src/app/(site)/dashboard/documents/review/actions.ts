@@ -6,7 +6,7 @@ import { redirect } from "next/navigation";
 import { submitDocumentReview, type ReviewerRole } from "@/lib/library-governance";
 
 // An appointed reviewer records their verdict on the current version of a
-// Practice Library resource. Who may review what is decided by the
+// Library resource. Who may review what is decided by the
 // database (guard_document_review, migration 0081), not here.
 export async function recordReviewAction(formData: FormData) {
   const supabase = await createClient();

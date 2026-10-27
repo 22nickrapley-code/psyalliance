@@ -38,7 +38,7 @@ export function PublicFooter({ home = false }: { home?: boolean }) {
       </div>
       <div className="foot-links">
         <a href={`${base}#how`}>How it works</a>
-        <a href={`${PUBLIC_BASE}/library`}>Practice Library</a>
+        <a href={`${PUBLIC_BASE}/library`}>Library</a>
         <a href={DEMOS_HREF}>Demo</a>
         <a href={`${PUBLIC_BASE}/verification`}>Verification</a>
         <a href={`${PUBLIC_BASE}/privacy`}>Privacy</a>

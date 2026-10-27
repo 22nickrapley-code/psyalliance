@@ -5,7 +5,7 @@ import { SectionReel } from "../tour/story-reel";
 import { findJourney } from "@/tour/journeys";
 import { CATEGORIES, PUBLIC_WORKFLOW, SHORT_CATEGORY, docName, publicLibraryHref, type PublicDoc } from "@/lib/library";
 
-// The public Practice Library (Nick, 18 Oct): every listed template's
+// The public Library (Nick, 18 Oct): every listed template's
 // title, what's in it and who it's for. Opening and downloading templates
 // is for members: a verified account. No review wording is shown here.
 
@@ -39,8 +39,8 @@ export function PublicLibraryView({ docs, q }: { docs: PublicDoc[]; q: string })
         <section className="public-section lib-hero">
           <div className="section-inner">
             <div className="section-intro">
-              <div className="eyebrow">Practice Library</div>
-              <h1>The Practice Library.</h1>
+              <div className="eyebrow">Library</div>
+              <h1>The Library.</h1>
               <p>
                 Templates and checklists for independent practice, written for psychologists and psychiatrists. See what&rsquo;s in each one here; members open,
                 download and save every template.
@@ -129,7 +129,7 @@ export function PublicResourceView({ d, related }: { d: PublicDoc; related: Publ
         <section className="public-section lib-detail">
           <div className="section-inner">
             <div className="lib-crumbs small">
-              <a href="/library">Practice Library</a> / <b>{d.category}</b>
+              <a href="/library">Library</a> / <b>{d.category}</b>
             </div>
             <div className="lib-detail-grid">
               <div>
