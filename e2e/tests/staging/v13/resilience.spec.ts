@@ -176,3 +176,17 @@ test("RV-09 reading a conversation marks its new-message notification read", asy
   await a.close();
   await c.close();
 });
+
+test("RV-10 a message with a client's phone number is held back with a plain reason, and nothing is saved", async ({ page, context, baseURL }) => {
+  await signInAs(context, "avery", baseURL!);
+  await page.goto("/dashboard/messages");
+  await hub(page);
+  await startDirect(page, account("cass").id);
+  const text = `QA identifiers ${Date.now()}: the client is on 617-555-0142.`;
+  await page.locator("#message-input").fill(text);
+  await page.getByRole("button", { name: "Send message" }).click();
+  await expect(page.locator("#app")).toContainText(/remove a phone number/i, { timeout: 20000 });
+  expect((await one(`select count(*)::int n from conversation_messages where body = $1`, [text])).n).toBe(0);
+  // Nothing about it reads like a crash.
+  await expect(page.locator("#app")).not.toContainText(/PGRST|violates|Something went wrong/i);
+});
