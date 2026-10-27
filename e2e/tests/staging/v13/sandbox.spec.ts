@@ -66,12 +66,13 @@ test.describe("SBX sandbox", () => {
     const plans = await q<{ title: string; mine: boolean; status: string }>("select title, (profile_id=$1) as mine, status from coverage_plans where profile_id=$1 or id in (select coverage_plan_id from coverage_plan_cases c join coverage_requests r on r.coverage_plan_case_id=c.id where r.requested_profile_id=$1)", [gid]);
     expect(plans.filter((p) => p.mine).length).toBe(3);
     expect(plans.filter((p) => !p.mine).length).toBe(2);
-    const cases = await q<{ status: string }>("select c.status from coverage_plan_cases c join coverage_plans p on p.id=c.coverage_plan_id where p.profile_id=$1 and p.title='Fall leave cover'", [gid]);
-    // one client ready, one agreed but not yet "Handover ready", one in discussion
-    expect(cases.map((c) => c.status).sort()).toEqual(["agreed", "discussing", "ready"]);
+    const cases = await q<{ status: string; ready: boolean; asks: string | null }>(
+      "select c.status, c.handover_confirmed_at is not null as ready, (select string_agg(r.status::text, ',') from coverage_requests r where r.coverage_plan_case_id = c.id) as asks from coverage_plan_cases c join coverage_plans p on p.id=c.coverage_plan_id where p.profile_id=$1 and p.title='Fall leave cover' order by c.id", [gid]);
+    // one client "Handover ready", one agreed but not yet ready, one paused on a question
+    expect(cases.map((c) => `${c.status}/${c.ready ? "ready" : "not-ready"}/${c.asks}`)).toEqual(["confirmed/ready/accepted", "confirmed/not-ready/accepted", "awaiting_response/not-ready/discussing"]);
     // the sequential request that is paused for a question has a queued colleague behind it
-    const queued = await one<{ n: string }>("select count(*) n from coverage_requests r join coverage_plan_cases c on c.id=r.coverage_plan_case_id join coverage_plans p on p.id=c.coverage_plan_id where p.profile_id=$1 and r.status='queued'", [gid]);
-    expect(Number(queued.n)).toBeGreaterThan(0);
+    const queued = await one<{ n: number }>("select coalesce(sum(cardinality(c.outreach_queue)), 0)::int n from coverage_plan_cases c join coverage_plans p on p.id=c.coverage_plan_id where p.profile_id=$1 and c.status='awaiting_response'", [gid]);
+    expect(queued.n).toBeGreaterThan(0);
     // two conversations with the same colleague stay separate (Cover and Referral)
     const maya = await q("select c.id from conversations c join conversation_participants a on a.conversation_id=c.id and a.profile_id=$1 join profiles pr on pr.id<>$1 join conversation_participants b on b.conversation_id=c.id and b.profile_id=pr.id where pr.full_name like 'Maya Patel%'", [gid]);
     expect(maya.length).toBeGreaterThanOrEqual(2);
@@ -160,6 +161,10 @@ test.describe("SBX sandbox", () => {
       `select count(*) n from notification_deliveries d where d.channel='email' and d.status in ('pending','sending','sent')
         and (d.recipient_profile_id in (select guest_id from sandbox_passes where guest_id is not null) or private.is_sandbox_colleague(d.recipient_profile_id))`);
     expect(Number(rows.n)).toBe(0);
+    // the guest's own notifications exist and every email one is closed
+    const own = await q<{ channel: string; status: string }>("select channel, status from notification_deliveries where recipient_profile_id=$1", [gid]);
+    expect(own.filter((d) => d.channel === "email").every((d) => d.status === "suppressed_demo")).toBe(true);
+    expect(own.some((d) => d.channel === "in_app")).toBe(true);
     const email = await one<{ email: string }>("select email from auth.users where id=$1", [gid]);
     expect(email.email).toMatch(/@sandbox\.psyalliance\.test$/);
     await context.close();
@@ -204,12 +209,15 @@ test.describe("SBX sandbox", () => {
       expect(ready.s).toBe("ready");
     }
     // the 90-day rule: exactly 90 days is still fresh, 91 is not
+    if (!(await page.getByRole("button", { name: /Exactly 90 days/ }).count())) await openControls(page);
     await page.getByRole("button", { name: /Exactly 90 days/ }).click();
     await page.waitForTimeout(1500);
     expect(await one<{ f: boolean }>("select public.availability_is_fresh(availability_confirmed_at) f from profiles where id=$1", [gid]).then((r) => r.f)).toBe(true);
+    if (!(await page.getByRole("button", { name: /Make confirmation 91 days old/ }).count())) await openControls(page);
     await page.getByRole("button", { name: /Make confirmation 91 days old/ }).click();
     await page.waitForTimeout(1500);
     expect(await one<{ f: boolean }>("select public.availability_is_fresh(availability_confirmed_at) f from profiles where id=$1", [gid]).then((r) => r.f)).toBe(false);
+    if (!(await page.getByRole("button", { name: /Confirm it today/ }).count())) await openControls(page);
     await page.getByRole("button", { name: /Confirm it today/ }).click();
     await page.waitForTimeout(1500);
     expect(await one<{ f: boolean }>("select public.availability_is_fresh(availability_confirmed_at) f from profiles where id=$1", [gid]).then((r) => r.f)).toBe(true);

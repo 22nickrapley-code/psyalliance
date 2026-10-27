@@ -1473,10 +1473,35 @@ $function$;
 revoke execute on function public.claim_sandbox(text) from public;
 grant execute on function public.claim_sandbox(text) to anon, authenticated;
 
+-- 9b. Mail to fictional people is closed the moment it is queued ------------------------------
+-- The mail job already skips demo profiles and ".test" addresses, so nothing is
+-- ever sent. This closes the row at creation too, so no delivery to a fictional
+-- guest or colleague ever shows as waiting.
+create or replace function private.suppress_demo_delivery()
+returns trigger
+language plpgsql
+security definer
+set search_path to 'public'
+as $function$
+begin
+  if new.channel = 'email' and new.status = 'pending'
+     and exists (select 1 from profiles p where p.id = new.recipient_profile_id and p.is_demo) then
+    new.status := 'suppressed_demo';
+    new.attempted_at := now();
+  end if;
+  return new;
+end;
+$function$;
+revoke all on function private.suppress_demo_delivery() from public, anon, authenticated;
+drop trigger if exists suppress_demo_delivery on notification_deliveries;
+create trigger suppress_demo_delivery before insert on notification_deliveries
+  for each row execute function private.suppress_demo_delivery();
+
 -- 10. Checks (every column should be true) ------------------------------------------------------
 select
   to_regprocedure('public.sandbox_tick(boolean)') is not null as tick_ready,
   to_regprocedure('public.sandbox_respond(text,bigint,bigint,uuid,text)') is not null as controls_ready,
   to_regprocedure('private.seed_demo_viewer(uuid)') is not null as story_ready,
   exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'consultations' and column_name = 'sandbox_owner') as discussions_isolated,
-  position('Rachel Davis' in pg_get_functiondef('public.claim_sandbox(text)'::regprocedure)) > 0 as guest_is_rachel;
+  position('Rachel Davis' in pg_get_functiondef('public.claim_sandbox(text)'::regprocedure)) > 0 as guest_is_rachel,
+  exists (select 1 from pg_trigger where tgname = 'suppress_demo_delivery' and not tgisinternal) as mail_to_fiction_closed;
