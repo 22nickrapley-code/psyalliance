@@ -12,6 +12,8 @@
 --   7. Consult: the asker can mark a question resolved (D-14).
 --   8. Worked with before is agreed work only (D-08).
 --   9. A message can be edited for 15 minutes (D-22).
+--  10. Physician referrals inside Referrals need a total as well as a waiting count (D-15).
+--  11. The Suggested card can say "invited you" (D-12).
 --
 -- Additive and safe to run again. Apply after 0117 and 0118.
 
@@ -1131,5 +1133,69 @@ end;
 $function$;
 revoke all on function public.message_edit(text, text, text) from public, anon;
 grant execute on function public.message_edit(text, text, text) to authenticated;
+
+-- 10. Physician referrals live inside Referrals (D-18) ---------------------------------
+-- The tab shows when there is anything to see, so it needs the total as well as
+-- the number still waiting for an answer.
+create or replace function public.workspace_inbound()
+returns jsonb
+language sql
+stable
+security definer
+set search_path to 'public'
+as $function$
+  select jsonb_build_object(
+           'physician', (select count(*) from provider_referrals where target_profile_id = auth.uid() and status = 'sent'),
+           'physicianAll', (select count(*) from provider_referrals where target_profile_id = auth.uid()))
+   where auth.uid() is not null;
+$function$;
+revoke all on function public.workspace_inbound() from public, anon;
+grant execute on function public.workspace_inbound() to authenticated;
+
+-- 11. The invitation shows on the Suggested card (D-12) ---------------------------------
+create or replace function public.workspace_tiers()
+returns jsonb
+language sql
+stable
+security definer
+set search_path to 'public'
+as $function$
+  with vm as (select id from private.visible_members(auth.uid())),
+  trusted as (select t.colleague_id from trusted_colleagues t where t.profile_id = auth.uid() and t.colleague_id in (select id from vm)),
+  worked as (select w.colleague_id, w.reason, w.at from private.workspace_worked(auth.uid()) w where w.colleague_id in (select id from vm) and w.colleague_id not in (select colleague_id from trusted)),
+  liked as (
+    select h.colleague_id, max(h.at) as at from (
+      select m.author_id as colleague_id, r.created_at as at
+        from message_reactions r join conversation_messages m on m.id = r.message_id
+       where r.profile_id = auth.uid() and r.reaction = 'heart' and m.author_id <> auth.uid() and m.deleted_at is null
+      union all
+      select x.responder_profile_id, u.created_at
+        from consultation_response_useful u join consultation_responses x on x.id = u.response_id
+       where u.profile_id = auth.uid() and x.responder_profile_id <> auth.uid()
+    ) h group by h.colleague_id
+  ),
+  suggested as (
+    select s.colleague_id, 0 as grp, s.position::numeric as ord from suggested_colleagues s
+     where s.profile_id = auth.uid() and s.colleague_id in (select id from vm)
+       and s.colleague_id not in (select colleague_id from trusted) and s.colleague_id not in (select colleague_id from worked)
+    union all
+    select l.colleague_id, 1, -extract(epoch from l.at)
+      from liked l
+     where l.colleague_id in (select id from vm)
+       and l.colleague_id not in (select colleague_id from trusted) and l.colleague_id not in (select colleague_id from worked)
+       and l.colleague_id not in (select s2.colleague_id from suggested_colleagues s2 where s2.profile_id = auth.uid())
+  )
+  select jsonb_build_object(
+    'trust', coalesce((select jsonb_agg(colleague_id order by created_at) from (select t2.colleague_id, t2.created_at from trusted_colleagues t2 where t2.profile_id = auth.uid() and t2.colleague_id in (select id from vm)) q), '[]'::jsonb),
+    'worked', coalesce((select jsonb_agg(colleague_id order by at desc) from worked), '[]'::jsonb),
+    'suggested', coalesce((select jsonb_agg(colleague_id order by grp, ord) from suggested), '[]'::jsonb),
+    'workedReasons', coalesce((select jsonb_object_agg(colleague_id, reason) from worked), '{}'::jsonb),
+    -- Colleagues who invited this member (D-12): the screens say so on their Suggested card.
+    'invitedBy', coalesce((select jsonb_agg(u.inviter) from member_invite_uses u where u.invitee = auth.uid() and u.connected_at is not null and u.inviter in (select id from vm)), '[]'::jsonb)
+  )
+  where auth.uid() is not null;
+$function$;
+revoke all on function public.workspace_tiers() from public, anon;
+grant execute on function public.workspace_tiers() to authenticated;
 
 notify pgrst, 'reload schema';

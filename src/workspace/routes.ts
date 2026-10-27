@@ -18,6 +18,7 @@ export function openOf(sp: URLSearchParams | Params, view: WorkspaceView = "home
   const get = (k: string) => (sp instanceof URLSearchParams ? sp.get(k) || "" : one(sp[k]));
   const plan = num(get("plan"));
   if (plan && view === "cover") return { type: "plan", id: Number(plan) };
+  if (get("tab") === "physicians" && view === "referrals") return { type: "physicians" };
   const referral = num(get("referral"));
   if (referral && view === "referrals") return { type: "referral", id: Number(referral) };
   const to = get("to");
@@ -56,6 +57,7 @@ export function legacyDestination(section: string[], sp: Params): string | null 
     if (num(b)) return `/dashboard/consult?discussion=${b}`;
   }
   if (a === "clinicians") return "/dashboard/network";
+  if (a === "physician-referrals") return "/dashboard/referrals?tab=physicians";
   if (a === "invite") return "/dashboard/network?invite=1";
   if (a === "refer") {
     if (!b) return "/dashboard/referrals";

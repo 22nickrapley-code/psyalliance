@@ -34,6 +34,9 @@ export default function WorkspaceRootLayout({ children }: { children: React.Reac
         {/* The sandbox's own note, chip and arrival notice: a separate sheet after the approved ones, demo site only. */}
         {/* eslint-disable-next-line @next/next/no-css-tags */}
         {IS_DEMO_SITE && <link rel="stylesheet" href={`/workspace/sandbox.css?v=${V}`} />}
+        {/* The final product's own sheet loads last: contrast (D-04), the first-message menu fix, and small pieces for the additions. */}
+        {/* eslint-disable-next-line @next/next/no-css-tags */}
+        <link rel="stylesheet" href={`/workspace/final.css?v=${V}`} />
       </head>
       <body>
         <a className="skip-link" href="#main">Skip to content</a>

@@ -1,0 +1,69 @@
+/* PsyAlliance workspace: the final-product sheet. It loads after the approved v13 sheets, which stay exactly as delivered.
+   Everything here is a recorded decision (docs/psyalliance-v13-parity/final_product_decisions.md) and a logged exception
+   (implementation_exceptions.csv): D-04 contrast, the C-17 menu fix, and a few small pieces for the additions (D-02, D-05, D-09, D-15). */
+
+/* 1. Contrast (D-04, EXC-32). */
+.top-search{color:#6b726b}
+.label{color:#5a7356}
+.label.gold{color:#806b42}
+.label.gray{color:#687064}
+.count-label{color:#62715e}
+.discussion-byline b{color:#62715c}
+.discussion-footer small{color:#6c7165}
+.pagination small{color:#6c7165}
+.invite-banner p{color:#656e5b}
+.page-footer{color:#6c7166}
+.inbox-filters button.active{color:#5b704c}
+.context-strip strong{color:#607651}
+.context-strip button{color:#5f7854}
+.bubble{color:#647057}
+.plan-date small{color:#6e7661}
+.avatar.self{color:#71674d}
+.circle-legend small{color:#6d7967}
+.view-tabs button{color:#687461}
+.network-overview>div>p{color:#6d7a67}
+.results-meta{color:#66755b}
+.layout-toggle button{color:#6b7962}
+.list-section-header p{color:#626f59}
+.arrangement-main>small{color:#6a7a60}
+.license-list span{color:#816d4f}
+.conversation-switch label{color:#6d7968}
+.library-review-label{color:#837257}
+.pulse-wordmark>span{color:#667469}
+.pulse-action small{color:#646e5e}
+.pulse-tabs button{color:#616b5a}
+.pulse-question-byline small{color:#656f5d}
+.pulse-pages span{color:#656e5a}
+.pulse-invite>small{color:#5b6c46}
+.pulse-conversations .pulse-section-heading .pulse-kicker{color:#776773}
+.pulse-network .pulse-kicker{color:#726751}
+.pulse-network .pulse-footnote{color:#70685a}
+.direction-incoming .direction-caption{color:#7c6849}
+.response-history{color:#6c7166}
+.pulse-attention-toggle small{color:#62715c}
+.inbox-latest small{color:#6d7766}
+.inbox-person-meta time{color:#6e7767}
+.hub-latest-author small{color:#76746b}
+.hub-colleague-top p{color:#6f7866}
+.hub-colleague-licenses{color:#6f7868}
+.hub-colleague-capacity small{color:#67725f}
+.hub-colleague-actions .button:last-child{color:#856c34}
+/* The Referrals amber: white text on it was 4.43:1, now 4.9:1. */
+.feature-referrals,.modal-feature-referrals{--feature:#8a6c33}
+
+/* 2. The Edit / Remove menu on the first message opened under the header strip (C-17, EXC-33): open it below instead. */
+.date-rule+.message-group .popover{bottom:auto;top:calc(100% + 5px)}
+
+/* 3. Small pieces for the additions, from the approved tokens. */
+.availability-extra{margin-top:12px}
+.availability-extra .field{flex:1;min-width:0}
+.availability-consult{margin-top:12px}
+.availability-consult p{font-size:11px;line-height:1.7;color:#6c7165;margin:4px 0 0 28px}
+.field-hint{display:block;margin-top:6px;font-size:11px;line-height:1.6;color:#667160}
+.referral-title-line{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:12px 0;padding:10px 14px;border:1px solid var(--line);border-radius:10px;background:#fff}
+.referral-title-line small{display:block;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:#6c7165}
+.referral-title-line strong{font-size:14px;font-weight:600}
+.profile-safety{margin-top:14px;font-size:12px;color:#6c7165}
+.profile-safety .text-link,.report-link{font-size:12px;color:#6c7165;text-decoration:underline;text-underline-offset:2px}
+.report-link{margin-left:10px}
+.physician-list{margin-top:6px}

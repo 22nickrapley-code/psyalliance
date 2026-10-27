@@ -40,6 +40,29 @@ const num = (v: unknown) => Number(v);
 const bad = (error: string): Result => ({ ok: false, error });
 const fail = (error: any, fallback?: string): Result => ({ ok: false, error: friendly(error, fallback) });
 
+// Physician referrals as the tab shows them: the rows, and the counts the
+// Hub and the account menu quote.
+async function physicianState(ctx: Ctx) {
+  const { data, error } = await ctx.supabase
+    .from("provider_referrals")
+    .select("id, status, created_at, reason, urgency, status_note, referring_providers(full_name, practice_name)")
+    .eq("target_profile_id", ctx.userId)
+    .order("created_at", { ascending: false })
+    .limit(50);
+  if (error) throw new Error(`physician referrals: ${error.message}`);
+  const rows = ((data as any[]) || []).map((r) => ({
+    id: Number(r.id),
+    status: String(r.status),
+    createdAt: r.created_at,
+    reason: r.reason || "Referral",
+    urgency: r.urgency || "routine",
+    note: r.status_note || "",
+    from: r.referring_providers?.full_name || "A physician",
+    practice: r.referring_providers?.practice_name || "",
+  }));
+  return { data: { rows }, patch: { inbound: { physician: rows.filter((r) => r.status === "sent").length, physicianAll: rows.length } } };
+}
+
 export const handlers: Record<string, Handler> = {
   // Any slices, for polling and for returning to a screen.
   refresh: async (ctx, a) => {
@@ -360,6 +383,76 @@ export const handlers: Record<string, Handler> = {
     const { data } = await ctx.supabase.rpc("my_consult_useful");
     // A colleague whose reply you mark useful joins Suggested for you.
     return { ok: true, patch: { useful: data || [], ...(await slices(ctx, ["tiers"])) } };
+  },
+
+  // The person who asked marks their question resolved, or reopens it.
+  "consult.resolve": async (ctx, a) => {
+    const id = Number(a.id);
+    if (!Number.isInteger(id) || id < 1) return bad("That question isn't available.");
+    const { error } = await ctx.supabase.rpc("consult_resolve", { p_consultation: id, p_on: a.on === true });
+    if (error) return fail(error);
+    const { data: discussion } = await ctx.supabase.rpc("workspace_discussion", { p_id: id });
+    return { ok: true, patch: { discussion: discussion || null } };
+  },
+
+  // A report goes to the admins' queue. The reported member is not told.
+  "report.send": async (ctx, a) => {
+    const m = /^(profile|discussion|reply):(.{1,60})$/.exec(String(a.target || ""));
+    if (!m) return bad("That can't be reported from here.");
+    const reason = text(a.reason, 1000);
+    if (!reason) return bad("Say what is wrong so an admin has something to act on.");
+    const category = ["patient_information", "conduct", "other"].includes(a.category) ? a.category : "other";
+    let target_type: string;
+    let target_id: string;
+    if (m[1] === "profile") {
+      if (!/^[0-9a-f-]{36}$/i.test(m[2])) return bad("That can't be reported from here.");
+      if (m[2].toLowerCase() === ctx.userId.toLowerCase()) return bad("You can't report yourself.");
+      target_type = "profile";
+      target_id = m[2];
+    } else if (m[1] === "discussion") {
+      if (!/^\d{1,12}$/.test(m[2])) return bad("That can't be reported from here.");
+      target_type = "consultation";
+      target_id = m[2];
+    } else {
+      const r = /^r(\d{1,18})$/.exec(m[2]);
+      if (!r) return bad("That can't be reported from here.");
+      target_type = "consultation_response";
+      target_id = r[1];
+    }
+    const { error } = await ctx.supabase.from("reports").insert({ reporter_profile_id: ctx.userId, target_type, target_id, reason, category });
+    if (error) return fail(error, "That report didn't send. Please try again.");
+    return { ok: true };
+  },
+
+  // Blocking hides each of you from the other everywhere the workspace looks.
+  "block.set": async (ctx, a) => {
+    const target = String(a.person || "");
+    if (!/^[0-9a-f-]{36}$/i.test(target)) return bad("That colleague isn't available.");
+    if (target.toLowerCase() === ctx.userId.toLowerCase()) return bad("You can't block yourself.");
+    const { error } =
+      a.on === false
+        ? await ctx.supabase.from("blocked_members").delete().eq("profile_id", ctx.userId).eq("blocked_profile_id", target)
+        : await ctx.supabase.from("blocked_members").upsert({ profile_id: ctx.userId, blocked_profile_id: target });
+    if (error) return fail(error);
+    return { ok: true, patch: await slices(ctx, ["people", "known", "tiers", "plans", "referrals", "threads", "consult"]) };
+  },
+
+  // Referrals sent in by physicians, read and answered inside Referrals.
+  "physician.list": async (ctx) => ({ ok: true, ...(await physicianState(ctx)) }),
+  "physician.answer": async (ctx, a) => {
+    const id = Number(a.id);
+    const response = a.response === "acknowledged" ? "acknowledged" : a.response === "declined" ? "declined" : null;
+    if (!Number.isInteger(id) || id < 1 || !response) return bad("That referral can't be answered.");
+    const { data, error } = await ctx.supabase
+      .from("provider_referrals")
+      .update({ status: response, status_note: text(a.note, 300) || null, responded_at: new Date().toISOString() })
+      .eq("id", id)
+      .eq("target_profile_id", ctx.userId)
+      .eq("status", "sent")
+      .select("id");
+    if (error) return fail(error);
+    if (!data?.length) return bad("That referral has already been answered.");
+    return { ok: true, ...(await physicianState(ctx)) };
   },
 
   "resource.save": async (ctx, a) => {
