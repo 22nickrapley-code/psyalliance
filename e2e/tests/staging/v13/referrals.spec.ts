@@ -280,13 +280,16 @@ test("RF-10 asking another colleague applies the same requirements, once", async
   expect((await mine(avery, r.referralId)).requests.map((x: any) => x.person)).toEqual([bram, cass]);
 });
 
-test("RF-11 a licence that has lapsed since the request stops any reply until it is renewed", async () => {
+test("RF-11 a licence that has lapsed since the request stops every reply except 'not available' until it is renewed", async () => {
   const r = await create(avery, payload());
   await q(`update licenses set status = 'expired', expiration_date = current_date - 30 where profile_id = $1`, [bram]);
-  await expect(answer(bram, r.referralId, "interested", true)).rejects.toThrow(/isn't active/);
-  await expect(answer(bram, r.referralId, "declined")).rejects.toThrow(/isn't active/);
+  await expect(answer(bram, r.referralId, "interested", true)).rejects.toThrow(/only decline/);
+  await expect(answer(bram, r.referralId, "discussing", false, "Is this weekly?")).rejects.toThrow(/only decline/);
   expect((await q(`select 1 from referral_responses where referral_request_id = $1`, [r.referralId])).length).toBe(0);
-  // A licence that is current for another state does not help: the state of this client decides.
+  // Saying "not available" is always possible (decision D-10): the referrer is not left waiting.
+  expect((await answer(bram, r.referralId, "declined")).status).toBe("declined");
+  expect((await mine(avery, r.referralId)).requests[0].status).toBe("declined");
+  // Once the licence is renewed, they can change their mind.
   await q(`update licenses set status = 'active', expiration_date = null where profile_id = $1`, [bram]);
   expect((await answer(bram, r.referralId, "interested", true)).status).toBe("interested");
 });
