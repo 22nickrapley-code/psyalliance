@@ -433,8 +433,16 @@ export function StoryPlayer({
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") window.parent.postMessage({ type: "pa-example-close" }, "*");
     };
+    // The same key pressed while focus is inside a demo screen arrives as a message.
+    const onFrame = (e: MessageEvent) => {
+      if (e.origin === window.location.origin && e.data?.type === "pa-scene-escape") window.parent.postMessage({ type: "pa-example-close" }, "*");
+    };
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    window.addEventListener("message", onFrame);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("message", onFrame);
+    };
   }, [embed]);
   const toggle = () => {
     if (ended) {

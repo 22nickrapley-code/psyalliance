@@ -63,7 +63,7 @@ const MOMENTS: [string, string, string][] = [
     "Leave, illness, an emergency. Get each client covered by a colleague licensed in the right state, suited to the client and actually free, without the phone calls and favors.",
   ],
   [
-    "Refer",
+    "Referrals",
     "You’re full.",
     "Send an inquiry you can’t take to the right colleague, matched by license, focus and insurance, not whoever you happen to remember.",
   ],
@@ -132,13 +132,13 @@ export default async function HomePage() {
             </div>
             <div className="visual-card">
               <div className="eyebrow">Cover plan &middot; Six weeks&rsquo; parental leave</div>
-              <h3>3 of 3 clients covered.</h3>
+              <h3>3 of 3 handovers ready.</h3>
               <p>Each client described by need, never by name.</p>
             </div>
             <div className="visual-card visual-match">
               <div className="row between wrap" style={{ gap: 8 }}>
                 <b>Client 1 &middot; Trauma/PTSD</b>
-                <span className="status">Covered</span>
+                <span className="status">Handover ready</span>
               </div>
               <div className="visual-person">
                 <span className="avatar" aria-hidden="true">MC</span>
@@ -152,12 +152,12 @@ export default async function HomePage() {
               <div className="line">
                 <b>Client 2 &middot; Teen anxiety</b>
                 <span className="who">Samuel Brindlemoor, PhD</span>
-                <span className="status">Covered</span>
+                <span className="status">Handover ready</span>
               </div>
               <div className="line">
                 <b>Client 3 &middot; Needs prescribing</b>
                 <span className="who">Eli Kestrelby, MD</span>
-                <span className="status">Covered</span>
+                <span className="status">Handover ready</span>
               </div>
             </div>
           </div>

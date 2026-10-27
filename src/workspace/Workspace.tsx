@@ -15,6 +15,18 @@ import { workspaceCall } from "./server/actions";
 export type SceneProps = { id: string; macro?: string };
 
 export default function Workspace({ mode = "fixture", boot, view = "home", scene }: { mode?: "fixture" | "live"; boot?: LiveBoot; view?: WorkspaceView; scene?: SceneProps }) {
+  // A demo frame sits inside the player, which may sit inside a dialog. Escape
+  // pressed while focus is in the frame never reaches them, so when the frame
+  // has nothing of its own to close, it tells its parent.
+  useEffect(() => {
+    if (!scene || window.parent === window) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && !document.querySelector(".overlay")) window.parent.postMessage({ type: "pa-scene-escape" }, window.location.origin);
+    };
+    window.addEventListener("keydown", onKey, true);
+    return () => window.removeEventListener("keydown", onKey, true);
+  }, [scene]);
+
   useEffect(() => {
     let stop: (() => void) | undefined;
     let cancelled = false;
