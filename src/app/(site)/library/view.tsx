@@ -2,7 +2,7 @@ import { PublicNav, PublicFooter } from "../_public/chrome";
 import { JOIN_HREF, TOUR_URL } from "@/lib/env";
 import { FOUNDING_LINE } from "@/lib/founding";
 import { SectionReel } from "../tour/story-reel";
-import { findDemo } from "../tour/demos";
+import { findJourney } from "@/tour/journeys";
 import { CATEGORIES, PUBLIC_WORKFLOW, SHORT_CATEGORY, docName, publicLibraryHref, type PublicDoc } from "@/lib/library";
 
 // The public Practice Library (Nick, 18 Oct): every listed template's
@@ -63,7 +63,7 @@ export function PublicLibraryView({ docs, q }: { docs: PublicDoc[]; q: string })
                 <h2>Find the right template, in the moment you need it.</h2>
               </div>
               <SectionReel
-                demo={findDemo("library")!}
+                demo={findJourney("library")!}
                 tryHref={`${JOIN_HREF}?from=library-video`}
                 end={{
                   title: "The right template, when you need it.",

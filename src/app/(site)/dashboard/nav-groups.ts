@@ -5,9 +5,10 @@ import { IS_DEMO_SITE } from "@/lib/env";
 // shell as a prop (importing a helper from a "use client" file into server
 // code breaks under production bundling).
 //
-// Workspace: the four jobs and Clinicians (search). Your practice: Profile
-// (with availability, credentials and the continuity plan inside it),
-// Messages, Network (your circle), the Library and Settings (Nick, 10 Oct).
+// Your workspace: the same seven places, with the same names, as the approved
+// workspace (version 13). Your practice: the pages the workspace does not
+// cover (profile with availability, credentials and the continuity plan
+// inside it, My documents, Demos and Settings).
 
 export type NavItem = {
   href: string;
@@ -58,22 +59,22 @@ export function buildNavGroups(opts: {
 
   const groups: NavGroup[] = [
     {
-      label: "Workspace",
+      label: "Your workspace",
       items: [
-        { href: "/dashboard", label: "Home", glyph: "home" },
+        { href: "/dashboard", label: "The Hub", glyph: "home" },
         { href: "/dashboard/cover", label: "Cover", glyph: "cover", badge: opts.pendingCoverRequests },
-        { href: "/dashboard/refer", label: "Refer", glyph: "refer", badge: opts.pendingReferrals },
+        { href: "/dashboard/referrals", label: "Referrals", glyph: "refer", badge: opts.pendingReferrals },
         { href: "/dashboard/consult", label: "Consult", glyph: "consult" },
-        { href: "/dashboard/clinicians", label: "Clinicians", glyph: "members", matches: ["/dashboard/people"] },
+        { href: "/dashboard/network", label: "Network / Search", glyph: "members", matches: ["/dashboard/people", "/dashboard/invite"] },
+        { href: "/dashboard/messages", label: "Messages", glyph: "messages", badge: opts.unreadMessages },
+        { href: "/dashboard/library", label: "Library", glyph: "library" },
       ],
     },
     {
       label: "Your practice",
       items: [
         { href: "/dashboard/profile", label: "Profile", glyph: "profile", matches: ["/dashboard/availability", "/dashboard/credentials", "/dashboard/continuity"] },
-        { href: "/dashboard/messages", label: "Messages", glyph: "messages", badge: opts.unreadMessages },
-        { href: "/dashboard/network", label: "Network", glyph: "network", matches: ["/dashboard/invite"] },
-        { href: "/dashboard/documents", label: "Practice Library", glyph: "library" },
+        { href: "/dashboard/documents", label: "My documents", glyph: "library" },
         ...(opts.hideDemos ? [] : [{ href: "/dashboard/demos", label: "Demos", glyph: "play" } as NavItem]),
         { href: "/dashboard/settings", label: "Settings", glyph: "settings" },
       ],
@@ -86,4 +87,4 @@ export function buildNavGroups(opts: {
 }
 
 // The five destinations on the mobile bottom bar.
-export const MOBILE_PRIMARY = ["/dashboard", "/dashboard/cover", "/dashboard/refer", "/dashboard/consult", "/dashboard/messages"];
+export const MOBILE_PRIMARY = ["/dashboard", "/dashboard/cover", "/dashboard/referrals", "/dashboard/consult", "/dashboard/messages"];

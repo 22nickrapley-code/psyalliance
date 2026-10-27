@@ -1,15 +1,7 @@
 // How long each moment of a demo video lasts. Shared by the player (which
 // runs on the page) and the pages that say how long a video is.
-
-// What the person in the video does before the scene's last click: tick
-// or choose something, type a short entry, or pick from a dropdown. The
-// screen starts without it, so the viewer watches it happen.
-export type SceneAction =
-  | { do: "pick"; target: string }
-  | { do: "type"; target: string; text: string }
-  | { do: "select"; target: string; value: string }
-  // Scroll the screen to show something, without clicking (a PDF's pages).
-  | { do: "scroll"; target: string };
+import type { SceneAction } from "@/tour/journeys";
+export type { SceneAction } from "@/tour/journeys";
 
 // Typing longer than this lands at once, like a paste.
 export const TYPE_LIMIT = 80;
@@ -24,3 +16,11 @@ export function actionMs(a: SceneAction) {
 }
 export const actionsMs = (actions?: SceneAction[]) => (actions || []).reduce((n, a) => n + actionMs(a), 0);
 export const sceneMs = (sc: { seconds?: number; actions?: SceneAction[] }) => (sc.seconds || 8.5) * 1000 + actionsMs(sc.actions);
+
+// A step's reading time follows its words, so a longer explanation stays up
+// longer; the person on screen then acts, then the next step.
+export function sceneSeconds(step: { title: string; what: string; seconds?: number }) {
+  if (step.seconds) return step.seconds;
+  const words = `${step.title} ${step.what}`.split(/\s+/).length;
+  return Math.round(Math.max(8, Math.min(13, 4.5 + words / 3.4)) * 2) / 2;
+}

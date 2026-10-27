@@ -8,9 +8,10 @@ import { FOUNDING_LINE } from "@/lib/founding";
 export const metadata = { title: "See PsyAlliance in two minutes", robots: { index: false, follow: false } };
 
 // The public demo is one story of about two minutes, playing on its own on
-// the real screens. The step-by-step demos, and a sandbox to try everything
-// in, are for members: one story here, the detail once you've joined
-// (Nick, 11 Oct: two layers of demos was too much, too soon).
+// the approved workspace itself (the same screens members use, on fictional
+// people). The longer demos, and a sandbox to try everything in, are for
+// members: one story here, the detail once you've joined (Nick, 11 Oct: two
+// layers of demos was too much, too soon).
 export default async function DemoStoryPage(props: { searchParams: Promise<{ chapter?: string }> }) {
   if (!TOUR_ENABLED) notFound();
   if (IS_DEMO_SITE && process.env.NODE_ENV === "production") redirect(REAL_SITE_URL + "/tour");
@@ -29,8 +30,8 @@ export default async function DemoStoryPage(props: { searchParams: Promise<{ cha
                 <div className="eyebrow">PsyAlliance in two minutes &middot; fictional people</div>
                 <h1>Your own practice, with a group behind you.</h1>
                 <p className="lead">
-                  Watch it work on the real screens: cover for time away, a referral out, referrals coming in, a question to colleagues, a template, and
-                  joining in a minute. It plays on its own; pause or skip at any time.
+                  Watch it work on the real screens: cover for time away, a referral out, a question to colleagues, messages that keep each context apart,
+                  and how every member is checked. It plays on its own; pause or skip at any time, or step through it yourself.
                 </p>
               </div>
             </div>

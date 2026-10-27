@@ -2,14 +2,14 @@ import "../../premium.css";
 import { notFound, redirect } from "next/navigation";
 import { TOUR_ENABLED, IS_DEMO_SITE, REAL_SITE_URL } from "@/lib/env";
 import { PublicNav, PublicFooter } from "../../_public/chrome";
-import { DEMOS, CLOSER_LOOKS, MORE_DETAIL, findDemo, LEGACY } from "../demos";
+import { JOURNEYS, CLOSER_LOOKS, MORE_DETAIL, findJourney, LEGACY_SLUGS } from "@/tour/journeys";
 import { SectionReel, watchLength } from "../story-reel";
 import { DemoGrid } from "../demo-progress";
 
 export const metadata = { title: "Demo", robots: { index: false, follow: false } };
 
 export function generateStaticParams() {
-  return DEMOS.filter((d) => d.key !== "overview").map((d) => ({ demo: d.key }));
+  return JOURNEYS.filter((d) => d.key !== "overview").map((d) => ({ demo: d.key }));
 }
 
 // One job, as a short video on the real screens, then the same screens to
@@ -20,13 +20,13 @@ export default async function DemoWatch({ params }: { params: Promise<{ demo: st
   const { demo } = await params;
   if (IS_DEMO_SITE && process.env.NODE_ENV === "production") redirect(`${REAL_SITE_URL}/tour/${encodeURIComponent(demo)}`);
   if (demo === "overview") redirect("/tour");
-  const d = findDemo(demo);
+  const d = findJourney(demo);
   if (!d) {
-    const legacy = LEGACY[demo];
+    const legacy = LEGACY_SLUGS[demo];
     redirect(legacy ? `/tour/${legacy}` : "/tour");
   }
   const first = `/tour/${d.key}/${d.steps[0].slug}`;
-  const others = DEMOS.filter((x) => [...CLOSER_LOOKS, ...MORE_DETAIL].includes(x.key) && x.key !== d.key);
+  const others = JOURNEYS.filter((x) => [...CLOSER_LOOKS, ...MORE_DETAIL].includes(x.key) && x.key !== d.key);
   return (
     <div className="pa">
       <PublicNav />

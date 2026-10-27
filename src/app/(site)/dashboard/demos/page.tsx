@@ -1,5 +1,5 @@
 import { IS_DEMO_SITE, TOUR_URL } from "@/lib/env";
-import { CLOSER_LOOKS, MORE_DETAIL, findDemo } from "../../tour/demos";
+import { CLOSER_LOOKS, MORE_DETAIL, findJourney } from "@/tour/journeys";
 import { watchLength } from "../../tour/story-reel";
 import { PageHead } from "../_components/ui";
 import { WatchDemo } from "../_components/watch-demo";
@@ -7,17 +7,18 @@ import { hideDemosAction } from "./actions";
 
 export const metadata = { title: "Demos" };
 
-// Demos for members: a short step-by-step video of each part of
-// PsyAlliance. The public site shows only the two-minute story; the detail
-// lives here, once someone has an account (Nick, 11 Oct).
+// Demos for members: a short video of each part of PsyAlliance, played on
+// the same screens members use (the approved workspace on fictional people).
+// The public site shows only the two-minute story; the detail lives here,
+// once someone has an account (Nick, 11 Oct).
 const WHERE: Record<string, { href: string; label: string }> = {
   cover: { href: "/dashboard/cover", label: "Go to Cover" },
-  refer: { href: "/dashboard/refer", label: "Go to Refer" },
+  refer: { href: "/dashboard/referrals", label: "Go to Referrals" },
   consult: { href: "/dashboard/consult", label: "Go to Consult" },
   profile: { href: "/dashboard/profile", label: "Go to your profile" },
   circle: { href: "/dashboard/network", label: "Go to Network" },
   verified: { href: "/dashboard/credentials", label: "Go to Credentials" },
-  library: { href: "/dashboard/documents", label: "Go to the Practice Library" },
+  library: { href: "/dashboard/library", label: "Go to the Library" },
 };
 
 export default function DemosPage() {
@@ -43,7 +44,7 @@ export default function DemosPage() {
       />
       <div className="demo-list">
         {keys.map((k, n) => {
-          const d = findDemo(k);
+          const d = findJourney(k);
           if (!d) return null;
           const go = WHERE[k];
           return (
