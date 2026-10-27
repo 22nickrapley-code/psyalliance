@@ -2,17 +2,16 @@ import { Suspense } from "react";
 import { IS_DEMO_SITE } from "@/lib/env";
 import { stateList, stateName } from "@/lib/open-states";
 import { clinicianName, roleLabel } from "@/lib/profession";
-import { resetSandboxAction } from "../sandbox/[token]/actions";
+import { resetSandboxAction } from "@/app/(site)/sandbox/[token]/actions";
 import { createClient } from "@/lib/supabase/server";
-import { signOutAction } from "../auth/actions";
+import { signOutAction } from "@/app/(site)/auth/actions";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
-import PremiumShell from "./premium-shell";
-import { buildNavGroups } from "./nav-groups";
-import "../premium.css";
+import AccountShell from "./account-shell";
+import { buildNavGroups } from "@/app/(site)/dashboard/nav-groups";
 import { resolveAvatarUrl } from "@/lib/avatars";
 import { getUnreadNotificationCount } from "@/lib/notifications-v2";
-import { SandboxNudge } from "./_components/sandbox-nudge";
+import { SandboxNudge } from "@/app/(site)/dashboard/_components/sandbox-nudge";
 import { loadRelationshipMap } from "@/lib/relationship-map";
 import { computeHubStates } from "@/lib/hub-states";
 
@@ -206,7 +205,7 @@ export default async function DashboardLayout({
   });
 
   return (
-    <PremiumShell
+    <AccountShell
       groups={groups}
       displayName={displayName}
       initials={initials}
@@ -237,6 +236,6 @@ export default async function DashboardLayout({
           <SandboxNudge />
         </Suspense>
       )}
-    </PremiumShell>
+    </AccountShell>
   );
 }

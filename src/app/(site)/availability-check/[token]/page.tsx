@@ -35,7 +35,7 @@ export default async function AvailabilityCheckPage(props: {
       <>
         <h1>Thank you{row?.first_name ? `, ${row.first_name}` : ""}.</h1>
         <p>Your availability is confirmed as of today. Colleagues will see it straight away.</p>
-        <a className="btn secondary" href="/dashboard/availability">Open PsyAlliance</a>
+        <a className="btn secondary" href="/dashboard?availability=1">Open PsyAlliance</a>
       </>
     );
   } else if (!row || !row.valid || row.used || sp.failed) {
@@ -43,7 +43,7 @@ export default async function AvailabilityCheckPage(props: {
       <>
         <h1>This link has expired.</h1>
         <p>Links from the monthly check work once and last 30 days. You can confirm your availability after signing in.</p>
-        <a className="btn" href="/dashboard/availability">Sign in and confirm</a>
+        <a className="btn" href="/dashboard?availability=1">Sign in and confirm</a>
       </>
     );
   } else {

@@ -11,7 +11,7 @@ import { assertLocal } from "../../lib/staging";
 test.beforeEach(({ baseURL }) => assertLocal(baseURL!));
 
 const PUBLIC = ["/", "/join", "/auth/sign-in", "/auth/sign-up", "/auth/forgot-password", "/library", "/tour", "/tour/cover/watch", "/privacy", "/terms", "/verification"];
-const MEMBER = ["/dashboard", "/dashboard/cover", "/dashboard/cover/new", "/dashboard/refer", "/dashboard/refer/new", "/dashboard/consult", "/dashboard/consult/new", "/dashboard/clinicians", "/dashboard/messages", "/dashboard/network", "/dashboard/profile", "/dashboard/availability", "/dashboard/settings", "/dashboard/documents", "/dashboard/demos", "/dashboard/credentials", "/dashboard/continuity"];
+const MEMBER = ["/dashboard", "/dashboard/cover", "/dashboard/cover?new=1", "/dashboard/referrals", "/dashboard/referrals?new=1", "/dashboard/referrals?tab=physicians", "/dashboard/consult", "/dashboard/consult?new=1", "/dashboard/network", "/dashboard/network?invite=1", "/dashboard/messages", "/dashboard/messages?compose=1", "/dashboard/library", "/dashboard/notifications", "/dashboard/profile", "/dashboard/settings", "/dashboard/documents", "/dashboard/demos", "/dashboard/credentials", "/dashboard/continuity", "/dashboard/continuity/duties", "/dashboard/consult/groups"];
 
 async function check(page: Page, path: string, info: any) {
   await page.goto(path);

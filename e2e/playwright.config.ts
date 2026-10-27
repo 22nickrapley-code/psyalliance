@@ -1,4 +1,32 @@
 import { defineConfig, devices } from "@playwright/test";
+import fs from "fs";
+import path from "path";
+
+// Tests of screens the final product replaced are retired, not deleted: docs/psyalliance-v13-parity/legacy_test_triage.csv
+// lists each one with the test that covers it now. Rows marked "Replaced" are left out of a normal run;
+// E2E_INCLUDE_RETIRED=1 runs them too (they are expected to fail against the new screens).
+function retiredTests(): RegExp | undefined {
+  if (process.env.E2E_INCLUDE_RETIRED) return undefined;
+  try {
+    const text = fs.readFileSync(path.join(process.cwd(), "../docs/psyalliance-v13-parity/legacy_test_triage.csv"), "utf8");
+    const rows: string[][] = [];
+    let row: string[] = [], cell = "", quoted = false;
+    for (let i = 0; i < text.length; i++) {
+      const c = text[i];
+      if (quoted) { if (c === '"' && text[i + 1] === '"') { cell += '"'; i++; } else if (c === '"') quoted = false; else cell += c; }
+      else if (c === '"') quoted = true;
+      else if (c === ",") { row.push(cell); cell = ""; }
+      else if (c === "\n") { row.push(cell); rows.push(row); row = []; cell = ""; }
+      else if (c !== "\r") cell += c;
+    }
+    const head = rows.shift() || [];
+    const iTest = head.indexOf("legacy_test"), iStatus = head.indexOf("status");
+    const names = rows.filter((r) => r[iStatus]?.trim() === "Replaced" && r[iTest]).map((r) => r[iTest].trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+    return names.length ? new RegExp(names.join("|")) : undefined;
+  } catch {
+    return undefined;
+  }
+}
 
 // PsyAlliance acceptance suite.
 //
@@ -22,6 +50,7 @@ export default defineConfig({
   timeout: 120_000,
   expect: { timeout: 15_000 },
   fullyParallel: false,
+  grepInvert: retiredTests(),
   workers: Number(process.env.E2E_WORKERS || 1),
   retries: 0,
   reporter: [

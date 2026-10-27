@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import DemosPage from "../../../dashboard/demos/page";
+import DemosPage from "../../../dashboard/demos/view";
 import { InviteLanding } from "../../../i/[token]/view";
 import { ContinuityView } from "../../../dashboard/continuity/view";
 import { PlanDocument } from "../../../dashboard/continuity/document";

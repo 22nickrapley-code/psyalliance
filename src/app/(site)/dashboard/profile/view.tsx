@@ -379,19 +379,11 @@ export function ProfileView({
               </details>
             </Section>
 
-            <Section title="Consult and supervision" help="Shown on your profile and used to suggest you in Consult.">
+            <Section title="Consult" help="Shown on your profile and used to suggest you in Consult.">
               <div className="stack" style={{ gap: 8 }}>
                 <label className="checkline">
                   <input type="checkbox" name="open_to_group_consultation" defaultChecked={profile?.open_to_group_consultation ?? true} />
                   Open to joining consultation groups
-                </label>
-                <label className="checkline">
-                  <input type="checkbox" name="open_to_give_supervision" defaultChecked={!!profile?.open_to_give_supervision} />
-                  Open to providing supervision
-                </label>
-                <label className="checkline">
-                  <input type="checkbox" name="open_to_receive_supervision" defaultChecked={!!profile?.open_to_receive_supervision} />
-                  Looking for supervision
                 </label>
               </div>
             </Section>

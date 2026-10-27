@@ -45,7 +45,7 @@ export default async function ActivationPage() {
           {cohorts.length === 0 ? (
             <Empty title="No members have joined in the last 12 weeks." body="Each week's cohort appears here as people join." />
           ) : (
-            <div className="table-scroll">
+            <div className="table-scroll" tabIndex={0} role="region" aria-label="Activation by member">
               <table className="activation-table">
                 <thead>
                   <tr><th>Week of</th><th>Joined</th><th>Verified</th><th>3+ trusted</th><th>Availability</th><th>Activated</th></tr>

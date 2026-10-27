@@ -1,0 +1,58 @@
+selector,text_colour,background,ratio,font_size,where
+.profile-button > span:nth-child(2) > small,#778079,#fcfcf9,3.96,8.3pt (11px),avery /dashboard
+.top-date,#778079,#fcfbf8,3.94,9.0pt (12px),avery /dashboard
+.pulse-empty > p,#6c7a63,#eeeae2,3.8,9.8pt (13px),avery /dashboard
+.top-date,#778079,#fbfcf8,3.95,9.0pt (12px),avery /dashboard/cover
+.page-heading > div:nth-child(1) > p,#778079,#f4f7f1,3.77,9.8pt (13px),avery /dashboard/cover
+.top-date,#778079,#fcfcf8,3.96,9.0pt (12px),avery /dashboard/referrals
+.page-heading > div:nth-child(1) > p,#778079,#faf7ef,3.81,9.8pt (13px),avery /dashboard/referrals
+small,#778079,#fcfcf9,3.96,8.3pt (11px),avery /dashboard/consult
+.top-date,#778079,#fcfbf9,3.94,9.0pt (12px),avery /dashboard/consult
+.page-heading > div:nth-child(1) > p,#778079,#faf5f6,3.77,9.8pt (13px),avery /dashboard/consult
+article:nth-child(2) > .discussion-text > .discussion-footer > .blue.label,#5e778c,#ebf1f5,4.1,6.8pt (9px),avery /dashboard/consult
+article:nth-child(3) > .discussion-text > .discussion-footer > .blue.label,#5e778c,#ebf1f5,4.1,6.8pt (9px),avery /dashboard/consult
+span:nth-child(2) > small,#778079,#fcfcf9,3.96,8.3pt (11px),avery /dashboard/network
+.page-heading > div:nth-child(1) > p,#778079,#f8f6f0,3.77,9.8pt (13px),avery /dashboard/network
+"button[data-action=""network-tab:circle""]",#877253,#f8f6f0,4.25,9.0pt (12px),avery /dashboard/network
+.page-heading > div:nth-child(1) > p,#778079,#f7f6f1,3.76,9.8pt (13px),avery /dashboard/library
+article:nth-child(1) > .eyebrow,#778079,#ffffff,4.07,7.5pt (10px),avery /dashboard/library
+article:nth-child(2) > .eyebrow,#778079,#ffffff,4.07,7.5pt (10px),avery /dashboard/library
+article:nth-child(3) > .eyebrow,#778079,#ffffff,4.07,7.5pt (10px),avery /dashboard/library
+article:nth-child(4) > .eyebrow,#778079,#ffffff,4.07,7.5pt (10px),avery /dashboard/library
+article:nth-child(5) > .eyebrow,#778079,#ffffff,4.07,7.5pt (10px),avery /dashboard/library
+article:nth-child(6) > .eyebrow,#778079,#ffffff,4.07,7.5pt (10px),avery /dashboard/library
+article:nth-child(7) > .eyebrow,#778079,#ffffff,4.07,7.5pt (10px),avery /dashboard/library
+article:nth-child(8) > .eyebrow,#778079,#ffffff,4.07,7.5pt (10px),avery /dashboard/library
+.workflow-step:nth-child(3),#6e7564,#f4f7f1,4.42,8.3pt (11px),avery /dashboard/cover?new=1
+.workflow-step:nth-child(5),#6e7564,#f4f7f1,4.42,8.3pt (11px),avery /dashboard/cover?new=1
+.workflow-step:nth-child(7),#6e7564,#f4f7f1,4.42,8.3pt (11px),avery /dashboard/cover?new=1
+.reason-card:nth-child(3) > span > small,#6f805f,#ffffff,4.26,8.3pt (11px),avery /dashboard/cover?new=1
+.reason-card:nth-child(5) > span > small,#6f805f,#ffffff,4.26,8.3pt (11px),avery /dashboard/cover?new=1
+.reason-card:nth-child(6) > span > small,#6f805f,#ffffff,4.26,8.3pt (11px),avery /dashboard/cover?new=1
+.full.field:nth-child(4) > small,#708166,#fafcfa,4.05,7.5pt (10px),avery /dashboard/cover?new=1
+.footer-note,#6d7563,#f2f7f2,4.42,7.5pt (10px),avery /dashboard/cover?new=1
+.eyebrow,#8a6c33,#f5efdf,4.28,6.8pt (9px),avery /dashboard/referrals?new=1
+.modal-header > div > p:nth-child(3),#64765a,#f5efdf,4.27,9.0pt (12px),avery /dashboard/referrals?new=1
+.workflow-step:nth-child(3),#6e7564,#faf7ef,4.46,8.3pt (11px),avery /dashboard/referrals?new=1
+.workflow-step:nth-child(5),#6e7564,#faf7ef,4.46,8.3pt (11px),avery /dashboard/referrals?new=1
+.form-intro,#657c58,#fdfbf7,4.43,9.0pt (12px),avery /dashboard/referrals?new=1
+"label[for=""referral-focus""] > span",#7b8971,#fdfbf7,3.59,7.5pt (10px),avery /dashboard/referrals?new=1
+"label[for=""referral-secondary""] > span",#7b8971,#fdfbf7,3.59,7.5pt (10px),avery /dashboard/referrals?new=1
+"label[for=""referral-city""] > span",#7b8971,#fdfbf7,3.59,7.5pt (10px),avery /dashboard/referrals?new=1
+.privacy-line,#718667,#fdfbf7,3.82,7.5pt (10px),avery /dashboard/referrals?new=1
+.footer-note,#6d7563,#f9f5ec,4.41,7.5pt (10px),avery /dashboard/referrals?new=1
+.modal-header > div > p:nth-child(3),#64765a,#f5eaf0,4.18,9.0pt (12px),avery /dashboard/consult?new=1
+.workflow-step:nth-child(3),#6e7564,#faf5f6,4.43,8.3pt (11px),avery /dashboard/consult?new=1
+.selected > span:nth-child(3) > small,#7a6b72,#f7eff4,4.45,7.5pt (10px),avery /dashboard/consult?new=1
+summary > span,#8d7d85,#ffffff,3.88,7.5pt (10px),avery /dashboard/consult?new=1
+.footer-note,#6d7563,#f9f2f6,4.35,7.5pt (10px),avery /dashboard/consult?new=1
+.eyebrow,#877253,#f0ece3,3.9,6.8pt (9px),avery /dashboard/network?invite=1
+.modal-header > div > p:nth-child(3),#64765a,#f0ece3,4.16,9.0pt (12px),avery /dashboard/network?invite=1
+.form-intro,#657c58,#fbfaf8,4.39,9.0pt (12px),avery /dashboard/network?invite=1
+"label[for=""invite-email""] > span",#7b8971,#fbfaf8,3.55,7.5pt (10px),avery /dashboard/network?invite=1
+.field.full:nth-child(3) > small,#708166,#fbfaf8,4,7.5pt (10px),avery /dashboard/network?invite=1
+.invite-prototype,#858a7e,#fbfaf8,3.39,8.3pt (11px),avery /dashboard/network?invite=1
+.relation-other,#6c7882,#edf0f2,3.94,9.0pt (12px),avery /dashboard/messages?compose=1
+.selected > span > small,#6f805f,#eff5ee,3.84,8.3pt (11px),avery:phone /dashboard/cover?new=1
+.reason-card:nth-child(2) > span > small,#6f805f,#ffffff,4.26,8.3pt (11px),avery:phone /dashboard/cover?new=1
+.reason-card:nth-child(4) > span > small,#6f805f,#ffffff,4.26,8.3pt (11px),avery:phone /dashboard/cover?new=1

@@ -61,7 +61,7 @@ export function buildNavGroups(opts: {
     {
       label: "Your workspace",
       items: [
-        { href: "/dashboard", label: "The Hub", glyph: "home" },
+        { href: "/dashboard", label: "The Hub", glyph: "home", matches: ["/dashboard/overview", "/dashboard/full"] },
         { href: "/dashboard/cover", label: "Cover", glyph: "cover", badge: opts.pendingCoverRequests },
         { href: "/dashboard/referrals", label: "Referrals", glyph: "refer", badge: opts.pendingReferrals },
         { href: "/dashboard/consult", label: "Consult", glyph: "consult" },

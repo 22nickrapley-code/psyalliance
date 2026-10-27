@@ -19,6 +19,10 @@ export function openOf(sp: URLSearchParams | Params, view: WorkspaceView = "home
   const plan = num(get("plan"));
   if (plan && view === "cover") return { type: "plan", id: Number(plan) };
   if (get("tab") === "physicians" && view === "referrals") return { type: "physicians" };
+  // From the account pages' top bar and the retired availability page.
+  if (get("search") === "1") return { type: "search" };
+  if (get("settings") === "1") return { type: "settings" };
+  if (get("availability") === "1" && view === "home") return { type: "availability" };
   const referral = num(get("referral"));
   if (referral && view === "referrals") return { type: "referral", id: Number(referral) };
   const to = get("to");

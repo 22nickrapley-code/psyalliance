@@ -180,8 +180,10 @@ export async function saveProfile(formData: FormData) {
     contact_phone: String(formData.get("contact_phone") || "") || null,
     contact_email: String(formData.get("contact_email") || "") || null,
     open_to_group_consultation: formData.get("open_to_group_consultation") === "on",
-    open_to_give_supervision: formData.get("open_to_give_supervision") === "on",
-    open_to_receive_supervision: formData.get("open_to_receive_supervision") === "on",
+    // Supervision is hidden from the final product (decision D-03). Its two answers are kept as they are and are only
+    // written when a form sends them, so saving the profile never clears what a member said before.
+    ...(formData.has("open_to_give_supervision") ? { open_to_give_supervision: formData.get("open_to_give_supervision") === "on" } : {}),
+    ...(formData.has("open_to_receive_supervision") ? { open_to_receive_supervision: formData.get("open_to_receive_supervision") === "on" } : {}),
     psypact_participating: formData.get("psypact_participating") === "on",
     updated_at: new Date().toISOString(),
   };

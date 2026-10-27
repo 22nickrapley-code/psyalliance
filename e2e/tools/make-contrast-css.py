@@ -33,6 +33,28 @@ for r in csv.DictReader(open(FINDINGS)):
     if src not in fix or lum(dst) < lum(fix[src]):
         fix[src] = dst
 
+# Second findings sheet: the sweep of the live workspace (e2e/tests/diagnostics/contrast-final.spec.ts). No passing colour is
+# listed there, so it is worked out here: the same hue, darkened until the text passes on the darkest background it sat on.
+import colorsys
+FINAL = "docs/psyalliance-v13-parity/a11y_contrast_findings_final.csv"
+def hsl_darken(src, bgs, need=4.6):
+    h = src.lstrip("#"); r, g, b = [int(h[i:i + 2], 16) / 255 for i in (0, 2, 4)]
+    hh, ll, ss = colorsys.rgb_to_hls(r, g, b)
+    while ll > 0.05:
+        ll -= 0.004
+        rr, gg, bb = colorsys.hls_to_rgb(hh, ll, ss)
+        c = "#%02x%02x%02x" % (round(rr * 255), round(gg * 255), round(bb * 255))
+        if all(ratio(c, x) >= need for x in bgs): return c
+    return src
+if os.path.exists(FINAL):
+    by = {}
+    for r in csv.DictReader(open(FINAL)):
+        src = r["text_colour"].lower()
+        if src.startswith("#") and len(src) == 7: by.setdefault(src, set()).add(r["background"].lower())
+    for src, bgs in by.items():
+        dst = hsl_darken(src, bgs)
+        if dst != src and (src not in fix or lum(dst) < lum(fix[src])): fix[src] = dst
+
 def walk(css):
     """Yield (at_rule_prefix, selector, body) for every style rule, one level of @media deep."""
     i, n = 0, len(css)

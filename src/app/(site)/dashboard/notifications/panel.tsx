@@ -165,7 +165,7 @@ export function NotificationsView({ items }: { items: NotificationItem[] }) {
               <span className="notif-tag">{i.label}</span>
               <div className="notif-body">
                 <b>
-                  {i.unread && <span className="new-dot" aria-label="New" />}
+                  {i.unread && <span className="new-dot" role="img" aria-label="New" />}
                   {i.title}
                 </b>
                 {i.body && <p>{i.body}</p>}

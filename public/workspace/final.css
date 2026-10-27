@@ -6,6 +6,7 @@
 .top-search{color:#6b726b}
 .label{color:#5a7356}
 .label.gold{color:#806b42}
+.label.blue{color:#576f82}
 .label.gray{color:#687064}
 .count-label{color:#62715e}
 .discussion-byline b{color:#62715c}
@@ -17,7 +18,11 @@
 .context-strip strong{color:#607651}
 .context-strip button{color:#5f7854}
 .bubble{color:#647057}
+.person-card-bottom small{color:#6b7261}
 .plan-date small{color:#6e7661}
+.timeline-item small{color:#69715f}
+.modal-footer .footer-note{color:#69715f}
+.workflow-step{color:#6b7261}
 .avatar.self{color:#71674d}
 .circle-legend small{color:#6d7967}
 .view-tabs button{color:#687461}
@@ -26,14 +31,24 @@
 .layout-toggle button{color:#6b7962}
 .list-section-header p{color:#626f59}
 .arrangement-main>small{color:#6a7a60}
-.license-list span{color:#816d4f}
+.modal-header p{color:#5d6e54}
+.field label span{color:#697560}
+.field small{color:#66765d}
+.form-intro{color:#627855}
+.reason-card small{color:#637255}
+.modal-body .privacy-line{color:#65785c}
+.audience-tile small{color:#77686f}
+.peer-tags summary span{color:#807078}
+.license-list span{color:#7a674b}
 .conversation-switch label{color:#6d7968}
 .library-review-label{color:#837257}
+.invite-prototype{color:#6e7368}
 .pulse-wordmark>span{color:#667469}
 .pulse-action small{color:#646e5e}
 .pulse-tabs button{color:#616b5a}
 .pulse-question-byline small{color:#656f5d}
 .pulse-pages span{color:#656e5a}
+.pulse-empty p{color:#606c58}
 .pulse-invite>small{color:#5b6c46}
 .pulse-conversations .pulse-section-heading .pulse-kicker{color:#776773}
 .pulse-network .pulse-kicker{color:#726751}
@@ -48,8 +63,13 @@
 .hub-colleague-licenses{color:#6f7868}
 .hub-colleague-capacity small{color:#67725f}
 .hub-colleague-actions .button:last-child{color:#856c34}
-/* The Referrals amber: white text on it was 4.43:1, now 4.9:1. */
-.feature-referrals,.modal-feature-referrals{--feature:#8a6c33}
+.feature-referrals,.modal-feature-referrals{--feature:#7a5f28}
+
+/* Tokens whose value fails on small text: the muted grey, the Network amber, the "other" relationship label, one form note. */
+:root{--muted:#636b65}
+.feature-network,.modal-feature-network{--feature:#7a674b}
+.avatar.relation-other,.relationship-label.relation-other{color:#626d76}
+.form-intro{color:#627855!important}
 
 /* 2. The Edit / Remove menu on the first message opened under the header strip (C-17, EXC-33): open it below instead. */
 .date-rule+.message-group .popover{bottom:auto;top:calc(100% + 5px)}
