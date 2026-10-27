@@ -6,6 +6,8 @@ import { workspaceCall } from "./server/actions";
 import { signOutAction } from "@/app/(site)/auth/actions";
 import { openOf, viewOf } from "./routes";
 
+const TITLES: Record<string, string> = { home: "The Hub", cover: "Cover", referrals: "Referrals", consult: "Consult", network: "Network / Search", messages: "Messages", library: "Library" };
+
 // Mounts the workspace once for the visit and keeps it in step with the
 // address: moving between sections is the workspace's own navigation, the
 // address follows it, and the back button and links land in the right place.
@@ -43,6 +45,8 @@ function Host({ boot }: { boot: LiveBoot }) {
   }, []);
 
   useEffect(() => {
+    // Each section is its own address, so each says where it is in the tab, the history and to a screen reader.
+    document.title = `PsyAlliance · ${TITLES[viewOf(pathname)] || "The Hub"}`;
     if (!engine.current) return;
     const view = viewOf(pathname);
     const open = openOf(search, view);

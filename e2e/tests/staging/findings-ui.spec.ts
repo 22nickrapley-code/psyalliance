@@ -27,11 +27,15 @@ async function clearRecentNotifications(keys: string[]) {
             where recipient_profile_id = any($1::uuid[]) and created_at > now() - interval '2 days'`, [keys.map((k) => account(k).id)]);
 }
 
+// Messages are the approved v13 screen: New message, choose the colleague, write, Send message.
 async function sendMessage(page: Page, toId: string, text: string) {
-  await page.goto(`/dashboard/messages?to=${toId}`);
-  await page.getByPlaceholder(/Write a professional message/).fill(text);
-  await page.getByRole("button", { name: "Send" }).click();
-  await expect(page.getByText(text).first()).toBeVisible();
+  await page.goto("/dashboard/messages");
+  await expect(page.locator("#app .sidebar")).toBeVisible();
+  await page.getByRole("button", { name: "New message" }).click();
+  await page.locator(`[data-action="person-message:${toId}"]`).click();
+  await page.locator("#message-input").fill(text);
+  await page.getByRole("button", { name: "Send message" }).click();
+  await expect(page.locator(".message-group.outgoing .delivery-state.sent").last()).toBeVisible({ timeout: 20000 });
 }
 
 test.describe("N16-01 digest every two weeks", () => {
@@ -88,7 +92,7 @@ test.describe("N16-03 notification deliveries", () => {
     const bp = await bc.newPage();
     await signInAs(bc, "bram", baseURL!);
     await bp.goto("/dashboard/messages");
-    await bp.getByText(/Avery Quillfeather/).first().click();
+    await bp.locator(".inbox-colleague", { hasText: "Avery" }).locator(".inbox-latest").first().click();
     await expect(bp.getByText(read).first()).toBeVisible();
     await bc.close();
     // The hour passes (staging only): make both emails due now, then run the dispatcher.

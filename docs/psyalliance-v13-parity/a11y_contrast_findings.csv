@@ -1,0 +1,127 @@
+selector,text_sample,text_colour,background,ratio,needed,font_size,screens_and_widths,closest_passing_text_colour
+.hub-latest-author > span > small,<small>1 hour ago</small>,#929087,#fffcff,3.14,4.5:1,6.8pt (9px),desktop:home; phone:home,#76746b
+.inbox-colleague:nth-child(1) > .inbox-colleague-heading > .inbox-person-meta > time,<time>11:15</time>,#86907f,#fcfdfa,3.26,4.5:1,6.8pt (9px),desktop:messages; phone:messages,#6e7767
+.inbox-colleague:nth-child(2) > .inbox-colleague-heading > .inbox-person-meta > time,<time>10:42</time>,#86907f,#fcfdfa,3.26,4.5:1,6.8pt (9px),desktop:messages; phone:messages,#6e7767
+.inbox-colleague:nth-child(3) > .inbox-colleague-heading > .inbox-person-meta > time,<time>09:56</time>,#86907f,#fcfdfa,3.26,4.5:1,6.8pt (9px),desktop:messages; phone:messages,#6e7767
+.inbox-colleague:nth-child(4) > .inbox-colleague-heading > .inbox-person-meta > time,<time>Yesterday</time>,#86907f,#fcfdfa,3.26,4.5:1,6.8pt (9px),desktop:messages; phone:messages,#6e7767
+.inbox-colleague:nth-child(5) > .inbox-colleague-heading > .inbox-person-meta > time,<time>Yesterday</time>,#86907f,#fcfdfa,3.26,4.5:1,6.8pt (9px),desktop:messages; phone:messages,#6e7767
+".pulse-pages > span[aria-live=""polite""]","<span aria-live=""polite"">1 / 9</span>",#7c876f,#f2edf2,3.27,4.5:1,7.5pt (10px),desktop:home; phone:home,#656e5a
+".inbox-latest[data-action=""thread:james-direct""] > small",<small>Direct conversation</small>,#85907e,#fcfdfa,3.27,4.5:1,7.5pt (10px),desktop:messages; phone:messages,#6d7766
+".inbox-latest[data-action=""thread:rena-cover""] > small",<small>Cover · Fall leave · Client 1</small>,#85907e,#fcfdfa,3.27,4.5:1,7.5pt (10px),desktop:messages; phone:messages,#6d7766
+".inbox-latest[data-action=""thread:maya-referral""] > small",<small>Referral · Anxiety · New York</small>,#85907e,#fcfdfa,3.27,4.5:1,7.5pt (10px),desktop:messages; phone:messages,#6d7766
+".inbox-latest[data-action=""thread:alex-direct""] > small",<small>Direct conversation</small>,#85907e,#fcfdfa,3.27,4.5:1,7.5pt (10px),desktop:messages; phone:messages,#6d7766
+".inbox-latest[data-action=""thread:sophie-consult""] > small",<small>Thursday peer consultation</small>,#85907e,#fcfdfa,3.27,4.5:1,7.5pt (10px),desktop:messages,#6d7766
+.pulse-person.hub-colleague:nth-child(1) > .hub-colleague-capacity > div > small,<small>Confirmed 6 days ago</small>,#7b8872,#f1f4eb,3.36,4.5:1,7.5pt (10px),desktop:home,#67725f
+.pulse-person.hub-colleague:nth-child(2) > .hub-colleague-capacity > div > small,<small>Confirmed 8 days ago</small>,#7b8872,#f1f4eb,3.36,4.5:1,7.5pt (10px),desktop:home,#67725f
+.pulse-person.hub-colleague:nth-child(3) > .hub-colleague-capacity > div > small,<small>Confirmed 12 days ago</small>,#7b8872,#f1f4eb,3.36,4.5:1,7.5pt (10px),desktop:home,#67725f
+.hub-colleague-capacity > div > small,<small>Confirmed 6 days ago</small>,#7b8872,#f1f4eb,3.36,4.5:1,8.3pt (11px),phone:home,#67725f
+.pulse-question-byline > div > small,<small>Clinical practice</small>,#78846e,#f2edf2,3.41,4.5:1,7.5pt (10px),desktop:home; phone:home,#656f5d
+"button[data-action=""pulse-people:suggested""]","<button data-action=""pulse-people:suggested"" aria-pressed=""false"">Suggested by P",#74806c,#eeeae2,3.46,4.5:1,9.0pt (12px),desktop:home; phone:home,#616b5a
+.feature-network > span:nth-child(2) > small,<small>Find your people and search the network.</small>,#74806d,#f0ede5,3.55,4.5:1,8.3pt (11px),desktop:home; phone:home,#646e5e
+"button[data-action=""discussion-tab:Following""]","<button aria-pressed=""false"" data-action=""discussion-tab:Following"">Following</b",#74806c,#f2edf2,3.6,4.5:1,9.0pt (12px),desktop:home; phone:home,#646e5d
+.feature-consult > span:nth-child(2) > small,<small>A second opinion on a question you’re unsure about.</small>,#74806d,#f6edf3,3.62,4.5:1,8.3pt (11px),desktop:home; phone:home,#656f5f
+.direction-incoming > .list-section-header > div > p,<p>They create the plan. You respond to requests and provide agreed cover.</p>,#718067,#f4eee1,3.64,4.5:1,9.0pt (12px),desktop:cover; desktop:referrals; phone:cover; phone:referrals,#626f59
+.pulse-person.hub-colleague:nth-child(1) > .hub-colleague-licenses > span,<span>Licensed in NY · CT</span>,#7e8876,#fffefa,3.66,4.5:1,7.5pt (10px),desktop:home,#6f7868
+.pulse-person.hub-colleague:nth-child(2) > .hub-colleague-licenses > span,<span>Licensed in NY · MA · NJ</span>,#7e8876,#fffefa,3.66,4.5:1,7.5pt (10px),desktop:home,#6f7868
+.pulse-person.hub-colleague:nth-child(3) > .hub-colleague-licenses > span,<span>Licensed in MA · NY · VT</span>,#7e8876,#fffefa,3.66,4.5:1,7.5pt (10px),desktop:home,#6f7868
+.hub-colleague-licenses > span,<span>Licensed in NY · CT</span>,#7e8876,#fffefa,3.66,4.5:1,8.3pt (11px),phone:home,#6f7868
+.direction-outgoing > .list-section-header > div > p,"<p>You create the plan, choose colleagues and confirm each handover.</p>",#718067,#eaf1f6,3.69,4.5:1,9.0pt (12px),desktop:cover; desktop:referrals; phone:cover; phone:referrals,#63705a
+"button[data-action=""cover-start""] > span:nth-child(2) > small",<small>Plan time away and caseload coverage.</small>,#74806d,#edf4ec,3.71,4.5:1,8.3pt (11px),desktop:home; phone:home,#667160
+.pulse-network > .pulse-section-heading > div > .pulse-kicker,"<span class=""pulse-kicker"">NETWORK / SEARCH</span>",#82765d,#eeeae2,3.72,4.5:1,6.8pt (9px),desktop:home; phone:home,#726751
+.pulse-person.hub-colleague:nth-child(1) > .hub-colleague-top > div > p,"<p>PhD · Queens, NY</p>",#7d8773,#fffefa,3.72,4.5:1,7.5pt (10px),desktop:home,#6f7866
+.pulse-person.hub-colleague:nth-child(2) > .hub-colleague-top > div > p,"<p>PsyD · Brooklyn, NY</p>",#7d8773,#fffefa,3.72,4.5:1,7.5pt (10px),desktop:home,#6f7866
+.pulse-person.hub-colleague:nth-child(3) > .hub-colleague-top > div > p,"<p>PhD · Boston, MA</p>",#7d8773,#fffefa,3.72,4.5:1,7.5pt (10px),desktop:home,#6f7866
+.hub-colleague-top > div > p,"<p>PhD · Queens, NY</p>",#7d8773,#fffefa,3.72,4.5:1,8.3pt (11px),phone:home,#6f7866
+.direction-incoming > .list-section-header > div > .direction-caption,"<span class=""direction-caption"">COLLEAGUES’ PLANS</span>",#8c7652,#f4eee1,3.76,4.5:1,6.8pt (9px),desktop:cover; desktop:referrals; phone:cover; phone:referrals,#7c6849
+.page-heading > div:nth-child(1) > p,"<p>Arrange cover for your clients, or respond to a colleague’s request for help.",#778079,#f4f7f1,3.77,4.5:1,9.8pt (13px),desktop:consult; desktop:cover; desktop:library; desktop:network; desktop:referrals; phone:consult; phone:cover; phone:library; phone:network; phone:referrals,#69716b
+"button[data-action=""referral-start""] > span:nth-child(2) > small",<small>Find the right colleague for a single client.</small>,#74806d,#faf4e5,3.78,4.5:1,8.3pt (11px),desktop:home; phone:home,#687261
+.direction-outgoing > .list-section-body > article:nth-child(1) > .arrangement-side > .label,"<span class=""label "">Active</span>",#648060,#edf2e9,3.85,4.5:1,6.0pt (8px),desktop:cover; desktop:referrals; phone:cover; phone:referrals,#5a7356
+.direction-outgoing > .list-section-body > article:nth-child(2) > .arrangement-side > .label,"<span class=""label "">Active</span>",#648060,#edf2e9,3.85,4.5:1,6.0pt (8px),desktop:cover; phone:cover,#5a7356
+.direction-incoming > .list-section-body > article:nth-child(2) > .arrangement-side > .label,"<span class=""label "">Ready</span>",#648060,#edf2e9,3.85,4.5:1,6.0pt (8px),desktop:cover; phone:cover,#5a7356
+article:nth-child(2) > .discussion-text > .discussion-footer > .label,"<span class=""label "">Clinical practice</span>",#648060,#edf2e9,3.85,4.5:1,6.8pt (9px),desktop:consult; phone:consult,#5a7356
+article:nth-child(3) > .discussion-text > .discussion-footer > .label,"<span class=""label "">Professional life</span>",#648060,#edf2e9,3.85,4.5:1,6.8pt (9px),desktop:consult; phone:consult,#5a7356
+article:nth-child(4) > .discussion-text > .discussion-footer > .label,"<span class=""label "">Resources</span>",#648060,#edf2e9,3.85,4.5:1,6.8pt (9px),desktop:consult; phone:consult,#5a7356
+article:nth-child(5) > .discussion-text > .discussion-footer > .label,"<span class=""label "">Professional life</span>",#648060,#edf2e9,3.85,4.5:1,6.8pt (9px),desktop:consult; phone:consult,#5a7356
+article:nth-child(6) > .discussion-text > .discussion-footer > .label,"<span class=""label "">Clinical practice</span>",#648060,#edf2e9,3.85,4.5:1,6.8pt (9px),desktop:consult; phone:consult,#5a7356
+article:nth-child(7) > .discussion-text > .discussion-footer > .label,"<span class=""label "">Consultation</span>",#648060,#edf2e9,3.85,4.5:1,6.8pt (9px),desktop:consult; phone:consult,#5a7356
+.label,"<span class=""label dot"">Active</span>",#648060,#edf2e9,3.85,4.5:1,6.8pt (9px),desktop:messages,#5a7356
+".view-tabs > button[data-action=""network-tab:directory""]","<button class="""" data-action=""network-tab:directory"">",#73806c,#f8f6f0,3.86,4.5:1,9.0pt (12px),desktop:network; phone:network,#687461
+.top-date,"<span class=""top-date"">Tuesday, October 27</span>",#778079,#fcfbf8,3.94,4.5:1,9.0pt (12px),desktop:consult; desktop:cover; desktop:home; desktop:library; desktop:messages; desktop:network; desktop:referrals,#6d756f
+.profile-button > span:nth-child(2) > small,<small>Clinical psychologist</small>,#778079,#fcfcf9,3.96,4.5:1,8.3pt (11px),desktop:cover; desktop:home; desktop:referrals,#6d756f
+span:nth-child(2) > small,<small>Clinical psychologist</small>,#778079,#fcfcf9,3.96,4.5:1,8.3pt (11px),desktop:consult; desktop:library; desktop:messages; desktop:network,#6d756f
+.pulse-conversations > .pulse-section-heading > div > .pulse-kicker,"<span class=""pulse-kicker"">CONSULT</span>",#816f7c,#f2edf2,4.03,4.5:1,6.8pt (9px),desktop:home; phone:home,#776773
+article:nth-child(1) > .eyebrow,"<span class=""eyebrow"">Cover &amp; continuity</span>",#778079,#ffffff,4.07,4.5:1,7.5pt (10px),desktop:library; phone:library,#707872
+article:nth-child(2) > .eyebrow,"<span class=""eyebrow"">Consultation</span>",#778079,#ffffff,4.07,4.5:1,7.5pt (10px),desktop:library; phone:library,#707872
+article:nth-child(3) > .eyebrow,"<span class=""eyebrow"">Referrals</span>",#778079,#ffffff,4.07,4.5:1,7.5pt (10px),desktop:library; phone:library,#707872
+article:nth-child(4) > .eyebrow,"<span class=""eyebrow"">Your network</span>",#778079,#ffffff,4.07,4.5:1,7.5pt (10px),desktop:library; phone:library,#707872
+article:nth-child(5) > .eyebrow,"<span class=""eyebrow"">Cover &amp; continuity</span>",#778079,#ffffff,4.07,4.5:1,7.5pt (10px),desktop:library; phone:library,#707872
+article:nth-child(6) > .eyebrow,"<span class=""eyebrow"">Consultation</span>",#778079,#ffffff,4.07,4.5:1,7.5pt (10px),desktop:library; phone:library,#707872
+article:nth-child(7) > .eyebrow,"<span class=""eyebrow"">Cover &amp; continuity</span>",#778079,#ffffff,4.07,4.5:1,7.5pt (10px),desktop:library; phone:library,#707872
+article:nth-child(8) > .eyebrow,"<span class=""eyebrow"">Cover &amp; continuity</span>",#778079,#ffffff,4.07,4.5:1,7.5pt (10px),desktop:library; phone:library,#707872
+.pulse-invite > small,<small>A personal invitation. A stronger alliance.</small>,#62744b,#e3ecb6,4.11,4.5:1,6.8pt (9px),desktop:home; phone:home,#5b6c46
+"button[data-action=""network-tier:trusted""] > span:nth-child(3) > small",<small>The people you choose to count on.</small>,#74816e,#ffffff,4.11,4.5:1,8.3pt (11px),desktop:network; phone:network,#6d7967
+"button[data-action=""network-tier:worked""] > span:nth-child(3) > small",<small>Built through meaningful collaboration.</small>,#74816e,#ffffff,4.11,4.5:1,8.3pt (11px),desktop:network; phone:network,#6d7967
+"button[data-action=""network-tier:suggested""] > span:nth-child(3) > small",<small>Practice fit and perspectives you value.</small>,#74816e,#ffffff,4.11,4.5:1,8.3pt (11px),desktop:network; phone:network,#6d7967
+"button[data-action=""network-tier:other""] > span:nth-child(3) > small",<small>Explore the rest of the verified network.</small>,#74816e,#ffffff,4.11,4.5:1,8.3pt (11px),desktop:network; phone:network,#6d7967
+"button[data-action=""inbox-filter:All""]","<button data-action=""inbox-filter:All"" class=""active"">All</button>",#617851,#e6efde,4.11,4.5:1,8.3pt (11px),desktop:messages; phone:messages,#5b704c
+.results-meta,"<p class=""results-meta"">26 resources</p>",#6c7c61,#f7f6f1,4.13,4.5:1,8.3pt (11px),desktop:library; phone:library,#66755b
+.pulse-footnote,"<p class=""pulse-footnote"">Trusted Colleagues are chosen by you. Availability can",#776f60,#eeeae2,4.14,4.5:1,7.5pt (10px),desktop:home; phone:home,#70685a
+.count-label,"<span class=""count-label"">3 unread</span>",#687864,#edf2e8,4.14,4.5:1,7.5pt (10px),desktop:messages; phone:messages,#62715e
+.invite-banner > div > p,<p>Confirm the handover before marking a client ready.</p>,#6b7561,#ecefe6,4.15,4.5:1,8.3pt (11px),desktop:cover; phone:cover,#656e5b
+"label[for=""conversation-context""]","<label for=""conversation-context"">Conversation</label>",#73806e,#ffffff,4.16,4.5:1,8.3pt (11px),desktop:messages,#6d7968
+.relation-suggested,"<span class=""avatar relation-suggested sm"" aria-hidden=""true"">ER</span>",#247c91,#e6f1f3,4.17,4.5:1,7.5pt (10px),desktop:consult; phone:consult,#227589
+"button[title=""Elena Rivera""] > .relation-suggested.sm.avatar","<span class=""avatar relation-suggested sm"" aria-hidden=""true"">ER</span>",#247c91,#e6f1f3,4.17,4.5:1,7.5pt (10px),desktop:network; phone:network,#227589
+"button[title=""Lena Larkhollow""] > .relation-suggested.sm.avatar","<span class=""avatar relation-suggested sm"" aria-hidden=""true"">LL</span>",#247c91,#e6f1f3,4.17,4.5:1,7.5pt (10px),desktop:network; phone:network,#227589
+"button[title=""Fatima Ruskmere""] > .relation-suggested.sm.avatar","<span class=""avatar relation-suggested sm"" aria-hidden=""true"">FR</span>",#247c91,#e6f1f3,4.17,4.5:1,7.5pt (10px),desktop:network; phone:network,#227589
+"button[data-action=""profile:marcus""] > .relation-suggested.sm.avatar","<span class=""avatar relation-suggested sm"" aria-hidden=""true"">MR</span>",#247c91,#e6f1f3,4.17,4.5:1,7.5pt (10px),desktop:network; phone:network,#227589
+.colleague-row:nth-child(2) > .relation-suggested.avatar,"<span class=""avatar relation-suggested "" aria-hidden=""true"">ER</span>",#247c91,#e6f1f3,4.17,4.5:1,7.5pt (10px),desktop:network; phone:network,#227589
+.colleague-row:nth-child(3) > .relation-suggested.avatar,"<span class=""avatar relation-suggested "" aria-hidden=""true"">LL</span>",#247c91,#e6f1f3,4.17,4.5:1,7.5pt (10px),desktop:network; phone:network,#227589
+.colleague-row:nth-child(4) > .relation-suggested.avatar,"<span class=""avatar relation-suggested "" aria-hidden=""true"">FR</span>",#247c91,#e6f1f3,4.17,4.5:1,7.5pt (10px),desktop:network; phone:network,#227589
+.pulse-attention-toggle > span:nth-child(2) > small,<small>Choose what to address. Open the list to see everything.</small>,#687862,#eff3ea,4.19,4.5:1,9.0pt (12px),desktop:home; phone:home,#62715c
+.gold,"<span class=""label gold"">Needs your reply</span>",#877145,#f7f2e5,4.19,4.5:1,6.0pt (8px),desktop:cover; desktop:referrals; phone:cover; phone:referrals,#806b42
+article:nth-child(7) > .resource-meta > .library-review-label,"<span class=""library-review-label"">Supplied draft · Review pending</span>",#8b795c,#ffffff,4.21,4.5:1,7.5pt (10px),desktop:library; phone:library,#837257
+article:nth-child(8) > .resource-meta > .library-review-label,"<span class=""library-review-label"">Supplied draft · Review pending</span>",#8b795c,#ffffff,4.21,4.5:1,7.5pt (10px),desktop:library; phone:library,#837257
+.pulse-wordmark > span,"<span>Your alliance, in motion.</span>",#6b796e,#f7f6f1,4.23,4.5:1,9.0pt (12px),desktop:home,#667469
+"div[data-message-id=""r1""] > .bubble-wrap > .bubble","<div class=""bubble"">Hi Rachel! Thanks for sharing your cover plan. I’ve had a lo",#69765b,#edf2e7,4.24,4.5:1,9.8pt (13px),desktop:messages,#647057
+"div[data-message-id=""r3""] > .bubble-wrap > .bubble","<div class=""bubble"">Of course. I can cover both weeks. Shall we arrange a quick ",#69765b,#edf2e7,4.24,4.5:1,9.8pt (13px),desktop:messages,#647057
+"div[data-message-id=""r5""] > .bubble-wrap > .bubble","<div class=""bubble"">Thursday works perfectly. Looking forward to catching up!</d",#69765b,#edf2e7,4.24,4.5:1,9.8pt (13px),desktop:messages,#647057
+"button[data-action=""network-tab:circle""]","<button class=""active"" data-action=""network-tab:circle"">Your circle</button>",#877253,#f8f6f0,4.25,4.5:1,9.0pt (12px),desktop:network; phone:network,#816d4f
+"button[data-action=""profile-referral:imani""]","<button type=""button"" class=""button secondary small"" data-action=""profile-referr",#8b7036,#faf5e8,4.31,4.5:1,7.5pt (10px),desktop:home; phone:home,#856c34
+"button[data-action=""profile-referral:maya""]","<button type=""button"" class=""button secondary small"" data-action=""profile-referr",#8b7036,#faf5e8,4.31,4.5:1,7.5pt (10px),desktop:home,#856c34
+"button[data-action=""profile-referral:rena""]","<button type=""button"" class=""button secondary small"" data-action=""profile-referr",#8b7036,#faf5e8,4.31,4.5:1,7.5pt (10px),desktop:home,#856c34
+.profile-button > .self.avatar,"<span class=""avatar self "" aria-hidden=""true"">RD</span>",#766b50,#ece9df,4.33,4.5:1,9.0pt (12px),desktop:home; desktop:messages; desktop:network,#71674d
+.self.sm.avatar,"<span class=""avatar self sm"" aria-hidden=""true"">RD</span>",#766b50,#ece9df,4.33,4.5:1,7.5pt (10px),desktop:consult; desktop:home; desktop:messages; desktop:network,#71674d
+".profile-button > .avatar.self[aria-hidden=""true""]","<span class=""avatar self "" aria-hidden=""true"">RD</span>",#766b50,#ece9df,4.33,4.5:1,9.0pt (12px),desktop:cover; desktop:library; desktop:referrals,#71674d
+.sm,"<span class=""avatar self sm"" aria-hidden=""true"">RD</span>",#766b50,#ece9df,4.33,4.5:1,7.5pt (10px),desktop:cover; desktop:library; desktop:referrals,#71674d
+.arrangement-side > .gray.label,"<span class=""label gray"">Completed</span>",#6c7468,#f1f3ef,4.33,4.5:1,6.0pt (8px),desktop:cover; phone:cover,#687064
+.direction-outgoing > .list-section-body > article:nth-child(2) > .arrangement-side > .gray.label,"<span class=""label gray"">Placed</span>",#6c7468,#f1f3ef,4.33,4.5:1,6.0pt (8px),desktop:referrals; phone:referrals,#687064
+.direction-incoming > .list-section-body > article:nth-child(2) > .arrangement-side > .gray.label,"<span class=""label gray"">Placed</span>",#6c7468,#f1f3ef,4.33,4.5:1,6.0pt (8px),desktop:referrals; phone:referrals,#687064
+".profile-button > .self.avatar[aria-hidden=""true""]","<span class=""avatar self "" aria-hidden=""true"">RD</span>",#766b50,#ece9df,4.33,4.5:1,9.0pt (12px),desktop:consult,#71674d
+.context-strip > strong,<strong>Cover · Fall leave · Client 1</strong>,#647b54,#f5f8f0,4.34,4.5:1,8.3pt (11px),desktop:messages,#607651
+.direction-outgoing > .list-section-body > article:nth-child(1) > .arrangement-main > small:nth-child(2),<small>Your plan · Nov 2 – Nov 13 · 3 clients</small>,#6e7e63,#ffffff,4.35,4.5:1,8.3pt (11px),desktop:cover; desktop:referrals; phone:cover; phone:referrals,#6a7a60
+.direction-outgoing > .list-section-body > article:nth-child(2) > .arrangement-main > small:nth-child(2),<small>Your plan · Dec 7 – Dec 11 · 1 client</small>,#6e7e63,#ffffff,4.35,4.5:1,8.3pt (11px),desktop:cover; desktop:referrals; phone:cover; phone:referrals,#6a7a60
+article:nth-child(3) > .arrangement-main > small:nth-child(2),<small>Your plan · Aug 10 – Aug 21 · 1 client</small>,#6e7e63,#ffffff,4.35,4.5:1,8.3pt (11px),desktop:cover; phone:cover,#6a7a60
+.direction-incoming > .list-section-body > article:nth-child(1) > .arrangement-main > small:nth-child(2),"<small>Plan by <button type=""button"" class=""person-link"" data-action=""profile:al",#6e7e63,#ffffff,4.35,4.5:1,8.3pt (11px),desktop:cover; desktop:referrals; phone:cover; phone:referrals,#6a7a60
+"button[data-action=""profile:alex""]","<button type=""button"" class=""person-link"" data-action=""profile:alex"">Alex Morgan",#6e7e63,#ffffff,4.35,4.5:1,8.3pt (11px),desktop:cover; desktop:referrals; phone:cover; phone:referrals,#6a7a60
+.direction-incoming > .list-section-body > article:nth-child(2) > .arrangement-main > small:nth-child(2),"<small>Plan by <button type=""button"" class=""person-link"" data-action=""profile:ma",#6e7e63,#ffffff,4.35,4.5:1,8.3pt (11px),desktop:cover; desktop:referrals; phone:cover; phone:referrals,#6a7a60
+"button[data-action=""profile:maya""]","<button type=""button"" class=""person-link"" data-action=""profile:maya"">Maya Patel<",#6e7e63,#ffffff,4.35,4.5:1,8.3pt (11px),desktop:cover; phone:cover,#6a7a60
+.direction-outgoing > .list-section-body > article:nth-child(1) > .arrangement-main > small:nth-child(3),<small>Review the interested colleague and confirm the placement.</small>,#6e7e63,#ffffff,4.35,4.5:1,8.3pt (11px),desktop:referrals; phone:referrals,#6a7a60
+.direction-outgoing > .list-section-body > article:nth-child(2) > .arrangement-main > small:nth-child(3),"<small>Placed with <button type=""button"" class=""person-link"" data-action=""profil",#6e7e63,#ffffff,4.35,4.5:1,8.3pt (11px),desktop:referrals; phone:referrals,#6a7a60
+"button[data-action=""profile:eli""]","<button type=""button"" class=""person-link"" data-action=""profile:eli"">Eli Kestrelb",#6e7e63,#ffffff,4.35,4.5:1,8.3pt (11px),desktop:referrals; phone:referrals,#6a7a60
+.direction-incoming > .list-section-body > article:nth-child(1) > .arrangement-main > small:nth-child(3),<small>Review the requirements and confirm whether you can help.</small>,#6e7e63,#ffffff,4.35,4.5:1,8.3pt (11px),desktop:referrals; phone:referrals,#6a7a60
+"button[data-action=""profile:sophie""]","<button type=""button"" class=""person-link"" data-action=""profile:sophie"">Sophie Ch",#6e7e63,#ffffff,4.35,4.5:1,8.3pt (11px),desktop:referrals; phone:referrals,#6a7a60
+.direction-incoming > .list-section-body > article:nth-child(2) > .arrangement-main > small:nth-child(3),"<small>Placed with <button type=""button"" class=""person-link"" data-action=""profil",#6e7e63,#ffffff,4.35,4.5:1,8.3pt (11px),desktop:referrals; phone:referrals,#6a7a60
+".person-link[data-action=""profile:me""][type=""button""]","<button type=""button"" class=""person-link"" data-action=""profile:me"">Rachel Davis<",#6e7e63,#ffffff,4.35,4.5:1,8.3pt (11px),desktop:referrals; phone:referrals,#6a7a60
+footer > span:nth-child(1),<span>,#70756a,#f7f6f1,4.36,4.5:1,7.5pt (10px),desktop:consult; desktop:cover; desktop:home; desktop:library; desktop:network; desktop:referrals; phone:consult; phone:cover; phone:home; phone:library; phone:network; phone:referrals,#6c7166
+footer > span:nth-child(2),<span>PsyAlliance · Independent practice. Collective strength.</span>,#70756a,#f7f6f1,4.36,4.5:1,7.5pt (10px),desktop:consult; desktop:cover; desktop:home; desktop:library; desktop:network; desktop:referrals,#6c7166
+"button[data-action=""cover-layout:calendar""]","<button class="""" data-action=""cover-layout:calendar"">",#6f7d65,#ffffff,4.37,4.5:1,8.3pt (11px),desktop:cover; phone:cover,#6b7962
+"button[data-action=""plan:1""]","<button data-action=""plan:1"">",#617b56,#f5f8f0,4.37,4.5:1,8.3pt (11px),desktop:messages,#5f7854
+kbd,<kbd>⌘ K</kbd>,#6d756d,#f6f7f1,4.41,4.5:1,6.8pt (9px),desktop:consult; desktop:cover; desktop:home; desktop:library; desktop:messages; desktop:network; desktop:referrals,#6b726b
+.primary,"<button type=""button"" class=""button primary"" data-action=""referral-start"">",#ffffff,#927338,4.43,4.5:1,9.0pt (12px),desktop:referrals; phone:referrals,
+.pagination > small,<small>Page 1 of 4</small>,#6f7467,#f7f6f1,4.44,4.5:1,7.5pt (10px),desktop:library; phone:library,#6c7165
+div:nth-child(2) > p,<p>Every relationship has a place. You choose who you trust; shared work and use,#6e7b68,#ffffff,4.47,4.5:1,9.0pt (12px),desktop:network; phone:network,#6d7a67
+.direction-outgoing > .list-section-body > article:nth-child(1) > .plan-date > small,<small>Nov</small>,#6f7762,#f9fbf5,4.48,4.5:1,6.0pt (8px),desktop:cover; phone:cover,#6e7661
+.direction-outgoing > .list-section-body > article:nth-child(2) > .plan-date > small,<small>Dec</small>,#6f7762,#f9fbf5,4.48,4.5:1,6.0pt (8px),desktop:cover; phone:cover,#6e7661
+article:nth-child(3) > .plan-date > small,<small>Aug</small>,#6f7762,#f9fbf5,4.48,4.5:1,6.0pt (8px),desktop:cover; phone:cover,#6e7661
+.direction-incoming > .list-section-body > article:nth-child(1) > .plan-date > small,<small>Oct</small>,#6f7762,#f9fbf5,4.48,4.5:1,6.0pt (8px),desktop:cover; phone:cover,#6e7661
+.direction-incoming > .list-section-body > article:nth-child(2) > .plan-date > small,<small>Nov</small>,#6f7762,#f9fbf5,4.48,4.5:1,6.0pt (8px),desktop:cover; phone:cover,#6e7661
