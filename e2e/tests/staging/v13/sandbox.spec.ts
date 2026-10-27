@@ -380,6 +380,42 @@ test.describe("SBX sandbox", () => {
     await context.close();
   });
 
+  test("SBX-17 sequential Cover in the sandbox: a discussion pauses the deadline; a decline moves on to the next colleague exactly once", async ({ browser }) => {
+    const token = await newPass("sequence");
+    const { context, page } = await enter(browser, token);
+    const gid = await guestOf(token);
+    const caseOf = async (plan: string) => (await one<{ id: string }>("select c.id from coverage_plan_cases c join coverage_plans p on p.id=c.coverage_plan_id where p.profile_id=$1 and p.title=$2 order by c.id limit 1", [gid, plan])).id;
+    const reqs = async (caseId: string) => q<{ s: string; p: string }>("select status::text s, requested_profile_id::text p from coverage_requests where coverage_plan_case_id=$1 order by id", [caseId]);
+    const apply = async (planText: string, response: string) => {
+      await openControls(page);
+      await page.evaluate((t) => { const sel = document.querySelector("#review-request") as HTMLSelectElement; const o = [...sel.options].find((x) => x.text.includes(t)); if (o) { sel.value = o.value; sel.dispatchEvent(new Event("change", { bubbles: true })); } }, planText);
+      await page.locator('.modal select[name="response"]').selectOption({ label: response });
+      await page.getByRole("button", { name: /Apply example response/ }).click();
+      await page.waitForTimeout(2500);
+    };
+    // A discussion pauses the deadline: letting it pass changes nothing.
+    const fall = await caseOf("Fall leave cover");
+    const fallCase = await q<{ id: string }>("select c.id from coverage_plan_cases c join coverage_plans p on p.id=c.coverage_plan_id where p.profile_id=$1 and p.title='Fall leave cover' and c.status='awaiting_response'", [gid]);
+    const paused = fallCase[0].id;
+    const before = await reqs(paused);
+    expect(before.map((r) => r.s)).toEqual(["discussing"]);
+    await apply("Fall leave cover", "Response deadline passes");
+    expect(await reqs(paused)).toEqual(before);
+    expect(fall).toBeTruthy();
+    // A decline on the sent request moves the case to the next colleague in its queue, once.
+    const conf = await caseOf("Conference week");
+    const queued = (await one<{ q: string }>("select outreach_queue[1]::text q from coverage_plan_cases where id=$1", [conf])).q;
+    const first = await reqs(conf);
+    expect(first.map((r) => r.s)).toEqual(["sent"]);
+    await apply("Conference week", "Decline");
+    const after = await reqs(conf);
+    expect(after.map((r) => r.s)).toEqual(["declined", "sent"]);
+    expect(after[1].p).toBe(queued);
+    // Nothing repeats: the same screen again picks the new open request, never the declined one.
+    expect((await reqs(conf)).length).toBe(2);
+    await context.close();
+  });
+
   test("SBX-16 the 20-client draft is saved with the member; a removed client's number is never reused; it is still there after a reload", async ({ browser }) => {
     const token = await newPass("twenty");
     const { context, page } = await enter(browser, token);
