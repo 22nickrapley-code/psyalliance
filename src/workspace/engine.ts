@@ -14,7 +14,7 @@ export function startWorkspace(env: any) {
  const document=__track(globalThis.document),window=__track(globalThis.window);
  const setInterval=(fn,ms)=>{const id=globalThis.setInterval(fn,ms);__cleanup.push(()=>globalThis.clearInterval(id));return id;};
  const uuid=()=>crypto.randomUUID?crypto.randomUUID():Array.from(crypto.getRandomValues(new Uint8Array(16)),b=>b.toString(16).padStart(2,'0')).join('');
- const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)],data=env.data,clone=o=>JSON.parse(JSON.stringify(o));
+ const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>r?[...r.querySelectorAll(s)]:[],data=env.data,clone=o=>JSON.parse(JSON.stringify(o));
  const escape=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const icon=n=>`<i data-lucide="${n}" aria-hidden="true"></i>`;
  const iconButton=(n,a,l,x='')=>`<button type="button" class="icon-button ${x}" data-action="${a}" aria-label="${escape(l)}" title="${escape(l)}">${icon(n)}</button>`;

@@ -205,3 +205,21 @@ test("RV-10 a message with a client's phone number is held back with a plain rea
   await expect(page.locator("#toast")).not.toContainText(/PGRST|violates|Something went wrong/i);
   await expect(page.locator("#app")).not.toContainText(/PGRST|violates|Something went wrong/i);
 });
+
+test("RV-11 a window closed in the instant after it opens leaves no error behind", async ({ page, context, baseURL }) => {
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await signInAs(context, "avery", baseURL!);
+  await page.goto("/dashboard/messages");
+  await hub(page);
+  // Open and close inside one frame: the window's focus step then runs with no window left.
+  for (let i = 0; i < 5; i++) {
+    await page.evaluate(() => {
+      (document.querySelector('[data-action="new-message"]') as HTMLElement).click();
+      (document.querySelector('[data-action="close-modal"]') as HTMLElement).click();
+    });
+    await page.waitForTimeout(100);
+  }
+  await expect(page.locator(".overlay")).toHaveCount(0);
+  expect(errors).toEqual([]);
+});

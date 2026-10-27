@@ -33,7 +33,7 @@ for (const [label, size] of [["desktop", DESKTOP], ["phone", PHONE]] as const) {
     const context = await browser.newContext({ viewport: size });
     const page = await context.newPage();
     const errs: string[] = [];
-    page.on("pageerror", (e) => errs.push(e.message));
+    page.on("pageerror", (e) => errs.push(`${e.message} @ ${page.url()} :: ${(e.stack || "").split("\n").slice(0, 4).join(" / ")}`));
     const seen = new Set<string>();
     const problems: string[] = [];
     for (const { src, id, s } of ALL) {
@@ -87,7 +87,7 @@ test("TOUR-03 the video plays on the real controls: it types, chooses and moves 
   const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
   const page = await context.newPage();
   const errs: string[] = [];
-  page.on("pageerror", (e) => errs.push(e.message));
+  page.on("pageerror", (e) => errs.push(`${e.message} @ ${page.url()} :: ${(e.stack || "").split("\n").slice(0, 4).join(" / ")}`));
   await page.goto("/tour/cover");
   const player = page.locator("section.story-player");
   await expect(player).toBeVisible();
@@ -145,7 +145,7 @@ for (const [label, size] of [["desktop", DESKTOP], ["phone", PHONE]] as const) {
     const context = await browser.newContext({ viewport: size });
     const page = await context.newPage();
     const errs: string[] = [];
-    page.on("pageerror", (e) => errs.push(e.message));
+    page.on("pageerror", (e) => errs.push(`${e.message} @ ${page.url()} :: ${(e.stack || "").split("\n").slice(0, 4).join(" / ")}`));
     await page.goto("/tour/cover/clients");
     const iframe = page.frameLocator("iframe");
     await expect(iframe.locator("#app")).toBeVisible({ timeout: 30000 });
@@ -234,7 +234,7 @@ test("TOUR-10 the embedded video (Watch inside the product) plays on its own and
   await signInAs(context, "avery", baseURL!);
   const page = await context.newPage();
   const errs: string[] = [];
-  page.on("pageerror", (e) => errs.push(e.message));
+  page.on("pageerror", (e) => errs.push(`${e.message} @ ${page.url()} :: ${(e.stack || "").split("\n").slice(0, 4).join(" / ")}`));
   await page.goto("/dashboard/demos");
   const watches = page.locator(".demo-row a", { hasText: "Watch" });
   await expect(watches.first()).toBeVisible({ timeout: 30000 });
