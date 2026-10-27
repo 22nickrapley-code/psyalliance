@@ -198,8 +198,10 @@ $function$;
 revoke all on function private.consult_recent(uuid) from public, anon, authenticated;
 
 -- One discussion as the screens read it. Replies are newest first, the latest
--- 50 of them; replies from a colleague the viewer has blocked are left out.
-create or replace function private.discussion_json(p_id bigint, p_viewer uuid)
+-- 50 of them (the lists carry the latest 20 and the full set loads on open);
+-- replies from a colleague the viewer has blocked are left out.
+drop function if exists private.discussion_json(bigint, uuid);
+create or replace function private.discussion_json(p_id bigint, p_viewer uuid, p_limit int default 50)
 returns jsonb
 language sql
 stable
@@ -231,10 +233,10 @@ as $function$
                'createdAt', x.created_at) order by x.created_at desc, x.id desc)
         from (select r.* from consultation_responses r
                where r.consultation_id = c.id and not public.is_blocked_between(p_viewer, r.responder_profile_id)
-               order by r.created_at desc, r.id desc limit 50) x), '[]'::jsonb))
+               order by r.created_at desc, r.id desc limit p_limit) x), '[]'::jsonb))
   from consultations c where c.id = p_id;
 $function$;
-revoke all on function private.discussion_json(bigint, uuid) from public, anon, authenticated;
+revoke all on function private.discussion_json(bigint, uuid, int) from public, anon, authenticated;
 
 create or replace function public.workspace_discussions()
 returns jsonb
@@ -243,7 +245,7 @@ stable
 security definer
 set search_path to 'public'
 as $function$
-  select coalesce(jsonb_agg(private.discussion_json(r.id, auth.uid()) order by r.ord), '[]'::jsonb)
+  select coalesce(jsonb_agg(private.discussion_json(r.id, auth.uid(), 20) order by r.ord), '[]'::jsonb)
     from private.consult_recent(auth.uid()) r
    where auth.uid() is not null;
 $function$;
@@ -559,6 +561,49 @@ end;
 $function$;
 revoke all on function public.consult_useful(bigint, boolean) from public, anon;
 grant execute on function public.consult_useful(bigint, boolean) to authenticated;
+
+-- Small reads, so a change can send back only the list it changed.
+create or replace function public.my_consult_follows()
+returns jsonb
+language sql
+stable
+security definer
+set search_path to 'public'
+as $function$
+  select coalesce(jsonb_agg(f.consultation_id order by f.created_at), '[]'::jsonb)
+    from consultation_follows f
+   where f.profile_id = auth.uid() and private.consult_can_see(f.consultation_id, auth.uid());
+$function$;
+revoke all on function public.my_consult_follows() from public, anon;
+grant execute on function public.my_consult_follows() to authenticated;
+
+create or replace function public.my_consult_useful()
+returns jsonb
+language sql
+stable
+security definer
+set search_path to 'public'
+as $function$
+  select coalesce(jsonb_agg('r' || u.response_id order by u.created_at), '[]'::jsonb)
+    from consultation_response_useful u
+   where u.profile_id = auth.uid();
+$function$;
+revoke all on function public.my_consult_useful() from public, anon;
+grant execute on function public.my_consult_useful() to authenticated;
+
+create or replace function public.my_saved_resources()
+returns jsonb
+language sql
+stable
+security definer
+set search_path to 'public'
+as $function$
+  select coalesce(jsonb_agg(s.resource_key order by s.created_at), '[]'::jsonb)
+    from saved_resources s
+   where s.profile_id = auth.uid();
+$function$;
+revoke all on function public.my_saved_resources() from public, anon;
+grant execute on function public.my_saved_resources() to authenticated;
 
 -- 7. Library ----------------------------------------------------------------------
 -- The templates a member can see (reviewed, or waiting for review) with their

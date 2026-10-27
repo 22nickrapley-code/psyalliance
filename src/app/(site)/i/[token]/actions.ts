@@ -16,7 +16,7 @@ export async function acceptInviteAction(formData: FormData) {
   const { data, error } = await supabase.rpc("accept_member_invite", { p_token: token });
   if (error) redirect(`/i/${token}?error=${encodeURIComponent(friendly(error))}`);
   const r = (data || {}) as { inviter?: string; connected?: boolean; self?: boolean };
-  if (r.self) redirect("/dashboard/invite");
+  if (r.self) redirect("/dashboard/network?invite=1");
   revalidatePath("/dashboard/network");
   if (r.connected && r.inviter) redirect(`/dashboard/people/${r.inviter}?connected=1`);
   redirect("/dashboard?invite=waiting");

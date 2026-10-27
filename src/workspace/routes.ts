@@ -25,7 +25,17 @@ export function openOf(sp: URLSearchParams | Params, view: WorkspaceView = "home
   if (get("compose") && view === "messages") return { type: "new-message" };
   const thread = get("thread");
   if (thread && view === "messages" && /^(c-\d{1,18}|[a-z]+-[0-9a-f-]{1,120})$/i.test(thread)) return { type: "thread", id: thread };
-  if (get("new") === "1") return { type: view === "referrals" ? "referral-start" : "cover-start" };
+  const profile = get("profile");
+  if (profile && /^[0-9a-f-]{36}$/i.test(profile)) return { type: "profile", id: profile };
+  const discussion = num(get("discussion"));
+  if (discussion && view === "consult") return { type: "discussion", id: Number(discussion) };
+  const resource = get("resource");
+  if (resource && view === "library" && /^(PA-\d{2}|\d{1,3})$/i.test(resource)) return { type: "resource", id: resource.toUpperCase() };
+  if (get("invite") === "1" && view === "network") return { type: "invite" };
+  if (get("new") === "1") {
+    if (view === "consult") return { type: "peer-start", sub: num(get("group")) || undefined };
+    if (view === "cover" || view === "referrals") return { type: view === "referrals" ? "referral-start" : "cover-start" };
+  }
   return null;
 }
 
@@ -40,6 +50,13 @@ export function legacyDestination(section: string[], sp: Params): string | null 
   }
   if (a === "messages" && !b && one(sp.tab) === "notifications") return "/dashboard/notifications";
   if (a === "messages" && b && num(b)) return `/dashboard/messages?thread=c-${b}`;
+  if (a === "consult" && b !== "groups") {
+    if (!b) return null;
+    if (b === "new") return `/dashboard/consult?new=1${num(one(sp.group)) ? `&group=${one(sp.group)}` : ""}`;
+    if (num(b)) return `/dashboard/consult?discussion=${b}`;
+  }
+  if (a === "clinicians") return "/dashboard/network";
+  if (a === "invite") return "/dashboard/network?invite=1";
   if (a === "refer") {
     if (!b) return "/dashboard/referrals";
     if (b === "new") return "/dashboard/referrals?new=1";

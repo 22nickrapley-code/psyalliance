@@ -22,6 +22,9 @@ export type LiveBoot = {
   inbound?: { physician?: number };
   discussions?: any[];
   resources?: any[];
+  groups?: any[];
+  consultQuiet?: string[];
+  savedResources?: number[];
   following?: number[];
   useful?: string[];
   dismissed?: string[];
@@ -44,6 +47,8 @@ export function buildLiveEnv(boot: LiveBoot, view: WorkspaceView) {
       known: boot.known || [],
       discussions: boot.discussions || [],
       resources: boot.resources || [],
+      groups: boot.groups || [],
+      consultQuiet: boot.consultQuiet || [],
       threads: boot.threads || [],
       options: { ...boot.options, states },
     },
@@ -59,6 +64,7 @@ export function buildLiveEnv(boot: LiveBoot, view: WorkspaceView) {
       discussions: boot.discussions || [],
       following: boot.following || [],
       useful: boot.useful || [],
+      savedResources: boot.savedResources || [],
       dismissed: boot.dismissed || [],
       preferences: boot.preferences || {},
       drafts: boot.drafts || {},

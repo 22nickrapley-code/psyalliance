@@ -1,6 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { friendly } from "@/lib/friendly-error";
 import { identifierError } from "@/lib/deidentify";
+import { loadInvite } from "@/lib/invite";
+import { shapeLibrary, resourceKey } from "./library";
 
 // Every change the workspace makes goes through one of these. Each runs as
 // the signed-in member (their own session, so row-level security and the
@@ -14,7 +16,13 @@ type Handler = (ctx: Ctx, args: any) => Promise<Result>;
 export async function slices(ctx: Ctx, names: string[]) {
   const { data, error } = await ctx.supabase.rpc("workspace_slice", { p_names: names });
   if (error) throw new Error(`workspace_slice: ${error.message}`);
-  return (data || {}) as Record<string, any>;
+  const out = (data || {}) as Record<string, any>;
+  if (out.resources !== undefined || out.saved !== undefined) {
+    const lib = shapeLibrary({ resources: out.resources, saved: out.saved });
+    delete out.saved;
+    Object.assign(out, lib);
+  }
+  return out;
 }
 
 
@@ -35,7 +43,7 @@ const fail = (error: any, fallback?: string): Result => ({ ok: false, error: fri
 export const handlers: Record<string, Handler> = {
   // Any slices, for polling and for returning to a screen.
   refresh: async (ctx, a) => {
-    const allowed = ["me", "people", "known", "tiers", "availability", "plans", "referrals", "threads", "pulse", "discussions", "resources", "drafts", "preferences"];
+    const allowed = ["me", "people", "known", "tiers", "availability", "plans", "referrals", "threads", "pulse", "inbound", "consult", "resources", "drafts", "preferences"];
     const names = (Array.isArray(a?.names) ? a.names : []).filter((n: string) => allowed.includes(n));
     return { ok: true, patch: await slices(ctx, names) };
   },
@@ -259,6 +267,101 @@ export const handlers: Record<string, Handler> = {
     const { data, error } = await ctx.supabase.rpc("thread_older", { p_key: String(a.key || ""), p_before: a.before == null ? null : num(a.before) });
     if (error) return fail(error);
     return { ok: true, data };
+  },
+
+  // Trusted colleagues: chosen one way. The colleague is told once.
+  "trust.set": async (ctx, a) => {
+    const person = String(a.person || "");
+    if (!/^[0-9a-f-]{36}$/i.test(person)) return bad("Choose a colleague.");
+    const { error } = await ctx.supabase.rpc("trust_set", { p_colleague: person, p_on: a.on === true });
+    if (error) return fail(error);
+    return { ok: true, patch: await slices(ctx, ["tiers"]) };
+  },
+
+  "preference.set": async (ctx, a) => {
+    const { data, error } = await ctx.supabase.rpc("set_workspace_preference", { p_key: String(a.key || ""), p_on: a.on !== false });
+    if (error) return fail(error);
+    return { ok: true, patch: { preferences: data } };
+  },
+
+  // Asking a question in Consult. The same request id lands once.
+  "consult.post": async (ctx, a) => {
+    const title = text(a.title, 150);
+    const body = text(a.body, 5000);
+    const tags = (Array.isArray(a.tags) ? a.tags : String(a.tags || "").split(",")).map((t: unknown) => text(t, 40)).filter(Boolean).slice(0, 10);
+    const err = [title, body, ...tags].map(identifierError).find(Boolean);
+    if (err) return bad(err);
+    if (!/^[0-9a-f-]{36}$/i.test(String(a.clientId || ""))) return bad("That question can't be posted.");
+    const group = Number(a.groupId);
+    const { data, error } = await ctx.supabase.rpc("consult_post", {
+      p_payload: {
+        title, body, tags, topic: text(a.topic, 40), audience: text(a.audience, 12), recipients: idList(a.recipients),
+        groupId: Number.isInteger(group) && group > 0 ? group : null, clientRequestId: String(a.clientId), confirmed: a.confirmed === true,
+      },
+    });
+    if (error) return fail(error, "That question didn't post. You can try again.");
+    const id = Number((data as any)?.id);
+    const [{ data: discussion }, { data: following }] = await Promise.all([
+      ctx.supabase.rpc("workspace_discussion", { p_id: id }),
+      ctx.supabase.rpc("my_consult_follows"),
+    ]);
+    return { ok: true, data: { id }, patch: { discussion: discussion || null, following: following || [] } };
+  },
+
+  "consult.reply": async (ctx, a) => {
+    const body = text(a.text, 3000);
+    if (!body) return bad("Write a reply first.");
+    const err = identifierError(body);
+    if (err) return bad(err);
+    const id = Number(a.id);
+    if (!Number.isInteger(id) || !/^[0-9a-f-]{36}$/i.test(String(a.clientId || ""))) return bad("That reply can't be posted.");
+    const { data, error } = await ctx.supabase.rpc("consult_reply", { p_consultation: id, p_body: body, p_client_id: String(a.clientId) });
+    if (error) return fail(error, "That reply didn't post. You can try again.");
+    const [{ data: discussion }, { data: following }] = await Promise.all([
+      ctx.supabase.rpc("workspace_discussion", { p_id: id }),
+      ctx.supabase.rpc("my_consult_follows"),
+    ]);
+    return { ok: true, data, patch: { discussion: discussion || null, following: following || [] } };
+  },
+
+  // One discussion in full, when it is opened.
+  "consult.get": async (ctx, a) => {
+    const { data, error } = await ctx.supabase.rpc("workspace_discussion", { p_id: Number(a.id) });
+    if (error) return fail(error);
+    return { ok: true, patch: { discussion: data || null } };
+  },
+
+  "consult.follow": async (ctx, a) => {
+    const { error } = await ctx.supabase.rpc("consult_follow", { p_consultation: Number(a.id), p_on: a.on === true });
+    if (error) return fail(error);
+    const { data } = await ctx.supabase.rpc("my_consult_follows");
+    return { ok: true, patch: { following: data || [] } };
+  },
+
+  "consult.useful": async (ctx, a) => {
+    const m = /^r(\d{1,18})$/.exec(String(a.response || ""));
+    if (!m) return bad("That reply isn't available.");
+    const { error } = await ctx.supabase.rpc("consult_useful", { p_response: Number(m[1]), p_on: a.on === true });
+    if (error) return fail(error);
+    const { data } = await ctx.supabase.rpc("my_consult_useful");
+    // A colleague whose reply you mark useful joins Suggested for you.
+    return { ok: true, patch: { useful: data || [], ...(await slices(ctx, ["tiers"])) } };
+  },
+
+  "resource.save": async (ctx, a) => {
+    const key = resourceKey(Number(a.id));
+    if (!key) return bad("That resource can't be saved.");
+    const { error } = await ctx.supabase.rpc("resource_save", { p_key: key, p_on: a.on === true });
+    if (error) return fail(error);
+    const lib = await slices(ctx, ["resources"]);
+    return { ok: true, patch: { savedResources: lib.savedResources } };
+  },
+
+  // The member's own invitation link and name, for the message they copy.
+  // Nothing is sent from here.
+  "invite.link": async (ctx) => {
+    const info = await loadInvite(ctx.supabase as any);
+    return { ok: true, data: { link: info.link, first: info.firstName, mode: info.mode } };
   },
 
   "draft.save": async (ctx, a) => {
