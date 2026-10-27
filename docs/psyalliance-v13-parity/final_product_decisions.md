@@ -10,3 +10,12 @@ The goal: one final product that combines the best of the original product and t
 | D-02 | C-25: report and block | **Add both, small and quiet.** | "Report" text link in the discussion window (question and reply) and a "Block" row in the profile window, in the approved styles. Reports go to the existing moderation queue; block uses the existing database rule. |
 | D-03 | C-27: Supervision | **Hide for launch, keep the data.** | No Supervision tab or page in the final product's screens. Tables, rules and routes stay so it can return. |
 | D-04 | C-37: contrast | **Darken slightly, keep the look.** | Small muted text colours move to the passing values in `a11y_contrast_findings.csv` (same hue, median 3 points darker); the amber badge a little darker. Recorded as an approved exception to the frozen CSS. |
+
+## Round 2: availability and matching rules
+
+| # | Question | Decision | What it means for the build |
+|---|----------|----------|------------------------------|
+| D-05 | C-02: pause-until and Cover / Consult openness | **Approved availability window plus the extras.** | "Pause until" date and Cover / Consult openness live inside the approved Availability window, in its styles; the old page stops being needed. The overall-spaces number, per-state settings and Confirm unchanged stay as approved. |
+| D-06 | C-03: reconfirm wording | **Keep day-30 reminders, fix the copy.** | Reminder emails unchanged. Hub card and window copy say members are reminded from day 30 and stop showing as available now after 90 days (confirmed through day 90, stale from day 91). |
+| D-07 | C-11: in-person matching | **Primary city or any licence city.** | Server rule as built. The match card says which city matched. The screens' own check is aligned to it. |
+| D-08 | C-05: Worked with before | **Approved rule: agreed work only.** | Cover agreed, confirmed referral placement and recorded completions only. Consult replies and reactions never create it. The old pages' definition is changed to match so the product says one thing everywhere. |
