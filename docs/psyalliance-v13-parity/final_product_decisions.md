@@ -44,5 +44,14 @@ The goal: one final product that combines the best of the original product and t
 |---|----------|----------|------------------------------|
 | D-17 | PSYPACT telehealth matching | **Allow PSYPACT telehealth matches, labelled.** | A colleague is eligible by PSYPACT when the setting is virtual, the client's state and the colleague's home state are both compact states, and the colleague participates (and qualification rules in `src/lib/psypact.ts` hold). The match card says "PSYPACT telehealth". Server and screens use one rule; compact-state list checked against psypact.gov before launch (the 7 Oct appraisal found NY and MA wrongly treated as compact). |
 | D-18 | C-40: demo and sandbox world | **Keep the large generated world** (about 1,200 fictional colleagues, 40 discussions). | No change. Noted: the 7 Oct appraisal's concern about a generated-looking cast stays open; hand-casting the first ~25 people can be done later without changing structure. |
-| D-19 | C-09: messaging delivery | **Real-time now.** | Messages arrive without waiting for a poll. **To confirm with Nick before building:** the local test stack has no Realtime service, so this cannot be proven here the way everything else has been; see the note in the next message. |
+| D-19 | C-09: messaging delivery | ~~Real-time now.~~ **Superseded by D-21.** | |
 | D-20 | Look and feel | **No change: the mock-up is the look.** | Every reskinned page matches the approved screens; only the contrast tweak (D-04) and the extras above depart from them. |
+
+## Round 6: delivery, editing, test route, build order
+
+| # | Question | Decision | What it means for the build |
+|---|----------|----------|------------------------------|
+| D-21 | C-09: messaging delivery (replaces D-19) | **Fast polling now, real-time as a drop-in later.** | While a conversation is open and the tab visible, check every 3 seconds; every 30 seconds otherwise; at once when returning to the tab. One place in the engine decides how updates arrive, so real-time can replace it later without changing screens. Proven end to end on the local stack (the stack has no Realtime service). |
+| D-22 | C-18: edit window | **15 minutes.** | Existing rule kept; after it the message says why Edit has gone. Deleting always allowed. |
+| D-23 | Test route | **On the sandbox site.** | Nick runs the migrations on the sandbox project and deploys the demo build (`npm run cf:deploy:demo`); the new product appears at sandbox.psyalliance.org with fictional data only. Production is untouched until he decides. |
+| D-24 | Build order | **One drop, everything together.** | The seven sections, every decision above, the backend changes and the reskinned pages arrive as one build, proven together, before Nick tests. |
