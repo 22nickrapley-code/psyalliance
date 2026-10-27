@@ -20,8 +20,17 @@ export default function Workspace({ mode = "fixture", boot, view = "home", scene
   // has nothing of its own to close, it tells its parent.
   useEffect(() => {
     if (!scene || window.parent === window) return;
+    // In the video the screen is a show, not something to operate: the player's own script can leave
+    // focus inside it, and Escape there must still end the video's dialog rather than close the
+    // screen's wizard. On a step page the screen is the member's to use, so an open window takes it first.
+    const inVideo = !!window.frameElement?.classList.contains("sp-frame-el");
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && !document.querySelector(".overlay")) window.parent.postMessage({ type: "pa-scene-escape" }, window.location.origin);
+      if (e.key !== "Escape") return;
+      if (inVideo) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+      } else if (document.querySelector(".overlay")) return;
+      window.parent.postMessage({ type: "pa-scene-escape" }, window.location.origin);
     };
     window.addEventListener("keydown", onKey, true);
     return () => window.removeEventListener("keydown", onKey, true);
