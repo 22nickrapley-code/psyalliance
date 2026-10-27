@@ -136,3 +136,43 @@ test("RV-07 a slow database (3 seconds a call) still loads The Hub", async ({ pa
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("The Hub");
   expect(Date.now() - t0, "slower, but it loads").toBeGreaterThan(3000);
 });
+
+test("RV-08 New message: typing a name finds a member who is not in the circle, and a nonsense name finds no one", async ({ page, context, baseURL }) => {
+  await signInAs(context, "avery", baseURL!);
+  await page.goto("/dashboard/messages");
+  await hub(page);
+  await page.getByRole("button", { name: "New message" }).click();
+  await page.locator("#recipient-search").fill("Fenn");
+  await expect(page.locator(`[data-action="person-message:${account("fenn").id}"]`)).toBeVisible();
+  await page.locator("#recipient-search").fill("zzqqxx");
+  await expect(page.locator('#recipient-list [data-action^="person-message:"]')).toHaveCount(0);
+});
+
+test("RV-09 reading a conversation marks its new-message notification read", async ({ browser, baseURL }) => {
+  await q(`update notification_deliveries set created_at = created_at - interval '2 days' where recipient_profile_id = $1 and created_at > now() - interval '2 days'`, [account("cass").id]);
+  const a = await browser.newContext({ viewport: { width: 1365, height: 900 } });
+  await signInAs(a, "avery", baseURL!);
+  const ap = await a.newPage();
+  await ap.goto("/dashboard/messages");
+  await hub(ap);
+  await startDirect(ap, account("cass").id);
+  const text = `QA read-through ${Date.now()}`;
+  await ap.locator("#message-input").fill(text);
+  await ap.getByRole("button", { name: "Send message" }).click();
+  await expect(ap.locator(".message-group.outgoing .delivery-state.sent").last()).toBeVisible({ timeout: 20000 });
+  const unread = async () =>
+    (await one(`select count(*)::int n from notification_deliveries d join notification_events e on e.id = d.notification_event_id
+                 where d.recipient_profile_id = $1 and d.channel = 'in_app' and d.read_at is null and e.event_type = 'message_received' and d.status = 'sent'`, [account("cass").id])).n;
+  const before = await unread();
+  const c = await browser.newContext({ viewport: { width: 1365, height: 900 } });
+  await signInAs(c, "cass", baseURL!);
+  const cp = await c.newPage();
+  await cp.goto("/dashboard/messages");
+  await hub(cp);
+  await cp.locator(".inbox-colleague", { hasText: "Avery" }).locator(".inbox-latest").first().click();
+  await expect(cp.getByText(text).first()).toBeVisible();
+  await expect.poll(unread, { timeout: 15000 }).toBe(0);
+  expect(before).toBeGreaterThan(0);
+  await a.close();
+  await c.close();
+});

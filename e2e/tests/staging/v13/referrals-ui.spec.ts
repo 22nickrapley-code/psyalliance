@@ -62,6 +62,15 @@ test("RFU-01 make a referral once, and see exactly what was saved after a reload
   await a.context.close();
 });
 
+test("RFU-04 untick the rest, review, go back: the same two colleagues stay ticked", async ({ browser, baseURL }) => {
+  const a = await openAs(browser, "avery", baseURL!);
+  await makeReferral(a.page);
+  await a.page.locator('[data-action="flow-back"]').first().click();
+  for (const id of [bram, cass]) await expect(a.page.locator(`input[data-match="referral"][value="${id}"]`)).toBeChecked();
+  await expect(a.page.locator('input[data-match="referral"]:checked')).toHaveCount(2);
+  await a.context.close();
+});
+
 test("RFU-02 a colleague opens the link, is interested with capacity confirmed; the referrer places; interest is not placement", async ({ browser, baseURL }) => {
   const a = await openAs(browser, "avery", baseURL!);
   await makeReferral(a.page);
