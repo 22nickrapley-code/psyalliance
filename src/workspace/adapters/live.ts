@@ -42,6 +42,7 @@ export function buildLiveEnv(boot: LiveBoot, view: WorkspaceView) {
     view,
     me: boot.me,
     previewControls: false,
+    account: { admin: !!boot.me?.isAdmin, physician: Number(boot.inbound?.physician || 0), demoSite: !!boot.demo },
     data: {
       people,
       known: boot.known || [],

@@ -25,6 +25,8 @@ export async function loadWorkspaceBoot(path: string): Promise<LiveBoot> {
   if (boot.gate === "no_profile") redirect("/dashboard/profile");
   if (boot.gate === "operator") redirect("/dashboard/admin");
   if (boot.gate === "waiting") redirect("/dashboard/overview");
+  // A light presence signal used only to order equally good matches ("last login"); not awaited.
+  supabase.from("profiles").update({ last_active_at: new Date().toISOString() }).eq("id", user.id).then(() => {});
   const { saved, ...rest } = boot;
   return { ...rest, ...shapeLibrary({ resources: boot.resources, saved }), demo: IS_DEMO_SITE, userId: user.id } as LiveBoot;
 }

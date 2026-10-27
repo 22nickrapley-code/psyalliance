@@ -3,6 +3,7 @@ import { Suspense, useEffect, useRef } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { buildLiveEnv, type LiveBoot } from "./adapters/live";
 import { workspaceCall } from "./server/actions";
+import { signOutAction } from "@/app/(site)/auth/actions";
 import { openOf, viewOf } from "./routes";
 
 // Mounts the workspace once for the visit and keeps it in step with the
@@ -22,6 +23,7 @@ function Host({ boot }: { boot: LiveBoot }) {
       const env: any = {
         ...buildLiveEnv(boot, first.current.view),
         call: workspaceCall,
+        signOut: () => signOutAction(),
         open: first.current.open,
         navigate: (url: string) => {
           if (url !== window.location.pathname) router.push(url);
