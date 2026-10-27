@@ -215,7 +215,9 @@ test("RV-11 a window closed in the instant after it opens leaves no error behind
   // Open and close inside one frame: the window's focus step then runs with no window left.
   for (let i = 0; i < 5; i++) {
     await page.evaluate(() => {
-      (document.querySelector('[data-action="new-message"]') as HTMLElement).click();
+      const open = document.querySelector('[data-action="new-message"]') as HTMLElement;
+      open.focus(); // the window's focus step looks for the button that was in use
+      open.click();
       (document.querySelector('[data-action="close-modal"]') as HTMLElement).click();
     });
     await page.waitForTimeout(100);
