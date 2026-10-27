@@ -19,3 +19,12 @@ The goal: one final product that combines the best of the original product and t
 | D-06 | C-03: reconfirm wording | **Keep day-30 reminders, fix the copy.** | Reminder emails unchanged. Hub card and window copy say members are reminded from day 30 and stop showing as available now after 90 days (confirmed through day 90, stale from day 91). |
 | D-07 | C-11: in-person matching | **Primary city or any licence city.** | Server rule as built. The match card says which city matched. The screens' own check is aligned to it. |
 | D-08 | C-05: Worked with before | **Approved rule: agreed work only.** | Cover agreed, confirmed referral placement and recorded completions only. Consult replies and reactions never create it. The old pages' definition is changed to match so the product says one thing everywhere. |
+
+## Round 3: Referrals, Hub, invitations
+
+| # | Question | Decision | What it means for the build |
+|---|----------|----------|------------------------------|
+| D-09 | C-43: referral numbering and titles | **Per-member numbering ("Referral 1", "Referral 2"), plus a title the referrer can change to something specific to the person referred, with the basic details (treatment area etc.) still shown beside it for quick reference.** (Nick's own wording.) | Number is the member's own running count of referrals they have sent. A private, editable title per referral. Lists show title, number, treatment area, setting, state and status together. **Open point (raised back to Nick):** a free-text title can end up holding a client's name or initials, which the product has so far avoided (system-generated case ids; "no details that identify a client"). Safeguards to be agreed in round 4. |
+| D-10 | C-14: lapsed licence | **Allow decline only.** | A colleague whose licence has lapsed can decline a referral or cover request (so the sender moves on at once) but cannot show interest or accept. |
+| D-11 | Quick Referral Search on the Hub | **Keep the Hub as approved.** | No new card. Referrals tile and Search anything stay the routes to matching. |
+| D-12 | C-26: invitation trust | **Inviter trusts, joiner chooses.** | The person who invites is added to nobody's circle automatically except that the inviter's circle gains the joiner; the joiner sees the inviter first in Suggested with a one-tap "Add to my trusted colleagues". Backend change to the invitation redemption rule; copy matches. |
