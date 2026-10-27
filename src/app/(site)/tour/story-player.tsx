@@ -508,7 +508,8 @@ export function StoryPlayer({
                 onLoad={() => {
                   loadedAt.current[sc.id] = Date.now();
                 }}
-                {...({ inert: true } as Record<string, boolean>)}
+                // The video is not a surface to click into. (React 18 drops `inert={true}`, so it is set as an empty string.)
+                {...({ inert: "" } as Record<string, string>)}
               />
             ))}
             {s && !isReady && !ended && <div className="sp-loading" role="status">Opening the screen&hellip;</div>}
