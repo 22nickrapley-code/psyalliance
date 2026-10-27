@@ -1152,6 +1152,27 @@ $function$;
 revoke all on function public.workspace_inbound() from public, anon;
 grant execute on function public.workspace_inbound() to authenticated;
 
+-- The referring physician's name, practice and office contact, which the physician gave so
+-- the specialist's office could reach them. The old page asked for the name through a table
+-- the specialist cannot read, so it always said "A physician" and never showed how to reply.
+create or replace function public.workspace_physician_referrals()
+returns jsonb
+language sql
+stable
+security definer
+set search_path to 'public'
+as $function$
+  select coalesce(jsonb_agg(jsonb_build_object(
+           'id', r.id, 'status', r.status, 'createdAt', r.created_at, 'reason', r.reason, 'urgency', r.urgency,
+           'note', coalesce(r.status_note, ''), 'ageRange', coalesce(r.patient_age_range, ''), 'contact', coalesce(r.contact_details, ''),
+           'from', coalesce(p.full_name, 'A physician'), 'practice', coalesce(p.practice_name, '')) order by r.created_at desc), '[]'::jsonb)
+    from (select * from provider_referrals where target_profile_id = auth.uid() order by created_at desc limit 50) r
+    left join referring_providers p on p.id = r.referring_provider_id
+   where auth.uid() is not null;
+$function$;
+revoke all on function public.workspace_physician_referrals() from public, anon;
+grant execute on function public.workspace_physician_referrals() to authenticated;
+
 -- 11. The invitation shows on the Suggested card (D-12) ---------------------------------
 create or replace function public.workspace_tiers()
 returns jsonb

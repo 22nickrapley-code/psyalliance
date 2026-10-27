@@ -43,22 +43,19 @@ const fail = (error: any, fallback?: string): Result => ({ ok: false, error: fri
 // Physician referrals as the tab shows them: the rows, and the counts the
 // Hub and the account menu quote.
 async function physicianState(ctx: Ctx) {
-  const { data, error } = await ctx.supabase
-    .from("provider_referrals")
-    .select("id, status, created_at, reason, urgency, status_note, referring_providers(full_name, practice_name)")
-    .eq("target_profile_id", ctx.userId)
-    .order("created_at", { ascending: false })
-    .limit(50);
+  const { data, error } = await ctx.supabase.rpc("workspace_physician_referrals");
   if (error) throw new Error(`physician referrals: ${error.message}`);
   const rows = ((data as any[]) || []).map((r) => ({
     id: Number(r.id),
     status: String(r.status),
-    createdAt: r.created_at,
+    createdAt: r.createdAt,
     reason: r.reason || "Referral",
     urgency: r.urgency || "routine",
-    note: r.status_note || "",
-    from: r.referring_providers?.full_name || "A physician",
-    practice: r.referring_providers?.practice_name || "",
+    note: r.note || "",
+    ageRange: r.ageRange || "",
+    contact: r.contact || "",
+    from: r.from || "A physician",
+    practice: r.practice || "",
   }));
   return { data: { rows }, patch: { inbound: { physician: rows.filter((r) => r.status === "sent").length, physicianAll: rows.length } } };
 }
