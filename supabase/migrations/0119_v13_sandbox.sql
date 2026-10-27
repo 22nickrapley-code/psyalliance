@@ -760,6 +760,35 @@ as $function$
 $function$;
 revoke all on function private.consult_can_see(bigint, uuid) from public, anon, authenticated;
 
+-- The recent-discussions list asks the check above about every question there
+-- is. In the sandbox each visitor's story adds its own questions, so skip the
+-- other visitors' before the full check (they would all fail it anyway).
+create or replace function private.consult_recent(p_viewer uuid)
+returns table (id bigint, ord bigint)
+language sql
+stable
+security definer
+set search_path to 'public'
+as $function$
+  select q.id, row_number() over (order by q.at desc, q.id desc)
+    from (
+      select c.id, greatest(c.created_at, coalesce((select max(r.created_at) from consultation_responses r where r.consultation_id = c.id), c.created_at)) as at
+        from consultations c
+       where p_viewer is not null and c.status in ('open', 'responses_received', 'resolved')
+         and case
+               when (c.sandbox_owner is null or c.sandbox_owner = p_viewer or not private.is_sandbox_guest(p_viewer))
+                and (c.author_profile_id = p_viewer or c.audience_type = 'wider_network' or c.group_id is not null
+                     or (c.audience_type = 'selected' and p_viewer = any (c.audience_profile_ids))
+                     or (c.audience_type = 'trusted' and exists (select 1 from trusted_colleagues t where t.profile_id = c.author_profile_id and t.colleague_id = p_viewer)))
+               then private.consult_can_see(c.id, p_viewer)
+               else false
+             end
+       order by 2 desc, 1 desc
+       limit 200
+    ) q;
+$function$;
+revoke all on function private.consult_recent(uuid) from public, anon, authenticated;
+
 alter policy "consultations are visible per their chosen audience" on public.consultations
   using (
     (status <> all (array['draft'::text, 'removed'::text]))
@@ -1150,6 +1179,8 @@ begin
      order by c.id
   loop
     declare responder uuid; begin
+      -- Who may see a question is decided for a signed-in viewer; the job has none, so look as the asker.
+      perform private.demo_as(r.owner);
       select p.id into responder from profiles p
        where p.is_demo and not (p.id = any(guests)) and p.id <> r.owner and p.consultation_availability <> 'no'
          and p.verification_status = 'verified' and p.account_status = 'active'

@@ -1,6 +1,6 @@
 import { test, expect, type Browser, type Page } from "@playwright/test";
 import { randomUUID } from "node:crypto";
-import { q, one, asMember, assertLocal } from "../../../lib/staging";
+import { q, one, asMember, assertLocal, runJobs } from "../../../lib/staging";
 
 // Version 13 sandbox: the real workspace, signed in as the fictional guest
 // Rachel Davis, on its own private copy of one story. These are target tests
@@ -258,6 +258,125 @@ test.describe("SBX sandbox", () => {
     const leak = await asMember(gid, "select count(*)::int n from consultations where sandbox_owner = $1", [og]);
     expect(leak.rows[0].n).toBe(0);
     await o.context.close();
+    await context.close();
+  });
+
+  // The product's own journeys, made on the sandbox's data. Colleagues answer
+  // what the guest sends after about a minute (the demo job), never real people.
+  test("SBX-12 arrange cover: sent once to a chosen colleague, answered by the sandbox colleague, agreed is not Handover ready", async ({ browser }) => {
+    const token = await newPass("cover-journey");
+    const { context, page } = await enter(browser, token);
+    const gid = await guestOf(token);
+    const rena = (await one<{ id: string }>("select id from profiles where full_name like 'Rena Mitchell%' and is_demo")).id;
+    await click(page, "nav:cover");
+    await page.locator('[data-action="cover-start"]').first().click();
+    await page.locator("#cover-name").fill("Winter break");
+    await page.getByRole("button", { name: "Continue to needs" }).click();
+    await page.locator("#cover-focus").selectOption("Anxiety/Panic Disorders");
+    await page.locator("#cover-setting").selectOption("virtual");
+    await page.getByRole("button", { name: "Save client", exact: true }).click();
+    await page.getByRole("button", { name: "Continue to colleagues" }).click();
+    const boxes = page.locator('input[data-match="cover"]:checked');
+    while ((await boxes.count()) > 0) await boxes.first().click();
+    await page.locator(`input[data-match="cover"][value="${rena}"]`).check();
+    await page.getByRole("button", { name: "Review invitations" }).click();
+    await page.locator('#cover-send-form input[name="reviewed"]').check();
+    await page.getByRole("button", { name: "Send cover requests" }).dblclick();
+    await expect(page.locator("#toast")).toContainText("Cover requests sent");
+    const plans = await q<{ id: string }>("select id from coverage_plans where profile_id=$1 and title='Winter break'", [gid]);
+    expect(plans.length).toBe(1);
+    const asked = await q<{ requested_profile_id: string; status: string }>("select r.requested_profile_id, r.status::text from coverage_requests r join coverage_plan_cases c on c.id=r.coverage_plan_case_id where c.coverage_plan_id=$1", [plans[0].id]);
+    expect(asked).toEqual([{ requested_profile_id: rena, status: "sent" }]);
+    // nobody answers instantly; after the minute the sandbox colleague does
+    await q("update coverage_requests set sent_at = sent_at - interval '3 minutes' where id in (select r.id from coverage_requests r join coverage_plan_cases c on c.id=r.coverage_plan_case_id where c.coverage_plan_id=$1)", [plans[0].id]);
+    await runJobs(["pa_demo_autorespond"]);
+    const after = await one<{ status: string }>("select r.status::text status from coverage_requests r join coverage_plan_cases c on c.id=r.coverage_plan_case_id where c.coverage_plan_id=$1", [plans[0].id]);
+    expect(["accepted", "declined", "discussing"]).toContain(after.status);
+    if (after.status === "accepted") {
+      const c = await one<{ status: string; ready: boolean }>("select status, handover_confirmed_at is not null ready from coverage_plan_cases where coverage_plan_id=$1", [plans[0].id]);
+      expect(c).toEqual({ status: "confirmed", ready: false });
+    }
+    await context.close();
+  });
+
+  test("SBX-13 make a referral: sent once to the chosen colleague; interest is not a placement", async ({ browser }) => {
+    const token = await newPass("referral-journey");
+    const { context, page } = await enter(browser, token);
+    const gid = await guestOf(token);
+    await click(page, "nav:referrals");
+    await page.locator('[data-action="referral-start"]').first().click();
+    await page.locator("#referral-focus").selectOption("Anxiety/Panic Disorders");
+    await page.locator("#referral-state").selectOption("NY");
+    await page.locator("#referral-setting").selectOption("virtual");
+    await page.getByRole("button", { name: "See matched colleagues" }).click();
+    const checked = page.locator('input[data-match="referral"]:checked');
+    while ((await checked.count()) > 0) await checked.first().click();
+    const first = page.locator('input[data-match="referral"]').first();
+    await first.click();
+    await expect(first).toBeChecked();
+    await page.getByRole("button", { name: "Review before sending" }).click();
+    await page.locator("#referral-message").fill("Weekly sessions, evenings preferred.");
+    await page.locator('#referral-send-form input[name="reviewed"]').check();
+    await page.getByRole("button", { name: "Send referral" }).dblclick();
+    await expect(page.locator("#toast")).toContainText("Referral shared");
+    const refs = await q<{ id: string; status: string; audience_profile_ids: string[] }>("select id, status::text, audience_profile_ids from referral_requests where requesting_profile_id=$1 and client_request_id is not null and notes='Weekly sessions, evenings preferred.'", [gid]);
+    expect(refs.length).toBe(1);
+    expect(refs[0].audience_profile_ids.length).toBe(1);
+    await q("update referral_recipients set sent_at = sent_at - interval '3 minutes' where referral_request_id=$1", [refs[0].id]);
+    await q("update referral_requests set created_at = created_at - interval '3 minutes' where id=$1", [refs[0].id]);
+    await runJobs(["pa_demo_autorespond"]);
+    const placed = await one<{ n: string }>("select count(*) n from referral_responses where referral_request_id=$1 and status='accepted'", [refs[0].id]);
+    expect(Number(placed.n)).toBe(0);
+    await context.close();
+  });
+
+  test("SBX-14 ask a question: posted once to trusted colleagues, answered by them, and no one else sees it", async ({ browser }) => {
+    const token = await newPass("consult-journey");
+    const { context, page } = await enter(browser, token);
+    const gid = await guestOf(token);
+    await click(page, "nav:consult");
+    await page.getByRole("button", { name: "Ask a question" }).first().click();
+    await page.locator("#peer-title").fill("How do you pace a first session?");
+    await page.locator("#peer-body").fill("Looking for a fresh view on structure.");
+    await page.locator('.audience-tile input[value="trusted"]').check({ force: true });
+    await page.locator('#peer-form input[name="reviewed"]').check();
+    await page.getByRole("button", { name: "Review before posting" }).click();
+    await page.getByRole("button", { name: "Post question" }).dblclick();
+    await expect(page.locator("#toast")).toContainText("shared");
+    const rows = await q<{ id: string; audience_type: string }>("select id, audience_type from consultations where author_profile_id=$1 and question='How do you pace a first session?'", [gid]);
+    expect(rows).toHaveLength(1);
+    expect(rows[0].audience_type).toBe("trusted");
+    await q("update consultations set created_at = created_at - interval '3 minutes' where id=$1", [rows[0].id]);
+    await runJobs(["pa_demo_autorespond"]);
+    const replies = await one<{ n: string }>("select count(*) n from consultation_responses where consultation_id=$1", [rows[0].id]);
+    expect(Number(replies.n)).toBeGreaterThan(0);
+    // a second visitor never sees it
+    const other = await newPass("consult-journey-b");
+    const o = await enter(browser, other);
+    const og = await guestOf(other);
+    expect((await asMember(og, "select count(*)::int n from consultations where question='How do you pace a first session?'")).rows[0].n).toBe(0);
+    await o.context.close();
+    await context.close();
+  });
+
+  test("SBX-15 a message to a sandbox colleague is sent once and is answered in the same conversation", async ({ browser }) => {
+    const token = await newPass("message-journey");
+    const { context, page } = await enter(browser, token);
+    const gid = await guestOf(token);
+    await click(page, "nav:messages");
+    await page.waitForTimeout(600);
+    await clickWith(page, "thread:", "James Wilson");
+    const text = `Thanks James ${Date.now()}`;
+    await page.locator(".chat-pane textarea").first().fill(text);
+    await page.keyboard.press("Enter");
+    await page.waitForTimeout(1500);
+    const sent = await q<{ conversation_id: string }>("select conversation_id from conversation_messages where body=$1", [text]);
+    expect(sent).toHaveLength(1);
+    await q("update conversation_messages set created_at = created_at - interval '3 minutes' where body=$1", [text]);
+    await runJobs(["pa_demo_autorespond"]);
+    const thread = await q<{ author: string }>("select author_id::text author from conversation_messages where conversation_id=$1 order by id", [sent[0].conversation_id]);
+    expect(thread.some((m) => m.author !== gid)).toBe(true);
+    expect(thread.filter((m) => m.author === gid).length).toBeGreaterThanOrEqual(1);
     await context.close();
   });
 

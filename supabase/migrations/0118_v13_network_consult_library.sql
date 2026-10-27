@@ -190,7 +190,16 @@ as $function$
       select c.id, greatest(c.created_at, coalesce((select max(r.created_at) from consultation_responses r where r.consultation_id = c.id), c.created_at)) as at
         from consultations c
        where p_viewer is not null and c.status in ('open', 'responses_received', 'resolved')
-         and private.consult_can_see(c.id, p_viewer)
+         -- Cheap necessary conditions first, so the full visibility check (the slow
+         -- part) runs only on the few questions that could be this member's. CASE
+         -- fixes the order; the planner would otherwise run the slow check first.
+         and case
+               when c.author_profile_id = p_viewer or c.audience_type = 'wider_network' or c.group_id is not null
+                 or (c.audience_type = 'selected' and p_viewer = any (c.audience_profile_ids))
+                 or (c.audience_type = 'trusted' and exists (select 1 from trusted_colleagues t where t.profile_id = c.author_profile_id and t.colleague_id = p_viewer))
+               then private.consult_can_see(c.id, p_viewer)
+               else false
+             end
        order by 2 desc, 1 desc
        limit 200
     ) q;
@@ -720,6 +729,8 @@ security definer
 set search_path to 'public'
 as $function$
   with me as (select auth.uid() as id),
+  recent as materialized (select id from private.consult_recent((select auth.uid()))),
+  visible as materialized (select vm.id from private.visible_members((select auth.uid())) vm),
   refs as (
     select p.profile_id as id from coverage_plans p, me
      where p.status <> 'draft' and (p.profile_id = me.id or exists (
@@ -749,9 +760,9 @@ as $function$
       join conversation_participants o on o.conversation_id = mine.conversation_id and o.profile_id <> mine.profile_id, me
      where mine.profile_id = me.id
     union
-    select c.author_profile_id from consultations c join private.consult_recent((select id from me)) rc on rc.id = c.id
+    select c.author_profile_id from consultations c join recent rc on rc.id = c.id
     union
-    select x.responder_profile_id from consultation_responses x join private.consult_recent((select id from me)) rc on rc.id = x.consultation_id
+    select x.responder_profile_id from consultation_responses x join recent rc on rc.id = x.consultation_id
     union
     select m.profile_id from consultation_group_members m, me
      where m.status = 'joined' and m.profile_id is not null
@@ -765,7 +776,7 @@ as $function$
     'psypact', false, 'bio', '', 'avatarPath', null, 'limited', true)), '[]'::jsonb)
   from refs join profiles pr on pr.id = refs.id, me
   where me.id is not null and refs.id <> me.id
-    and refs.id not in (select vm.id from private.visible_members(me.id) vm);
+    and not exists (select 1 from visible v where v.id = refs.id);
 $function$;
 revoke all on function public.workspace_known() from public, anon;
 grant execute on function public.workspace_known() to authenticated;
