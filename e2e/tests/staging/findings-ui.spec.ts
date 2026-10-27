@@ -33,6 +33,7 @@ async function sendMessage(page: Page, toId: string, text: string) {
   await expect(page.locator("#app .sidebar")).toBeVisible();
   await page.getByRole("button", { name: "New message" }).click();
   await page.locator(`[data-action="person-message:${toId}"]`).click();
+  await expect(page.locator(".overlay")).toHaveCount(0); // the window closes once the conversation is open
   await page.locator("#message-input").fill(text);
   await page.getByRole("button", { name: "Send message" }).click();
   await expect(page.locator(".message-group.outgoing .delivery-state.sent").last()).toBeVisible({ timeout: 20000 });

@@ -33,6 +33,7 @@ const catchUp = (page: Page) => page.evaluate(() => document.dispatchEvent(new E
 const startDirect = async (page: Page, id: string) => {
   await page.getByRole("button", { name: "New message" }).click();
   await page.locator(`[data-action="person-message:${id}"]`).click();
+  await expect(page.locator(".overlay")).toHaveCount(0); // the window closes once the conversation is open
   await expect(page.locator("#message-input")).toBeVisible();
 };
 const send = async (page: Page, text: string) => {
