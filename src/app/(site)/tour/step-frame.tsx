@@ -99,7 +99,7 @@ export function StepView(p: StepProps) {
     markFocus(doc, t, true);
   }, [p.focus, p.focusIndex]);
 
-  const look = p.focus ? `Look for the highlighted ${p.focus.startsWith("#") ? "part of the screen" : "control"}. ` : "";
+  const what = p.focus ? `the highlighted ${p.focus.startsWith("#") ? "part of the screen" : "control"}.` : "";
   return (
     <div className="pa tp" data-tour-step={p.title}>
       <header className="tp-bar" data-tour-nav>
@@ -131,7 +131,12 @@ export function StepView(p: StepProps) {
       </header>
       <div className="tp-look" role="note">
         <span>
-          <b>{p.last ? "Last step." : "Next."}</b> {look}
+          {p.last && <b>Last step. </b>}
+          {p.focus && (
+            <>
+              <b>Look for</b> {what}{" "}
+            </>
+          )}
           {p.focusNote}
         </span>
         <span className="tp-look-actions">

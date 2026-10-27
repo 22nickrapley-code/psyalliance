@@ -10,13 +10,13 @@ export function NextMoves() {
         <h3>Create your account</h3>
         <p className="small">
           For doctoral psychologists and psychiatrists. While a person checks your license, you can try everything in a sandbox with fictional colleagues
-          and use the Practice Library.
+          and use the Library.
         </p>
         <a className="btn" href={JOIN_HREF}>Create your account</a>
       </section>
       <section className="card">
         <div className="eyebrow">Not ready yet?</div>
-        <h3>Browse the Practice Library</h3>
+        <h3>Browse the Library</h3>
         <p className="small">
           Twenty templates for independent practice, from a professional will to a reciprocal cover agreement. Each shows whether it has been independently
           reviewed.
