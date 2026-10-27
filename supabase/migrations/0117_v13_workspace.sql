@@ -2467,7 +2467,7 @@ set search_path to 'public'
 as $function$
   select c.id from conversations c
    where p_viewer is not null and p_key is not null
-     and (c.context_key = p_key or (p_key ~ '^c-[0-9]{1,18}$' and c.id = substr(p_key, 3)::bigint))
+     and (c.context_key = p_key or c.id = (case when p_key ~ '^c-[0-9]{1,18}$' then substr(p_key, 3)::bigint end))
      and exists (select 1 from conversation_participants cp where cp.conversation_id = c.id and cp.profile_id = p_viewer)
    limit 1;
 $function$;

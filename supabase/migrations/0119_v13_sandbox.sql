@@ -279,7 +279,7 @@ revoke all on function private.demo_thread(bigint, jsonb, uuid, uuid, interval, 
 
 create or replace function private.demo_conv(p_key text)
 returns bigint language sql volatile security definer set search_path to 'public' as $fn$
-  select c.id from conversations c where c.context_key = p_key or (p_key ~ '^c-[0-9]{1,18}$' and c.id = substr(p_key, 3)::bigint) limit 1;
+  select c.id from conversations c where c.context_key = p_key or c.id = (case when p_key ~ '^c-[0-9]{1,18}$' then substr(p_key, 3)::bigint end) limit 1;
 $fn$;
 revoke all on function private.demo_conv(text) from public, anon, authenticated;
 
