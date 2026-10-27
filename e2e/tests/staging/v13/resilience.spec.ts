@@ -15,8 +15,18 @@ const hub = async (page: Page) => expect(page.locator("#app .sidebar")).toBeVisi
 const startDirect = async (page: Page, id: string) => {
   await page.getByRole("button", { name: "New message" }).click();
   await page.locator(`[data-action="person-message:${id}"]`).click();
+  // The window closes only once the conversation is open; typing before that goes nowhere.
+  await expect(page.locator(".overlay")).toHaveCount(0);
   await expect(page.locator("#message-input")).toBeVisible();
 };
+// Short messages ("toasts") vanish after a few seconds, so keep what each page said.
+const listenToasts = (page: Page) =>
+  page.evaluate(() => {
+    (window as any).__toasts = [];
+    const el = document.querySelector("#toast")!;
+    new MutationObserver(() => { if (el.textContent) (window as any).__toasts.push(el.textContent); }).observe(el, { childList: true, subtree: true, characterData: true });
+  });
+const toastsOf = (page: Page) => page.evaluate(() => ((window as any).__toasts || []).join(" | ") as string);
 
 test("RV-01 a member signs in and The Hub loads with their name; a reload keeps it", async ({ page, context, baseURL }) => {
   const errors: string[] = [];
@@ -60,12 +70,13 @@ test("RV-03 two colleagues answer the same client's Cover request at the same mo
     const p = await c.newPage();
     await p.goto(`/dashboard/cover?plan=${plan.planId}`);
     await expect(p.locator(`[data-action="cover-answer:${plan.planId}:${plan.cases[0].id}:accepted"]`)).toBeVisible({ timeout: 30000 });
+    await listenToasts(p);
     pages.push(p);
   }
   await Promise.all(pages.map((p) => p.locator(`[data-action="cover-answer:${plan.planId}:${plan.cases[0].id}:accepted"]`).click()));
   await Promise.all(pages.map((p) => p.waitForTimeout(2500)));
   const rows = await q(`select status::text s, requested_profile_id::text p from coverage_requests where coverage_plan_case_id = $1`, [plan.cases[0].id]);
-  const texts = await Promise.all(pages.map((p) => p.locator("#app").innerText()));
+  const texts = await Promise.all(pages.map(async (p) => `${await toastsOf(p)} ${await p.locator("#app").innerText()}`));
   for (const p of pages) await p.context().close();
   expect(rows.filter((r: any) => r.s === "accepted")).toHaveLength(1);
   // The one who did not win is told, in words, not by a failure.
@@ -145,7 +156,8 @@ test("RV-08 New message: typing a name finds a member who is not in the circle, 
   await page.locator("#recipient-search").fill("Fenn");
   await expect(page.locator(`[data-action="person-message:${account("fenn").id}"]`)).toBeVisible();
   await page.locator("#recipient-search").fill("zzqqxx");
-  await expect(page.locator('#recipient-list [data-action^="person-message:"]')).toHaveCount(0);
+  // The approved window hides what does not match, so count what can be seen.
+  await expect(page.locator('#recipient-list [data-action^="person-message:"]:visible')).toHaveCount(0);
 });
 
 test("RV-09 reading a conversation marks its new-message notification read", async ({ browser, baseURL }) => {
@@ -185,8 +197,11 @@ test("RV-10 a message with a client's phone number is held back with a plain rea
   const text = `QA identifiers ${Date.now()}: the client is on 617-555-0142.`;
   await page.locator("#message-input").fill(text);
   await page.getByRole("button", { name: "Send message" }).click();
-  await expect(page.locator("#app")).toContainText(/remove a phone number/i, { timeout: 20000 });
+  // The reason is given in the message that appears for a few seconds; the message itself stays, marked Failed.
+  await expect(page.locator("#toast")).toContainText(/remove a phone number/i, { timeout: 20000 });
+  await expect(page.locator(".message-group.outgoing .delivery-state.failed").last()).toBeVisible();
   expect((await one(`select count(*)::int n from conversation_messages where body = $1`, [text])).n).toBe(0);
   // Nothing about it reads like a crash.
+  await expect(page.locator("#toast")).not.toContainText(/PGRST|violates|Something went wrong/i);
   await expect(page.locator("#app")).not.toContainText(/PGRST|violates|Something went wrong/i);
 });
