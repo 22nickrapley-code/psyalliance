@@ -15,7 +15,7 @@ export type LiveBoot = {
   me: any;
   people: any[];
   known?: any[];
-  tiers: { trust: string[]; worked: string[]; suggested: string[]; workedReasons: Record<string, string>; invitedBy?: string[] };
+  tiers: { trust: string[]; worked: string[]; suggested: string[]; workedReasons: Record<string, string>; invitedBy?: string[]; excluded?: string[]; trustSince?: Record<string, string>; trustedBy?: string[]; collab?: Record<string, number> };
   availability: any;
   options: { focus: string[]; insurance: string[]; language: string[]; age: string[]; modality: string[] };
   plans?: any[];
@@ -60,6 +60,11 @@ export function buildLiveEnv(boot: LiveBoot, view: WorkspaceView) {
       worked: boot.tiers.worked,
       suggested: boot.tiers.suggested,
       invitedBy: boot.tiers.invitedBy || [],
+      excluded: boot.tiers.excluded || [],
+      trustSince: boot.tiers.trustSince || {},
+      trustedBy: boot.tiers.trustedBy || [],
+      collab: boot.tiers.collab || {},
+      year: boot.year || null,
       plans: boot.plans || [],
       referrals: boot.referrals || [],
       threads: boot.threads || [],

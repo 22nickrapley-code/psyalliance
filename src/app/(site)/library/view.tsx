@@ -1,8 +1,8 @@
 import { PublicNav, PublicFooter } from "../_public/chrome";
 import { JOIN_HREF, TOUR_URL } from "@/lib/env";
 import { FOUNDING_LINE } from "@/lib/founding";
-import { SectionReel } from "../tour/story-reel";
-import { findJourney } from "@/tour/journeys";
+import { Director } from "../tour/director";
+import { findScript } from "@/tour/demo-scripts";
 import { CATEGORIES, PUBLIC_WORKFLOW, SHORT_CATEGORY, docName, publicLibraryHref, type PublicDoc } from "@/lib/library";
 
 // The public Library (Nick, 18 Oct): every listed template's
@@ -62,8 +62,8 @@ export function PublicLibraryView({ docs, q }: { docs: PublicDoc[]; q: string })
                 <div className="eyebrow">See how it works &middot; fictional people</div>
                 <h2>Find the right template, in the moment you need it.</h2>
               </div>
-              <SectionReel
-                demo={findJourney("library")!}
+              <Director
+                script={findScript("library")!}
                 tryHref={`${JOIN_HREF}?from=library-video`}
                 end={{
                   title: "The right template, when you need it.",

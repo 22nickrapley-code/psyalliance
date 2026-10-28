@@ -46,7 +46,7 @@ test("PUB-04 the demos open and the player starts", async ({ page }, info) => {
   await page.goto("/tour");
   await shot(page, info, "tour");
   await page.goto("/tour/cover/watch");
-  await expect(page.locator(".story-player").first()).toBeVisible();
+  await expect(page.locator(".dp").first()).toBeVisible();
   await shot(page, info, "player");
 });
 

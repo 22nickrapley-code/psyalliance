@@ -34,7 +34,7 @@ test("RV-01 a member signs in and The Hub loads with their name; a reload keeps 
   await signInAs(context, "avery", baseURL!);
   await page.goto("/dashboard");
   await hub(page);
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("The Hub");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^Good (morning|afternoon|evening), Avery\.$/);
   await expect(page.locator(".profile-button")).toContainText("Avery");
   await page.reload();
   await hub(page);
@@ -144,7 +144,7 @@ test("RV-07 a slow database (3 seconds a call) still loads The Hub", async ({ pa
   const t0 = Date.now();
   await page.goto("/dashboard");
   await hub(page);
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("The Hub");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^Good (morning|afternoon|evening), Avery\.$/);
   expect(Date.now() - t0, "slower, but it loads").toBeGreaterThan(3000);
 });
 

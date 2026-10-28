@@ -47,7 +47,7 @@ test("FU-01 availability window: cover openness, pause-until and consult opennes
   const a = await openAs(browser, "avery", baseURL!);
   await a.page.getByRole("button", { name: "Edit" }).first().click();
   await a.page.locator("#availability-slots").fill("4");
-  await a.page.locator("#availability-cover").selectOption("ask");
+  await a.page.locator('input[name="cover"][value="ask"]').check({ force: true });
   await a.page.locator("#availability-pause").fill(isoDay(10));
   await a.page.locator('input[name="consult"]').uncheck({ force: true });
   await a.page.locator('input[name="virtual-NY"]').check();
@@ -59,7 +59,7 @@ test("FU-01 availability window: cover openness, pause-until and consult opennes
   // Nothing lived only in the browser.
   await a.page.reload();
   await a.page.getByRole("button", { name: "Edit" }).first().click();
-  await expect(a.page.locator("#availability-cover")).toHaveValue("ask");
+  await expect(a.page.locator('input[name="cover"][value="ask"]')).toBeChecked();
   await expect(a.page.locator("#availability-pause")).toHaveValue(isoDay(10));
   await expect(a.page.locator('input[name="consult"]')).not.toBeChecked();
   clean(a.page);
@@ -145,7 +145,8 @@ test("FU-04 consult: the asker marks a question resolved; others see why replies
   await expect(a.page.locator("#reply-form")).toHaveCount(0);
   await expect(a.page.locator("#discussion-resolved")).toContainText("You marked this question resolved");
   await a.page.keyboard.press("Escape");
-  await a.page.getByRole("button", { name: "Following" }).click();
+  await expect(a.page.locator(".modal")).toHaveCount(0);
+  await a.page.locator("#main").getByRole("button", { name: "Following" }).click();
   await expect(a.page.locator(".discussion-row", { hasText: "late cancellations" }).locator(".label", { hasText: "Your question" })).toBeVisible();
   await expect(a.page.locator(".discussion-row", { hasText: "late cancellations" }).locator(".label", { hasText: "Resolved" })).toBeVisible();
   await expect(a.page.getByRole("button", { name: "Mine" })).toHaveCount(0);

@@ -63,7 +63,7 @@ async function physicianState(ctx: Ctx) {
 export const handlers: Record<string, Handler> = {
   // Any slices, for polling and for returning to a screen.
   refresh: async (ctx, a) => {
-    const allowed = ["me", "people", "known", "tiers", "availability", "plans", "referrals", "threads", "pulse", "inbound", "consult", "resources", "drafts", "preferences"];
+    const allowed = ["me", "people", "known", "tiers", "availability", "plans", "referrals", "threads", "pulse", "inbound", "consult", "resources", "drafts", "preferences", "year"];
     const names = (Array.isArray(a?.names) ? a.names : []).filter((n: string) => allowed.includes(n));
     return { ok: true, patch: await slices(ctx, names) };
   },
@@ -76,6 +76,8 @@ export const handlers: Record<string, Handler> = {
       p_paused_until: typeof a.pausedUntil === "string" && /^\d{4}-\d{2}-\d{2}$/.test(a.pausedUntil) ? a.pausedUntil : null,
       p_cover: ["yes", "ask", "no"].includes(a.cover) ? a.cover : null,
       p_consult: a.consult === true ? "yes" : a.consult === false ? "no" : null,
+      // "Selected referrals only" (limited) is a choice again; left out when the screen does not send it.
+      ...(["yes", "limited", "no"].includes(a.referrals) ? { p_referrals: a.referrals } : {}),
     });
     if (error) return fail(error);
     return { ok: true, patch: await slices(ctx, ["availability", "me"]) };
@@ -349,7 +351,7 @@ export const handlers: Record<string, Handler> = {
     if (err) return bad(err);
     const id = Number(a.id);
     if (!Number.isInteger(id) || !/^[0-9a-f-]{36}$/i.test(String(a.clientId || ""))) return bad("That reply can't be posted.");
-    const { data, error } = await ctx.supabase.rpc("consult_reply", { p_consultation: id, p_body: body, p_client_id: String(a.clientId) });
+    const { data, error } = await ctx.supabase.rpc("consult_reply", { p_consultation: id, p_body: body, p_client_id: String(a.clientId), p_kind: a.kind === "clarifying" ? "clarifying_question" : "reply" });
     if (error) return fail(error, "That reply didn't post. You can try again.");
     const [{ data: discussion }, { data: following }] = await Promise.all([
       ctx.supabase.rpc("workspace_discussion", { p_id: id }),
@@ -394,7 +396,7 @@ export const handlers: Record<string, Handler> = {
 
   // A report goes to the admins' queue. The reported member is not told.
   "report.send": async (ctx, a) => {
-    const m = /^(profile|discussion|reply):(.{1,60})$/.exec(String(a.target || ""));
+    const m = /^(profile|discussion|reply|message):(.{1,60})$/.exec(String(a.target || ""));
     if (!m) return bad("That can't be reported from here.");
     const reason = text(a.reason, 1000);
     if (!reason) return bad("Say what is wrong so an admin has something to act on.");
@@ -410,6 +412,14 @@ export const handlers: Record<string, Handler> = {
       if (!/^\d{1,12}$/.test(m[2])) return bad("That can't be reported from here.");
       target_type = "consultation";
       target_id = m[2];
+    } else if (m[1] === "message") {
+      // A private message a colleague sent: it can be reported by someone in that conversation, never by its author.
+      const mid = /^m?(\d{1,18})$/.exec(m[2]);
+      if (!mid) return bad("That can't be reported from here.");
+      const { data: msg } = await ctx.supabase.from("conversation_messages").select("id, author_id").eq("id", mid[1]).maybeSingle();
+      if (!msg || msg.author_id === ctx.userId) return bad("That can't be reported from here.");
+      target_type = "message";
+      target_id = String(msg.id);
     } else {
       const r = /^r(\d{1,18})$/.exec(m[2]);
       if (!r) return bad("That can't be reported from here.");
@@ -419,6 +429,27 @@ export const handlers: Record<string, Handler> = {
     const { error } = await ctx.supabase.from("reports").insert({ reporter_profile_id: ctx.userId, target_type, target_id, reason, category });
     if (error) return fail(error, "That report didn't send. Please try again.");
     return { ok: true };
+  },
+
+  // Exclude from suggestions: private, never told, and gentler than blocking. The person stays in the directory
+  // but leaves Suggested, and the shortlist for referrals and cover moves them out of the top picks.
+  "profile.signals": async (ctx, a) => {
+    const target = String(a.person || "");
+    if (!/^[0-9a-f-]{36}$/i.test(target)) return bad("That colleague isn't available.");
+    const { data, error } = await ctx.supabase.rpc("workspace_profile_signals", { p_id: target });
+    if (error) return fail(error);
+    return { ok: true, data: data || {} };
+  },
+  "exclude.set": async (ctx, a) => {
+    const target = String(a.person || "");
+    if (!/^[0-9a-f-]{36}$/i.test(target)) return bad("That colleague isn't available.");
+    if (target.toLowerCase() === ctx.userId.toLowerCase()) return bad("You can't exclude yourself.");
+    const { error } =
+      a.on === false
+        ? await ctx.supabase.from("do_not_work_with").delete().eq("profile_id", ctx.userId).eq("blocked_profile_id", target).eq("block_type", "exclude")
+        : await ctx.supabase.from("do_not_work_with").upsert({ profile_id: ctx.userId, blocked_profile_id: target, block_type: "exclude" });
+    if (error) return fail(error);
+    return { ok: true, patch: await slices(ctx, ["tiers"]) };
   },
 
   // Blocking hides each of you from the other everywhere the workspace looks.

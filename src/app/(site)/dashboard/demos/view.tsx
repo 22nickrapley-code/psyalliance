@@ -1,5 +1,7 @@
 import { IS_DEMO_SITE, TOUR_URL } from "@/lib/env";
-import { CLOSER_LOOKS, MORE_DETAIL, findJourney } from "@/tour/journeys";
+import { findJourney } from "@/tour/journeys";
+import { findScript } from "@/tour/demo-scripts";
+import { lengthLabel } from "@/tour/scripts";
 import { watchLength } from "../../tour/story-reel";
 import { PageHead } from "../_components/ui";
 import { WatchDemo } from "../_components/watch-demo";
@@ -19,10 +21,15 @@ const WHERE: Record<string, { href: string; label: string }> = {
   circle: { href: "/dashboard/network", label: "Go to Network" },
   verified: { href: "/dashboard/credentials", label: "Go to Credentials" },
   library: { href: "/dashboard/library", label: "Go to the Library" },
+  hub: { href: "/dashboard", label: "Go to the Hub" },
+  messages: { href: "/dashboard/messages", label: "Go to Messages" },
 };
 
+// Every part of the product that has a self-playing demo, then the two pages the workspace does not cover.
+const DEMO_KEYS = ["hub", "cover", "refer", "consult", "circle", "messages", "library", "availability", "profile", "verified"];
+
 export default function DemosPage() {
-  const keys = [...CLOSER_LOOKS, ...MORE_DETAIL];
+  const keys = DEMO_KEYS;
   return (
     <>
       <PageHead
@@ -44,14 +51,17 @@ export default function DemosPage() {
       />
       <div className="demo-list">
         {keys.map((k, n) => {
-          const d = findJourney(k);
+          const sc = findScript(k);
+          const j = findJourney(k);
+          const d = sc ? { title: sc.title, blurb: sc.blurb } : j;
           if (!d) return null;
+          const length = sc ? lengthLabel(sc) : watchLength(j!);
           const go = WHERE[k];
           return (
             <section key={k} className="card demo-row">
               <span className="demo-n" aria-hidden="true">{n + 1}</span>
               <div className="demo-row-text">
-                <div className="eyebrow">{watchLength(d)}</div>
+                <div className="eyebrow">{length}</div>
                 <h3>{d.title}</h3>
                 <p className="small">{d.blurb}</p>
               </div>

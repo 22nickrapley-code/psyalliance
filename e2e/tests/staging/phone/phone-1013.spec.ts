@@ -50,23 +50,4 @@ test("P13-02 member pages fit a phone screen without sideways scrolling", async 
   expect(bad, JSON.stringify(bad)).toHaveLength(0);
 });
 
-test("P13-03 the demo plays slower on a phone than on a computer", async ({ page, browser }, info) => {
-  const sceneSeconds = async (p: Page) => {
-    await p.goto("/tour/cover/watch");
-    const seg = p.locator(".sp-progress .sp-seg.on span").first();
-    await p.locator(".story-player").scrollIntoViewIfNeeded();
-    await expect(seg).toHaveAttribute("style", /animation-duration/, { timeout: 10000 });
-    return parseFloat(((await seg.getAttribute("style")) || "").match(/animation-duration:\s*([\d.]+)s/)?.[1] || "0");
-  };
-  const phone = await sceneSeconds(page);
-  await page.waitForTimeout(6000);
-  await shot(page, info, "phone-demo");
-  const desk = await browser.newContext({ ...devices["Desktop Chrome"] });
-  const deskPage = await desk.newPage();
-  const desktop = await sceneSeconds(deskPage);
-  await desk.close();
-  await info.attach("timing.json", { body: JSON.stringify({ phoneSceneSeconds: phone, desktopSceneSeconds: desktop }, null, 2), contentType: "application/json" });
-  expect(phone, "first scene lasts longer on a phone").toBeGreaterThan(desktop + 1.5);
-  // In the v13 player the whole scene, scroll and pointer included, runs slower on a phone (story-player.tsx: slow = 1.4, +1.6 s).
-  expect(phone / desktop, "a phone scene is at least 15% longer").toBeGreaterThan(1.15);
-});
+// P13-03 (the old player's scene length) is replaced by DEMO-V14-06 in v13/demo-player.spec.ts.

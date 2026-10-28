@@ -116,3 +116,10 @@
 .sidebar .profile-button{min-width:0}
 .sidebar .profile-button>span:not(.avatar){min-width:0;flex:1 1 auto;overflow:hidden}
 .sidebar .profile-button strong,.sidebar .profile-button small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* Smooth pop-ups: the card stays; only its content eases in. */
+@keyframes stage-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.modal.is-stage>.modal-body,.modal.is-stage>.modal-header>div:first-child,.modal.is-stage>.modal-footer{animation:stage-in .22s cubic-bezier(.2,.7,.2,1) both}
+.overlay.is-closing{opacity:0;transition:opacity .15s ease;pointer-events:none}
+.overlay.is-closing .modal{transform:translateY(4px);transition:transform .15s ease}
+@media(prefers-reduced-motion:reduce){.modal.is-stage>*,.modal.is-stage>.modal-header>div:first-child{animation:none!important}}

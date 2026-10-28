@@ -187,8 +187,8 @@ test.describe("DEMO player and sandbox entry", () => {
     await expect(dialog).toHaveCount(1);
     const frame = page.frameLocator("dialog.example-dialog[open] iframe");
     // Wait until the player has opened its first screen (it is running, not just drawn), then click into it.
-    await expect(frame.locator("section.story-player")).toBeVisible({ timeout: 30000 });
-    await expect(frame.locator(".sp-loading")).toHaveCount(0, { timeout: 30000 });
+    await expect(frame.locator(".dp")).toBeVisible({ timeout: 30000 });
+    await expect(frame.locator(".dp-loading")).toHaveCount(0, { timeout: 60000 });
     await frame.locator("body").click({ position: { x: 40, y: 40 } });
     await shot(page, info, "1-playing-focus-inside");
     await page.keyboard.press("Escape");

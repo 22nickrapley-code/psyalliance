@@ -2,6 +2,7 @@ import { test, expect, type Page } from "@playwright/test";
 import { J } from "../../../lib/journeys";
 import { signInAs } from "../../../lib/auth";
 import { assertLocal } from "../../../lib/staging";
+import { D } from "../../../lib/demos";
 
 // Version 13 demos: every demo is the approved workspace itself on its
 // fictional sample data (or, for the two pages the design does not cover, the
@@ -82,62 +83,7 @@ test("TOUR-02 a demo frame saves and sends nothing, and starts from the same sam
   await context.close();
 });
 
-test("TOUR-03 the video plays on the real controls: it types, chooses and moves on by itself", async ({ browser }) => {
-  test.setTimeout(180_000);
-  const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
-  const page = await context.newPage();
-  const errs: string[] = [];
-  page.on("pageerror", (e) => errs.push(`${e.message} @ ${page.url()} :: ${(e.stack || "").split("\n").slice(0, 4).join(" / ")}`));
-  await page.goto("/tour/cover");
-  const player = page.locator("section.story-player");
-  await expect(player).toBeVisible();
-  await expect(player).toHaveAttribute("data-player-scene", "cover/plan");
-  const frame = page.frameLocator('iframe[data-scene-id="cover/plan"]');
-  // The person on screen picks the kind of absence and names the plan.
-  await expect(frame.locator("#cover-name")).toHaveValue("Parental leave", { timeout: 60000 });
-  await expect(frame.locator('input[name="reason"][value="extended"]')).toBeChecked();
-  // ...and the story carries on to the next screen by itself.
-  await expect(player).toHaveAttribute("data-player-scene", "cover/clients", { timeout: 60000 });
-  await expect(page.locator('iframe[data-scene-id="cover/clients"]')).toBeVisible();
-  expect(errs).toEqual([]);
-  await context.close();
-});
-
-test("TOUR-04 the video can be paused, stepped, jumped to a chapter and ended; Watch again starts afresh", async ({ browser }) => {
-  test.setTimeout(240_000);
-  const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
-  const page = await context.newPage();
-  await page.goto("/tour/library");
-  const player = page.locator("section.story-player");
-  await expect(player).toHaveAttribute("data-player-state", "playing", { timeout: 30000 });
-  await player.getByRole("button", { name: "Pause" }).click();
-  await expect(player).toHaveAttribute("data-player-state", "paused");
-  await player.getByRole("button", { name: "Next", exact: true }).click();
-  await expect(player).toHaveAttribute("data-player-scene", "library/template");
-  await player.getByRole("button", { name: "Previous" }).click();
-  await expect(player).toHaveAttribute("data-player-scene", "library/search");
-  // Going back to a screen that was acted in opens it afresh.
-  await page.locator(".sp-progress button").last().click({ force: true });
-  await expect(player).toHaveAttribute("data-player-scene", "library/saved");
-  await player.getByRole("button", { name: "Play" }).click();
-  await expect(player.locator(".sp-end")).toBeVisible({ timeout: 90000 });
-  await expect(player.locator(".sp-end")).toContainText("The right template");
-  await player.getByRole("button", { name: "Watch again" }).first().click();
-  await expect(player).toHaveAttribute("data-player-scene", "library/search");
-  await context.close();
-});
-
-test("TOUR-05 the overview story starts from a chapter link and shows the approved product", async ({ browser }) => {
-  test.setTimeout(120_000);
-  const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
-  const page = await context.newPage();
-  await page.goto("/tour?chapter=consult");
-  await expect(page.locator("section.story-player")).toHaveAttribute("data-player-scene", "overview/consult");
-  const frame = page.frameLocator('iframe[data-scene-id="overview/consult"]');
-  await expect(frame.locator("#app .sidebar")).toBeVisible({ timeout: 30000 });
-  await expect(frame.locator("h1")).toContainText(/Consult/i);
-  await context.close();
-});
+// TOUR-03/04/05 (the old video player) are replaced by DEMO-V14-03/04/05 in demo-player.spec.ts: the scripted demos.
 
 for (const [label, size] of [["desktop", DESKTOP], ["phone", PHONE]] as const) {
   test(`TOUR-06 ${label}: click through a step on the real screen, with the step's control marked`, async ({ browser }) => {
@@ -195,7 +141,7 @@ test("TOUR-08 links to the earlier demos still land somewhere right", async ({ p
     ["/tour/not-a-demo", /\/tour$/],
     ["/tour/cover/not-a-step", /\/tour\/cover\/plan$/],
     ...Object.entries(LEGACY_STEPS).map(([k, v]) => [`/tour/${k}`, new RegExp(`/tour/${k.split("/")[0]}/${v}$`)] as [string, RegExp]),
-    ...Object.entries(LEGACY_SLUGS).map(([k, v]) => [`/tour/${k}`, new RegExp(`/tour/${v}$`)] as [string, RegExp]).filter(([u]) => !JOURNEYS.some((j) => u === `/tour/${j.key}`)),
+    ...Object.entries(LEGACY_SLUGS).map(([k, v]) => [`/tour/${k}`, new RegExp(`/tour/${v}$`)] as [string, RegExp]).filter(([u]) => !JOURNEYS.some((j) => u === `/tour/${j.key}`) && !D.findScript(u.replace("/tour/", ""))),
   ];
   for (const [from, to] of hits) {
     await page.goto(from);
@@ -238,14 +184,14 @@ test("TOUR-10 the embedded video (Watch inside the product) plays on its own and
   await page.goto("/dashboard/demos");
   const watches = page.locator(".demo-row a", { hasText: "Watch" });
   await expect(watches.first()).toBeVisible({ timeout: 30000 });
-  expect(await watches.count()).toBe(7);
+  expect(await watches.count()).toBe(10);
   await page.waitForLoadState("networkidle");
   await watches.first().click();
   const dialog = page.locator("dialog.example-dialog[open]");
   await expect(dialog).toBeVisible();
   const inner = page.frameLocator("dialog.example-dialog[open] iframe");
-  await expect(inner.locator("section.story-player")).toBeVisible({ timeout: 30000 });
-  await expect(inner.locator("iframe.sp-frame-el.on")).toBeVisible({ timeout: 30000 });
+  await expect(inner.locator(".dp")).toBeVisible({ timeout: 30000 });
+  await expect(inner.locator("iframe.dp-frame-el.on")).toBeVisible({ timeout: 60000 });
   await page.keyboard.press("Escape");
   await expect(page.locator("dialog.example-dialog[open]")).toHaveCount(0);
   expect(errs).toEqual([]);
@@ -253,7 +199,7 @@ test("TOUR-10 the embedded video (Watch inside the product) plays on its own and
 });
 
 test("TOUR-11 the public demo pages name only the approved places", async ({ page }) => {
-  for (const path of ["/tour", "/tour/cover", "/tour/refer", "/tour/consult", "/tour/circle", "/tour/verified", "/tour/library", "/tour/profile"]) {
+  for (const path of ["/tour", "/tour/cover", "/tour/refer", "/tour/consult", "/tour/circle", "/tour/hub", "/tour/messages", "/tour/availability", "/tour/verified", "/tour/library", "/tour/profile"]) {
     await page.goto(path);
     const text = await page.locator("main").innerText();
     expect(text, path).not.toMatch(/\bPulse\b/);

@@ -51,13 +51,13 @@ async function ask(page: Page, o: { title: string; body: string; audience: "trus
 
 test("NCU-01 trusted colleagues: add and remove from the screen, saved once, colleague told once", async ({ browser, baseURL }) => {
   const { page, context } = await openAs(browser, "avery", baseURL!);
-  await expect(page.locator(".relationship-group", { hasText: "Trusted colleagues" })).toBeVisible();
+  await expect(page.locator("#net-trusted")).toBeVisible();
   await page.locator(`[data-action="trust:${bram}"]`).first().click();
   await expect(page.locator("#toast")).toContainText("Added to your trusted colleagues");
   expect((await q(`select 1 from trusted_colleagues where profile_id = $1 and colleague_id = $2`, [avery, bram])).length).toBe(1);
   // It is the database's: a reload keeps it, and Bram is told in the app once.
   await page.reload();
-  await expect(page.locator(".relationship-group", { hasText: "Trusted colleagues" }).locator(`[data-action="profile:${bram}"]`)).toBeVisible();
+  await expect(page.locator("#net-trusted").locator(`[data-action="profile:${bram}"]`)).toBeVisible();
   const told = await q(`select d.channel from notification_deliveries d join notification_events e on e.id = d.notification_event_id where d.recipient_profile_id = $1 and e.dedup_key like $2`, [bram, `trusted:${avery}:${bram}`]);
   expect(told.filter((n) => n.channel === "in_app").length).toBe(1);
   // Take them off again from the profile; no second notice when added back.

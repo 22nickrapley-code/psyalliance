@@ -20,7 +20,7 @@ export const viewport: Viewport = {
 } as Viewport;
 
 const STYLES = ["styles", "product", "refinements", "home", "pulse", "directions", "polish", "feedback", "hub"];
-const V = "13";
+const V = "14";
 
 export default function WorkspaceRootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -37,6 +37,9 @@ export default function WorkspaceRootLayout({ children }: { children: React.Reac
         {/* The final product's own sheet loads last: contrast (D-04), the first-message menu fix, and small pieces for the additions. */}
         {/* eslint-disable-next-line @next/next/no-css-tags */}
         <link rel="stylesheet" href={`/workspace/final.css?v=${V}`} />
+        {/* Calm palette: one neutral ground, white cards, thin muted accents. Last, so it wins. */}
+        {/* eslint-disable-next-line @next/next/no-css-tags */}
+        <link rel="stylesheet" href={`/workspace/calm.css?v=${V}`} />
       </head>
       <body>
         <a className="skip-link" href="#main">Skip to content</a>
