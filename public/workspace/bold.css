@@ -240,3 +240,7 @@
 .arrangement-row.row-reply .plan-date b{color:#8a5a00!important}
 .arrangement-row.row-ready .plan-date b{color:#14502d!important}
 .arrangement-row.row-done .plan-date b{color:#4f5851!important}
+.pagination small{color:#565c51}
+.empty-state h3{color:#46503f}
+.empty-state p{color:#55604c}
+.inline-note{color:#4f5a46}
