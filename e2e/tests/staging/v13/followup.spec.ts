@@ -75,7 +75,11 @@ async function startReferral(page: Page) {
 }
 const ticked = (page: Page) => page.locator('input[data-match="referral"]:checked').evaluateAll((els) => els.map((e) => (e as HTMLInputElement).value));
 
-test("FOL-01 Hub (D4): a greeting with the name, up to four discussions, and a year line without zeros", async ({ browser, baseURL }) => {
+test("FOL-01 Hub (D4): a greeting with the name, up to four discussions, and a year line that counts only what happened", async ({ browser, baseURL }) => {
+  // One answer given this year, so the line has something to count.
+  await seedQuestions();
+  const asked = await one(`select id from consultations where question like 'FOL How do you handle%'`);
+  await q(`insert into consultation_responses (consultation_id, responder_profile_id, body) values ($1, $2, 'FOL an answer')`, [asked.id, avery.id]);
   const { page, context } = await openAs(browser, "avery", baseURL!);
   await expect(page.locator(".content h1")).toHaveText(/^Good (morning|afternoon|evening), Avery\.$/);
   const rows = page.locator(".home-discussion");
@@ -83,9 +87,9 @@ test("FOL-01 Hub (D4): a greeting with the name, up to four discussions, and a y
   expect(await rows.count()).toBeLessThanOrEqual(4);
   const more = page.getByRole("button", { name: /^All \d+ discussions$/ });
   if (await more.count()) expect(Number((await more.innerText()).match(/\d+/)![0])).toBeGreaterThan(4);
-  // The "year so far" line is hidden until there is something to count, and never says "0".
-  await expect(page.locator(".home-ledger li").first()).toBeVisible(); // Avery has placed and covered clients
-  for (const item of await page.locator(".home-ledger li").allInnerTexts()) expect(item).toMatch(/^[1-9]\d* /);
+  const items = page.locator(".home-ledger li");
+  await expect(items.filter({ hasText: /question(s)? you answered/ })).toHaveCount(1);
+  for (const item of await items.allInnerTexts()) expect(item).toMatch(/^[1-9]\d* /); // never "0 ..."
   await clean(page);
   await context.close();
 });
