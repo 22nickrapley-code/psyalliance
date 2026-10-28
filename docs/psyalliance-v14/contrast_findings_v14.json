@@ -2578,5 +2578,16 @@
   "bg": "#fcfbfb",
   "ratio": 3.79,
   "size": "7.5pt (10px)"
+ },
+ {
+  "view": "consult",
+  "macro": "discussion",
+  "mode": "d",
+  "selector": ".inline-note",
+  "fg": "#6a785b",
+  "bg": "#f6eef2",
+  "ratio": 4.14,
+  "size": "9.8pt (13px)",
+  "source": "contrast-crawl.spec.ts (signed-in app)"
  }
 ]

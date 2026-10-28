@@ -40,7 +40,7 @@ body{background:var(--calm-ground)}
 .context-strip{background:var(--calm-soft)}
 .context-strip strong,.context-strip button{color:#4c6040}
 .bubble{background:#eef1ec}
-.outgoing .bubble{background:#dfe9e1;color:#1d3529;border-color:#cddbd0}
+.outgoing .bubble{background:#d3e2d6;color:#1d3529;border-color:#bdd2c2}
 .sidebar,.topbar{background:#fbfbf9}
 
 /* Phone: Messages lives in the bottom bar; Availability joins the drawer. */
@@ -304,14 +304,14 @@ body{background:var(--calm-ground)}
 .availability-form .availability-consult label{font-size:14px}
 
 /* "New to Referrals? Watch an example": the note at the top of each main screen, and the window the video plays in. */
-.first-visit{display:flex;align-items:center;gap:6px;max-width:max-content;margin:18px 0 -4px;padding:5px 6px 5px 6px;border:1px solid #dccfb5;background:#faf3e3;border-radius:999px;box-shadow:0 4px 14px rgba(120,90,40,.08)}
+.first-visit{display:flex;align-items:center;gap:6px;max-width:max-content;margin:18px 0 -4px 34px;padding:5px 6px 5px 6px;border:1px solid #dccfb5;background:#faf3e3;border-radius:999px;box-shadow:0 4px 14px rgba(120,90,40,.08)}
 .first-visit-text{display:flex;align-items:center;gap:10px;padding:3px 8px 3px 3px;border-radius:999px;text-align:left;color:var(--ink);font-size:13.5px;line-height:1.35}
 .first-visit-text b{font-weight:600}
 .first-visit-text:hover{background:rgba(163,138,85,.12)}
 .first-visit-icon{display:grid;place-items:center;flex:none;width:26px;height:26px;border-radius:50%;background:var(--gold);color:#fff;font-size:10px;padding-left:1px}
 .first-visit-close{flex:none;width:28px;height:28px;border-radius:50%;color:var(--muted);font-size:18px;line-height:1}
 .first-visit-close:hover{background:rgba(0,0,0,.05);color:var(--ink)}
-.example-link{margin:14px 0 -6px}
+.example-link{margin:14px 0 -6px 34px}
 .example-link.modal-example{margin:0 0 12px}
 .example-link .text-link{display:inline-flex;align-items:center;gap:7px;color:var(--green);font-size:13px;font-weight:600;padding:4px 0}
 .example-link .text-link span{font-size:9px}
@@ -341,6 +341,7 @@ body{background:var(--calm-ground)}
 .inbox-context{color:#616d56}
 .inbox-preview{color:#666c5c}
 .workflow-step.done{color:#617353}
+.discussion-detail p{color:#626f54}
 .calendar-header p{color:#69785f}
 .client-list-heading p{color:#65765a}
 .saved-client small{color:#667959}
