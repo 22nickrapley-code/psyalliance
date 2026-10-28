@@ -61,7 +61,7 @@ test("NCU-01 trusted colleagues: add and remove from the screen, saved once, col
     await page.locator('input[name="q"]').first().fill(account("bram").name);
     await page.keyboard.press("Enter");
     await page.locator(`[data-action="profile:${bram}"]`).first().click();
-    await page.locator(`.modal [data-action="trust:${bram}"]`).click();
+    await page.locator(`.modal [data-action="trust:${bram}"]`).first().click();
   }
   await expect(page.locator("#toast")).toContainText("Added to your trusted colleagues");
   expect((await q(`select 1 from trusted_colleagues where profile_id = $1 and colleague_id = $2`, [avery, bram])).length).toBe(1);

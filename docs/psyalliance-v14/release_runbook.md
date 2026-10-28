@@ -14,7 +14,7 @@ Branch `followup-old-vs-new`, on top of `d96a497` (the version 13 release you al
 
 ## Order of work
 
-The version 13 code keeps working on the database once 0122 is in (tested), so the SQL can go in first. Group conversations show as ordinary conversations in the version 13 site until it is replaced, so deploy straight after the SQL.
+The version 13 code keeps working on the database once 0122 is in (tested), so the SQL can go in first. A conversation of three or more people shows in the version 13 site with a blank-looking header ("A colleague · undefined, undefined") until the new site is deployed. Nothing breaks and replies still work (tested), but deploy straight after the SQL.
 
 1. Bring the bundle in (adds a branch only).
 2. Sandbox project (`xsfqeepxnmnvlhxwkfnw`): read the four numbers, run 0122, read them again.

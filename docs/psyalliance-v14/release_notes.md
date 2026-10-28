@@ -27,7 +27,7 @@ Not picked and not in: D1 and D5. Screen verdicts applied: muted tints; Home in 
 
 `supabase/migrations/0122_followup_old_parts.sql`, for both projects. Functions only: no table, no column, no data. Replaces 13 functions and adds `workspace_year` and `workspace_profile_signals`. Safe to run twice. `supabase/rollbacks/0122_followup_old_parts.rollback.sql` restores every replaced function exactly and drops the two new ones.
 
-Tested: run twice on the same database (second run changes nothing); rollback, then 0122 again (same result as before); rollback restores each function byte for byte, permissions included; the version 13 code against the 0122 database ({{COMPAT}}).
+Tested: run twice on the same database (second run changes nothing); rollback, then 0122 again (same result as before); rollback restores each function byte for byte, permissions included; the version 13 code against the 0122 database (the whole version 13 workspace suite: 139 pass, 23 skipped, 1 known intermittent check that also fails without 0122; and a three-person conversation opens on the version 13 site, shows both people's messages and takes a reply, but its header reads "A colleague · undefined, undefined" until the new site is deployed).
 
 Things 0122 changes for a version 13 caller: nothing is removed. `set_my_availability` gains a seventh argument with a default and `consult_reply` a fourth, so old calls still work. The new site calls the two new functions, so **roll the site back before the SQL, never the other way round.**
 
@@ -49,7 +49,17 @@ Things 0122 changes for a version 13 caller: nothing is removed. `set_my_availab
 
 All on the local staging copy, fictional people only, on a production build of this branch.
 
-{{TESTS}}
+| Check | Result |
+| --- | --- |
+| Workspace suite on a brand-new database (180 tests, including 9 new checks for the picks in `followup.spec.ts`) | 157 pass, 23 skipped by design, 0 fail. The full run gave 147 pass, 22 skipped and one failure (NCU-01: a click in the test matched two buttons); after that test-only fix the Network file was rerun alone: 10 pass, 1 skipped. |
+| Older suites, accessibility included (599 tests) | 590 pass, 3 skipped, 6 fail: the `/sandbox/request` route checks, which need the real website |
+| Phone and public pages | 16 of 16 pass (phone 2, public 14) |
+| Colour contrast on 94 demo screens (computer and phone) and 187 pop-ups and panels on the real app | 0 failures after two contrast passes |
+| 0122 run twice; rollback then 0122 again; rollback restores functions byte for byte | As expected |
+| Version 13 code on the 0122 database | See "The database change" |
+| Demo player (pointer, typing, chapters, pause, phone, in-app notes) | 9 checks pass |
+
+The new checks found one real fault, now fixed: the message options menu (Report, Edit, Remove) opened upward and sat under the strip above a conversation when it was on the first message, so it could not be clicked. Version 13 has the same fault.
 
 ## Known items
 
