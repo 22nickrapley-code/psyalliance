@@ -52,7 +52,17 @@ async function ask(page: Page, o: { title: string; body: string; audience: "trus
 test("NCU-01 trusted colleagues: add and remove from the screen, saved once, colleague told once", async ({ browser, baseURL }) => {
   const { page, context } = await openAs(browser, "avery", baseURL!);
   await expect(page.locator("#net-trusted")).toBeVisible();
-  await page.locator(`[data-action="trust:${bram}"]`).first().click();
+  // Your circle lists only the first five of the worked-with and suggested groups, so which
+  // colleagues show depends on the data. If Bram is not listed, find him as a member would.
+  const inCircle = page.locator(`[data-action="trust:${bram}"]`).first();
+  if (await inCircle.isVisible()) await inCircle.click();
+  else {
+    await page.getByRole("button", { name: /Find colleagues/ }).first().click();
+    await page.locator('input[name="q"]').first().fill(account("bram").name);
+    await page.keyboard.press("Enter");
+    await page.locator(`[data-action="profile:${bram}"]`).first().click();
+    await page.locator(`.modal [data-action="trust:${bram}"]`).click();
+  }
   await expect(page.locator("#toast")).toContainText("Added to your trusted colleagues");
   expect((await q(`select 1 from trusted_colleagues where profile_id = $1 and colleague_id = $2`, [avery, bram])).length).toBe(1);
   // It is the database's: a reload keeps it, and Bram is told in the app once.
