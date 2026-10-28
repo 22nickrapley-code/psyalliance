@@ -13,9 +13,11 @@ const everyone = [avery.id, bram.id, cass.id, fenn.id, ...others.map((o) => o.id
 
 // What a test may change, put back as it was.
 let original: Record<string, string> = {};
+let originalStatus: Record<string, string> = {};
 test.beforeAll(async () => {
-  const rows = await q(`select id, referral_availability from profiles where id = any($1::uuid[])`, [everyone]);
+  const rows = await q(`select id, referral_availability, account_status from profiles where id = any($1::uuid[])`, [everyone]);
   original = Object.fromEntries(rows.map((r: any) => [r.id, r.referral_availability]));
+  originalStatus = Object.fromEntries(rows.map((r: any) => [r.id, r.account_status]));
 });
 async function tidy() {
   await q(`delete from do_not_work_with where profile_id = any($1::uuid[])`, [everyone]);
@@ -26,6 +28,7 @@ async function tidy() {
   await q(`delete from conversations where title like 'FOL %'`);
   await q(`delete from consultations where question like 'FOL %'`);
   for (const [id, v] of Object.entries(original)) await q(`update profiles set referral_availability = $2 where id = $1`, [id, v]);
+  for (const [id, v] of Object.entries(originalStatus)) await q(`update profiles set account_status = $2 where id = $1`, [id, v]);
 }
 test.beforeEach(tidy);
 test.afterAll(tidy);
@@ -75,21 +78,21 @@ async function startReferral(page: Page) {
 }
 const ticked = (page: Page) => page.locator('input[data-match="referral"]:checked').evaluateAll((els) => els.map((e) => (e as HTMLInputElement).value));
 
-test("FOL-01 Hub (D4): a greeting with the name, up to four discussions, and a year line that counts only what happened", async ({ browser, baseURL }) => {
-  // One answer given this year, so the line has something to count.
+test("FOL-01 Hub (D4, v15): the greeting is in the top bar, the four areas lead, at most three discussions, and no year line", async ({ browser, baseURL }) => {
   await seedQuestions();
-  const asked = await one(`select id from consultations where question like 'FOL How do you handle%'`);
-  await q(`insert into consultation_responses (consultation_id, responder_profile_id, body) values ($1, $2, 'FOL an answer')`, [asked.id, avery.id]);
   const { page, context } = await openAs(browser, "avery", baseURL!);
-  await expect(page.locator(".content h1")).toHaveText(/^Good (morning|afternoon|evening), Avery\.$/);
+  await expect(page.locator(".topbar .breadcrumbs strong")).toHaveText(/^Good (morning|afternoon|evening), Avery$/);
+  await expect(page.locator(".hub-areas .hub-area")).toHaveCount(4);
+  await expect(page.locator(".hub-areas .hub-area-main")).toContainText(["Cover", "Referrals", "Consult", "Network / Search"]);
+  // The old busy parts are gone: the year line and the "actions waiting" block.
+  await expect(page.locator(".home-ledger")).toHaveCount(0);
+  await expect(page.getByText(/on PsyAlliance$/)).toHaveCount(0);
+  await expect(page.locator('[data-action="toggle-actions"]')).toHaveCount(0);
   const rows = page.locator(".home-discussion");
   await expect(page.locator(".home-discussion, .pulse-empty").first()).toBeAttached(); // discussions, or the honest empty note
-  expect(await rows.count()).toBeLessThanOrEqual(4);
+  expect(await rows.count()).toBeLessThanOrEqual(3);
   const more = page.getByRole("button", { name: /^All \d+ discussions$/ });
-  if (await more.count()) expect(Number((await more.innerText()).match(/\d+/)![0])).toBeGreaterThan(4);
-  const items = page.locator(".home-ledger li");
-  await expect(items.filter({ hasText: /question(s)? you answered/ })).toHaveCount(1);
-  for (const item of await items.allInnerTexts()) expect(item).toMatch(/^[1-9]\d* /); // never "0 ..."
+  if (await more.count()) expect(Number((await more.innerText()).match(/\d+/)![0])).toBeGreaterThan(3);
   await clean(page);
   await context.close();
 });
@@ -274,12 +277,25 @@ test("FOL-07 Messages (G1, G2): a conversation of three is listed under Group, s
   await context.close();
 });
 
-test("FOL-08 Network (D9): every trusted colleague is listed, not the first few", async ({ browser, baseURL }) => {
-  for (const o of [bram, cass, fenn, others[0], others[1]]) await q(`insert into trusted_colleagues (profile_id, colleague_id) values ($1, $2) on conflict do nothing`, [avery.id, o.id]);
+test("FOL-08 Network (D9, v15): every trusted colleague is reachable, five to a page", async ({ browser, baseURL }) => {
+  // The fixture has five members Avery can see; Sol is suspended on purpose in other tests, so make him visible for this one only.
+  await q(`update profiles set account_status = 'active' where id = $1`, [others[2].id]);
+  for (const o of [bram, cass, fenn, others[0], others[1], others[2]]) await q(`insert into trusted_colleagues (profile_id, colleague_id) values ($1, $2) on conflict do nothing`, [avery.id, o.id]);
   const { page, context } = await openAs(browser, "avery", baseURL!, "/dashboard/network");
   await expect(page.locator("#net-trusted")).toBeVisible();
   await expect(page.locator("#net-trusted .net-row")).toHaveCount(5);
+  await expect(page.locator("#net-trusted .net-pager")).toContainText("Page 1 of 2");
   await expect(page.locator("#net-trusted").getByRole("button", { name: /^View all/ })).toHaveCount(0);
+  // Each row has real buttons, the same size, with Message on the same line.
+  const row = page.locator("#net-trusted .net-row").first();
+  await expect(row.getByRole("button", { name: "Remove from trusted" })).toBeVisible();
+  await expect(row.getByRole("button", { name: /^Message/ })).toBeVisible();
+  const [a, b] = await Promise.all([row.locator(".net-trust").boundingBox(), row.locator(".net-message").boundingBox()]);
+  expect(Math.abs(a!.y - b!.y)).toBeLessThan(4);
+  expect(await row.locator(".net-trust").evaluate((e) => getComputedStyle(e).fontSize)).toBe(await row.locator(".net-message").evaluate((e) => getComputedStyle(e).fontSize));
+  await page.locator('#net-trusted [data-action="net-page:trusted:2"]').first().click();
+  await expect(page.locator("#net-trusted .net-row")).toHaveCount(1);
+  await expect(page.locator("#net-trusted .net-pager")).toContainText("Page 2 of 2");
   await clean(page);
   await context.close();
 });

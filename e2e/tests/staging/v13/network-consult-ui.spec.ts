@@ -211,6 +211,8 @@ test("NCU-06 replies: posted once even when retried, ordered newest first; follo
 
 test("NCU-07 library: save, find under Saved, templates not yet reviewed say so and have no file", async ({ browser, baseURL }) => {
   const { page, context } = await openAs(browser, "avery", baseURL!, "/dashboard/library");
+  // The PDF templates come first, so find the guide by searching for it.
+  await page.locator("#resource-search").fill("Planning your practice cover");
   const card = page.locator(".resource-card", { hasText: "Planning your practice cover" });
   await card.locator('[data-action^="resource-save:"]').click();
   await expect(page.locator("#toast")).toContainText("Saved to your Library");

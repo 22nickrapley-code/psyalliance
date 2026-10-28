@@ -106,13 +106,13 @@ test("FU-02 referral numbers are the sender's own, and the private title is priv
 });
 
 // ---------------------------------------------------------------------------------------------
-test("FU-03 report a profile, then block: the report reaches the admin queue, the block hides each of you", async ({ browser, baseURL }) => {
+test("FU-03 flag a profile, then block: the flag reaches the admin queue, the block hides each of you", async ({ browser, baseURL }) => {
   const b = await openAs(browser, "bram", baseURL!, `/dashboard/network?profile=${avery}`);
-  await b.page.getByRole("button", { name: "Report this profile" }).click();
+  await b.page.getByRole("button", { name: "Flag this profile" }).click();
   await b.page.locator("#report-category").selectOption("conduct");
   await b.page.locator("#report-reason").fill("A fictional concern for the test.");
-  await b.page.getByRole("button", { name: "Send report" }).click();
-  await expect(b.page.locator("#toast")).toContainText("Report sent");
+  await b.page.getByRole("button", { name: "Send flag" }).click();
+  await expect(b.page.locator("#toast")).toContainText("Flag sent");
   const rep = await one(`select * from reports where reporter_profile_id = $1`, [bram]);
   expect(rep).toMatchObject({ target_type: "profile", target_id: avery, category: "conduct", status: "open", reason: "A fictional concern for the test." });
   // Block: asks first, says what it does, and is undone in Settings.
@@ -131,14 +131,14 @@ test("FU-03 report a profile, then block: the report reaches the admin queue, th
 });
 
 // ---------------------------------------------------------------------------------------------
-test("FU-04 consult: the asker marks a question resolved; others see why replies stopped; Report on the question and on a reply", async ({ browser, baseURL }) => {
+test("FU-04 consult: the asker marks a question resolved; others see why replies stopped; Flag on the question and on a reply", async ({ browser, baseURL }) => {
   const post = await call(avery, `select public.consult_post($1::jsonb) as r`, [JSON.stringify({
     clientRequestId: uuid(), title: "How do you handle late cancellations?", body: "", topic: "Professional life", audience: "network", confirmed: "true", tags: [] })]);
   await call(cass, `select public.consult_reply($1::bigint, $2, $3::uuid) as r`, [post.id, "A written policy helps.", uuid()]);
   const a = await openAs(browser, "avery", baseURL!, `/dashboard/consult?discussion=${post.id}`);
   await expect(a.page.locator(".modal")).toContainText("Your question");
   await expect(a.page.locator("#reply-form")).toBeVisible();
-  await expect(a.page.getByRole("button", { name: "Report this discussion" })).toHaveCount(0);
+  await expect(a.page.getByRole("button", { name: "Flag this discussion" })).toHaveCount(0);
   await a.page.getByRole("button", { name: "Mark as resolved" }).click();
   await expect(a.page.locator("#toast")).toContainText("resolved");
   expect((await one(`select status from consultations where id = $1`, [post.id])).status).toBe("resolved");
@@ -155,14 +155,15 @@ test("FU-04 consult: the asker marks a question resolved; others see why replies
   await expect(b.page.locator("#discussion-resolved")).toContainText("marked this question resolved");
   await expect(b.page.locator("#reply-form")).toHaveCount(0);
   await expect(b.page.getByRole("button", { name: "Mark as resolved" })).toHaveCount(0);
+  await b.page.locator(".reply .row-menu summary").first().click(); // the flag sits in the reply's ... menu
   await b.page.locator(".reply .report-link").first().click();
   await b.page.locator("#report-reason").fill("A fictional concern about this reply.");
-  await b.page.getByRole("button", { name: "Send report" }).click();
-  await expect(b.page.locator("#toast")).toContainText("Report sent");
-  await b.page.getByRole("button", { name: "Report this discussion" }).click();
+  await b.page.getByRole("button", { name: "Send flag" }).click();
+  await expect(b.page.locator("#toast")).toContainText("Flag sent");
+  await b.page.getByRole("button", { name: "Flag this discussion" }).click();
   await b.page.locator("#report-category").selectOption("patient_information");
   await b.page.locator("#report-reason").fill("A fictional concern about this question.");
-  await b.page.getByRole("button", { name: "Send report" }).click();
+  await b.page.getByRole("button", { name: "Send flag" }).click();
   await expect(b.page.locator("#report-form")).toHaveCount(0);
   const reps = await q(`select target_type, target_id, category from reports where reporter_profile_id = $1 order by id`, [bram]);
   expect(reps).toHaveLength(2);

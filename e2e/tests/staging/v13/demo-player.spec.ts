@@ -108,6 +108,32 @@ test("DEMO-V14-04 pause, step, jump to a chapter, end card, and Watch again", as
   await context.close();
 });
 
+test("DEMO-V15-01 clicking a progress segment shows that step's own screen, and the arrows sit in the middle of their buttons", async ({ browser }) => {
+  test.setTimeout(240_000);
+  const context = await browser.newContext({ viewport: { width: 1280, height: 860 } });
+  const page = await context.newPage();
+  await page.goto("/tour/example/cover");
+  const player = page.locator(".dp");
+  await expect(player).toHaveAttribute("data-player-state", "playing", { timeout: 60_000 });
+  await player.getByRole("button", { name: "Pause" }).click();
+  // Arrow glyphs are centred in their round buttons.
+  for (const b of await page.locator(".dp-btn").all()) {
+    const [box, ico] = await Promise.all([b.boundingBox(), b.locator("svg").first().boundingBox().catch(() => null)]);
+    if (!box || !ico) continue;
+    expect(Math.abs(box.x + box.width / 2 - (ico.x + ico.width / 2)), "horizontally centred").toBeLessThan(1.5);
+    expect(Math.abs(box.y + box.height / 2 - (ico.y + ico.height / 2)), "vertically centred").toBeLessThan(1.5);
+  }
+  // Jump into a later chapter: the screen is that chapter's, not the first one.
+  const chapters = D.DEMO_SCRIPTS.cover.chapters as { view: string; macro?: string; steps: unknown[] }[];
+  let index = 0, target = 0;
+  chapters.forEach((c, ci) => { if (ci === 1) target = index; index += c.steps.length; });
+  await page.locator(".dp-seg").nth(target).click();
+  await expect(player).toHaveAttribute("data-pos", `1.0`);
+  const want = `/tour/stage/${chapters[1].view}${chapters[1].macro ? `?m=${encodeURIComponent(chapters[1].macro)}` : ""}`;
+  await expect(page.locator(".dp-frame-el.on")).toHaveAttribute("src", want, { timeout: 30_000 });
+  await context.close();
+});
+
 test("DEMO-V14-05 the two-minute story starts from a chapter link and ends offering the account", async ({ browser }) => {
   test.setTimeout(120_000);
   const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });

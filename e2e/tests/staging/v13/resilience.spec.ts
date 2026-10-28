@@ -34,7 +34,7 @@ test("RV-01 a member signs in and The Hub loads with their name; a reload keeps 
   await signInAs(context, "avery", baseURL!);
   await page.goto("/dashboard");
   await hub(page);
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^Good (morning|afternoon|evening), Avery\.$/);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^Good (morning|afternoon|evening), Avery$/);
   await expect(page.locator(".profile-button")).toContainText("Avery");
   await page.reload();
   await hub(page);
@@ -115,7 +115,8 @@ test("RV-05 a message the database cannot save says so, keeps the text, and noth
   // Back up: Retry sends it, once.
   await gatewayFault({ clear: true });
   await page.getByRole("button", { name: /Retry/ }).first().click();
-  await expect(page.locator(".message-group.outgoing .delivery-state.sent").last()).toBeVisible({ timeout: 30000 });
+  // The tick of this message, not one left by an earlier run in the same conversation.
+  await expect(page.locator(".message-group.outgoing", { hasText: text }).locator(".delivery-state.sent").last()).toBeVisible({ timeout: 30000 });
   expect((await one(`select count(*)::int n from conversation_messages where body = $1`, [text])).n).toBe(1);
 });
 
@@ -144,7 +145,7 @@ test("RV-07 a slow database (3 seconds a call) still loads The Hub", async ({ pa
   const t0 = Date.now();
   await page.goto("/dashboard");
   await hub(page);
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^Good (morning|afternoon|evening), Avery\.$/);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^Good (morning|afternoon|evening), Avery$/);
   expect(Date.now() - t0, "slower, but it loads").toBeGreaterThan(3000);
 });
 
@@ -171,7 +172,7 @@ test("RV-09 reading a conversation marks its new-message notification read", asy
   const text = `QA read-through ${Date.now()}`;
   await ap.locator("#message-input").fill(text);
   await ap.getByRole("button", { name: "Send message" }).click();
-  await expect(ap.locator(".message-group.outgoing .delivery-state.sent").last()).toBeVisible({ timeout: 20000 });
+  await expect(ap.locator(".message-group.outgoing", { hasText: text }).locator(".delivery-state.sent").last()).toBeVisible({ timeout: 20000 });
   const unread = async () =>
     (await one(`select count(*)::int n from notification_deliveries d join notification_events e on e.id = d.notification_event_id
                  where d.recipient_profile_id = $1 and d.channel = 'in_app' and d.read_at is null and e.event_type = 'message_received' and d.status = 'sent'`, [account("cass").id])).n;
