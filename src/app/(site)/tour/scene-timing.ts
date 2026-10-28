@@ -22,5 +22,5 @@ export const sceneMs = (sc: { seconds?: number; actions?: SceneAction[] }) => (s
 export function sceneSeconds(step: { title: string; what: string; seconds?: number }) {
   if (step.seconds) return step.seconds;
   const words = `${step.title} ${step.what}`.split(/\s+/).length;
-  return Math.round(Math.max(8, Math.min(13, 4.5 + words / 3.4)) * 2) / 2;
+  return Math.round(Math.max(10, Math.min(17, 6 + words / 2.6)) * 2) / 2;
 }

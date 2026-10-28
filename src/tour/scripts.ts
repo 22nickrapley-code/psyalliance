@@ -57,7 +57,8 @@ export type DemoScript = {
 
 // ---------------------------------------------------------------- timing
 // Shared by the player and by the pages that say how long a demo is.
-export const READ_MS = (text: string) => Math.max(2200, Math.min(6500, 1400 + (text.split(/\s+/).length / 3.2) * 1000));
+// About 2.2 words a second plus a moment to settle: slower than a quick skim, so the words can be read before the screen moves.
+export const READ_MS = (text: string) => Math.max(4500, Math.min(13000, 2200 + (text.split(/\s+/).length / 2.2) * 1000));
 
 const beatMs = (b: Beat): number => {
   switch (b[0]) {

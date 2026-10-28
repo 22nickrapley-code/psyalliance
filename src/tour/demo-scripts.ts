@@ -77,7 +77,7 @@ const COVER: DemoScript = {
           title: "One picture of every client",
           text: "Open a plan and the journey bar shows where you are: asked, agreed, handover, ready. Each client has a row saying who covers them.",
           beats: [
-            ["click", "text=Open plan"],
+            ["click", ".arrangement-row"],
             ["look", ".journey-bar"],
             ["look", ".client-table-head"],
           ],
@@ -103,7 +103,7 @@ const COVER: DemoScript = {
         {
           title: "A colleague asks you for cover",
           text: "Cover works both ways. Their request arrives with what the client needs and when, and you answer in one place.",
-          beats: [["click", "text=Reply"], ["look", ".needs-box"]],
+          beats: [["click", ".arrangement-row.row-reply"], ["look", ".needs-box"]],
         },
         {
           title: "Say yes, or ask first",
@@ -378,13 +378,13 @@ const HUB: DemoScript = {
       steps: [
         {
           title: "A calm start to the day",
-          text: "A greeting and a plain count of what is unfinished. No item ranks above another: you choose.",
-          beats: [["look", "text=Good morning"], ["look", '[data-action="toggle-actions"]']],
+          text: "Your greeting sits in the top bar. Below it are the four places you work in: Cover, Referrals, Consult and Network / Search.",
+          beats: [["look", ".breadcrumbs strong, .hub-hello"], ["look", ".hub-areas"]],
         },
         {
-          title: "Everything waiting, in one list",
-          text: "Cover discussions, handovers, referrals to answer. Open the list to see them all, and go straight to the one you want.",
-          beats: [["click", '[data-action="toggle-actions"]'], ["look", "#pulse-action-list"]],
+          title: "What is waiting, without the noise",
+          text: "A small count on Cover or Referrals shows what needs you. Click it to go straight to those items.",
+          beats: [["look", ".hub-area-count"]],
         },
         {
           title: "Start anything from here",

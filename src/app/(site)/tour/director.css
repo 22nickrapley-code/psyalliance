@@ -20,7 +20,8 @@
 .pa .dp-controls{display:flex;align-items:center;gap:5px;margin-top:auto;padding-top:10px;flex-wrap:nowrap}
 .pa .dp-play{border:0;background:var(--forest);color:#fff;font:600 13px/1 var(--body);padding:11px 12px;border-radius:999px;cursor:pointer;min-width:88px;transition:background .2s}
 .pa .dp-play:hover{background:#0f3027}
-.pa .dp-btn{flex:none;width:34px;height:34px;border-radius:50%;border:1px solid var(--line);background:var(--paper);color:var(--ink);font:600 15px/1 var(--body);cursor:pointer}
+.pa .dp-btn{flex:none;width:34px;height:34px;padding:0;display:inline-flex;align-items:center;justify-content:center;border-radius:50%;border:1px solid var(--line);background:var(--paper);color:var(--ink);font:600 15px/1 var(--body);cursor:pointer}
+.pa .dp-btn .dp-ico{width:16px;height:16px;display:block;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .pa .dp-btn:hover:not(:disabled){border-color:#9db3a3;background:var(--soft)}
 .pa .dp-btn:disabled{opacity:.35;cursor:default}
 .pa .dp-count{color:var(--muted);font:600 12.5px/1 var(--body);min-width:34px;text-align:center}

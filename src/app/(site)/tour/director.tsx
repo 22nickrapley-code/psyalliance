@@ -188,7 +188,17 @@ export function Director({
     if (!w) return;
     const r = el.getBoundingClientRect();
     const vh = w.innerHeight;
-    if (r.top < 90 || r.bottom > vh - 80) {
+    // A pop-up scrolls inside itself. If the control sits under the panel's edge (or its footer), scroll the panel.
+    let clipped = false;
+    for (let p = el.parentElement; p && p !== el.ownerDocument.body; p = p.parentElement) {
+      const cs = w.getComputedStyle(p);
+      if (/(auto|scroll)/.test(cs.overflowY) && p.scrollHeight > p.clientHeight + 4) {
+        const pr = p.getBoundingClientRect();
+        if (r.top < pr.top + 24 || r.bottom > pr.bottom - 56) clipped = true;
+        break;
+      }
+    }
+    if (clipped || r.top < 90 || r.bottom > vh - 80) {
       el.scrollIntoView({
         block: "center",
         inline: "nearest",
@@ -465,11 +475,11 @@ export function Director({
       const t0 = Date.now();
       // A caption takes longer to read on a phone, where the screen and the words are both small.
       const read = READ_MS(`${step.title} ${step.text}`) * (phoneRef.current ? 1.3 : 1);
-      await sleep(Math.min(3000, read * 0.55), id);
+      // The words stay still for their whole reading time before anything on screen moves.
+      if (!fastRef.current) await sleep(read, id);
       await runBeats(ci, si, id);
       if (!fastRef.current) {
-        const left = read + 500 - (Date.now() - t0);
-        await sleep(Math.max(900, left) + (step.hold || 0) * 1000, id);
+        await sleep(900 + (step.hold || 0) * 1000, id);
       }
     } finally {
       fastRef.current = prevFast;
@@ -506,10 +516,17 @@ export function Director({
             si < chapters[ci].steps.length;
             si++
           ) {
-            const stepByHand = first && manual && pausedRef.current;
+            const stepByHand = first && manual;
             first = false;
             await runStep(ci, si, id, { fast: stepByHand });
-            if (stepByHand) await untilPlaying(id);
+            if (stepByHand) {
+              // The screen already shows this step's result, so the caption and the picture agree.
+              if (pausedRef.current) await untilPlaying(id);
+              else {
+                const st = chapters[ci].steps[si];
+                await sleep(READ_MS(`${st.title} ${st.text}`) * (phoneRef.current ? 1.3 : 1), id);
+              }
+            }
           }
         }
         // Let the last result be seen before the closing card.
@@ -772,7 +789,7 @@ export function Director({
               onClick={() => step(-1)}
               disabled={!ended && flatIndex <= 0}
             >
-              ←
+              <svg className="dp-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6" /></svg>
             </button>
             <span className="dp-count">
               {Math.max(1, flatIndex + 1)} / {flat.length}
@@ -784,7 +801,7 @@ export function Director({
               onClick={() => step(1)}
               disabled={ended || flatIndex >= flat.length - 1}
             >
-              →
+              <svg className="dp-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
             </button>
             <button
               type="button"
@@ -793,7 +810,7 @@ export function Director({
               title="Start again"
               onClick={() => jump({ c: 0, s: 0 }, true)}
             >
-              ↻
+              <svg className="dp-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.6-5.9M20 4v5h-5" /></svg>
             </button>
           </div>
         </div>

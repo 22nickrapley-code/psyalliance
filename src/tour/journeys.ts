@@ -338,7 +338,7 @@ const CIRCLE: Journey = {
   minutes: "2½ minutes",
   outcome: "What needs you, who is around you, and every conversation in its own place.",
   learned: [
-    "The Hub lists what is waiting, and a count of exactly what is unfinished.",
+    "The Hub puts your four main areas one click away, with a small count of what is waiting.",
     "Your circle has four tiers, and the directory finds anyone by need.",
     "A colleague profile shows facts, not testimonials, and leads to a message or a referral.",
     "One person can have several conversations with you, one for each cover plan and referral.",
@@ -347,10 +347,10 @@ const CIRCLE: Journey = {
     {
       slug: "home",
       title: "The Hub: what needs you",
-      what: "A count of what is unfinished, and the list behind it when you want it: replies, handovers, referrals to answer. No item ranks above the rest; you choose.",
-      focusNote: "Open the list to see everything.",
-      scene: w("home", "hub-actions"),
-      focus: "View actions",
+      what: "Cover, Referrals, Consult and Network / Search, one click away, with a small count on the ones that have something waiting. No item ranks above the rest; you choose.",
+      focusNote: "Start from any of the four.",
+      scene: w("home"),
+      focus: ".hub-areas",
       scenarios: ["DEM-01"],
     },
     {
