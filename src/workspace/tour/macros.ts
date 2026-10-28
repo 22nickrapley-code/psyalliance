@@ -74,10 +74,6 @@ async function failedSend(ui: Ui) {
 }
 
 export const MACROS: Record<string, Macro> = {
-  // The Hub, with the list of actions open.
-  "hub-actions": async (ui) => {
-    await ui.act("toggle-actions");
-  },
   "preview-controls": previewControls,
 
   // Cover

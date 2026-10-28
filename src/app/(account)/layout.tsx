@@ -30,7 +30,7 @@ export const viewport: Viewport = {
 } as Viewport;
 
 const STYLES = ["styles", "product", "refinements", "home", "pulse", "directions", "polish", "feedback", "hub"];
-const V = "13";
+const V = "15";
 
 export default function AccountRootLayout({ children }: { children: React.ReactNode }) {
   return (
