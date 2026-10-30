@@ -1084,3 +1084,6 @@ body,.workspace,.workspace.feature-cover,.workspace.feature-referrals,.workspace
 .panel.agenda-empty .list-section-header h2{font-size:16px}
 .panel.agenda-empty .list-section-header p{display:none}
 .panel.agenda-empty .list-section-body .no-results{padding:0 20px 14px;text-align:left;font-size:14px}
+
+/* Release B: the status pill in the month agenda and day sheet is as wide as its words on phones, so "Needs your reply" never spills out of it. */
+.calendar-agenda .arrangement-side .label{max-width:none}

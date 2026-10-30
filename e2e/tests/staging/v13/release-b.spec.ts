@@ -593,6 +593,20 @@ test("B-14 D19 the day sheet stacks the two directions, a direction with nothing
     await expect(page.locator(".tracking-next")).toContainText("invitation");
     await expect(page.locator(".tracking-next")).not.toContainText("still needs a colleague");
     await context.close();
+    // On a phone the status pill is as wide as its words, on the month page and in the day sheet.
+    const phone = await openAs(browser, "avery", baseURL!, "/dashboard/cover", 390);
+    await phone.page.locator('[data-action="cover-layout:calendar"]').click();
+    for (let n = 0; n < 7; n++) await phone.page.locator('[data-action="calendar-month:1"]').click();
+    const pills = async (scope: string) => phone.page.locator(`${scope} .arrangement-side .label`).evaluateAll((els) => els.map((e) => ({ text: e.textContent, over: e.scrollWidth - e.clientWidth })));
+    const onPage = await pills(".calendar-agenda");
+    expect(onPage.length, "the month page lists the plan").toBeGreaterThan(0);
+    for (const p of onPage) expect(p.over, `pill "${p.text}" fits its words on the month page`).toBeLessThanOrEqual(1);
+    await phone.page.locator(`[data-action="calendar-day:${iso(7, 12)}"]`).click();
+    await expect(phone.page.locator(".modal")).toContainText("B Sheet theirs");
+    const inSheet = await pills(".modal");
+    expect(inSheet.length).toBeGreaterThan(0);
+    for (const p of inSheet) expect(p.over, `pill "${p.text}" fits its words in the day sheet`).toBeLessThanOrEqual(1);
+    await phone.context.close();
   } finally {
     await q(`delete from coverage_plans where title = 'B Sheet theirs'`);
   }
