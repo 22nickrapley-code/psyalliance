@@ -205,6 +205,7 @@ test("P-11 L18 an existing account is never overwritten silently: the account's 
   await expect(page.locator("input[name=help][value=cover]")).not.toBeChecked();
   await expect(page.locator("input[name=help][value=referrals]")).toBeChecked();
   await page.locator("[data-suggestion='cover'] button", { hasText: "Discard suggestion" }).click();
+  await expect(page.locator("[data-suggestion='cover'] button", { hasText: "Discard suggestion" })).toHaveCount(0);
   await page.getByRole("button", { name: "Save my choices" }).click();
   await page.waitForURL(/dashboard\/settings/);
   expect((await q(`select open_referrals, open_cover, open_consult from member_participation where profile_id = $1`, [avery]))[0]).toEqual({ open_referrals: true, open_cover: false, open_consult: true });
