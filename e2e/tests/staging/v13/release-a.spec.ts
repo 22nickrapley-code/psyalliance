@@ -216,7 +216,8 @@ test("RA-06 relevant questions are a separate, uncounted group with a quiet dot 
   await expect(headline(page)).toHaveText("You’re up to date");
   await expect(page.locator(".hub-attn-note")).toContainText(/question[s]? you could help with/);
   await expect(page.locator('.sidebar [data-action="nav:consult"] .nav-dot')).toHaveCount(1);
-  await expect(page.locator(".nav-count, .hub-card .label")).not.toContainText("1");
+  await expect(page.locator('.sidebar [data-action="nav:consult"] .nav-count')).toHaveCount(0);
+  await expect(page.locator(".hub-card .label, .hub-card .nav-count")).toHaveCount(0);
   await page.locator(".hub-attn-toggle").click();
   const group = page.locator(".hub-group-help");
   const mineRow = group.locator(".hub-row", { hasText: "RA Thoughts on" });
@@ -483,7 +484,9 @@ test("RA-15 PSYPACT (F03): the screen and the server agree on who can take a cli
       await form.locator('select[name="state"]').selectOption(c.state);
       await form.locator('select[name="setting"]').selectOption(c.setting);
       await page.locator('.modal-footer button[type="submit"]').click();
-      await expect(page.locator(".match-card").first()).toBeVisible();
+      // The next step is the colleague list, which can be empty when nobody can take the client.
+      await expect(page.locator("#referral-need-form")).toHaveCount(0);
+      await expect(page.locator(".modal-body")).toBeVisible();
       const box = page.locator(`input[data-match="referral"][value="${bram.id}"]`);
       const screen = (await box.count()) === 1 && (await box.isEnabled());
       expect(server, `server: ${c.label}`).toBe(c.ok);
