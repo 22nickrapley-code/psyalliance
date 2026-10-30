@@ -31,9 +31,11 @@ async function openAs(browser: Browser, who: string, baseURL: string, path: stri
 for (const width of [1365, 390, 320]) {
   test(`NB-01 N02 network at ${width}px: circle targets never overlap or hide one another, and every trusted colleague can be reached and opened`, async ({ browser, baseURL }) => {
     // Seven trusted colleagues: more than the circle can show, so the list has to carry the rest.
-    await q(`insert into trusted_colleagues (profile_id, colleague_id) select $1, id from profiles where id <> $1 and verification_status = 'verified' order by full_name limit 7`, [avery]);
-    const trusted = (await q(`select t.colleague_id as id, p.full_name from trusted_colleagues t join profiles p on p.id = t.colleague_id where t.profile_id = $1`, [avery])) as { id: string; full_name: string }[];
-    expect(trusted.length).toBe(7);
+    const visible = (await asMember(avery, `select public.workspace_people() as p`)).rows[0].p as { id: string; name: string }[];
+    const chosen = visible.filter((p) => p.id !== avery).sort((a, b) => a.name.localeCompare(b.name)).slice(0, 7);
+    expect(chosen.length).toBe(7);
+    for (const p of chosen) await q(`insert into trusted_colleagues (profile_id, colleague_id) values ($1, $2)`, [avery, p.id]);
+    const trusted = chosen.map((p) => ({ id: p.id, full_name: p.name }));
     const { page, context } = await openAs(browser, "avery", baseURL!, "/dashboard/network", width);
     const nodes = page.locator(".circle-map .circle-person");
     const n = await nodes.count();
@@ -88,6 +90,7 @@ test("NB-02 A02 availability on a phone: one overall number, a setting for each 
     await context.close();
   }
   // No invented cover cap and no multiplied total anywhere in the numbers colleagues see.
+  await q(`update profiles set availability_paused_until = null where id = $1`, [avery]);
   const { rows } = await asMember(bram, `select public.workspace_people() as p`);
   const me = (rows[0].p as any[]).find((p) => p.id === avery);
   expect(me.slots).toBe(4);
@@ -97,7 +100,7 @@ test("NB-03 A01 one confirmation time: confirming on the screen changes the stor
   await q(`update profiles set availability_confirmed_at = now() - interval '45 days' where id = $1`, [avery]);
   const { page, context } = await openAs(browser, "avery", baseURL!, "/dashboard?availability=1", 1365);
   await expect(page.locator(".av-side")).toContainText("45 days ago");
-  await page.getByRole("button", { name: /Confirm unchanged|Confirm availability/ }).first().click();
+  await page.locator(".modal").getByRole("button", { name: /Confirm unchanged/ }).first().click();
   await expect(page.locator("#toast")).toContainText(/confirmed/i);
   const p = await one(`select availability_confirmed_at > now() - interval '1 minute' as fresh from profiles where id = $1`, [avery]);
   expect(p.fresh).toBe(true);
