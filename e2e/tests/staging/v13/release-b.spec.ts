@@ -613,3 +613,16 @@ test("B-14 D19 the day sheet stacks the two directions, a direction with nothing
     await q(`delete from coverage_plans where title = 'B Sheet theirs'`);
   }
 });
+
+test("B-15 D12 the handover window names the client it is about, and the incoming plan summary says what the colleague has been asked", async ({ page }) => {
+  await page.goto("/tour/scene/cover/handover");
+  await page.waitForFunction(() => document.documentElement.dataset.scene === "ready", null, { timeout: 30000 });
+  await expect(page.locator("#modal-title")).toHaveText("Confirm handover for Client 2");
+  await expect(page.locator(".modal-header p:not(.eyebrow)")).toContainText("Cover agreed with");
+  await page.goto("/tour/scene/cover/incoming");
+  await page.waitForFunction(() => document.documentElement.dataset.scene === "ready", null, { timeout: 30000 });
+  await expect(page.locator(".tracking-next")).toContainText("1 invitation still needs your reply");
+  await expect(page.locator(".tracking-next")).not.toContainText("still needs a colleague");
+  // Keyboard focus starts on the close button here too.
+  await expect(page.locator(".modal-header [data-action='close-modal']")).toBeFocused();
+});

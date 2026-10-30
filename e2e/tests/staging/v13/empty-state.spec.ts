@@ -89,6 +89,9 @@ test("EMP-02 a brand-new member's Hub and lists say what to do first", async ({ 
   // Each list opens and offers its way in, with no rows to show.
   await page.goto("/dashboard/cover");
   await expect(page.getByRole("button", { name: /Plan cover|New cover|Start/i }).first()).toBeVisible();
+  // An empty Cover page says what to do in each direction instead of repeating "No arrangements".
+  await expect(page.locator("main, #main").first()).toContainText("You have no cover plans yet. Choose Plan cover to ask colleagues to cover your clients.");
+  await expect(page.locator("main, #main").first()).toContainText("No colleague has asked you to cover their clients. Requests appear here.");
   await page.goto("/dashboard/referrals");
   await expect(page.getByRole("button", { name: /referral|Refer/i }).first()).toBeVisible();
   await page.goto("/dashboard/messages");
