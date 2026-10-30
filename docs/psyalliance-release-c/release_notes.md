@@ -50,3 +50,35 @@ Every public sentence that differs from the brief, and why:
 - Prefill of the real profile from sign-up answers is not built: the carried choice only opens the right place and never fills a profile field. The only values carried are the ones listed above.
 - Passkeys, AI-assisted entry, semantic search and participant testing (L09, L10) were not part of this build.
 - The full "one Library catalogue" merge (F07) and a complete pass over every account page's content layout (D23) are not done beyond what is listed in the ledger.
+
+
+# Part 2: practice scenarios, rebuilt demos, one Library, reviewable suggestions
+
+(Added after your 30 October answers. It is in the same bundle.)
+
+## What visitors will notice
+
+- **Six need walkthroughs** (about a minute each, skippable and replayable, from the starting page's "Watch the short demo" and "Try this scenario"): Establish or rebuild a caseload, Arrange time away, Find a colleague for a client, Get another professional perspective, Reduce or wind down practice, Offer support to colleagues. Each runs the real product screens on its **own practice scenario** (a small fictional practice with its own availability, colleagues and unfinished work), has one step marked "Your turn", an optional "What will they receive?" panel (the generic alert line only, then "Back to my view"), and an ending that restates what happens next and carries the same need into sign-up (`/start?need=...`).
+- Every practice screen says **Fictional practice environment. Nothing here is saved or sent.**, and has **Reset scenario** (puts that scenario back to its start) and **Change scenario** (the choice page).
+- The existing demos keep their routes. Their wording now says what the product does: pausing never reopens by itself, alerts are one short line, and Library saving is a bookmark while saving a copy is a private file in My files.
+
+## What members will notice
+
+- **The Library is one place.** Old Documents addresses now land on the Library (a template's old name or PA number opens the Library on that template). My files and the professional-review page stay where they were. In a template, "Save resource" bookmarks it; **Save a copy to My files** makes a private file. Links from Consult, Referrals, Credentials and Continuity point at the Library.
+- **Suggestions from the public guide are reviewable.** On "We've used your choices to get you started": each suggestion says where it came from, has Discard, and nothing is saved until Save my choices. If the account already has a setting, it is shown and kept unless changed here. Nothing from a practice scenario ever reaches a profile, and a caseload choice never sets places.
+- The Notifications page is titled Notifications; categories say Referrals, not Refer.
+
+## How the practice scenarios work (important)
+
+The practice workspace runs **in the visitor's browser** on fixture data (`src/tour/scenarios.ts`). It never calls the database, so it cannot touch live or sandbox rows or grant a role, and Reset simply reloads the scenario. The "own colleagues" are the same invented colleagues, with each scenario changing availability and which discussions are visible. **If you wanted scenario-specific accounts stored in the sandbox database, that is a larger change I have not made.** SQL 0126 adds a read-only `practice_scenarios` catalogue so the demo site, the sandbox and analytics agree on the six ids. Analytics: practice events (`task_start`, `recipient_preview`, `interaction_complete`, `summary_continue`) are written to the `practice` namespace, never `real`.
+
+## Route mapping
+
+| Old | Now |
+|---|---|
+| `/dashboard/documents` | `/dashboard/library` |
+| `/dashboard/documents/<name or PA-nn>` | `/dashboard/library?resource=PA-nn` |
+| `/dashboard/documents?tab=mine` | unchanged (My files) |
+| `/dashboard/documents/review` | unchanged |
+| starting page "demo" per need | `/tour/caseload`, `/tour/time-away`, `/tour/client-referral`, `/tour/perspective`, `/tour/reducing`, `/tour/offer-support` (Just explore: `/tour`) |
+| `/tour/scene/<demo>/<step>` | same; the walkthroughs load their scenario by demo key |

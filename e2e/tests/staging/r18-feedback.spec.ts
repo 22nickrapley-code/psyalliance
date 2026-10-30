@@ -208,19 +208,20 @@ test("R18-10 Profile's four tabs are coloured by how complete they are", async (
 
 test("R18-11 the Library never shows review status; templates not ready say Coming soon", async ({ page, context, baseURL }) => {
   await signInAs(context, "bram", baseURL!);
+  // The Library is one place now: the old Documents address lands on it.
   await page.goto("/dashboard/documents");
-  const body = await page.locator("main").innerText();
-  expect(body).not.toMatch(/[Pp]rovisional|independently reviewed|review pending/);
+  await expect(page).toHaveURL(/\/dashboard\/library$/);
+  await page.locator(".library-grid, .resource-card, [data-action^='resource:']").first().waitFor({ timeout: 20000 });
+  const body = await page.locator("body").innerText();
+  expect(body).not.toMatch(/[Pp]rovisional|independently reviewed|review pending|Review pending/);
   const docs = await q(`select library_code, review_status from documents where owner_scope = 'world' and review_status in ('published', 'provisional') order by library_code`);
   const provisional = docs.find((d) => d.review_status === "provisional");
   test.skip(!provisional, "no template waiting for review on staging");
-  // This build is like the live site: a template waiting for review is
-  // listed as Coming soon and can't be opened.
-  await expect(page.locator(".soon-chip").first()).toBeVisible();
-  await page.locator("article.resource").filter({ has: page.locator(".soon-chip") }).first().locator("h3 a").click();
-  await expect(page.getByRole("link", { name: "Open the PDF" })).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "Save PDF to My Library" })).toHaveCount(0);
-  expect(await page.locator("main").innerText()).not.toMatch(/[Pp]rovisional|independently reviewed|Not yet/);
+  // This build is like the live site: a template waiting for review is listed as Coming soon and has no file to open.
+  await expect(page.getByText("Coming soon").first()).toBeVisible();
+  await page.goto(`/dashboard/library-files/${provisional!.library_code}`).catch(() => {});
+  const res = await page.request.get(`/dashboard/library-files/${provisional!.library_code}`);
+  expect(res.status()).toBe(404);
 });
 
 test("R18-12 the public Library lists titles and asks visitors to join", async ({ page }) => {

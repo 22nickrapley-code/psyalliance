@@ -233,11 +233,11 @@ test("C-08 L07 push subscription belongs to the signed-in member only; the alert
 
 test("C-09 L11/L13 guide: every need, headline and benefit exactly, optional follow-up and Skip, change my choice, no email field, demos reachable", async ({ browser, baseURL }) => {
   const cases: [string, string, string, string][] = [
-    ["Arrange time away", "Time away, with a clearer plan", "See how you can find suitable colleagues, review their responses and track the handovers that still need arranging.", "/tour/cover"],
-    ["Find a colleague for a client", "A clearer route to an appropriate colleague", "See how requirements, match explanations and recipient review help you approach suitable colleagues.", "/tour/refer"],
-    ["Establish or rebuild my caseload", "Help appropriate colleagues discover your practice", "See how your experience, settings and current capacity help others consider you for referrals.", "/tour/verified"],
-    ["Get another professional perspective", "Another professional perspective", "See how to choose who you ask and keep the discussion together.", "/tour/consult"],
-    ["Reduce or close my practice", "Support for your next chapter", "See how to consider onward referrals and the arrangements involved in changing your practice.", "/tour/refer"],
+    ["Arrange time away", "Time away, with a clearer plan", "See how you can find suitable colleagues, review their responses and track the handovers that still need arranging.", "/tour/time-away"],
+    ["Find a colleague for a client", "A clearer route to an appropriate colleague", "See how requirements, match explanations and recipient review help you approach suitable colleagues.", "/tour/client-referral"],
+    ["Establish or rebuild my caseload", "Help appropriate colleagues discover your practice", "See how your experience, settings and current capacity help others consider you for referrals.", "/tour/caseload"],
+    ["Get another professional perspective", "Another professional perspective", "See how to choose who you ask and keep the discussion together.", "/tour/perspective"],
+    ["Reduce or close my practice", "Support for your next chapter", "See how to consider onward referrals and the arrangements involved in changing your practice.", "/tour/reducing"],
   ];
   for (const width of [1365, 390, 320]) {
     const context = await browser.newContext({ viewport: { width, height: 900 } });

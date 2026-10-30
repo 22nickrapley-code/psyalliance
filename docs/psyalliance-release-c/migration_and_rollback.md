@@ -55,3 +55,8 @@ Then re-run the definitions of `private.cover_exclusions` from `0120_final_produ
 | `SMS_PROVIDER`, `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM` | Worker secrets | Text alerts, later. Leave `SMS_PROVIDER` unset until you have a paid account; members can still save a number and consent, and nothing is sent. |
 
 Until the VAPID keys exist the "Turn on alerts" button stays disabled and nothing else changes.
+
+
+## Part 2: SQL 0126_practice_scenarios.sql
+
+Adds one table, `practice_scenarios` (six rows; read-only to visitors; idempotent). It was applied twice to a local database with no change on the second run (test P-06 checks the ids against the code). **Not run on live or the sandbox.** Run it after 0125, on the sandbox first. Rollback: `drop table if exists public.practice_scenarios;` The site works without it (the table is not read by the pages); only the catalogue and its test depend on it. All other Part 2 changes are code only, so rolling the code back restores the old Documents pages without data changes.

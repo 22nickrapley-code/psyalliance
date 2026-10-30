@@ -357,7 +357,7 @@ test("RA-11 one unread number: the workspace, the account pages and the phone ba
 });
 
 test("RA-12 account pages: exactly five fully visible destinations at 320px, the same order, a named Search, no More", async ({ browser, baseURL }) => {
-  for (const path of ["/dashboard/profile", "/dashboard/settings", "/dashboard/documents"]) {
+  for (const path of ["/dashboard/profile", "/dashboard/settings", "/dashboard/documents?tab=mine"]) {
     const { page, context } = await openAs(browser, "fenn", baseURL!, path, true, 320);
     const links = page.locator(".mobile-nav a");
     await expect(links).toHaveCount(5);

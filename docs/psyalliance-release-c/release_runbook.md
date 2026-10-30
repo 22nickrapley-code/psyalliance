@@ -63,6 +63,14 @@ Texts need `SMS_PROVIDER=twilio` plus `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`,
 3. `npm run cf:deploy`
 4. The ten-minute check on `https://psyalliance.org`.
 
+## Part 2 additions
+
+Step 3 also runs `supabase/migrations/0126_practice_scenarios.sql` (after 0125). Then, on each site, add to the ten-minute check:
+
+- Open `/start`, choose "Arrange time away", press "Try this scenario": you should see "Fictional practice environment", three steps, "Your turn" on the second, "What will they receive?" on the third, and an ending with "Start my cover plan". Press Reset scenario and Change scenario once each.
+- Open `/dashboard/documents` signed in: it should land on the Library. Open a template and check "Save resource" and "Save a copy to My files" do different things (copy appears in My files).
+- Sign in with a guide choice saved ("Continue with these choices"): the start page shows each suggestion with its source and a Discard button.
+
 ## The ten-minute check (each site)
 
 **Public (signed out; try 390 wide too)**
