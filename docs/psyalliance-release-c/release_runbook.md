@@ -16,7 +16,7 @@ git fetch C:\Users\Nick\Downloads\psyalliance-release-c.bundle release-c:release
 git log --oneline master..release-c
 ```
 
-`git status` lists your three Cloudflare flag files (`package.json`, `package-lock.json`, `scripts/deploy-demo.mjs`); that is expected. The last command lists what is new. If Release B is already merged you will see only lines starting "Release C" (about twenty). If B is not merged, you will also see seventeen "Release B" lines first (and the A.1 / A / version 15 lines before that if those are missing too). Anything else, stop and tell me.
+`git status` lists your three Cloudflare flag files (`package.json`, `package-lock.json`, `scripts/deploy-demo.mjs`); that is expected. The last command lists what is new. If Release B is already merged you will see only lines starting "Release C" (twelve). If B is not merged, you will also see seventeen "Release B" lines first (and the A.1 / A / version 15 lines before that if those are missing too). Anything else, stop and tell me.
 
 ## Step 2: merge
 
