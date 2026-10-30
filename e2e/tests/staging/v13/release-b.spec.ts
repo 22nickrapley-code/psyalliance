@@ -592,6 +592,8 @@ test("B-14 D19 the day sheet stacks the two directions, a direction with nothing
     await panels.nth(1).getByText("B Sheet theirs").first().click();
     await expect(page.locator(".tracking-next")).toContainText("invitation");
     await expect(page.locator(".tracking-next")).not.toContainText("still needs a colleague");
+    // Keyboard focus starts on the close button, not on the organiser's name in the subtitle (its box clipped the words beside it).
+    await expect(page.locator(".modal-header [data-action='close-modal']")).toBeFocused();
     await context.close();
     // On a phone the status pill is as wide as its words, on the month page and in the day sheet.
     const phone = await openAs(browser, "avery", baseURL!, "/dashboard/cover", 390);
