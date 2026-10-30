@@ -94,16 +94,18 @@ test("ACC-05 Sign out from an account page ends the session", async ({ browser, 
   await a.context.close();
 });
 
-test("ACC-06 phone: More opens the menu, Escape closes it and focus returns; the bar marks where you are", async ({ browser, baseURL }) => {
+test("ACC-06 phone: the menu button opens the menu, Escape closes it and focus returns; the five-item bar marks nothing on a page outside it", async ({ browser, baseURL }) => {
   const a = await open(browser, "avery", baseURL!, "/dashboard/settings", true);
   const side = a.page.locator(".sidebar");
   await expect(side).toHaveAttribute("aria-hidden", "true");
-  await a.page.locator(".mobile-nav button", { hasText: "More" }).click();
+  await a.page.locator(".mobile-menu").click();
   await expect(side).toHaveClass(/open/);
   await expect(side).toHaveAttribute("aria-hidden", "false");
   await a.page.keyboard.press("Escape");
   await expect(side).not.toHaveClass(/open/);
-  await expect(a.page.locator(".mobile-nav button.active")).toContainText("More");
+  await expect(a.page.locator(".mobile-menu")).toBeFocused();
+  await expect(a.page.locator(".mobile-nav a")).toHaveCount(5);
+  await expect(a.page.locator(".mobile-nav a.active")).toHaveCount(0);
   await a.context.close();
 });
 

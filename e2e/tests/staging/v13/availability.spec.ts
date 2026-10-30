@@ -13,34 +13,32 @@ const reset = async () => {
   await q(`delete from workspace_drafts where profile_id = $1`, [avery()]);
 };
 
-test("AV-01 the Hub shows the member's own availability from the database", async ({ page, context, baseURL }) => {
+test("AV-01 the availability window shows the member's own availability from the database", async ({ page, context, baseURL }) => {
   await reset();
   await signInAs(context, "avery", baseURL!);
-  await page.goto("/dashboard");
-  await expect(page.locator(".hub-capacity-total strong")).toHaveText("3");
-  await expect(page.locator(".hub-state-settings")).toContainText("NY");
-  await expect(page.locator(".hub-freshness")).toContainText("Confirmed 8 days ago");
+  await page.goto("/dashboard?availability=1");
+  await expect(page.locator("#availability-slots")).toHaveValue("3");
+  await expect(page.locator('input[name="virtual-NY"]')).toBeAttached();
+  await expect(page.locator(".av-side")).toContainText("8 days ago");
 });
 
 test("AV-02 saving changes spaces and settings in the database and confirms today", async ({ page, context, baseURL }) => {
   await reset();
   await signInAs(context, "avery", baseURL!);
-  await page.goto("/dashboard");
-  await page.getByRole("button", { name: "Edit" }).first().click();
+  await page.goto("/dashboard?availability=1");
   await page.locator("#availability-slots").fill("5");
   await page.locator('input[name="virtual-NY"]').check();
   await page.locator('input[name="inPerson-NY"]').check();
   await page.locator("#availability-city-NY").fill("Brooklyn");
   await page.getByRole("button", { name: /Save & confirm availability/ }).click();
   await expect(page.locator("#toast")).toContainText("confirmed");
-  await expect(page.locator(".hub-capacity-total strong")).toHaveText("5");
   const p = await one(`select approx_spaces, referral_availability, availability_confirmed_at > now() - interval '1 minute' as fresh from profiles where id = $1`, [avery()]);
   expect(p).toMatchObject({ approx_spaces: 5, referral_availability: "yes", fresh: true });
   const s = await one(`select virtual, in_person, city from profile_state_settings where profile_id = $1 and state = 'NY'`, [avery()]);
   expect(s).toMatchObject({ virtual: true, in_person: true, city: "Brooklyn" });
   // It is the same after a reload: nothing lived only in the browser.
-  await page.reload();
-  await expect(page.locator(".hub-capacity-total strong")).toHaveText("5");
+  await page.goto("/dashboard?availability=1");
+  await expect(page.locator("#availability-slots")).toHaveValue("5");
 });
 
 test("AV-03 the server refuses spaces with no setting, and in-person with no city", async () => {
@@ -64,26 +62,25 @@ test("AV-04 a state without a reviewed licence cannot be given settings", async 
 test("AV-05 Confirm unchanged moves only the confirmation time", async ({ page, context, baseURL }) => {
   await reset();
   await signInAs(context, "avery", baseURL!);
-  await page.goto("/dashboard");
+  await page.goto("/dashboard?availability=1");
   await page.getByRole("button", { name: "Confirm unchanged" }).first().click();
   await expect(page.locator("#toast")).toContainText("reconfirmed today");
   const p = await one(`select approx_spaces, referral_availability, availability_confirmed_at > now() - interval '1 minute' as fresh from profiles where id = $1`, [avery()]);
   expect(p).toMatchObject({ approx_spaces: 3, referral_availability: "yes", fresh: true });
-  await expect(page.locator(".hub-freshness")).toContainText("Confirmed today");
+  await page.goto("/dashboard?availability=1");
+  await expect(page.locator(".av-side")).toContainText("Confirmed today");
 });
 
 test("AV-06 an unsaved availability edit survives Confirm unchanged, a reload and the account", async ({ page, context, baseURL }) => {
   await reset();
   await q(`delete from workspace_drafts where profile_id = $1`, [avery()]);
   await signInAs(context, "avery", baseURL!);
-  await page.goto("/dashboard");
-  await page.getByRole("button", { name: "Edit" }).first().click();
+  await page.goto("/dashboard?availability=1");
   await page.locator("#availability-slots").fill("7");
   await page.waitForTimeout(900);
   const d = await one(`select data from workspace_drafts where profile_id = $1 and kind = 'availability'`, [avery()]);
   expect(d.data.slots).toBe(7);
-  await page.reload();
-  await page.getByRole("button", { name: "Edit" }).first().click();
+  await page.goto("/dashboard?availability=1");
   await expect(page.locator("#availability-slots")).toHaveValue("7");
   // Confirming without saving is refused while an edit is waiting.
   await page.getByRole("button", { name: "Confirm unchanged" }).last().click();
@@ -104,9 +101,10 @@ test("AV-07 the 90-day rule: confirmed through day 90, stale from day 91", async
     const ids = (rows[0].people as any[]).map((p) => p.id);
     expect(ids.includes(avery()), `day ${days} in confirmed-available-now`).toBe(fresh);
     await page.goto("/dashboard");
-    const line = page.locator(".hub-freshness");
-    if (fresh) await expect(line).not.toContainText("Please reconfirm");
-    else await expect(line).toContainText("Please reconfirm");
+    // The Hub's practice-setup line: a gentle reminder from day 30, and "needs reconfirming" once the 90 days have passed.
+    const line = page.locator(".hub-setup");
+    await expect(line).toContainText(fresh ? "Reconfirm your availability" : "needs reconfirming");
+    if (fresh) await expect(line).not.toContainText("needs reconfirming");
   }
 });
 

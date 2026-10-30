@@ -187,14 +187,14 @@ test("V15-07 your own profile uses the same layout as a colleague's", async ({ b
   await context.close();
 });
 
-test("V15-08 Hub: greeting in the top bar, four areas first, nothing else crowding", async ({ browser, baseURL }) => {
+test("V15-08 Hub: greeting in the top bar, three service cards in one row, nothing else crowding", async ({ browser, baseURL }) => {
   const { page, context } = await openAs(browser, "avery", baseURL!, "/dashboard");
   await expect(page.locator(".topbar .breadcrumbs strong")).toContainText(/Good (morning|afternoon|evening), Avery/);
   // Only the top bar shows it on a computer; the heading stays for screen readers, drawn one pixel wide.
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^Good (morning|afternoon|evening), Avery$/);
   expect((await page.locator(".hub-hello").boundingBox())!.width).toBeLessThanOrEqual(1);
-  const areas = page.locator(".hub-area");
-  await expect(areas).toHaveCount(4);
+  const areas = page.locator(".hub-card");
+  await expect(areas).toHaveCount(3);
   const boxes = await areas.evaluateAll((els) => els.map((e) => e.getBoundingClientRect().top));
   expect(Math.max(...boxes) - Math.min(...boxes)).toBeLessThan(2); // one row
   await expect(page.getByText(/actions? waiting/i)).toHaveCount(0);
@@ -202,7 +202,7 @@ test("V15-08 Hub: greeting in the top bar, four areas first, nothing else crowdi
   await context.close();
 });
 
-test("V15-09 phone: Hub areas fit two across and nothing scrolls sideways", async ({ browser, baseURL }) => {
+test("V15-09 phone: the Hub fits the screen and nothing scrolls sideways", async ({ browser, baseURL }) => {
   const { page, context } = await openAs(browser, "avery", baseURL!, "/dashboard", true);
   await expect(page.locator(".hub-hello")).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);

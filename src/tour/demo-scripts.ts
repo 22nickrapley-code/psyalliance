@@ -368,7 +368,7 @@ const HUB: DemoScript = {
   key: "hub",
   title: "Your day on the Hub",
   what: "Hub",
-  blurb: "A calm start: what needs you, where to begin, questions from colleagues, and your availability.",
+  blurb: "A calm start: one list of what needs you, three places to start something, and a small invitation to grow your circle.",
   outcome: "You know what is waiting and where to start.",
   tryHref: "/tour/circle/home",
   chapters: [
@@ -378,34 +378,34 @@ const HUB: DemoScript = {
       steps: [
         {
           title: "A calm start to the day",
-          text: "Your greeting sits in the top bar. Below it are the four places you work in: Cover, Referrals, Consult and Network / Search.",
-          beats: [["look", ".breadcrumbs strong, .hub-hello"], ["look", ".hub-areas"]],
+          text: "Your greeting sits at the top. One line says how many things need you, and three cards below start a referral, plan cover or ask a question.",
+          beats: [["look", ".breadcrumbs strong, .hub-hello"], ["look", ".hub-attn-toggle"], ["look", ".hub-cards"]],
         },
         {
-          title: "What is waiting, without the noise",
-          text: "A small count on Cover or Referrals shows what needs you. Click it to go straight to those items.",
-          beats: [["look", ".hub-area-count"]],
+          title: "Everything that needs you, in one list",
+          text: "Open the list to see every request and task waiting for you, grouped by Referrals, Cover and Consult. Choose Later to set one aside. It comes back if anything new happens.",
+          beats: [["click", ".hub-attn-toggle"], ["look", ".hub-attn-panel"]],
         },
         {
           title: "Start anything from here",
-          text: "Plan cover, make a referral, ask a question, or search the network, each one click away.",
-          beats: [["look", '[data-action="cover-start"]'], ["look", '[data-action="referral-start"]'], ["look", '[data-action="directory"]']],
+          text: "Refer a client, plan cover or ask a question. Each card opens its own window and nothing is sent until you say so.",
+          beats: [["look", '[data-action="referral-start"]'], ["look", '[data-action="cover-start"]'], ["look", '[data-action="peer-start"]']],
         },
       ],
     },
     {
-      name: "Your colleagues, your availability",
+      name: "Your circle and your availability",
       view: "home",
       steps: [
         {
-          title: "Questions from your colleagues",
-          text: "Recent discussions from people you trust, with their topic. Join one, or follow it to keep it in your list.",
-          beats: [["scroll", "#home-discussions"], ["look", '[data-action="discussion:1"]']],
+          title: "Questions you could help with",
+          text: "Recent questions that match your interests can appear in their own group, never in the count. You can turn this off in your notification preferences.",
+          beats: [["look", ".hub-attn-toggle"]],
         },
         {
-          title: "Keep your availability current",
-          text: "Colleagues rely on it. Confirm it is unchanged in one click, or edit what has changed.",
-          beats: [["scroll", '[data-action="availability"]'], ["look", '[data-action="availability-reconfirm"]']],
+          title: "Grow your circle",
+          text: "A small line at the bottom invites a colleague you know. A bigger circle makes every other part more useful.",
+          beats: [["scroll", ".hub-invite-line"], ["look", ".hub-invite-line"]],
         },
       ],
     },

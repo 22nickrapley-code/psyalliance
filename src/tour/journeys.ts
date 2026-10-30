@@ -347,10 +347,10 @@ const CIRCLE: Journey = {
     {
       slug: "home",
       title: "The Hub: what needs you",
-      what: "Cover, Referrals, Consult and Network / Search, one click away, with a small count on the ones that have something waiting. No item ranks above the rest; you choose.",
-      focusNote: "Start from any of the four.",
+      what: "One line says how many things need you, and one list holds them all. Three cards start a referral, plan cover or ask a question. No item ranks above the rest; you choose.",
+      focusNote: "Start from any of the three.",
       scene: w("home"),
-      focus: ".hub-areas",
+      focus: ".hub-cards",
       scenarios: ["DEM-01"],
     },
     {

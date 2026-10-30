@@ -456,3 +456,45 @@ test("RA-14 collapsed navigation and person choices have names; a very long coll
     await q(`delete from auth.users where email like 'ra1200-%@mail.staging.example'`);
   }
 });
+
+test("RA-15 PSYPACT (F03): the screen and the server agree on who can take a client in another state", async ({ browser, baseURL }) => {
+  const cases = [
+    { label: "home NJ, PhD, taking part, virtual into PA", home: "NJ", cred: "PhD", part: true, state: "PA", setting: "virtual", ok: true },
+    { label: "same, either setting", home: "NJ", cred: "PhD", part: true, state: "PA", setting: "either", ok: true },
+    { label: "same, in person only", home: "NJ", cred: "PhD", part: true, state: "PA", setting: "in_person", ok: false },
+    { label: "same, into a state that is not a member (CA)", home: "NJ", cred: "PhD", part: true, state: "CA", setting: "virtual", ok: false },
+    { label: "an MD", home: "NJ", cred: "MD", part: true, state: "PA", setting: "virtual", ok: false },
+    { label: "a DO", home: "NJ", cred: "DO", part: true, state: "PA", setting: "virtual", ok: false },
+    { label: "not taking part", home: "NJ", cred: "PhD", part: false, state: "PA", setting: "virtual", ok: false },
+  ];
+  await q(`delete from licenses where profile_id = $1 and state = 'NJ'`, [bram.id]);
+  await q(`insert into licenses (profile_id, state, license_number, license_type, status, reviewed_at) values ($1, 'NJ', 'FIC-NJ-RA', 'Psychologist', 'active', now())`, [bram.id]);
+  const { page, context } = await openAs(browser, "avery", baseURL!, "/dashboard/referrals");
+  try {
+    for (const c of cases) {
+      await q(`update profiles set primary_state = $2, psypact_participating = $3, qualification_level = $4::qualification_level where id = $1`, [bram.id, c.home, c.part, c.cred]);
+      await q(`delete from workspace_drafts where profile_id = $1`, [avery.id]);
+      const server = (await one(`select private.licence_route($1::uuid, $2, $3) is not null as ok`, [bram.id, c.state, c.setting])).ok as boolean;
+      await page.goto("/dashboard/referrals");
+      await page.locator('[data-action="referral-start"]').first().click();
+      await expect(page.locator("#referral-need-form")).toBeVisible();
+      const form = page.locator("#referral-need-form");
+      await form.locator('select[name="focus"]').selectOption({ label: "Anxiety/Panic Disorders" });
+      await form.locator('select[name="state"]').selectOption(c.state);
+      await form.locator('select[name="setting"]').selectOption(c.setting);
+      await page.locator('.modal-footer button[type="submit"]').click();
+      await expect(page.locator(".match-card").first()).toBeVisible();
+      const box = page.locator(`input[data-match="referral"][value="${bram.id}"]`);
+      const screen = (await box.count()) === 1 && (await box.isEnabled());
+      expect(server, `server: ${c.label}`).toBe(c.ok);
+      expect(screen, `screen: ${c.label}`).toBe(c.ok);
+      await page.keyboard.press("Escape");
+    }
+  } finally {
+    await q(`update profiles set primary_state = 'NY', psypact_participating = false, qualification_level = 'PhD' where id = $1`, [bram.id]);
+    await q(`delete from licenses where profile_id = $1 and state = 'NJ'`, [bram.id]);
+    await q(`delete from workspace_drafts where profile_id = $1`, [avery.id]);
+  }
+  await clean(page);
+  await context.close();
+});

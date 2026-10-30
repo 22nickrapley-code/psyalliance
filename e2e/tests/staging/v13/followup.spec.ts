@@ -78,21 +78,19 @@ async function startReferral(page: Page) {
 }
 const ticked = (page: Page) => page.locator('input[data-match="referral"]:checked').evaluateAll((els) => els.map((e) => (e as HTMLInputElement).value));
 
-test("FOL-01 Hub (D4, v15): the greeting is in the top bar, the four areas lead, at most three discussions, and no year line", async ({ browser, baseURL }) => {
+test("FOL-01 Hub (Release A): the greeting is in the top bar, three service cards lead, no discussion list and no year line", async ({ browser, baseURL }) => {
   await seedQuestions();
   const { page, context } = await openAs(browser, "avery", baseURL!);
   await expect(page.locator(".topbar .breadcrumbs strong")).toHaveText(/^Good (morning|afternoon|evening), Avery$/);
-  await expect(page.locator(".hub-areas .hub-area")).toHaveCount(4);
-  await expect(page.locator(".hub-areas .hub-area-main")).toContainText(["Cover", "Referrals", "Consult", "Network / Search"]);
+  await expect(page.locator(".hub-cards .hub-card")).toHaveCount(3);
+  await expect(page.locator(".hub-cards .hub-card")).toContainText(["Referrals", "Cover", "Consult"]);
   // The old busy parts are gone: the year line and the "actions waiting" block.
   await expect(page.locator(".home-ledger")).toHaveCount(0);
   await expect(page.getByText(/on PsyAlliance$/)).toHaveCount(0);
   await expect(page.locator('[data-action="toggle-actions"]')).toHaveCount(0);
-  const rows = page.locator(".home-discussion");
-  await expect(page.locator(".home-discussion, .pulse-empty").first()).toBeAttached(); // discussions, or the honest empty note
-  expect(await rows.count()).toBeLessThanOrEqual(3);
-  const more = page.getByRole("button", { name: /^All \d+ discussions$/ });
-  if (await more.count()) expect(Number((await more.innerText()).match(/\d+/)![0])).toBeGreaterThan(3);
+  // Discussions are in Consult now; the Hub carries one actions control instead.
+  await expect(page.locator(".home-discussion, #home-discussions")).toHaveCount(0);
+  await expect(page.locator(".hub-attn-main, .hub-attn-clear")).toHaveCount(1);
   await clean(page);
   await context.close();
 });
@@ -300,12 +298,12 @@ test("FOL-08 Network (D9, v15): every trusted colleague is reachable, five to a 
   await context.close();
 });
 
-test("FOL-09 Phone bar (D2): Hub, Cover, Referrals, Consult, Messages, in that order", async ({ browser, baseURL }) => {
+test("FOL-09 Phone bar (D2): Hub, Referrals, Cover, Consult, Messages, in that order (Release A: Referrals first)", async ({ browser, baseURL }) => {
   const { page, context } = await openAs(browser, "avery", baseURL!, "/dashboard", true);
   const nav = page.locator(".mobile-nav");
   await expect(nav).toBeVisible();
   const labels = (await nav.innerText()).split("\n").map((s) => s.trim()).filter((s) => /^[A-Za-z ]+$/.test(s));
-  expect(labels).toEqual(["The Hub", "Cover", "Referrals", "Consult", "Messages"]);
+  expect(labels).toEqual(["The Hub", "Referrals", "Cover", "Consult", "Messages"]);
   await clean(page);
   await context.close();
 });

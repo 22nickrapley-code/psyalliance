@@ -44,8 +44,7 @@ const clean = (page: Page) => expect((page as any).__errs).toEqual([]);
 
 // ---------------------------------------------------------------------------------------------
 test("FU-01 availability window: cover openness, pause-until and consult openness are saved and come back", async ({ browser, baseURL }) => {
-  const a = await openAs(browser, "avery", baseURL!);
-  await a.page.getByRole("button", { name: "Edit" }).first().click();
+  const a = await openAs(browser, "avery", baseURL!, "/dashboard?availability=1");
   await a.page.locator("#availability-slots").fill("4");
   await a.page.locator('input[name="cover"][value="ask"]').check({ force: true });
   await a.page.locator("#availability-pause").fill(isoDay(10));
@@ -55,10 +54,9 @@ test("FU-01 availability window: cover openness, pause-until and consult opennes
   await expect(a.page.locator("#toast")).toContainText("confirmed");
   const p = await one(`select approx_spaces, availability_paused_until::text as paused, accepting_referrals, coverage_availability, consultation_availability from profiles where id = $1`, [avery]);
   expect(p).toMatchObject({ approx_spaces: 4, paused: isoDay(10), accepting_referrals: false, coverage_availability: "ask_me", consultation_availability: "no" });
-  await expect(a.page.locator(".hub-capacity")).toContainText(/Paused until/);
   // Nothing lived only in the browser.
-  await a.page.reload();
-  await a.page.getByRole("button", { name: "Edit" }).first().click();
+  await a.page.goto("/dashboard?availability=1");
+  await expect(a.page.locator(".av-side")).toContainText("Paused");
   await expect(a.page.locator('input[name="cover"][value="ask"]')).toBeChecked();
   await expect(a.page.locator("#availability-pause")).toHaveValue(isoDay(10));
   await expect(a.page.locator('input[name="consult"]')).not.toBeChecked();
