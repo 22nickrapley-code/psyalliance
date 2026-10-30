@@ -75,8 +75,8 @@ export function MessagesShell({
       <div className="page-head">
         <div>
           <div className="eyebrow">Your practice</div>
-          <h1>Messages</h1>
-          <p>Conversations with colleagues, connected to what started them, and every notification in one place.</p>
+          <h1>{tab === "notifications" ? "Notifications" : "Messages"}</h1>
+          <p>{tab === "notifications" ? "Replies, requests and notices from PsyAlliance, in one place." : "Conversations with colleagues, connected to what started them, and every notification in one place."}</p>
         </div>
       </div>
       <MessagesTabs tab={tab} newNotifications={newNotifications} />

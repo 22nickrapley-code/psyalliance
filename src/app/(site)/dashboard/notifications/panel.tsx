@@ -6,7 +6,7 @@ import { setNotificationReadState } from "../messages/actions";
 
 // Every notification in one list, housed in Messages beside the
 // conversations (the bell opens the same list): replies and requests from
-// Cover, Refer and Consult, colleagues adding you, license reviews, and
+// Cover, Referrals and Consult, colleagues adding you, license reviews, and
 // notices from PsyAlliance. New ones are highlighted until read.
 
 type Supabase = Awaited<ReturnType<typeof createClient>>;
@@ -17,9 +17,9 @@ const LABELS: Record<NotificationEventType, string> = {
   coverage_request: "Cover",
   coverage_response: "Cover",
   coverage_confirmed: "Cover",
-  referral_sent: "Refer",
-  referral_response: "Refer",
-  referral_connected: "Refer",
+  referral_sent: "Referrals",
+  referral_response: "Referrals",
+  referral_connected: "Referrals",
   consultation_response: "Consult",
   consultation_invite: "Consult",
   trusted_invitation_sent: "Network",
@@ -153,7 +153,7 @@ export function NotificationsView({ items }: { items: NotificationItem[] }) {
         )}
       </div>
       <p className="small" style={{ marginTop: 0 }}>
-        Replies and requests from Cover, Refer and Consult, colleagues who add you, license reviews and notices from PsyAlliance. The bell opens this list
+        Replies and requests from Cover, Referrals and Consult, colleagues who add you, license reviews and notices from PsyAlliance. The bell opens this list
         too.
       </p>
       {items.length === 0 ? (

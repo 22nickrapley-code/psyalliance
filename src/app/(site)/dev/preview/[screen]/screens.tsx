@@ -398,7 +398,7 @@ export const previewScreens: Record<string, () => ReactNode> = {
         items={[
           { key: "a", at: "2026-10-10T10:40:00.000Z", unread: true, label: "PsyAlliance", title: "Your credentials have been reviewed and verified", body: "You're now free to use PsyAlliance. Welcome to the network.", markRead: { kind: "notice", id: 1 } },
           { key: "b", at: "2026-10-10T09:10:00.000Z", unread: true, label: "Network", title: "Maya Calderwick, PsyD added you as a trusted colleague", body: null, open: { deliveryId: 2, href: "/dashboard/people/x" } },
-          { key: "c", at: "2026-10-09T16:00:00.000Z", unread: true, label: "Refer", title: "Samuel Brindlemoor, PhD replied to your referral: interested", body: null, open: { deliveryId: 3, href: "/dashboard/refer" } },
+          { key: "c", at: "2026-10-09T16:00:00.000Z", unread: true, label: "Referrals", title: "Samuel Brindlemoor, PhD replied to your referral: interested", body: null, open: { deliveryId: 3, href: "/dashboard/refer" } },
           { key: "d", at: "2026-10-07T12:00:00.000Z", unread: false, label: "Cover", title: "Eli Kestrelby, MD accepted cover for one client", body: null, open: { deliveryId: 4, href: "/dashboard/cover" } },
           { key: "e", at: "2026-10-02T12:00:00.000Z", unread: false, label: "Credentials", title: "Your New York license was reviewed", body: null },
         ]}
