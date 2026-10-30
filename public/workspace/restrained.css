@@ -203,14 +203,15 @@ body,.workspace,.workspace.feature-cover,.workspace.feature-referrals,.workspace
 .discussion-footer .label{font-size:12px}
 
 /* ---------- Choosing colleagues (Cover and Referrals) ---------- */
-.match-card{padding:14px 16px;gap:10px}
+.match-card{padding:16px 18px;gap:12px}
 .match-card .match-reasons{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
-.match-card .match-card-top{display:flex;align-items:flex-start;gap:12px}
-.match-card .match-card-top .match-card-select{flex:1;min-width:0}
-.match-card .match-profile-link{flex:none;font-size:15px;font-weight:650;display:inline-flex;align-items:center;gap:5px;color:var(--feature);padding:2px 2px;margin-top:2px;text-decoration:none}
+.match-card .match-card-top{display:flex;align-items:flex-start;gap:14px}
+.match-card .match-card-top .match-card-select{flex:1;min-width:0;align-items:center}
+.match-card .match-profile-link{flex:none;font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:4px;color:var(--forest);padding:6px 0;text-decoration:none;min-height:32px}
 .match-card .match-profile-link:hover{text-decoration:underline}
-.match-card .match-profile-link svg{width:16px;height:16px}
+.match-card .match-profile-link svg{width:14px;height:14px}
 .match-card .match-card-footer{margin:0;padding:0;min-height:0}
+.match-card .match-card-select .relationship-label{margin-left:auto;align-self:center;white-space:nowrap}
 
 /* ---------- Library, profile, Messages back ---------- */
 .resource-card .pdf-tag{display:inline-flex;align-items:center;padding:3px 10px;border-radius:6px;background:var(--sage);color:var(--forest);font-weight:700;font-size:12px}
@@ -691,7 +692,6 @@ body,.workspace,.workspace.feature-cover,.workspace.feature-referrals,.workspace
 .reply header small{font-size:12px}
 .reply strong{font-size:12px}
 .reply-kind{font-size:12px}
-.request-details>summary{font-size:12px}
 .request-line .label{font-size:12px}
 .request-line small{font-size:12px}
 .resource-card .button{font-size:12px}
@@ -987,4 +987,25 @@ body,.workspace,.workspace.feature-cover,.workspace.feature-referrals,.workspace
   .page-heading p{max-width:none}
   .page-heading .heading-buttons{display:flex}
   .page-heading .heading-buttons .button{flex:1 1 auto;justify-content:center;min-height:44px}
+}
+
+/* Design pass 2 (Nick, 30 Oct): Cover pop-up steps 3 and 4 */
+.workflow-step{white-space:nowrap}
+.outreach-summary{align-items:flex-start}
+.outreach-summary>svg{flex:none;margin-top:2px}
+@media(max-width:760px){
+  /* Step bar: numbers for every step, the name only for the current one, so nothing wraps */
+  .workflow-steps .workflow-step:not(.active){font-size:0;gap:0}
+  .workflow-steps .workflow-step:not(.active)>span{font-size:12px}
+  .workflow-steps .workflow-line{min-width:10px}
+  /* Colleague card: name and relationship on their own lines, Profile link small beneath */
+  .match-card{padding:14px}
+  .match-card .match-card-top{flex-direction:column;gap:4px}
+  .match-card .match-card-top .match-card-select{width:100%;flex-wrap:wrap;row-gap:6px;align-items:flex-start}
+  .match-card .match-card-select .relationship-label{margin-left:0;flex-basis:100%;width:max-content;order:3}
+  .match-card .match-profile-link{align-self:flex-start;padding:0;min-height:32px;margin-left:0}
+  .match-card .match-reasons{gap:4px}
+  .match-card .match-reasons>span{padding:3px 8px}
+  /* Review: stack the reply-time field and the explanation */
+  .modal .form-grid:has(>.outreach-summary){grid-template-columns:1fr}
 }
