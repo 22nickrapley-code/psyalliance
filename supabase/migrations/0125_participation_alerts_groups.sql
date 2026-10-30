@@ -75,6 +75,23 @@ begin
   end if;
 end $$;
 
+-- A colleague who has paused or closed Consult invitations cannot be picked as a direct recipient (new questions only;
+-- discussions already under way and group posts to the person's own groups are unaffected).
+do $$
+declare def text;
+begin
+  select pg_get_functiondef('public.consult_post(jsonb)'::regprocedure) into def;
+  if position('service_paused' in def) = 0 then
+    def := replace(def, $q$    v_recipients := v_ids;
+$q$, $q$    if exists (select 1 from unnest(v_ids) i where private.service_paused(i, 'consult') or not private.service_open(i, 'consult')) then
+      raise exception 'One of those colleagues is not taking new Consult invitations at the moment. Choose someone else.' using errcode = 'P0001';
+    end if;
+    v_recipients := v_ids;
+$q$);
+    execute def;
+  end if;
+end $$;
+
 create or replace function public.my_participation()
 returns jsonb language sql stable security definer set search_path to 'public' as $$
   select coalesce((

@@ -25,7 +25,7 @@ const FAQ: [string, string][] = [
   ],
   [
     "What's in the Library?",
-    "Twenty templates for independent practice, from a professional will to a reciprocal cover agreement. Browse the titles here. Members open the ones that have been released, placed beside the work they support, and the rest follow as each completes professional review.",
+    "Twenty templates for independent practice, from a professional will to a reciprocal cover agreement. Browse the titles here. Members open the ones available now, placed beside the work they support, and the rest follow as each is released.",
   ],
   [
     "Do client details go into PsyAlliance?",

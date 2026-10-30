@@ -43,7 +43,7 @@ export function PublicLibraryView({ docs, q }: { docs: PublicDoc[]; q: string })
               <h1>The Library.</h1>
               <p>
                 Templates and checklists for independent practice, written for psychologists and psychiatrists. See what&rsquo;s in each one here. Members open and download
-                the templates that have been released, and each of the others follows once it has completed professional review.
+                the templates that are available now, and the others are added as each is released.
               </p>
             </div>
             <form method="get" action="/library" className="searchbar lib-search">
@@ -51,7 +51,7 @@ export function PublicLibraryView({ docs, q }: { docs: PublicDoc[]; q: string })
               <input type="search" name="q" defaultValue={q} placeholder="Search a topic, such as leave, consent or subpoena" aria-label="Search the library" />
               <button type="submit" className="btn small-btn">Search</button>
             </form>
-            <p className="lib-count micro-note">{docs.length} templates. {docs.filter((x) => x.downloadable).length} released to members now; the rest are added as each completes professional review.</p>
+            <p className="lib-count micro-note">{docs.length} templates. {docs.filter((x) => x.downloadable).length} available to members now; the rest are added as each is released.</p>
           </div>
         </section>
 
@@ -165,8 +165,8 @@ export function PublicResourceView({ d, related }: { d: PublicDoc; related: Publ
                   </>
                 ) : (
                   <>
-                    <h3>Not released yet.</h3>
-                    <p className="small">The {docName(d.code)} is waiting for professional review. Members see it listed in the Library, and it opens for them once it has been released.</p>
+                    <h3>Coming soon.</h3>
+                    <p className="small">The {docName(d.code)} is not available to members yet. It opens in the Library as soon as it is released.</p>
                   </>
                 )}
                 <a className="btn" href={join}>Create your account</a>

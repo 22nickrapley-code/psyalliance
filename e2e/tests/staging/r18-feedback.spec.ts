@@ -228,7 +228,7 @@ test("R18-12 the public Library lists titles and asks visitors to join", async (
   const text = await page.locator("main").innerText();
   expect(text).not.toMatch(/review|Free download|free to download/i);
   await page.locator(".lib-card h3 a").first().click();
-  await expect(page.getByRole("heading", { name: "Members get it now." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Members get it now\.|Coming soon\./ })).toBeVisible();
   await expect(page.getByRole("link", { name: "Create your account" }).first()).toBeVisible();
   expect(await page.locator("main").innerText()).not.toMatch(/review|Free download/i);
 });

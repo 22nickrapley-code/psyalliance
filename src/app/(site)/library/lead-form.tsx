@@ -42,7 +42,7 @@ export function LeadForm({
         ) : state.intent === "notify" ? (
           <>
             <b>Thank you. We&rsquo;ll email you when the {name} is free to download.</b>
-            <p className="small">Members open the templates that have been released; the others follow once they have completed professional review.</p>
+            <p className="small">Members open the templates that are available now; the others follow as each is released.</p>
           </>
         ) : (
           <>

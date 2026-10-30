@@ -393,7 +393,7 @@ test("C-16 D21/F19 public Library no longer promises every template; D28 phone s
   const t = (await page.locator("main").innerText()).toLowerCase();
   expect(t).not.toContain("members get every template");
   expect(t).not.toContain("download and save every template");
-  expect(t).toMatch(/released to members now/);
+  expect(t).toMatch(/available to members now/);
   await page.goto(baseURL! + "/auth/sign-up");
   const form = await page.locator("form.join-card").boundingBox();
   const intro = await page.locator(".join-intro h1").boundingBox();
@@ -408,4 +408,17 @@ test("C-17 events: unknown events are ignored, known ones carry a namespace and 
   expect(n.n).toBe(0);
   const cols = (await q(`select column_name from information_schema.columns where table_name = 'lifecycle_events' order by 1`)).map((r) => r.column_name);
   expect(cols).toEqual(["at", "event", "id", "namespace", "need"]);
+});
+
+test("C-18 L03/L05 a Consult pause or closed door stops new direct invitations only", async () => {
+  const ask = (to: string) => asMember(avery, `select public.consult_post($1::jsonb)`, [JSON.stringify({ title: "RC pause question", body: "", confirmed: "true", audience: "one", recipients: [to] })]);
+  await q(`insert into member_participation (profile_id, paused_consult) values ($1, true) on conflict (profile_id) do update set paused_consult = true`, [bram]);
+  await expect(ask(bram)).rejects.toThrow(/not taking new Consult invitations/);
+  await q(`update member_participation set paused_consult = false, open_consult = false where profile_id = $1`, [bram]);
+  await expect(ask(bram)).rejects.toThrow(/not taking new Consult invitations/);
+  // Another colleague is unaffected, and so is a Cover or referral pause for the same member.
+  await q(`update member_participation set open_consult = true, paused_cover = true, paused_referrals = true where profile_id = $1`, [bram]);
+  const ok = await ask(bram);
+  expect(ok.rowCount).toBe(1);
+  await q(`delete from consultations where question = 'RC pause question'`);
 });

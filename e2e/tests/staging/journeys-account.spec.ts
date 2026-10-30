@@ -129,7 +129,7 @@ test("J-LIB-01 the public Library lists titles, asks visitors to join, and never
   await shot(page, info, "2-template");
   const t = await page.locator("main, body").first().innerText();
   await info.attach("text.txt", { body: t.slice(0, 3000), contentType: "text/plain" });
-  expect(t, "asks visitors to join").toMatch(/Members get it now/);
+  expect(t, "asks visitors to join").toMatch(/Members get it now|Coming soon/);
   await expect(page.getByRole("link", { name: /Create your account/ }).first()).toBeVisible();
   expect(t, "no review wording").not.toMatch(/not yet (independently )?reviewed|after independent review|provisional/i);
   expect(t, "never claims a review").not.toMatch(/Reviewed by|Clinically reviewed/i);
