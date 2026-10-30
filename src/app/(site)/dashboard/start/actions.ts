@@ -53,14 +53,13 @@ export async function startFreshAction() {
 
 // Discard one suggestion. The choice was only ever a private draft in this browser, so discarding it removes it from
 // the draft and changes nothing on the account.
-export async function discardSuggestionAction(formData: FormData) {
+export async function discardSuggestionAction(what: string) {
   const jar = await cookies();
   const h = parseHandoff(jar.get(HANDOFF_COOKIE)?.value);
   if (!h) redirect("/dashboard");
-  const what = String(formData.get("discard") || "");
   const next = { need: h.need, ctx: h.ctx, helps: h.helps, exp: h.exp };
   if (what === "ctx") next.ctx = undefined;
   else if ((HELPS as readonly string[]).includes(what)) next.helps = (h.helps || []).filter((k) => k !== what);
-  jar.set(HANDOFF_COOKIE, encodeURIComponent(JSON.stringify(next)), { path: "/", maxAge: HANDOFF_HOURS * 3600, sameSite: "lax" });
+  jar.set(HANDOFF_COOKIE, JSON.stringify(next), { path: "/", maxAge: HANDOFF_HOURS * 3600, sameSite: "lax" });
   redirect("/dashboard/start");
 }

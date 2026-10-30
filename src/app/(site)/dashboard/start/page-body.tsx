@@ -35,7 +35,7 @@ export default async function StartPage(props: { searchParams: Promise<{ route?:
                   <span>Private context</span>
                   <strong>{CONTEXT_LABEL[h.ctx] || h.ctx}</strong>
                   <small className="muted" data-provenance>Suggested from your choice on the public guide. Only you see this.</small>
-                  <form action={discardSuggestionAction}><button type="submit" name="discard" value="ctx" className="btn secondary small-btn">Discard</button></form>
+                  <form action={discardSuggestionAction.bind(null, "ctx")}><button type="submit" className="btn secondary small-btn">Discard</button></form>
                 </li>
               ) : null}
             </ul>
@@ -61,7 +61,7 @@ export default async function StartPage(props: { searchParams: Promise<{ route?:
                   </label>
                   {suggested ? <small className="muted" data-provenance>Suggested from your choice on the public guide.</small> : null}
                   {differs ? <small className="muted" data-conflict> Your account currently has this {current[k] ? "on" : "off"}; it stays that way unless you change it here.</small> : null}
-                  {suggested ? <button type="submit" formAction={discardSuggestionAction} name="discard" value={k} className="text-link small" formNoValidate>Discard suggestion</button> : null}
+                  {suggested ? <button type="submit" formAction={discardSuggestionAction.bind(null, k)} className="text-link small" formNoValidate>Discard suggestion</button> : null}
                 </div>
               );
             })}
