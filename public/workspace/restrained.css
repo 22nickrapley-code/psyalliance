@@ -1073,3 +1073,6 @@ body,.workspace,.workspace.feature-cover,.workspace.feature-referrals,.workspace
 /* Release B: the circle's touch targets never overlap (see fitCircle). */
 .circle-person[hidden] { display: none; }
 @media (max-width: 350px) { .network-overview .circle-map { transform: none; margin: 0 auto; } }
+
+/* Release B: with one client there is nothing to switch between, so the matching step is one column. */
+.client-match-layout.single { display: block; }

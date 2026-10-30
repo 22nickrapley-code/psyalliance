@@ -516,3 +516,42 @@ test("B-12 A01 freshness at 29, 30, 90 and 91 days: one age everywhere, stale st
     void label;
   }
 });
+
+test("B-13 D09 D12 workflow headings name the task, and one client has no client tabs and no By colleague switch", async ({ browser, baseURL }) => {
+  const { page, context } = await openAs(browser, "avery", baseURL!, "/dashboard/cover");
+  await expect(page.locator('[data-action="cover-start"]').first()).toHaveText(/Plan cover/);
+  await startCover(page, "B Headings");
+  await expect(page.locator("#modal-title")).toHaveText("Build your client list");
+  await saveClient(page);
+  await page.getByRole("button", { name: "Continue to colleagues" }).click();
+  await expect(page.locator("#modal-title")).toHaveText("Choose colleagues");
+  // One client: nothing to switch between.
+  await expect(page.locator(".client-match-tabs")).toHaveCount(0);
+  await expect(page.locator('[data-action="match-view:colleague"]')).toHaveCount(0);
+  await expect(page.locator('[data-action="match-view:client"]')).toHaveCount(0);
+  await expect(page.locator(".match-intro")).toContainText("Choose who to ask about this client.");
+  await expect(page.locator(".match-intro h3")).toHaveCount(0);
+  // The colleague list is still there and can be used.
+  expect(await page.locator('input[data-match="cover"][data-client="1"]').count()).toBeGreaterThan(0);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
+  // Two clients: both switches come back.
+  await page.getByRole("button", { name: "Back" }).click();
+  await clickAction(page, '[data-action^="client-duplicate:"]');
+  await page.getByRole("button", { name: "Continue to colleagues" }).click();
+  await expect(page.locator(".client-match-tabs")).toBeVisible();
+  await expect(page.locator('[data-action="match-view:colleague"]')).toBeVisible();
+  await expect(page.locator(".match-intro")).toContainText("Choose who to ask for each client.");
+  await page.keyboard.press("Escape");
+  // Referrals and availability use plain task names too.
+  await page.goto("/dashboard/referrals");
+  await expect(page.locator('[data-action="referral-start"]').first()).toHaveText(/Refer a client/);
+  await page.locator('[data-action="referral-start"]').first().click();
+  await expect(page.locator("#modal-title")).toHaveText("Refer a client");
+  await page.keyboard.press("Escape");
+  await page.goto("/dashboard?availability=1");
+  await expect(page.locator("#modal-title")).toHaveText("Your availability");
+  // None of the old promotional headings survive anywhere in the workflow screens.
+  const text = await page.locator(".modal").innerText();
+  expect(text).not.toMatch(/Room for the right referral|Choose the right colleagues|Bring your people closer|Good colleagues\. A clear fit/);
+  await context.close();
+});

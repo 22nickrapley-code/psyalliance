@@ -165,7 +165,7 @@ const COVER: Journey = {
       what: "Your plans and the plans you are covering, on a calendar. Your own are labelled as yours, and a colleague’s as theirs, so a clash is easy to see.",
       focusNote: "Switch between your plans and the ones you cover.",
       scene: w("cover", "cover-calendar"),
-      focus: "Arrange cover for my clients",
+      focus: "Plan cover",
       scenarios: ["DEM-06"],
     },
   ],
@@ -447,7 +447,7 @@ const VERIFIED: Journey = {
     },
     {
       slug: "availability",
-      title: "Room for the right referral",
+      title: "Your availability",
       what: "A single number of spaces, shared across the states you are licensed in, with each state’s virtual and in-person options. Colleagues see when you last confirmed it.",
       focusNote: "Save and confirm, or confirm that nothing has changed.",
       scene: w("home", "availability"),
