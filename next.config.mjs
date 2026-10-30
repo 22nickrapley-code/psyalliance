@@ -22,6 +22,9 @@ const nextConfig = {
   reactStrictMode: true,
   // Don't announce the framework (release testing R16-A).
   poweredByHeader: false,
+  // Messages accept files up to 20 MB. Next keeps only the first 10 MB of a request body that passes through the
+  // middleware, so a file between 10 and 20 MB failed with "That file couldn't be read" (Release B, M03).
+  experimental: { middlewareClientMaxBodySize: "25mb" },
   async headers() {
     return [
       { source: "/:path*", headers: securityHeaders },
