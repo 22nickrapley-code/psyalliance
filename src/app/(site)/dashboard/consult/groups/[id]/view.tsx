@@ -9,6 +9,7 @@ import {
   leaveGroupAction,
   removeGroupMemberAction,
   updateCharterAction,
+  setGroupRoleAction,
 } from "../actions";
 import { PageHead, Banner, Empty, Status, PersonAvatar } from "../../../_components/ui";
 
@@ -33,6 +34,7 @@ export default async function ConsultationGroupPage(props: { params: Promise<{ i
   const { data: group } = await supabase.from("consultation_groups").select("*").eq("id", groupId).maybeSingle();
   if (!group) redirect("/dashboard/consult/groups?error=" + encodeURIComponent("That group isn't available."));
   const isCreator = group.created_by === me;
+  const { data: charters } = await supabase.from("consultation_group_charters").select("version, body, edited_at").eq("group_id", groupId).order("version", { ascending: false });
 
   const [{ data: members }, { data: mine }, { data: threads }, { data: conns }] = await Promise.all([
     supabase
@@ -54,9 +56,11 @@ export default async function ConsultationGroupPage(props: { params: Promise<{ i
           .eq("profile_id", me)
       : Promise.resolve({ data: [] as any[] }),
   ]);
-  if (!isCreator && !mine) redirect("/dashboard/consult/groups?error=" + encodeURIComponent("That group isn't available."));
+  if (!isCreator && mine?.status !== "joined" && mine?.status !== "invited") redirect("/dashboard/consult/groups?error=" + encodeURIComponent("That group isn't available."));
 
   const isMember = isCreator || mine?.status === "joined";
+  const myRole = (members || []).find((m: any) => m.profile_id === me)?.role;
+  const isOrganiser = isCreator || myRole === "coordinator";
   const nameOf = (p: any) => (p ? clinicianName(p?.full_name, p?.qualification_level, p?.credential_prefix) : "Member");
   const existing = new Set((members || []).map((m: any) => m.profile_id).filter(Boolean));
   const candidates = (conns || [])
@@ -135,16 +139,26 @@ export default async function ConsultationGroupPage(props: { params: Promise<{ i
                     ) : (
                       <strong>{m.external_email} <span className="micro-note">(invited by email)</span></strong>
                     )}
-                    <p>{m.role === "creator" || m.profile_id === group.created_by ? "Organizer" : MEMBER_STATUS[m.status] || m.status}</p>
+                    <p>{m.role === "creator" || m.profile_id === group.created_by ? "Organizer" : m.role === "coordinator" && m.status === "joined" ? "Organizer (appointed)" : MEMBER_STATUS[m.status] || m.status}</p>
                   </span>
                 </span>
-                {isCreator && m.profile_id !== group.created_by && ["joined", "invited"].includes(m.status) && (
-                  <form action={removeGroupMemberAction} className="inline">
-                    <input type="hidden" name="group_id" value={group.id} />
-                    <input type="hidden" name="membership_id" value={m.id} />
-                    <button type="submit" className="plain-button small">Remove</button>
-                  </form>
-                )}
+                <span className="row" style={{ gap: 8 }}>
+                  {isCreator && m.profile_id && m.profile_id !== group.created_by && m.status === "joined" && (
+                    <form action={setGroupRoleAction} className="inline">
+                      <input type="hidden" name="group_id" value={group.id} />
+                      <input type="hidden" name="profile_id" value={m.profile_id} />
+                      <input type="hidden" name="role" value={m.role === "coordinator" ? "member" : "coordinator"} />
+                      <button type="submit" className="plain-button small">{m.role === "coordinator" ? "Make an ordinary member" : "Make an organizer"}</button>
+                    </form>
+                  )}
+                  {isOrganiser && m.profile_id && m.profile_id !== group.created_by && m.profile_id !== me && ["joined", "invited"].includes(m.status) && (
+                    <form action={removeGroupMemberAction} className="inline">
+                      <input type="hidden" name="group_id" value={group.id} />
+                      <input type="hidden" name="profile_id" value={m.profile_id} />
+                      <button type="submit" className="plain-button small">Remove</button>
+                    </form>
+                  )}
+                </span>
               </div>
             ))}
             {isCreator && group.charter_body && (
@@ -190,7 +204,7 @@ export default async function ConsultationGroupPage(props: { params: Promise<{ i
             ) : (
               <p className="small">No charter yet.</p>
             )}
-            {isCreator && (
+            {isOrganiser && (
               <details style={{ marginTop: 12 }} open={!group.charter_body}>
                 <summary className="small" style={{ cursor: "pointer" }}>{group.charter_body ? "Edit the charter" : "Write the charter"}</summary>
                 <form action={updateCharterAction} style={{ marginTop: 10 }}>
@@ -204,6 +218,17 @@ export default async function ConsultationGroupPage(props: { params: Promise<{ i
               </details>
             )}
           </section>
+          {isMember && (charters || []).length > 1 && (
+            <section className="card" data-charter-history>
+              <div className="card-title"><h3>Earlier charters</h3></div>
+              {(charters || []).slice(1).map((c: any) => (
+                <details key={c.version} className="item">
+                  <summary className="small">Version {c.version} &middot; {shortDate(c.edited_at)}</summary>
+                  <p className="small" style={{ whiteSpace: "pre-wrap" }}>{c.body}</p>
+                </details>
+              ))}
+            </section>
+          )}
           <section className="card">
             <div className="eyebrow">From the Library</div>
             <h3>Consultation Group Charter</h3>

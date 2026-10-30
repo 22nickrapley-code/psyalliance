@@ -144,41 +144,35 @@ export async function leaveGroupAction(formData: FormData) {
 
 export async function removeGroupMemberAction(formData: FormData) {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Not signed in");
-
   const groupId = Number(formData.get("group_id"));
-  const membershipId = Number(formData.get("membership_id"));
-
-  // RLS ("group creator manages membership") is the real gate here - this
-  // delete only succeeds when the caller created the group.
-  const { error } = await supabase.from("consultation_group_members").delete().eq("id", membershipId);
+  const member = String(formData.get("profile_id") || "");
+  // The database checks the caller is an organiser. A removed member keeps no access to the group.
+  const { error } = await supabase.rpc("group_remove_member", { p_group: groupId, p_member: member });
   if (error) groupError(groupId, friendly(error));
-
   revalidatePath(`/dashboard/consult/groups/${groupId}`);
   redirect(`/dashboard/consult/groups/${groupId}`);
 }
 
 export async function updateCharterAction(formData: FormData) {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Not signed in");
-
   const groupId = Number(formData.get("group_id"));
-  const charterBody = String(formData.get("charter_body") || "");
-
-  const { data: current } = await supabase.from("consultation_groups").select("charter_version").eq("id", groupId).maybeSingle();
-  const { error } = await supabase
-    .from("consultation_groups")
-    .update({ charter_body: charterBody, charter_version: (current?.charter_version || 1) + 1 })
-    .eq("id", groupId)
-    .eq("created_by", user.id);
+  const { error } = await supabase.rpc("group_edit_charter", { p_group: groupId, p_body: String(formData.get("charter_body") || "") });
   if (error) groupError(groupId, friendly(error));
+  revalidatePath(`/dashboard/consult/groups/${groupId}`);
+  redirect(`/dashboard/consult/groups/${groupId}`);
+}
 
+export async function setGroupRoleAction(formData: FormData) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not signed in");
+  const groupId = Number(formData.get("group_id"));
+  const { error } = await supabase.rpc("group_set_role", { p_group: groupId, p_member: String(formData.get("profile_id") || ""), p_role: String(formData.get("role") || "") });
+  if (error) groupError(groupId, friendly(error));
   revalidatePath(`/dashboard/consult/groups/${groupId}`);
   redirect(`/dashboard/consult/groups/${groupId}`);
 }
