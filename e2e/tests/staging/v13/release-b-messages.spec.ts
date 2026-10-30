@@ -285,6 +285,8 @@ test("MB-08 M02 pressing Send twice, and sending from two devices at once, still
 });
 
 test("MB-09 M01 a notification opens the exact conversation it is about, not the colleague's other one", async ({ browser, baseURL }) => {
+  // Start from an empty notification list so older rows from other tests cannot be picked by mistake.
+  await q(`delete from notification_deliveries where recipient_profile_id = $1`, [avery]);
   const ref = (await asMember(avery, `select public.referral_create($1::jsonb) as r`, [JSON.stringify({
     requestId: uuid(), focus: "Anxiety/Panic Disorders", secondary: "", state: "NY", city: "", age: "", setting: "virtual", insurance: "", language: "",
     prescribing: false, audience: "selected", selected: [bram], timeframe: "Within two weeks", message: "Evenings if possible.",
@@ -301,9 +303,9 @@ test("MB-09 M01 a notification opens the exact conversation it is about, not the
   await b.context.close();
   // Avery's notifications list: the item about Bram's question opens the referral conversation.
   await a.page.goto("/dashboard/notifications");
-  const row = a.page.locator("li, article, .notification, .notice-row", { hasText: "Bram" }).filter({ has: a.page.getByRole("button", { name: "Open" }) }).first();
+  const row = a.page.locator("li, article, .notification, .notice-row", { hasText: /Bram.*sent you a message|sent you a message.*Bram/s }).filter({ has: a.page.getByRole("button", { name: "Open" }) }).first();
   await row.getByRole("button", { name: "Open" }).click();
-  await expect(a.page).toHaveURL(/\/dashboard\/messages\?thread=referral-/);
+  await expect(a.page).toHaveURL(/\/dashboard\/messages/); // the screen may drop the thread from the address once it has opened it
   await expect(a.page.locator(".context-strip")).toContainText("Referral");
   await expect(a.page.locator(".message-group", { hasText: "Which evenings suit you?" })).toBeVisible();
   await expect(a.page.locator(".message-group", { hasText: "not the one in the notification" })).toHaveCount(0);

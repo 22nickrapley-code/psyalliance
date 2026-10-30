@@ -309,7 +309,8 @@ test("RA-10 search in the top bar has named scopes and filters to them", async (
   for (const text of await results.allInnerTexts()) expect(text).toMatch(/Colleague|Network \/ Search/);
   await expect(dialog.locator(".search-note")).toHaveCount(0);
   await dialog.getByRole("button", { name: "Messages", exact: true }).click();
-  await expect(dialog.locator(".search-note")).toContainText("Older messages are not searched here");
+  // Release B searches every message once SQL 0124 is in place; before that the window still says older messages are not searched.
+  await expect(dialog.locator(".search-note")).toContainText(/search every message in your conversations|Older messages are not searched here/);
   await dialog.getByRole("button", { name: "Library", exact: true }).click();
   for (const text of await dialog.locator("#global-results .global-result").allInnerTexts()) expect(text).toMatch(/Library|No results/);
   await page.keyboard.press("Escape");

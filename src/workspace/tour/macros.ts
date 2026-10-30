@@ -35,6 +35,13 @@ async function threeClients(ui: Ui) {
   await ui.click("text=Save client");
   await ui.wait(`${M} [data-action="needs-continue"]`);
 }
+// Opening the matching step no longer picks anyone for you, so a scene that goes on to the review chooses one colleague for each client, as a person would.
+async function chooseColleagues(ui: Ui, clients = 3) {
+  for (let id = 1; id <= clients; id++) {
+    await ui.click(`${M} [data-action="match-client:${id}"]`);
+    await ui.tick(`${M} input[data-match="cover"][data-client="${id}"]:not([disabled])`);
+  }
+}
 async function previewControls(ui: Ui) {
   await ui.act("settings");
   await ui.act("review-controls");
@@ -87,6 +94,8 @@ export const MACROS: Record<string, Macro> = {
   "cover-review": async (ui) => {
     await threeClients(ui);
     await ui.act("needs-continue");
+    await ui.wait(`${M} [data-action="match-view:client"]`);
+    await chooseColleagues(ui);
     await ui.wait(`${M} [data-action="cover-review"]`);
     await ui.act("cover-review");
     await ui.wait(`${M} form, ${M} [data-action="peer-post"], ${M} button[type="submit"]`);
