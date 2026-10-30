@@ -43,6 +43,7 @@ export function buildLiveEnv(boot: LiveBoot, view: WorkspaceView) {
     mode: "live" as const,
     view,
     me: boot.me,
+    userId: boot.userId,
     previewControls: !!boot.sandbox,
     sandbox: boot.sandbox || null,
     account: { admin: !!boot.me?.isAdmin, physician: Number(boot.inbound?.physician || 0), demoSite: !!boot.demo },

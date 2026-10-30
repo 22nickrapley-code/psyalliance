@@ -309,3 +309,103 @@ test("MB-09 M01 a notification opens the exact conversation it is about, not the
   await expect(a.page.locator(".message-group", { hasText: "not the one in the notification" })).toHaveCount(0);
   await a.context.close();
 });
+
+const unreadIn = async (prefix: string) => Number((await q(`select count(*)::int c from conversation_messages m join conversations c on c.id = m.conversation_id join conversation_participants p on p.conversation_id = m.conversation_id and p.profile_id = $1 where c.context_key like $2 and m.author_id <> $1 and m.deleted_at is null and m.created_at > coalesce(p.last_read_at, 'epoch')`, [avery, prefix + "%"]))[0].c);
+
+test("MB-10 M01 one colleague, two contexts: the outer row shows the latest message and opens exactly that context, a count says how many, and opening one leaves the other unread", async ({ browser, baseURL }) => {
+  const ref = (await asMember(avery, `select public.referral_create($1::jsonb) as r`, [JSON.stringify({
+    requestId: uuid(), focus: "Anxiety/Panic Disorders", secondary: "", state: "NY", city: "", age: "", setting: "virtual", insurance: "", language: "",
+    prescribing: false, audience: "selected", selected: [bram], timeframe: "Within two weeks", message: "Evenings if possible.",
+  })])).rows[0].r;
+  // Bram asks a question in the referral conversation; then Avery writes in the direct one, which is now the latest message.
+  const b = await openAs(browser, "bram", baseURL!, `/dashboard/referrals?referral=${ref.referralId}`);
+  await b.page.getByRole("button", { name: "Discuss first" }).click();
+  await b.page.locator("#question-text").fill("Which evenings suit you?");
+  await b.page.getByRole("button", { name: "Send question" }).click();
+  await expect(b.page.locator("#toast")).toContainText("Your question is in");
+  await b.context.close();
+  const a = await openAs(browser, "avery", baseURL!);
+  await startDirect(a.page, bram);
+  await send(a.page, "A direct note from me.");
+  await expect(a.page.locator(".delivery-state.sent").last()).toBeVisible();
+  await a.page.reload();
+  const row = a.page.locator(".inbox-colleague", { hasText: "Bram" });
+  await expect(row.locator(".inbox-latest-preview")).toHaveText("You: A direct note from me.");
+  await expect(row.locator(".inbox-latest small")).not.toHaveText(""); // the context that produced it is named
+  await expect(row.locator(".context-count")).toHaveText("2 conversations");
+  const pill = row.locator(".inbox-person-meta .unread-pill");
+  await expect(pill).toHaveText("1");
+  await expect(pill).toHaveAttribute("aria-label", "1 unread message");
+  const items = row.locator(".colleague-contexts .inbox-item");
+  const open = async () => { if ((await items.count()) === 0) await row.getByRole("button", { name: /conversations with Bram/ }).click(); await expect(items).toHaveCount(2); };
+  await open();
+  const labels = (await items.locator(".inbox-context").allInnerTexts()).map((t) => t.trim());
+  expect(new Set(labels).size).toBe(2);
+  expect(labels.some((l) => /Referral/i.test(l))).toBe(true);
+  await expect(items.filter({ hasText: "Which evenings suit you?" }).locator(".unread-pill")).toHaveText("1");
+  // Opening the latest preview opens the context that produced it. The other context stays unread.
+  await row.locator(".inbox-latest").click();
+  await expect(a.page.locator(".message-group", { hasText: "A direct note from me." })).toBeVisible();
+  await expect(a.page.locator(".message-group", { hasText: "Which evenings suit you?" })).toHaveCount(0);
+  await a.page.waitForTimeout(1500);
+  expect(await unreadIn("referral-")).toBe(1);
+  await open();
+  await items.filter({ hasText: "Which evenings suit you?" }).click();
+  await expect(a.page.locator(".context-strip")).toContainText("Referral");
+  await expect(a.page.locator(".message-group", { hasText: "Which evenings suit you?" })).toBeVisible();
+  await expect(a.page.locator(".message-group", { hasText: "A direct note from me." })).toHaveCount(0);
+  await expect.poll(() => unreadIn("referral-")).toBe(0);
+  await a.context.close();
+});
+
+test("MB-11 M02 composing stays immediate while a message is sending, and a Retry pressed twice still gives one message", async ({ browser, baseURL }) => {
+  const a = await openAs(browser, "avery", baseURL!);
+  await startDirect(a.page, bram);
+  let release: () => void = () => {};
+  const held = new Promise<void>((r) => (release = r));
+  let aborted = 0;
+  await a.page.route("**/dashboard/messages*", async (route) => {
+    const post = route.request().method() === "POST" ? route.request().postData() || "" : "";
+    if (post.includes("message.send") && post.includes("PB first")) { await held; await route.continue(); }
+    else if (post.includes("message.send") && post.includes("PB third") && aborted === 0) { aborted++; await route.abort("connectionreset"); }
+    else await route.continue();
+  });
+  await send(a.page, "PB first message");
+  await expect(a.page.locator(".message-group", { hasText: "PB first message" }).locator(".delivery-state.sending")).toBeVisible();
+  // The first is still on its way; the box is free, and the next message goes out on its own.
+  await expect(a.page.locator("#message-input")).toBeEnabled();
+  await send(a.page, "PB second message, typed while the first is sending");
+  // It is in the conversation at once, in its place, and the box is free again. (Sends leave one after another, so it waits its turn.)
+  await expect(a.page.locator(".message-group", { hasText: "PB second message" })).toBeVisible();
+  await expect(a.page.locator("#message-input")).toHaveValue("");
+  await expect(a.page.locator("#message-input")).toBeEnabled();
+  release();
+  await expect(a.page.locator(".message-group", { hasText: "PB first message" }).locator(".delivery-state.sent")).toBeVisible();
+  await expect(a.page.locator(".message-group", { hasText: "PB second message" }).locator(".delivery-state.sent")).toBeVisible();
+  const order = await q(`select body from conversation_messages where body like 'PB %' order by id`);
+  expect(order.map((r) => (String(r.body).startsWith("PB first") ? "first" : "second"))).toEqual(["first", "second"]);
+  // A send that fails and is retried twice in a row is still one message.
+  await send(a.page, "PB third message");
+  await expect(a.page.locator(".delivery-state.failed")).toBeVisible();
+  await a.page.getByRole("button", { name: "Retry" }).dblclick();
+  await expect(a.page.locator(".message-group", { hasText: "PB third message" }).locator(".delivery-state.sent")).toBeVisible();
+  for (const t of ["PB first message", "PB second message", "PB third message"]) expect((await q(`select 1 from conversation_messages where body like $1`, [t + "%"])).length, t).toBe(1);
+  await a.context.close();
+});
+
+test("MB-12 M02 two devices on one account: each message is shown once on both, in the conversation it was sent in", async ({ browser, baseURL }) => {
+  const one_ = await openAs(browser, "avery", baseURL!);
+  await startDirect(one_.page, bram);
+  await send(one_.page, "PB from device one");
+  await expect(one_.page.locator(".delivery-state.sent").last()).toBeVisible();
+  const two = await openAs(browser, "avery", baseURL!);
+  await two.page.locator(".inbox-colleague", { hasText: "Bram" }).locator(".inbox-latest").click();
+  await expect(two.page.locator(".message-group", { hasText: "PB from device one" })).toHaveCount(1);
+  await send(two.page, "PB from device two");
+  await expect(two.page.locator(".delivery-state.sent").last()).toBeVisible();
+  await expect(one_.page.locator(".message-group", { hasText: "PB from device two" })).toHaveCount(1, { timeout: 15000 });
+  await expect(one_.page.locator(".message-group", { hasText: "PB from device one" })).toHaveCount(1);
+  for (const t of ["PB from device one", "PB from device two"]) expect((await q(`select 1 from conversation_messages where body = $1`, [t])).length, t).toBe(1);
+  await one_.context.close();
+  await two.context.close();
+});

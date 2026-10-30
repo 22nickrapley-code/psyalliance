@@ -45,7 +45,7 @@ async function saveClient(page: Page, o: { focus?: string; setting?: string; pre
   await page.getByRole("button", { name: "Save client", exact: true }).click();
 }
 
-test("B-01 C01 twenty clients: copies get new ids, the limit holds, a removed id is not reused, copies carry no choices", async ({ browser, baseURL }) => {
+test("B-01 C01 twenty clients: copies get new ids, the limit holds, a removed id is not reused", async ({ browser, baseURL }) => {
   const { page, context } = await openAs(browser, "avery", baseURL!, "/dashboard/cover");
   await startCover(page, "B Twenty");
   await saveClient(page);
@@ -62,6 +62,35 @@ test("B-01 C01 twenty clients: copies get new ids, the limit holds, a removed id
   const after = (await page.locator(".saved-client .client-index").allInnerTexts()).map((t) => t.trim());
   expect(after.at(-1)).toBe("21"); // 20 was removed; its number is not handed out again
   expect(new Set(after).size).toBe(20);
+  await context.close();
+});
+
+test("B-01b C01 a copy is independent: it carries no colleague choice, and editing one client does not change another", async ({ browser, baseURL }) => {
+  const { page, context } = await openAs(browser, "avery", baseURL!, "/dashboard/cover");
+  await startCover(page, "B Copy");
+  await saveClient(page);
+  const box = (id: number) => page.locator(`input[data-match="cover"][data-client="${id}"][value="${bram}"]`);
+  await page.getByRole("button", { name: "Continue to colleagues" }).click();
+  await box(1).check();
+  await page.getByRole("button", { name: "Back" }).click();
+  await clickAction(page, '[data-action^="client-duplicate:"]');
+  await expect(page.locator(".saved-client")).toHaveCount(2);
+  await page.getByRole("button", { name: "Continue to colleagues" }).click();
+  await page.locator('[data-action="match-client:2"]').click();
+  await expect(box(2)).toBeEnabled();
+  await expect(box(2)).not.toBeChecked(); // the copy did not take the original's colleague
+  await page.locator('[data-action="match-client:1"]').click();
+  await expect(box(1)).toBeChecked();
+  // Editing the copy leaves the original alone.
+  await page.getByRole("button", { name: "Back" }).click();
+  await clickAction(page, '[data-action="client-edit:2"]');
+  await page.locator('#client-form input[name="prescribing"]').check();
+  await page.getByRole("button", { name: "Save client", exact: true }).click();
+  await page.getByRole("button", { name: "Continue to colleagues" }).click();
+  await page.locator('[data-action="match-client:1"]').click();
+  await expect(box(1)).toBeChecked();
+  await page.locator('[data-action="match-client:2"]').click();
+  await expect(box(2)).toHaveCount(0); // client 2 now needs prescribing, which Bram does not do
   await context.close();
 });
 
@@ -162,6 +191,28 @@ test("B-03 C03 workload before review: totals per colleague, first and queued, g
   await context.close();
 });
 
+test("B-03b C03 twenty requests to one colleague are visible, counted and asked first, before review approval", async ({ browser, baseURL }) => {
+  const { page, context } = await openAs(browser, "avery", baseURL!, "/dashboard/cover");
+  await startCover(page, "B Twenty requests");
+  await saveClient(page);
+  for (let i = 0; i < 19; i++) { await clickAction(page, '[data-action^="client-duplicate:"]'); await page.waitForTimeout(40); }
+  await expect(page.locator(".saved-client")).toHaveCount(20);
+  await page.getByRole("button", { name: "Continue to colleagues" }).click();
+  await page.locator('[data-action="match-view:colleague"]').click();
+  const row = page.locator("details.bulk-colleague", { hasText: "Bram Tellinghast" });
+  await row.locator("summary").click();
+  for (let id = 1; id <= 20; id++) await row.locator(`input[data-bulk-person="${bram}"][value="${id}"]`).check();
+  await row.getByRole("button", { name: "Apply to selected clients" }).click();
+  await expect(page.locator(".inline-note[role=status]").first()).toContainText("Client 20");
+  await page.getByRole("button", { name: "Review invitations" }).click();
+  const line = page.locator(".workload-list li", { hasText: "Bram Tellinghast" });
+  await expect(line).toContainText("20 requests");
+  await expect(line).toContainText("20 asked first");
+  await expect(page.locator(".outreach-summary")).toContainText("20 invitations go out first, one per client.");
+  expect((await q(`select 1 from coverage_plans where profile_id = $1 and title = 'B Twenty requests'`, [avery])).length).toBe(0); // nothing was sent
+  await context.close();
+});
+
 test("B-04 C06 calendar: both directions and Today are named, today and the selected day differ, a phone shows dots not cut-off titles, deleting a draft leaves a live plan alone", async ({ browser, baseURL }) => {
   const { page, context } = await openAs(browser, "avery", baseURL!, "/dashboard/cover");
   // A live plan, sent to Bram.
@@ -212,6 +263,69 @@ test("B-04 C06 calendar: both directions and Today are named, today and the sele
   expect(await phone.page.locator(".month-day-counts").first().isVisible()).toBe(false);
   expect(await phone.page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
   await phone.context.close();
+});
+
+test("B-04b C06 calendar: overlapping plans, a plan across a month boundary, each direction on its own, an empty month, and the agenda opens the exact plan", async ({ browser, baseURL }) => {
+  const now = new Date();
+  const iso = (m: number, d: number) => { const x = new Date(now.getFullYear(), now.getMonth() + m, d, 12); return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, "0")}-${String(x.getDate()).padStart(2, "0")}`; };
+  const mk = (who: string, name: string, start: string, end: string, to: string) => asMember(who, `select public.cover_create_plan($1::jsonb) as r`, [JSON.stringify({
+    requestId: crypto.randomUUID(), name, reason: "short", other: "", start, end, mode: "sequential", deadline: 48, message: "Weekly appointments.",
+    clients: [{ label: "Client 1", focus: "Anxiety/Panic Disorders", secondary: "", state: "NY", age: "", setting: "virtual", insurance: "", frequency: "Weekly", prescribing: false, language: "", city: "", selected: [to] }],
+  })]);
+  const overlapping = async (m: number) => {
+    const from = iso(m, 1), to = iso(m + 1, 0);
+    const plans = (await asMember(avery, `select public.workspace_plans() as r`)).rows[0].r as any[];
+    return plans.filter((p) => p.status !== "cancelled" && p.start <= to && (!p.end || p.end >= from)).length;
+  };
+  const plansText = (n: number) => `${n} plan${n === 1 ? "" : "s"}`;
+  const [before1, before5] = [await overlapping(1), await overlapping(5)]; // the fixture members already have other plans
+  try {
+    await mk(avery, "B Cal one", iso(1, 3), iso(1, 6), bram);
+    await mk(avery, "B Cal long", iso(1, 27), iso(2, 4), bram);
+    await mk(cass, "B Cal theirs", iso(1, 5), iso(1, 9), avery);
+    const { page, context } = await openAs(browser, "avery", baseURL!, "/dashboard/cover");
+    await page.locator('[data-action="cover-layout:calendar"]').click();
+    await page.locator('[data-action="calendar-month:1"]').click();
+    const day = (m: number, d: number) => page.locator(`[data-action="calendar-day:${iso(m, d)}"]`);
+    // Both directions: the overlap on day 5 and 6 shows both plans; day 3 only the first; day 8 only the colleague's.
+    await expect(day(1, 5)).toHaveAttribute("aria-label", /B Cal one/);
+    await expect(day(1, 5)).toHaveAttribute("aria-label", /B Cal theirs/);
+    await expect(day(1, 6)).toHaveAttribute("aria-label", /B Cal one/);
+    await expect(day(1, 3)).not.toHaveAttribute("aria-label", /B Cal theirs/);
+    await expect(day(1, 8)).toHaveAttribute("aria-label", /B Cal theirs/);
+    await expect(day(1, 8)).not.toHaveAttribute("aria-label", /B Cal one/);
+    // Counts are plans, not clients: three more plans overlap the month, one client each.
+    await expect(page.locator(".calendar-month-summary")).toContainText(plansText(before1 + 3));
+    // Each direction on its own.
+    await page.getByRole("button", { name: "Your cover plans", exact: true }).click();
+    await expect(day(1, 5)).toHaveAttribute("aria-label", /B Cal one/);
+    await expect(day(1, 5)).not.toHaveAttribute("aria-label", /B Cal theirs/);
+    await page.getByRole("button", { name: "Cover for colleagues", exact: true }).click();
+    await expect(day(1, 5)).toHaveAttribute("aria-label", /B Cal theirs/);
+    await expect(day(1, 5)).not.toHaveAttribute("aria-label", /B Cal one/);
+    await page.getByRole("button", { name: "Both directions", exact: true }).click();
+    // A range across the month boundary is on its last days of this month and its first days of the next, and not after it ends.
+    await expect(day(1, 28)).toHaveAttribute("aria-label", /B Cal long/);
+    await page.locator('[data-action="calendar-month:1"]').click();
+    await expect(day(2, 2)).toHaveAttribute("aria-label", /B Cal long/);
+    await expect(day(2, 4)).toHaveAttribute("aria-label", /B Cal long/);
+    await expect(day(2, 5)).not.toHaveAttribute("aria-label", /B Cal long/);
+    // A month with none of these plans shows none of them and counts only what is really there.
+    for (let i = 0; i < 3; i++) await page.locator('[data-action="calendar-month:1"]').click();
+    await expect(page.locator(".calendar-month-summary")).toContainText(plansText(before5));
+    await expect(page.locator(".calendar-agenda")).not.toContainText("B Cal");
+    // The agenda opens the exact plan.
+    await page.locator('[data-action="calendar-month:-1"]').click();
+    for (let i = 0; i < 2; i++) await page.locator('[data-action="calendar-month:-1"]').click();
+    await page.locator('[data-action="calendar-month:-1"]').click();
+    await expect(page.locator(".calendar-month-summary")).toContainText(plansText(before1 + 3));
+    await page.locator(".calendar-agenda").getByText("B Cal theirs").first().click();
+    await expect(page.locator(".modal")).toContainText("B Cal theirs");
+    await expect(page.locator(".modal")).not.toContainText("B Cal one");
+    await context.close();
+  } finally {
+    await q(`delete from coverage_plans where profile_id = $1 and title like 'B %'`, [cass]);
+  }
 });
 
 test("B-05 R01 the need list is searchable and shared, and a referral begun from a profile keeps its colleague", async ({ browser, baseURL }) => {
@@ -365,7 +479,7 @@ test("B-09 M01 message history: search finds old messages in the right conversat
   await context.close();
 });
 
-test("B-10 M03 the conversation count is labelled and the unread number is not the same thing", async ({ browser, baseURL }) => {
+test("B-10 M03 the unread number is labelled as unread messages", async ({ browser, baseURL }) => {
   await seedMessages();
   await q(`update conversation_participants set last_read_at = now() - interval '10 days' where profile_id = $1 and conversation_id in (select id from conversations where context_key like 'b-test-avery-%')`, [avery]);
   const { page, context } = await openAs(browser, "avery", baseURL!, "/dashboard/messages");

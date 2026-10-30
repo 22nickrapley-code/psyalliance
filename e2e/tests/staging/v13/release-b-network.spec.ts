@@ -104,6 +104,7 @@ test("NB-03 A01 one confirmation time: confirming on the screen changes the stor
   await expect(page.locator("#toast")).toContainText(/confirmed/i);
   const p = await one(`select availability_confirmed_at > now() - interval '1 minute' as fresh from profiles where id = $1`, [avery]);
   expect(p.fresh).toBe(true);
+  await expect(page.locator(".av-side")).toContainText(/today|just now|0 days|minute/i); // the open window changed without leaving it
   // A colleague's directory and the member's own window both read the same new timestamp.
   const dir = await asMember(bram, `select (public.network_directory('{"available": true}'::jsonb) -> 'people') as p`);
   expect((dir.rows[0].p as any[]).some((x) => x.id === avery)).toBe(true);
