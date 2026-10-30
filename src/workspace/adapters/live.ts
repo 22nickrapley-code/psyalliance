@@ -65,6 +65,8 @@ export function buildLiveEnv(boot: LiveBoot, view: WorkspaceView) {
       trustedBy: boot.tiers.trustedBy || [],
       collab: boot.tiers.collab || {},
       year: boot.year || null,
+      // False only if the page arrived without its plan or referral lists; the Hub then says it could not check rather than "up to date".
+      loaded: Array.isArray(boot.plans) && Array.isArray(boot.referrals),
       plans: boot.plans || [],
       referrals: boot.referrals || [],
       threads: boot.threads || [],

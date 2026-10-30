@@ -242,7 +242,7 @@ export function startWorkspace(env: any) {
  const dueText=iso=>{const t=Date.parse(iso);if(!Number.isFinite(t))return '';const s=new Date(t).toLocaleString('en-US',{weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});return t<Date.now()?`Deadline passed · ${s}`:`Reply by ${s}`;};
  const HUB_OPEN_KEY='pa-hub-open';
  state.hubOpen=(()=>{try{return sessionStorage.getItem(HUB_OPEN_KEY)==='1';}catch{return false;}})();
- const hubReady=()=>!LIVE||(Array.isArray(env.initial?.plans)&&Array.isArray(env.initial?.referrals));
+ const hubReady=()=>!LIVE||env.initial?.loaded!==false;
  function hubActions(){
   const work=[],setup=[],help=[],nm=id=>person(id).name,openReq=c=>c.requests.filter(r=>['awaiting','queued','discussing'].includes(r.status));
   const reqSig=c=>c.requests.map(r=>`${r.person}:${r.status}`).join(',');

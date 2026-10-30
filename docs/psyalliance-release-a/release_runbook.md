@@ -93,5 +93,5 @@ The SQL needs no rollback after a site rollback (the previous site never calls i
 - **Cloudflare build and Worker size.** Your `--dangerouslyUseUnsupportedNextVersion` flag edits stay in your local files; if the Worker size is over the limit, tell me before deploying anything further.
 - **A real phone.** Everything on phones was tested in a phone-sized browser. Please look at the Hub, the pop-ups and typing on an actual iPhone and Android.
 - **Keyboard-only and screen-reader use**: checked for names and focus by automatic tests, not by a person.
-- **The Hub's "could not check what needs your attention" state.** It is built (message, Try again button, no false "up to date") but I could not make it happen in automatic tests. Easiest way to see it: open the Hub with the network switched off.
+- **A failed load.** If the workspace cannot load, you now get a plain "We could not load your workspace" page with Try again (tested by forcing a database error). Inside the Hub there is a second message, "We could not check what needs your attention", for the unlikely case the page arrives without its lists; I could not make that happen in tests.
 - **Real email.** Not part of Release A. (You are setting up the provider before Release B.)
