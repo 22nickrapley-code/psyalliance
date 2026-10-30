@@ -286,7 +286,7 @@ test("FOL-08 Network (D9, v15): every trusted colleague is reachable, five to a 
   await expect(page.locator("#net-trusted").getByRole("button", { name: /^View all/ })).toHaveCount(0);
   // Each row has real buttons, the same size, with Message on the same line.
   const row = page.locator("#net-trusted .net-row").first();
-  await expect(row.getByRole("button", { name: "Remove from trusted" })).toBeVisible();
+  await expect(row.getByRole("button", { name: "Remove from trusted colleagues" })).toBeVisible();
   await expect(row.getByRole("button", { name: /^Message/ })).toBeVisible();
   const [a, b] = await Promise.all([row.locator(".net-trust").boundingBox(), row.locator(".net-message").boundingBox()]);
   expect(Math.abs(a!.y - b!.y)).toBeLessThan(4);

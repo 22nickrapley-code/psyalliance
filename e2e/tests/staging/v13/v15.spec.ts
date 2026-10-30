@@ -69,7 +69,7 @@ test("V15-01 Cover and Referrals use the same filters, clearer panel titles, no 
   await page.keyboard.press("Escape");
   // Calendar chips carry the plan's own name, not "Yours 1" or "Peers 1".
   await page.locator('[data-action="cover-layout:calendar"]').click();
-  await expect(page.locator(".calendar-key")).toContainText("Your plans");
+  await expect(page.locator(".calendar-key")).toContainText("Your cover plans");
   await expect(page.locator(".month-day-counts", { hasText: /Yours \d|Peers \d/ })).toHaveCount(0);
   for (let n = 0; n < 4 && (await page.locator(".cal-chip").count()) === 0; n++) await page.locator('[data-action="calendar-month:1"]').click();
   if (await page.locator(".cal-chip").count()) await expect(page.locator(".cal-chip").first()).toContainText("V15 Autumn leave");
