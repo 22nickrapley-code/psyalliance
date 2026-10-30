@@ -1029,3 +1029,40 @@ body,.workspace,.workspace.feature-cover,.workspace.feature-referrals,.workspace
 .change-note .button{margin-top:8px}
 .icon-button:disabled{opacity:.35;cursor:default}
 @media(max-width:560px){.workload-list li{grid-template-columns:1fr}.workload-count{justify-self:start;text-align:left}}
+/* Release B: calendar, selected day and phone dots */
+.month-day.selected{outline:2px solid var(--forest);outline-offset:-2px}
+.cal-dots{display:none}
+@media(max-width:760px){
+  .month-day-counts{display:none}
+  .cal-dots{display:flex;gap:3px;align-items:center;justify-content:center;min-height:10px;margin-top:4px}
+  .cal-dots i{width:8px;height:8px;border-radius:50%;display:inline-block}
+  .cal-dots i.own{background:var(--forest)}
+  .cal-dots i.peer{border:2px solid var(--forest);background:#fff;box-sizing:border-box}
+  .cal-dots em{font-style:normal;font-size:12px;color:var(--muted)}
+}
+
+/* Release B: searchable treatment-area list (the select stays the field; this adds a search box) */
+.select-wrap{position:relative}
+.has-search-pick{position:relative}
+.search-pick-cover{position:absolute;inset:0;width:100%;height:100%;background:transparent;border:0;padding:0;margin:0;cursor:pointer}
+.search-pick{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:40;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 14px 32px #20352a33;overflow:hidden}
+.search-pick-box{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid var(--line);color:var(--muted)}
+.search-pick-box svg{width:16px;height:16px;flex:none}
+.search-pick-box input{flex:1;min-width:0;border:0;outline:0;background:transparent;font:inherit;color:var(--ink);padding:0;box-shadow:none;height:auto}
+.search-pick ul{list-style:none;margin:0;padding:4px;max-height:264px;overflow:auto}
+.search-pick li{padding:10px 12px;border-radius:8px;cursor:pointer;font-size:14px;line-height:1.35;color:var(--ink)}
+.search-pick li.active,.search-pick li:hover{background:var(--sage)}
+.search-pick li[aria-selected="true"]{font-weight:650}
+.search-pick li.empty{cursor:default;color:var(--muted)}
+.search-pick li.empty:hover{background:transparent}
+
+/* Release B: message search and the conversation count */
+.history-results{margin-top:14px}
+.history-title{font-size:13px;font-weight:650;color:var(--muted);margin:0 0 6px;letter-spacing:.01em}
+.history-hit .hit-context{font-weight:500;color:var(--muted);font-size:12px;margin-left:6px}
+.history-hit .hit-meta{color:var(--muted)}
+.history-hit mark{background:#e3ecd9;color:var(--ink);border-radius:3px;padding:0 2px}
+.history-ask{margin-top:12px}
+.message-group.found .bubble{outline:2px solid var(--forest);outline-offset:3px;transition:outline-color .6s}
+.inbox-context-toggle{display:inline-flex;align-items:center;gap:4px;background:none;border:0;padding:4px 2px;color:var(--muted);font-size:12px;cursor:pointer;min-height:32px}
+.inbox-context-toggle .context-count{text-decoration:underline;text-underline-offset:3px}

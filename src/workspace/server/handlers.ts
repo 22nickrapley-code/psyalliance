@@ -299,6 +299,18 @@ export const handlers: Record<string, Handler> = {
     return { ok: true, patch: { thread: data || null } };
   },
 
+  // Search of every message the member can see (Release B). If the database function is not there yet (the SQL has not
+  // been run) the screen is told, and keeps the conversation matches it already shows.
+  "messages.search": async (ctx, a) => {
+    const q = String(a.q || "").slice(0, 120);
+    const { data, error } = await ctx.supabase.rpc("search_message_history", { p_query: q, p_before: a.before == null ? null : num(a.before), p_limit: 20 });
+    if (error) {
+      if (/could not find the function|PGRST202/i.test(`${error.code} ${error.message}`)) return { ok: true, data: { unavailable: true, results: [], more: false } };
+      return fail(error);
+    }
+    return { ok: true, data };
+  },
+
   "thread.older": async (ctx, a) => {
     const { data, error } = await ctx.supabase.rpc("thread_older", { p_key: String(a.key || ""), p_before: a.before == null ? null : num(a.before) });
     if (error) return fail(error);
