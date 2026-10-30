@@ -4,7 +4,7 @@ Written 29 Oct 2026. Nothing has been pushed or deployed, and no SQL has been ru
 
 ## Starting point
 
-- Source: branch `release-a`, created from version 15 (`22a0c35`, the baseline named in the brief) and built on `c7e14b9` (version 14). Four Release A commits sit on top of version 15's four.
+- Source: branch `release-a`, created from version 15 (`22a0c35`, the baseline named in the brief) and built on `c7e14b9` (version 14). Eight Release A commits sit on top of version 15's four.
 - Database: on 29 Oct a read-only check of both Supabase projects (live `vvmulsyvyjsxhcpqfpyo`, sandbox `xsfqeepxnmnvlhxwkfnw`) found the version 14 SQL (0122) already in place on both (`workspace_year` and `workspace_profile_signals` exist) and nothing from Release A. So **the only SQL for Release A is `0123`.**
 - Which code is live: I cannot see this from here (the Cloudflare dashboard is yours). The runbook handles both cases (version 14 live, or version 15 live).
 

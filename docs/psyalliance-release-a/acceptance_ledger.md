@@ -1,6 +1,6 @@
 # Release A: acceptance ledger
 
-Written 29 Oct 2026 for Nick. Build: branch `release-a` at commit `@@COMMIT@@`, built for production and run on the **local staging copy** (fictional people only; no live or sandbox data was changed). Nothing was deployed.
+Written 29 Oct 2026 for Nick. Build: branch `release-a`, tip commit titled "Release A (part 8)" (the exact hash is in the bundle's release message and in `git log`), built for production and run on the **local staging copy** (fictional people only; no live or sandbox data was changed). Nothing was deployed.
 
 **How to read the results.** Pass means the check was run and met the expected result. Partial means part of the scenario is in Release A and passed, and the rest is named. Fail means it was run and did not pass. Blocked means it could not be run from here. "Not in A" means the scenario belongs to Release B or C (or, for a few, to work version 14 and 15 already did and Release A did not touch); the regression run still exercises the existing behaviour and is quoted at the end.
 
@@ -120,12 +120,18 @@ L01–L19: **Not in A.** The brief's section 21 (public lifecycle band, tailored
 
 ## Colour contrast
 
-@@CONTRAST@@
+Axe colour-contrast sweep on the final build, signed in as Avery, at 1,366 px and 412 px, over every workspace page and a sample of each page's pop-ups, menus and detail panes (170 things opened).
+
+- One element failed: the Library resource preview text (`#69775b` on a pale tint, 4.31:1, and only 11 px). It now uses the secondary token `#536559` at 13 px. Rechecked with the same checker on both resource previews, desktop and phone: no findings.
+- The new palette's own pairs, by calculation: body ink `#26352e` and secondary `#536559` on white 6.2:1, on cream `#f7f6f1` 5.8:1, on sage `#e9efea` 5.3:1; placeholder `#5f6e64` on white 5.4:1.
+- The accessibility suite (axe on every member and public page, A11Y-MEM and A11Y-PUB) passes in the full runs and in the final rerun.
+- Not covered: other roles (admin, pending member), contrast of icons and borders (non-text contrast), focus rings in every state, text over images, and a person checking real screens.
 
 ## Known gaps (Release A)
 
 - **Phone target sizes that remain below 44 px by design or by cost:** names written inside sentences (inline person links), the nodes of the network diagram, avatar initials, and the 11 px bottom-bar labels (the brief allows 11 px there). The crawl at 320 and 390 over every page and pop-up went from about 2,500 undersized text or target items to about 265; the remainder is these categories.
 - **The Hub's own "could not check" message** (a second guard behind the workspace error page, see H03) is not exercised by an automatic test.
+- **Existing rare timing problem: V15-04.** Opening a message from the Network and pressing "Back to Network" occasionally stays on Messages (the Back button disappears when the conversation finishes opening). About 1 in 16 on version 15, so not new; left for Release B's Messages work.
 - **Account pages**: no Consult dot; the Cover and Referral counters in the account menu are gone (the Hub count replaces them); the old company-notice count moved to the bell.
 - **Search** covers what is already loaded on screen, not older messages.
 - **Not done in Release A, by plan:** everything in Release B (service workflows) and C (public pages, Library, lifecycle, demos beyond the Hub).
@@ -133,4 +139,17 @@ L01–L19: **Not in A.** The brief's section 21 (public lifecycle band, tailored
 
 ## Regression run
 
-@@REGRESSION@@
+**Final state, newest first.**
+
+1. **Final targeted rerun on the final build (85 tests): 85 passed.** Release A tests RA-01 to RA-16, the empty-state, final-UI, account-pages, availability, resilience and accessibility suites. Phone 2 of 2 and public 14 of 14 pass on the same build.
+2. **Full `staging` run (804 tests) on the build before the last two small changes (the workspace error page, the Hub readiness flag and one CSS rule): 766 passed, 26 skipped by design, 7 failed, 5 not run.**
+   - 6 failed: the `/sandbox/request` checks. They need the real website and fail the same way on every offline run (they also failed in versions 14 and 15).
+   - 1 failed: V15-04 ("Back to Network" button). It fails roughly 1 run in 8 here, and about 1 in 16 on a build of version 15 itself, so it is an existing rare timing problem, not caused by Release A (see Known gaps). The five tests after it in that file were skipped by the runner; the whole file passes on repeat (all 9 on one repeat).
+3. **First full run (earlier build): 765 passed, 13 failed.** Triage:
+   - 6 the same website-only checks.
+   - R18-16 (long name in the menu): **a real regression I caused**, the account menu's profile button had lost its hover tooltip with the full name. Fixed.
+   - DEMO-V14-08, FOL-04, EMP-02: old tests that assumed an always-visible availability card on the Hub, which the brief removed. Tests now open the editor from its link, and a brand-new member's reminder reads "Set your availability". Product change: a never-set availability now says "Set", not "Reconfirm".
+   - RV-06: the new save-failure banner was always in the page (hidden) and matched an older test's selector. It now only holds text while it is showing.
+   - N16-04-A (message email suppression) and FOL-03: timing flakes (the read is recorded in the background after a conversation opens, and the test closed the browser too soon); N16-04-A's test now waits for the read to be recorded. Both pass on repeat.
+   - RV-09 passed on its own and failed once when run after another test left an unread notification behind (order-dependent test data, not product).
+4. **Not run again after the last two changes:** the full 804. The final targeted rerun above covers the files nearest the changes.

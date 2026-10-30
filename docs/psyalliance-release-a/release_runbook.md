@@ -19,7 +19,7 @@ git log --oneline master..release-a
 ```
 
 - `git status` will list three changed files (`package.json`, `package-lock.json`, `scripts/deploy-demo.mjs`): your Cloudflare flag edits. That is expected and the merge does not touch them.
-- The last command lists the commits that are new to `master`. If version 15 is already in `master`, you will see **four** lines starting "Release A". If not, you will see **eight**: four "Version 15" lines and four "Release A" lines. Anything else, stop and tell me.
+- The last command lists the commits that are new to `master`. If version 15 is already in `master`, you will see **eight** lines, all starting "Release A (part". If not, you will see **twelve**: four "Version 15" lines and the eight Release A lines. Anything else, stop and tell me.
 
 ## Step 2: merge
 

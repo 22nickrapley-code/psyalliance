@@ -809,3 +809,6 @@ body,.workspace,.workspace.feature-cover,.workspace.feature-referrals,.workspace
 
 /* Search: what Message results cover */
 .search-note{margin:10px 2px 2px;font-size:13px;line-height:1.45;color:var(--muted)}
+
+/* Library preview text: darker and not below 12px (found by the contrast sweep) */
+.resource-preview p,.resource-preview li{color:var(--muted);font-size:13px;line-height:1.7}
