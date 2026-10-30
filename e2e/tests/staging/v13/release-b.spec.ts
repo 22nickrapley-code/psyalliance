@@ -525,6 +525,7 @@ test("B-13 D09 D12 workflow headings name the task, and one client has no client
   await saveClient(page);
   await page.getByRole("button", { name: "Continue to colleagues" }).click();
   await expect(page.locator("#modal-title")).toHaveText("Choose colleagues");
+  await expect(page.locator(".modal-header p")).toHaveCount(1); // the small heading above the title only: the line below says what to do, once
   // One client: nothing to switch between.
   await expect(page.locator(".client-match-tabs")).toHaveCount(0);
   await expect(page.locator('[data-action="match-view:colleague"]')).toHaveCount(0);
