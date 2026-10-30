@@ -35,6 +35,12 @@ export type Step = {
   focusIndex?: number;
   actions?: SceneAction[];
   seconds?: number;
+  // The optional "What will they receive?" panel: the one line a colleague
+  // is notified with (first name, request type, "Review request."), and what
+  // they then see when they open it. Never anything about a client.
+  recipient?: { who: string; alert: string; sees: string };
+  // The one step the visitor is invited to do themselves on the real screen.
+  handsOn?: boolean;
   // Which rows of verification/demo_scenarios.csv this step demonstrates.
   scenarios: string[];
 };
@@ -47,6 +53,11 @@ export type Journey = {
   outcome: string;
   learned: string[];
   steps: Step[];
+  // A need-based walkthrough runs on that practice scenario (src/tour/scenarios.ts).
+  scenario?: string;
+  // What happens next in the real product, and the button that goes there.
+  summary?: string;
+  cta?: { label: string; href: string };
 };
 
 const w = (view: Extract<Scene, { kind: "workspace" }>["view"], macro?: string): Scene => ({ kind: "workspace", view, macro });
@@ -614,7 +625,96 @@ const OVERVIEW: Journey = {
   ],
 };
 
-export const JOURNEYS: Journey[] = [OVERVIEW, COVER, REFER, CONSULT, CIRCLE, VERIFIED, LIBRARY, PROFILE];
+
+// ------------------------------------------------------------------
+// Six short walkthroughs, one for each need on the starting page. Each runs
+// the real screens on its own practice scenario (src/tour/scenarios.ts), has
+// one step to do yourself, and ends on the route that starts the same thing
+// in the product. Everyone is fictional and nothing is saved or sent.
+const NEED_STEPS = (rows: [Step["slug"], string, string, Scene, string | undefined, string | undefined, Step["recipient"]?, boolean?][]): Step[] =>
+  rows.map(([slug, title, what, scene, focus, focusNote, recipient, handsOn]) => ({ slug, title, what, scene, focus, focusNote, recipient, handsOn, scenarios: ["DEM-NEED"] }));
+
+const CASELOAD: Journey = {
+  key: "caseload", scenario: "caseload", title: "Establish or rebuild a caseload", minutes: "1 minute",
+  blurb: "Rachel has just opened a practice. See how confirming real availability, and a profile colleagues can trust, lets them consider her for referrals.",
+  outcome: "Colleagues can see when you have room, and when you do not.",
+  learned: ["Your availability is a statement you confirm, and zero is a fine answer.", "Colleagues only see what you choose to show.", "A request tells you the type and nothing about the client until you open it."],
+  summary: "Next, review your profile, the states you are licensed in and your settings, then confirm your current capacity before accepting referral requests.",
+  cta: { label: "Set up my referral preferences", href: "/start?need=caseload" },
+  steps: NEED_STEPS([
+    ["capacity", "Confirm your current capacity", "Rachel’s availability is out of date, so colleagues cannot tell whether she has room. She confirms how many new clients she can honestly see, and zero is allowed.", w("home", "availability-91"), "Confirm unchanged", "Next, how colleagues see you.", undefined, true],
+    ["profile", "How colleagues see you", "A colleague opening Rachel’s profile sees her licensed states, her focus areas and how recently she confirmed her availability. Nothing about her clients.", w("network", "network-profile"), "Message", "Next, a first request arrives."],
+    ["request", "A first request arrives", "A colleague asks whether Rachel can take a client. She reads the anonymous need, then decides: interested, or not now.", w("referrals", "referral-incoming"), "I’m interested", undefined, { who: "Rachel", alert: "Maya has a referral request. Review request.", sees: "The anonymous need, why Rachel fits, and the choice to reply, ask a question or decline." }],
+  ]),
+};
+const TIME_AWAY: Journey = {
+  key: "time-away", scenario: "time_away", title: "Arrange time away", minutes: "1 minute",
+  blurb: "Six weeks of leave, three clients. Describe each by need, choose who is asked, and see where every handover stands.",
+  outcome: "Every client has a colleague, and every handover is ready, before you go.",
+  learned: ["Clients are described by need, never by name.", "You review exactly who is asked before anything is sent.", "An agreed colleague is not the same as a ready handover."],
+  summary: "Ready to start your Cover plan? Next, add your dates and anonymous client requirements. You’ll review every recipient before anything is sent.",
+  cta: { label: "Start my cover plan", href: "/start?need=time_away" },
+  steps: NEED_STEPS([
+    ["dates", "Your dates and the kind of cover", "Rachel chooses the kind of absence and the dates. The states default to where she is licensed.", w("cover", "cover-new"), "Continue to needs", "Next, who fits.", undefined],
+    ["colleagues", "Colleagues who fit, with reasons", "For each client: a reviewed license in the right state, the right focus and recently confirmed availability. Rachel picks who to ask.", w("cover", "cover-matches"), "Review invitations", "Then she reviews before sending.", undefined, true],
+    ["review", "Reviewed before anything is sent", "Rachel sees exactly who will be asked, in what order and by when. Nothing is sent until she confirms.", w("cover", "cover-review"), "Send cover requests", undefined, { who: "Maya", alert: "Rachel has a cover request. Review request.", sees: "The anonymous client needs, the dates, and the choice to accept, discuss or decline." }],
+  ]),
+};
+const CLIENT_REFERRAL: Journey = {
+  key: "client-referral", scenario: "client_referral", title: "Find a colleague for a client", minutes: "1 minute",
+  blurb: "A client Rachel cannot take needs OCD-informed care in New York. Describe the need anonymously and see who fits, and why.",
+  outcome: "A short list of colleagues who fit, each with the reason, and you decide who receives it.",
+  learned: ["You describe the need, never the person.", "Every match says why it fits.", "You review recipients before anything is sent."],
+  summary: "Next, describe the need without identifying the client, look at the matches and why each fits, and review every recipient before anything is sent.",
+  cta: { label: "Prepare a client referral", href: "/start?need=client_referral" },
+  steps: NEED_STEPS([
+    ["need", "Describe the need, not the client", "Focus, state, setting and practicalities. Nothing that identifies anyone.", w("referrals", "referral-new"), "See matched colleagues", "Next, who fits.", undefined],
+    ["matches", "Matches, with the reasons", "Each colleague shows why they fit and when they last confirmed availability. Rachel chooses who to ask.", w("referrals", "referral-matches"), "Review before sending", "Then a last look.", undefined, true],
+    ["review", "A last look before sending", "Rachel checks exactly who receives the request. Colleagues are notified with the request type only.", w("referrals", "referral-review"), "Send referral", undefined, { who: "Imani", alert: "Rachel has a referral request. Review request.", sees: "The anonymous need and why Imani fits. Replying, asking a question and declining are all fine." }],
+  ]),
+};
+const PERSPECTIVE: Journey = {
+  key: "perspective", scenario: "perspective", title: "Get another professional perspective", minutes: "1 minute",
+  blurb: "Rachel has a practice question. Write it without identifying details, choose who may see it, and keep the discussion together.",
+  outcome: "A focused question in front of the right colleagues, and the replies in one place.",
+  learned: ["You choose who may see the question.", "No client details belong in a question.", "Replies stay with the discussion."],
+  summary: "Next, write your question without identifying details, choose who may see it and review the recipients. Nothing is posted until you do.",
+  cta: { label: "Ask a colleague", href: "/start?need=perspective" },
+  steps: NEED_STEPS([
+    ["question", "Write the question", "Rachel writes what she wants a second view on, leaving out anything that could identify a client.", w("consult", "consult-ask"), "#peer-title", "Next, who sees it.", undefined, true],
+    ["audience", "Choose who may see it", "She picks the colleagues she trusts and reviews the list. Nothing is posted until she confirms.", w("consult", "consult-audience"), "Review before posting", "Then the replies come in.", { who: "Alex", alert: "Rachel has a consultation request. Review request.", sees: "The question and the people it was shared with. Alex can reply, or leave it." }],
+    ["replies", "The discussion, in one place", "Replies gather under the question. Rachel can mark what helped.", w("consult", "consult-discussion"), "Useful", undefined, undefined],
+  ]),
+};
+const REDUCING: Journey = {
+  key: "reducing", scenario: "reducing", title: "Reduce or wind down practice", minutes: "1 minute",
+  blurb: "Rachel is reducing her hours. Keep availability honest, take fewer referrals, and arrange cover for clients she cannot keep.",
+  outcome: "Fewer new referrals, honest availability, and a plan for the clients who need a colleague.",
+  learned: ["You decide how many new clients to offer, including none.", "Pausing is your choice and never reopens by itself.", "Cover and referrals use the same anonymous steps."],
+  summary: "Next, set your availability honestly, then, if some clients need a colleague, start a cover plan or a referral. Nothing is sent until you review it.",
+  cta: { label: "Review my availability", href: "/start?need=reducing" },
+  steps: NEED_STEPS([
+    ["availability", "Say how much room you have", "Rachel lowers her spaces and keeps cover answers honest. Each setting is separate.", w("home", "availability"), "Save & confirm availability", "Next, requests that arrive anyway.", undefined, true],
+    ["requests", "Requests that arrive anyway", "When a colleague asks, Rachel sees the need and her own capacity side by side, and can decline kindly.", w("referrals", "referral-capacity"), "Confirm & express interest", "Next, clients who need a colleague.", undefined],
+    ["handover", "Clients who need a colleague", "For clients Rachel cannot keep, a cover plan finds colleagues who fit and tracks each handover.", w("cover", "cover-new"), "Continue to needs", undefined, undefined],
+  ]),
+};
+const OFFER_SUPPORT: Journey = {
+  key: "offer-support", scenario: "offer_support", title: "Offer support to colleagues", minutes: "1 minute",
+  blurb: "Rachel has experience and capacity to share. See how colleagues’ questions and requests reach her, and how she answers in her own time.",
+  outcome: "You help when you can, on your terms, and nothing is expected of you.",
+  learned: ["You see requests that match your experience.", "Answering is always optional.", "Colleagues you work with are saved in your circle."],
+  summary: "Next, confirm your availability and the areas where you are glad to help. Requests reach you only when they fit, and you can always decline.",
+  cta: { label: "Set how I can help", href: "/start?need=offer_support" },
+  steps: NEED_STEPS([
+    ["questions", "Questions you could help with", "Colleagues’ practice questions appear here. Rachel opens the ones that fit her experience.", w("consult", "consult-list"), "Ask a question", "Next, a request for a referral.", undefined, true],
+    ["request", "A referral request that fits", "When a request matches, Rachel reads the anonymous need and decides in her own time.", w("referrals", "referral-incoming"), "I’m interested", "Next, her circle.", { who: "Rachel", alert: "Maya has a referral request. Review request.", sees: "The anonymous need, why Rachel fits, and the choice to reply or decline." }],
+    ["circle", "Colleagues you work with", "People Rachel works with are kept in her circle, so asking and answering gets easier.", w("network", "network-invite"), "Review invitation", undefined, undefined],
+  ]),
+};
+
+export const JOURNEYS: Journey[] = [OVERVIEW, COVER, REFER, CONSULT, CIRCLE, VERIFIED, LIBRARY, PROFILE, CASELOAD, TIME_AWAY, CLIENT_REFERRAL, PERSPECTIVE, REDUCING, OFFER_SUPPORT];
+export const NEED_DEMOS = ["caseload", "time-away", "client-referral", "perspective", "reducing", "offer-support"];
 // The three closer looks offered after the overview; the rest are supporting detail.
 export const CLOSER_LOOKS = ["cover", "refer", "consult"];
 export const MORE_DETAIL = ["circle", "verified", "library", "profile"];

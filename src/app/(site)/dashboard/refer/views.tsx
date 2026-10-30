@@ -86,9 +86,9 @@ function ResourceAside() {
       <div className="eyebrow">From the Library</div>
       <h3>Referral &amp; Transfer Toolkit</h3>
       <p className="small">Record who took the referral and what each of you is responsible for once a colleague agrees.</p>
-      <a className="btn secondary small-btn" href="/dashboard/documents/referral-and-termination-letters">View the template</a>
+      <a className="btn secondary small-btn" href="/dashboard/library?resource=PA-07">View the template</a>
       <p className="small" style={{ marginTop: 12 }}>Referring for medication while you keep therapy? The Split-Treatment Agreement sets out who does what.</p>
-      <a className="plain-button small" href="/dashboard/documents/split-treatment-agreement">View the agreement &rarr;</a>
+      <a className="plain-button small" href="/dashboard/library?resource=PA-08">View the agreement &rarr;</a>
     </section>
   );
 }

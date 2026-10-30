@@ -131,7 +131,7 @@ export function codeFromSlug(slug: string) {
 }
 
 export function libraryHref(code: string) {
-  return `/dashboard/documents/${docSlug(code)}`;
+  return `/dashboard/library?resource=${code}`;
 }
 
 export function publicLibraryHref(code: string) {

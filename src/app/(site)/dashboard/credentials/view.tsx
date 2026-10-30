@@ -307,7 +307,7 @@ export function CredentialsView({ sp, profile, licenses, ce, panels, npiChecks, 
             <div className="eyebrow">From the Library</div>
             <h3>Compliance Calendar and Renewal Tracker</h3>
             <p className="small">A master renewal tracker, annual compliance calendar and record-retention log.</p>
-            <a className="btn secondary small-btn" href="/dashboard/documents/compliance-calendar">View the template</a>
+            <a className="btn secondary small-btn" href="/dashboard/library?resource=PA-19">View the template</a>
           </section>
           <section className="card">
             <div className="eyebrow">Account states</div>

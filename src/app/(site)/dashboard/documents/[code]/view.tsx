@@ -1,31 +1,13 @@
-import { notFound } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
-import { LIBRARY_SELECT, isMemberVisible, toResource, codeFromSlug } from "@/lib/library";
-import { ResourceDetailView } from "../views";
+import { notFound, redirect } from "next/navigation";
+import { codeFromSlug } from "@/lib/library";
 
 export const metadata = { title: "Library" };
 
-// One Library resource: the card's facts, the PDF, a private
-// working copy and the workflow it supports. Addressed by PA number
-// (/dashboard/documents/extended-leave-pack); PA numbers still resolve.
-export default async function ResourcePage(props: {
-  params: Promise<{ code: string }>;
-  searchParams: Promise<{ error?: string }>;
-}) {
+// A resource has one address now: the Library, opened on that resource. The old address, by name or by PA number,
+// lands there. A code that does not exist is a plain not-found.
+export default async function ResourcePage(props: { params: Promise<{ code: string }> }) {
   const { code } = await props.params;
-  const sp = await props.searchParams;
-  const supabase = await createClient();
-
-  const { data: doc } = await supabase
-    .from("documents")
-    .select(LIBRARY_SELECT)
-    .eq("owner_scope", "world")
-    .eq("library_code", codeFromSlug(code) || "")
-    .maybeSingle();
-  if (!doc || !isMemberVisible(doc)) notFound();
-
-  const r = toResource(doc);
-  // Only a template that's ready opens (Nick, 18 Oct: "coming soon" otherwise).
-  const { data: signed } = r.available ? await supabase.storage.from("documents").createSignedUrl(r.storagePath, 60 * 60) : { data: null };
-  return <ResourceDetailView r={r} url={signed?.signedUrl || null} error={sp.error} />;
+  const c = codeFromSlug(code);
+  if (!c) notFound();
+  redirect(`/dashboard/library?resource=${c}`);
 }

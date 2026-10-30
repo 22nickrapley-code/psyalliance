@@ -505,7 +505,7 @@ const LIBRARY: DemoScript = {
         },
         {
           title: "Saved, and easy to find",
-          text: "Save it and it joins your saved list, private to you. Open it later from here, or from the cover plan it belongs to.",
+          text: "Save it and it joins your saved list, private to you. A template that is still being reviewed is listed as Coming soon and opens only when it is ready. Saving a copy puts a private file in My files; it is separate from the bookmark.",
           beats: [["click", '[data-action="resource-save:102"]'], ["do", "close-modal"], ["click", '[data-action="resource-filter:Saved"]']],
         },
       ],
@@ -533,7 +533,7 @@ const AVAILABILITY: DemoScript = {
         },
         {
           title: "Spaces, and where",
-          text: "How many spaces you have, which states, and whether you see people virtually or in person. Pause it if you need a break.",
+          text: "How many spaces you have, which states, and whether you see people virtually or in person. Pausing stops new requests only, never work under way, and it does not reopen by itself: you decide when to resume.",
           beats: [["type", "#availability-slots", "1"], ["tick", 'input[name="inPerson-NY"]']],
         },
         {
@@ -543,7 +543,7 @@ const AVAILABILITY: DemoScript = {
         },
         {
           title: "Saved, and confirmed today",
-          text: "Saving confirms it is current. Colleagues see when you last did, so they can rely on it.",
+          text: "Saving confirms it is current. Colleagues see when you last did, so they can rely on it. If you ask for an alert, it is one short line: a first name, the kind of request, and Review request.",
           beats: [["click", "text=Save & confirm availability"]],
         },
       ],
@@ -557,7 +557,7 @@ const OVERVIEW: DemoScript = {
   key: "overview",
   title: "PsyAlliance in two minutes",
   what: "PsyAlliance",
-  blurb: "Cover for time away, a referral out, a question to colleagues, and messages that keep each context apart.",
+  blurb: "From starting out to winding down: set your availability, arrange cover, refer a client, ask a colleague, and keep each conversation with its context.",
   outcome: "Your own practice, with a group behind you.",
   tryHref: "/join",
   chapters: [

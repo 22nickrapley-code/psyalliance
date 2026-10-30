@@ -74,7 +74,7 @@ export function buildNavGroups(opts: {
       label: "Your practice",
       items: [
         { href: "/dashboard/profile", label: "Profile", glyph: "profile", matches: ["/dashboard/availability", "/dashboard/credentials", "/dashboard/continuity"] },
-        { href: "/dashboard/documents", label: "My documents", glyph: "library" },
+        { href: "/dashboard/documents?tab=mine", label: "My documents", glyph: "library", matches: ["/dashboard/documents"] },
         ...(opts.hideDemos ? [] : [{ href: "/dashboard/demos", label: "Demos", glyph: "play" } as NavItem]),
         { href: "/dashboard/settings", label: "Settings", glyph: "settings" },
       ],

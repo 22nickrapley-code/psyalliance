@@ -6,6 +6,7 @@ import { JOURNEYS, CLOSER_LOOKS, findJourney } from "@/tour/journeys";
 import { NextMoves } from "../../next-moves";
 import { DemoGrid, MarkDone } from "../../demo-progress";
 import { watchLength } from "../../story-reel";
+import { ScenarioEnd } from "../../scenario-end";
 
 export const metadata = { title: "Demo complete", robots: { index: false, follow: false } };
 
@@ -35,6 +36,7 @@ export default async function DemoDonePage({ params }: { params: Promise<{ demo:
                 {d.learned.map((l) => <li key={l}>{l}</li>)}
               </ul>
             </div>
+            {d.summary && d.cta && d.scenario && <ScenarioEnd need={d.scenario} summary={d.summary} label={d.cta.label} href={d.cta.href} />}
             <h2 className="serif-title demo-next-title">Ready when you are</h2>
             <NextMoves />
             <h2 className="serif-title demo-next-title">{d.key === "overview" ? "Or take a closer look" : "Another closer look"}</h2>

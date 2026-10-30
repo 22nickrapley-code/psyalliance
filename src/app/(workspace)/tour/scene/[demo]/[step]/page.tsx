@@ -1,7 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import Workspace from "@/workspace/Workspace";
 import { TOUR_ENABLED, IS_DEMO_SITE, REAL_SITE_URL } from "@/lib/env";
-import { JOURNEYS, findStep } from "@/tour/journeys";
+import { JOURNEYS, findStep, findJourney } from "@/tour/journeys";
 import { FOCUS_CSS } from "@/tour/focus";
 
 // One screen of a demo: the approved workspace on its fictional sample data,
@@ -26,7 +26,7 @@ export default async function SceneFrame({ params }: { params: Promise<{ demo: s
     <>
       {/* How the player and the step pages point at a control. */}
       <style>{FOCUS_CSS}</style>
-      <Workspace mode="fixture" view={s.scene.view} scene={{ id: `${demo}/${step}`, macro: s.scene.macro }} />
+      <Workspace mode="fixture" view={s.scene.view} scene={{ id: `${demo}/${step}`, macro: s.scene.macro, scenario: findJourney(demo)?.scenario }} />
     </>
   );
 }

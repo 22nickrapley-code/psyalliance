@@ -223,7 +223,7 @@ export function ConsultIndexView({
             <div className="eyebrow">Before you post</div>
             <h3>Keep it focused and de-identified.</h3>
             <p className="small">Use a short question, relevant context and an intentional audience. Do not include client names, dates, contact details or an unusual combination of details that could identify someone.</p>
-            <a className="btn secondary small-btn" href="/dashboard/documents/case-consultation-template">Use the question guide</a>
+            <a className="btn secondary small-btn" href="/dashboard/library?resource=PA-05">Use the question guide</a>
           </section>
           <section className="card">
             <div className="eyebrow">Audience, deliberately chosen</div>
@@ -352,7 +352,7 @@ export function ConsultComposeView({
             <div className="eyebrow">Library</div>
             <h3>Case Consultation Template</h3>
             <p className="small">A structure for a concise question and a clear record of the advice you received.</p>
-            <a className="btn secondary small-btn" href="/dashboard/documents/case-consultation-template">View the template</a>
+            <a className="btn secondary small-btn" href="/dashboard/library?resource=PA-05">View the template</a>
           </section>
         </aside>
       </form>
@@ -490,7 +490,7 @@ export function ConsultDetailView({ c, ok, error, extra }: { c: ConsultDetail; o
             <div className="eyebrow">Library</div>
             <h3>Case Consultation Template</h3>
             <p className="small">Record the advice you received and your decision.</p>
-            <a className="btn secondary small-btn" href="/dashboard/documents/case-consultation-template">View the template</a>
+            <a className="btn secondary small-btn" href="/dashboard/library?resource=PA-05">View the template</a>
           </section>
         </aside>
       </div>

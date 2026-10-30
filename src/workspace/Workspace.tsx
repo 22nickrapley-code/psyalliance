@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { REFERENCE_DATA } from "./fixtures/reference-data";
 import { buildLiveEnv, type LiveBoot, type WorkspaceView } from "./adapters/live";
 import { workspaceCall } from "./server/actions";
+import { scenarioEnv } from "@/tour/scenarios";
 
 // Mounts the approved workspace engine into the layout's #app element.
 // "fixture" runs the approved sample data in the browser (tours, previews,
@@ -12,7 +13,7 @@ import { workspaceCall } from "./server/actions";
 // anywhere (it starts from the same sample data every time), opened at a
 // given screen by the same clicks a person would make. It tells the page
 // around it when it is ready, so a demo player can start its clock then.
-export type SceneProps = { id: string; macro?: string };
+export type SceneProps = { id: string; macro?: string; scenario?: string };
 
 export default function Workspace({ mode = "fixture", boot, view = "home", scene }: { mode?: "fixture" | "live"; boot?: LiveBoot; view?: WorkspaceView; scene?: SceneProps }) {
   // A demo frame sits inside the player, which may sit inside a dialog. Escape
@@ -42,7 +43,7 @@ export default function Workspace({ mode = "fixture", boot, view = "home", scene
     import("./engine").then(async ({ startWorkspace }) => {
       if (cancelled) return;
       const live = mode === "live" && boot;
-      const env = live ? { ...buildLiveEnv(boot, view), call: workspaceCall } : { mode: "fixture", data: REFERENCE_DATA, view, ...(scene ? { ephemeral: true } : {}) };
+      const env = live ? { ...buildLiveEnv(boot, view), call: workspaceCall } : { mode: "fixture", ...(scene?.scenario ? scenarioEnv(scene.scenario) : { data: REFERENCE_DATA }), view, ...(scene ? { ephemeral: true } : {}) };
       stop = startWorkspace(env);
       if (!scene) return;
       const tell = (state: "ready" | "error", message?: string) => {

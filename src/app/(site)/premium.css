@@ -2842,3 +2842,10 @@
 /* The approved logo asset, shared with the member shell. */
 .pa .brand .brand-logo{height:30px;width:auto;display:block}
 .pa .brand .brand-logo.on-dark{filter:brightness(0) invert(1)}
+
+/* Need walkthroughs: the hands-on cue, the recipient preview and the end summary. */
+.pa .tp-hands{flex:none;margin:0;padding:6px clamp(16px,3vw,36px);background:#eef6f1;border-bottom:1px solid #cfe3d7;color:#1f4a38;font-size:13px}
+.pa .tp-recipient{flex:none;padding:6px clamp(16px,3vw,36px);background:#f7f5ef;border-bottom:1px solid #e3ddcc;font-size:13px;line-height:1.45}
+.pa .tp-recipient p{margin:4px 0}
+.pa .scenario-end{display:flex;flex-direction:column;align-items:flex-start;gap:12px;margin:24px 0;padding:20px 22px;border:1px solid #d7e4dc;border-radius:12px;background:#f4f8f5;max-width:720px}
+.pa .scenario-end p{margin:0}

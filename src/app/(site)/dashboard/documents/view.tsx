@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { docName } from "@/lib/library";
 import { LIBRARY_SELECT, isMemberVisible, matchesQuery, toResource } from "@/lib/library";
@@ -13,6 +14,9 @@ export default async function DocumentsPage(props: {
   searchParams: Promise<{ tab?: string; q?: string; category?: string; folder?: string; uploaded?: string; copied?: string; error?: string; done?: string }>;
 }) {
   const sp = await props.searchParams;
+  // The Library is one place: the workspace Library. This page now holds only My files (private uploads and copies),
+  // and an old Library address lands on the Library, keeping what was searched for.
+  if (sp.tab !== "mine") redirect(sp.q ? `/dashboard/library?q=${encodeURIComponent(sp.q)}` : "/dashboard/library");
   const supabase = await createClient();
   const {
     data: { user },

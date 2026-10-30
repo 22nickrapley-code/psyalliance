@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { findFocus, markFocus } from "@/tour/focus";
+import { practiceEvent } from "./practice-events";
 
 export type StepProps = {
   src: string;
@@ -21,6 +22,10 @@ export type StepProps = {
   joinHref: string;
   dots: { slug: string; title: string; href: string }[];
   isPage: boolean;
+  recipient?: { who: string; alert: string; sees: string };
+  handsOn?: boolean;
+  scenario?: string;
+  changeHref?: string;
 };
 
 // One screen of a demo to click through yourself: the real screen on its
@@ -33,6 +38,10 @@ export function StepView(p: StepProps) {
   const [ready, setReady] = useState<"loading" | "ready" | "error">("loading");
   const [round, setRound] = useState(0);
   const [away, setAway] = useState(false);
+  const [showRecipient, setShowRecipient] = useState(false);
+  useEffect(() => {
+    if (p.scenario && p.index === 0) practiceEvent("task_start", p.scenario);
+  }, [p.scenario, p.index]);
 
   // On a phone the explanation folds away, so the screen has the room.
   useEffect(() => {
@@ -108,7 +117,7 @@ export function StepView(p: StepProps) {
           <span>
             {p.demoTitle} &middot; Step {p.index + 1} of {p.total}
           </span>
-          <span className="tp-note">Fictional practice environment. Nothing here is saved or sent.</span>
+          <span className="tp-note" data-practice-label>Fictional practice environment. Nothing here is saved or sent.</span>
           <a href={p.joinHref}>Create your account &rarr;</a>
         </div>
         <div className="tp-main">
@@ -143,10 +152,28 @@ export function StepView(p: StepProps) {
           {p.focus && away && (
             <button type="button" className="tp-link" onClick={show}>Show me &darr;</button>
           )}
-          <button type="button" className="tp-link" onClick={() => setRound((n) => n + 1)}>Reset scenario</button>
-          <a className="tp-link" href="/start">Change scenario</a>
+          <button type="button" className="tp-link" onClick={() => { setRound((n) => n + 1); setShowRecipient(false); }}>Reset scenario</button>
+          <a className="tp-link" href={p.changeHref || "/start"}>Change scenario</a>
         </span>
       </div>
+      {p.handsOn && (
+        <p className="tp-hands" data-hands-on>
+          <b>Your turn.</b> Use this screen yourself. Nothing is saved or sent.
+        </p>
+      )}
+      {p.recipient && (
+        <div className="tp-recipient" data-recipient>
+          <button type="button" className="tp-link" aria-expanded={showRecipient} onClick={() => { if (!showRecipient && p.scenario) practiceEvent("recipient_preview", p.scenario); setShowRecipient((v) => !v); }}>
+            {showRecipient ? "Back to my view" : "What will they receive?"}
+          </button>
+          {showRecipient && (
+            <div role="region" aria-label="What the colleague receives">
+              <p><b>{p.recipient.who}&rsquo;s notification:</b> &ldquo;{p.recipient.alert}&rdquo;</p>
+              <p>{p.recipient.sees}</p>
+            </div>
+          )}
+        </div>
+      )}
       <div className="tp-stage">
         <iframe key={round} ref={frame} src={p.src} title={`${p.title}: a screen of PsyAlliance with sample data`} />
         {ready === "loading" && <div className="tp-loading" role="status">Opening the screen&hellip;</div>}

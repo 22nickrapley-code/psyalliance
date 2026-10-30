@@ -3,7 +3,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { GUIDE, HANDOFF_COOKIE, HELPS, parseHandoff } from "@/lib/start-guide";
+import { GUIDE, HANDOFF_COOKIE, HANDOFF_HOURS, HELPS, parseHandoff } from "@/lib/start-guide";
 
 // Continue: the choice is used once. It opens the right unsent draft or editor; nothing is sent, published or switched on.
 export async function continueStartAction(formData: FormData) {
@@ -49,4 +49,18 @@ export async function startFreshAction() {
   await supabase.rpc("set_starting_intent", { p_intent: "" });
   await supabase.rpc("log_lifecycle_event", { p_namespace: "real", p_event: "handoff_cleared" });
   redirect("/dashboard");
+}
+
+// Discard one suggestion. The choice was only ever a private draft in this browser, so discarding it removes it from
+// the draft and changes nothing on the account.
+export async function discardSuggestionAction(formData: FormData) {
+  const jar = await cookies();
+  const h = parseHandoff(jar.get(HANDOFF_COOKIE)?.value);
+  if (!h) redirect("/dashboard");
+  const what = String(formData.get("discard") || "");
+  const next = { need: h.need, ctx: h.ctx, helps: h.helps, exp: h.exp };
+  if (what === "ctx") next.ctx = undefined;
+  else if ((HELPS as readonly string[]).includes(what)) next.helps = (h.helps || []).filter((k) => k !== what);
+  jar.set(HANDOFF_COOKIE, encodeURIComponent(JSON.stringify(next)), { path: "/", maxAge: HANDOFF_HOURS * 3600, sameSite: "lax" });
+  redirect("/dashboard/start");
 }

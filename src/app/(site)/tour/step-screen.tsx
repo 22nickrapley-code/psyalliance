@@ -30,6 +30,10 @@ export function DemoStepScreen({ demo, index: i }: { demo: Journey; index: numbe
       joinHref={JOIN_HREF}
       dots={demo.steps.map((x) => ({ slug: x.slug, title: x.title, href: `${base}/${x.slug}` }))}
       isPage={s.scene.kind === "page"}
+      recipient={s.recipient}
+      handsOn={s.handsOn}
+      scenario={demo.scenario}
+      changeHref={demo.scenario ? "/start" : undefined}
     />
   );
 }
