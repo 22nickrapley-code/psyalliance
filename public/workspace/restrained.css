@@ -1087,3 +1087,15 @@ body,.workspace,.workspace.feature-cover,.workspace.feature-referrals,.workspace
 
 /* Release B: the status pill in the month agenda and day sheet is as wide as its words on phones, so "Needs your reply" never spills out of it. */
 .calendar-agenda .arrangement-side .label{max-width:none}
+
+/* Release C: Library collection selector (phones), continuity first step (phones), copy actions */
+.collection-select{display:none}
+@media (max-width:700px){
+  .collection-select{display:grid;gap:4px;font-size:13px;color:#536559;width:100%}
+  .collection-select select{width:100%;min-height:44px;font-size:16px;border:1px solid #e5e9e3;border-radius:8px;background:#fff;color:#26352e;padding:0 12px}
+  #library-results,.content .toolbar .search-field{width:100%}
+  .toolbar:has(.collection-select) .filter-pills{display:none}
+  .toolbar:has(.collection-select) .search-field{width:100%;max-width:none}
+  .continuity-layout .continuity-steps{display:none}
+  .continuity-layout .continuity-summary{padding:14px}
+}

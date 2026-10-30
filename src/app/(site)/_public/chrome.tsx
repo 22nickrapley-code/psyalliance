@@ -12,7 +12,8 @@ export function PublicNav({ home = false }: { home?: boolean }) {
   return (
     <nav className="public-nav" aria-label="Public">
       <a className="brand" href={`${PUBLIC_BASE}/`}>
-        <span className="brand-mark" aria-hidden="true">ψ</span>psyalliance
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img className="brand-logo" src="/workspace/assets/logo.svg" alt="PsyAlliance" />
       </a>
       <div className="links">
         <a className="text-link" href={`${base}#how`}>How it works</a>
@@ -33,7 +34,7 @@ export function PublicFooter({ home = false }: { home?: boolean }) {
   return (
     <footer className="public-footer">
       <div>
-        <div className="brand"><span className="brand-mark" aria-hidden="true">ψ</span>psyalliance</div>
+        <div className="brand">{/* eslint-disable-next-line @next/next/no-img-element */}<img className="brand-logo on-dark" src="/workspace/assets/logo.svg" alt="PsyAlliance" /></div>
         <p>A private, verified network for independent psychologists and psychiatrists.</p>
       </div>
       <div className="foot-links">

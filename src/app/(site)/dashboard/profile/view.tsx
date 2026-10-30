@@ -120,6 +120,12 @@ export function ProfileView({
   const basicsDone = !!(profile?.full_name && profile?.qualification_level && profile?.primary_state && profile?.primary_practice_city);
   const doneCount = checks.filter((c) => c.done).length;
   const pct = Math.round((doneCount / checks.length) * 100);
+  // Two named measures: what must be in place for colleagues to match and find you, and the optional detail that makes a profile richer.
+  const ESSENTIAL = ["Name and qualification", "Practice location", "License in Credentials", "Availability confirmed"];
+  const essential = checks.filter((c) => ESSENTIAL.includes(c.label));
+  const optional = checks.filter((c) => !ESSENTIAL.includes(c.label));
+  const essDone = essential.filter((c) => c.done).length;
+  const optDone = optional.filter((c) => c.done).length;
 
   const name = profile?.full_name || "Your name";
   const display = clinicianName(name, profile?.qualification_level, profile?.credential_prefix);
@@ -180,25 +186,28 @@ export function ProfileView({
           </section>
           <aside className="stack">
             <section className="card tint roomy">
-              <div className="eyebrow">{pct === 100 ? "Complete" : `${pct}% complete`}</div>
-              <h2 className="serif-title" style={{ fontSize: 26 }}>{pct === 100 ? "Profile complete." : "Almost there."}</h2>
-              <div className="meter" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label="Profile completeness">
-                <span style={{ width: `${pct}%` }} />
+              <div className="eyebrow" data-measure="essential">Essential setup: {essDone} of {essential.length} done</div>
+              <h2 className="serif-title" style={{ fontSize: 26 }}>{essDone === essential.length ? "Ready for colleagues to find you." : "A few essentials left."}</h2>
+              <ul className="summary-list completeness" style={{ marginTop: 10 }}>
+                {essential.map((c) => (
+                  <li key={c.label} className={c.done ? "is-done" : "is-todo"}>
+                    <span>{c.done ? "✓ " : ""}{c.label}</span>
+                    <strong>{c.done ? "Done" : <a href={c.href.startsWith("#") ? `/dashboard/profile?edit=1${c.href}` : c.href}>Add</a>}</strong>
+                  </li>
+                ))}
+              </ul>
+              <div className="eyebrow" data-measure="optional" style={{ marginTop: 16 }}>Optional detail: {optDone} of {optional.length} added</div>
+              <div className="meter" role="progressbar" aria-valuenow={optDone} aria-valuemin={0} aria-valuemax={optional.length} aria-label="Optional profile detail">
+                <span style={{ width: `${Math.round((optDone / optional.length) * 100)}%` }} />
               </div>
-              {pct === 100 ? (
-                <p className="small" style={{ marginTop: 10, marginBottom: 0 }}>
-                  Every field matching uses is filled in, and your availability is current. {reviewed.length > 0 ? "Your license is reviewed, so colleagues can find you." : "You'll be matched once an admin has reviewed your license."}
-                </p>
-              ) : (
-                <ul className="summary-list completeness" style={{ marginTop: 10 }}>
-                  {checks.map((c) => (
-                    <li key={c.label} className={c.done ? "is-done" : "is-todo"}>
-                      <span>{c.done ? "✓ " : ""}{c.label}</span>
-                      <strong>{c.done ? "Done" : <a href={c.href.startsWith("#") ? `/dashboard/profile?edit=1${c.href}` : c.href}>Add</a>}</strong>
-                    </li>
+              <p className="small" style={{ margin: "8px 0 0" }}>Optional detail, such as a photo or a bio, helps colleagues know you. It is not needed to use PsyAlliance.</p>
+              {optDone < optional.length ? (
+                <ul className="summary-list completeness" style={{ marginTop: 8 }}>
+                  {optional.filter((c) => !c.done).map((c) => (
+                    <li key={c.label} className="is-todo"><span>{c.label}</span><strong><a href={c.href.startsWith("#") ? `/dashboard/profile?edit=1${c.href}` : c.href}>Add</a></strong></li>
                   ))}
                 </ul>
-              )}
+              ) : null}
             </section>
             <section className="card roomy">
               <h2 className="serif-title" style={{ fontSize: 24, marginTop: 0 }}>Your account</h2>
@@ -442,14 +451,24 @@ export function ProfileView({
         <aside className="stack">
           <section className="card tint">
             <div className="card-title">
-              <h3>Profile {pct}% complete</h3>
-              {pct === 100 ? <Status>Complete</Status> : <span className="micro-note">{checks.length - doneCount} to go</span>}
+              <h3>Setup and profile</h3>
+              <span className="micro-note">{essential.length - essDone} essential to go</span>
             </div>
-            <div className="meter" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label="Profile completeness">
-              <span style={{ width: `${pct}%` }} />
+            <div className="eyebrow" data-measure="essential">Essential setup: {essDone} of {essential.length} done</div>
+            <ul className="summary-list completeness" style={{ marginTop: 8 }}>
+              {essential.map((c) => (
+                <li key={c.label} className={c.done ? "is-done" : "is-todo"}>
+                  <span>{c.done ? "✓ " : ""}{c.label}</span>
+                  <strong>{c.done ? "Done" : <a href={c.href}>Add</a>}</strong>
+                </li>
+              ))}
+            </ul>
+            <div className="eyebrow" data-measure="optional" style={{ marginTop: 14 }}>Optional detail: {optDone} of {optional.length} added</div>
+            <div className="meter" role="progressbar" aria-valuenow={optDone} aria-valuemin={0} aria-valuemax={optional.length} aria-label="Optional profile detail">
+              <span style={{ width: `${Math.round((optDone / optional.length) * 100)}%` }} />
             </div>
-            <ul className="summary-list completeness" style={{ marginTop: 10 }}>
-              {checks.map((c) => (
+            <ul className="summary-list completeness" style={{ marginTop: 8 }}>
+              {optional.map((c) => (
                 <li key={c.label} className={c.done ? "is-done" : "is-todo"}>
                   <span>{c.done ? "✓ " : ""}{c.label}</span>
                   <strong>{c.done ? "Done" : <a href={c.href}>Add</a>}</strong>

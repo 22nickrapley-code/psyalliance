@@ -2839,3 +2839,6 @@
 .pa .lifecycle-band .micro-note{margin:16px 0 0;color:#536559;font-size:13px}
 /* Phone sign-up: the form comes first, the explanation after it. */
 @media (max-width:900px){.pa .join-layout .join-card{order:-1}.pa .join-intro .join-steps{margin-top:8px}}
+/* The approved logo asset, shared with the member shell. */
+.pa .brand .brand-logo{height:30px;width:auto;display:block}
+.pa .brand .brand-logo.on-dark{filter:brightness(0) invert(1)}
