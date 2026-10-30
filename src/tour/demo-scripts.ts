@@ -404,8 +404,8 @@ const HUB: DemoScript = {
         },
         {
           title: "Grow your circle",
-          text: "A small line at the bottom invites a colleague you know. A bigger circle makes every other part more useful.",
-          beats: [["scroll", ".hub-invite-line"], ["look", ".hub-invite-line"]],
+          text: "A card at the bottom invites a colleague you know. A bigger circle makes every other part more useful.",
+          beats: [["scroll", ".hub-invite-card"], ["look", ".hub-invite-card"]],
         },
       ],
     },
