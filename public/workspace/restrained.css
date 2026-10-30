@@ -1013,3 +1013,19 @@ body,.workspace,.workspace.feature-cover,.workspace.feature-referrals,.workspace
 .invite-order-row .order-controls{display:flex;flex-direction:row;gap:2px;align-items:center}
 .invite-order-row .order-controls .icon-button{width:34px;height:34px;min-width:34px;min-height:34px;padding:0;display:inline-flex;align-items:center;justify-content:center;border-radius:8px}
 .invite-order-row .order-controls .icon-button svg{width:16px;height:16px}
+
+/* Release B: Cover review, workload and change notes */
+.review-client-actions{display:flex;gap:4px;flex-wrap:wrap;padding:2px 0 8px}
+.workload-list{list-style:none;margin:10px 0 0;padding:0;border:1px solid var(--line);border-radius:12px;background:#fff;overflow:hidden}
+.workload-list li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:3px 14px;padding:12px 14px;border-top:1px solid var(--line);align-items:center}
+.workload-list li:first-child{border-top:0}
+.workload-name{display:flex;align-items:center;gap:10px;min-width:0}
+.workload-name strong{overflow-wrap:anywhere}
+.workload-count{justify-self:end;font-size:13px;color:var(--muted);text-align:right}
+.workload-count b{color:var(--ink);font-weight:650}
+.workload-list small{grid-column:1/-1;color:var(--muted);font-size:12px}
+.change-note{display:block}
+.change-note p{margin:6px 0 0}
+.change-note .button{margin-top:8px}
+.icon-button:disabled{opacity:.35;cursor:default}
+@media(max-width:560px){.workload-list li{grid-template-columns:1fr}.workload-count{justify-self:start;text-align:left}}
