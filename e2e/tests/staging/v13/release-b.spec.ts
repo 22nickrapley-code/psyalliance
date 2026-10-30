@@ -260,7 +260,12 @@ test("B-04 C06 calendar: both directions and Today are named, today and the sele
   await expect(phone.page.locator(".month-grid")).toBeVisible();
   for (let n = 0; n < 3 && (await phone.page.locator(".cal-dots i").count()) === 0; n++) await phone.page.locator('[data-action="calendar-month:1"]').click();
   expect(await phone.page.locator(".cal-dots i").count()).toBeGreaterThan(0);
-  expect(await phone.page.locator(".month-day-counts").first().isVisible()).toBe(false);
+  // No plan title is drawn inside a phone-sized date; the first day that has a plan is the one that must be checked.
+  const withPlan = phone.page.locator(".month-day:has(.cal-dots i)").first();
+  await expect(withPlan).toBeVisible();
+  expect(await withPlan.locator(".cal-chip").count()).toBeGreaterThan(0); // the titles are in the page for assistive technology and the agenda...
+  expect(await withPlan.locator(".cal-chip").evaluateAll((els) => els.filter((e) => { const r = e.getBoundingClientRect(); return r.width > 0 && r.height > 0 && getComputedStyle(e).visibility !== "hidden"; }).length)).toBe(0); // ...but none is drawn
+  expect(await withPlan.evaluate((e) => e.getBoundingClientRect().width)).toBeGreaterThan(36);
   expect(await phone.page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
   await phone.context.close();
 });
@@ -555,4 +560,40 @@ test("B-13 D09 D12 workflow headings name the task, and one client has no client
   const text = await page.locator(".modal").innerText();
   expect(text).not.toMatch(/Room for the right referral|Choose the right colleagues|Bring your people closer|Good colleagues\. A clear fit/);
   await context.close();
+});
+
+test("B-14 D19 the day sheet stacks the two directions, a direction with nothing in it stays small, and a colleague's plan reads from the invited colleague's side", async ({ browser, baseURL }) => {
+  const now = new Date();
+  const iso = (m: number, d: number) => { const x = new Date(now.getFullYear(), now.getMonth() + m, d, 12); return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, "0")}-${String(x.getDate()).padStart(2, "0")}`; };
+  // Seven months ahead, where the fixture members have no plans of their own.
+  await asMember(cass, `select public.cover_create_plan($1::jsonb) as r`, [JSON.stringify({
+    requestId: crypto.randomUUID(), name: "B Sheet theirs", reason: "short", other: "", start: iso(7, 10), end: iso(7, 14), mode: "sequential", deadline: 48, message: "Weekly appointments.",
+    clients: [{ label: "Client 1", focus: "Anxiety/Panic Disorders", secondary: "", state: "NY", age: "", setting: "virtual", insurance: "", frequency: "Weekly", prescribing: false, language: "", city: "", selected: [avery] }],
+  })]);
+  try {
+    const { page, context } = await openAs(browser, "avery", baseURL!, "/dashboard/cover", 1365);
+    await page.locator('[data-action="cover-layout:calendar"]').click();
+    for (let n = 0; n < 7; n++) await page.locator('[data-action="calendar-month:1"]').click();
+    await page.locator(`[data-action="calendar-day:${iso(7, 12)}"]`).click();
+    const sheet = page.locator(".modal");
+    await expect(sheet).toContainText("Cover on");
+    const panels = sheet.locator(".panel[class*='direction-']");
+    await expect(panels).toHaveCount(2);
+    const boxes = await panels.evaluateAll((els) => els.map((e) => { const r = e.getBoundingClientRect(); return { x: r.x, y: r.y, w: r.width, h: r.height, empty: e.classList.contains("agenda-empty") }; }));
+    expect(boxes[0].empty).toBe(true); // Avery has nothing of her own on that day
+    expect(boxes[0].h, "an empty direction is a small strip").toBeLessThan(110);
+    expect(Math.abs(boxes[0].x - boxes[1].x), "one column").toBeLessThan(2);
+    expect(boxes[1].y).toBeGreaterThan(boxes[0].y);
+    expect(boxes[1].w, "the plan has room to read").toBeGreaterThan(500);
+    await expect(panels.nth(0)).toContainText("WHEN YOU’RE AWAY"); // the direction labels stay
+    await expect(panels.nth(1)).toContainText("WHEN A COLLEAGUE IS AWAY");
+    await expect(panels.nth(1)).toContainText("B Sheet theirs");
+    // Opening it from the sheet: the summary is about what Avery has been asked, not the organiser's list.
+    await panels.nth(1).getByText("B Sheet theirs").first().click();
+    await expect(page.locator(".tracking-next")).toContainText("invitation");
+    await expect(page.locator(".tracking-next")).not.toContainText("still needs a colleague");
+    await context.close();
+  } finally {
+    await q(`delete from coverage_plans where title = 'B Sheet theirs'`);
+  }
 });

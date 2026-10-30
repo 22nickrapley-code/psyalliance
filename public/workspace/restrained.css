@@ -1032,7 +1032,7 @@ body,.workspace,.workspace.feature-cover,.workspace.feature-referrals,.workspace
 .month-day.selected{outline:2px solid var(--forest);outline-offset:-2px}
 .cal-dots{display:none}
 @media(max-width:760px){
-  .month-day-counts{display:none}
+  .month-day .month-day-counts{display:none}
   .cal-dots{display:flex;gap:3px;align-items:center;justify-content:center;min-height:10px;margin-top:4px}
   .cal-dots i{width:8px;height:8px;border-radius:50%;display:inline-block}
   .cal-dots i.own{background:var(--forest)}
@@ -1076,3 +1076,11 @@ body,.workspace,.workspace.feature-cover,.workspace.feature-referrals,.workspace
 
 /* Release B: with one client there is nothing to switch between, so the matching step is one column. */
 .client-match-layout.single { display: block; }
+
+/* Release B: the day sheet and the month agenda stack the two directions, and a direction with nothing in it stays small (D19). */
+.split-lists.calendar-agenda{grid-template-columns:minmax(0,1fr);grid-template-rows:none;gap:14px}
+.split-lists.calendar-agenda>.panel{display:block;grid-row:auto}
+.panel.agenda-empty .list-section-header{padding:12px 20px;border-bottom:0}
+.panel.agenda-empty .list-section-header h2{font-size:16px}
+.panel.agenda-empty .list-section-header p{display:none}
+.panel.agenda-empty .list-section-body .no-results{padding:0 20px 14px;text-align:left;font-size:14px}
