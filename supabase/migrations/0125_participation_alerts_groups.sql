@@ -249,6 +249,7 @@ revoke all on function private.alert_text(text, uuid) from public, anon, authent
 create or replace function public.claim_alerts(p_limit integer default 25)
 returns table (delivery_id bigint, channel text, recipient uuid, body text, link text, endpoint text, p256dh text, auth text, phone text)
 language plpgsql security definer set search_path to 'public' as $$
+#variable_conflict use_column
 declare r record;
 begin
   update notification_deliveries set status = 'failed', error = 'Not sent: too old' where channel in ('push', 'sms') and status = 'pending' and created_at < now() - interval '1 day';
