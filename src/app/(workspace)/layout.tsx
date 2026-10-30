@@ -20,7 +20,7 @@ export const viewport: Viewport = {
 } as Viewport;
 
 const STYLES = ["styles", "product", "refinements", "home", "pulse", "directions", "polish", "feedback", "hub"];
-const V = "15";
+const V = "16";
 
 export default function WorkspaceRootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -40,9 +40,9 @@ export default function WorkspaceRootLayout({ children }: { children: React.Reac
         {/* Calm palette: one neutral ground, white cards, thin muted accents. Last, so it wins. */}
         {/* eslint-disable-next-line @next/next/no-css-tags */}
         <link rel="stylesheet" href={`/workspace/calm.css?v=${V}`} />
-        {/* Stronger area colours and clearer states (Nick's 28 Oct feedback: the muted tints were too washed out). Loads last. */}
+        {/* Release A: the original restrained palette and the shared type scale. Last, so it wins. */}
         {/* eslint-disable-next-line @next/next/no-css-tags */}
-        <link rel="stylesheet" href={`/workspace/bold.css?v=${V}`} />
+        <link rel="stylesheet" href={`/workspace/restrained.css?v=${V}`} />
       </head>
       <body>
         <a className="skip-link" href="#main">Skip to content</a>

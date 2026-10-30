@@ -1,16 +1,10 @@
 /* Calm palette (Nick, 28 Oct): one neutral ground, white cards, and each area's colour used only as a thin,
    muted accent. Colour is kept for status and for the thing that needs attention. Loads after final.css. */
 :root{
-  --calm-ground:#f5f6f3; --calm-card:#ffffff; --calm-line:#e3e7e1; --calm-line-soft:#edf0eb; --calm-soft:#f1f3ef;
-  --calm-ink:#24332c; --calm-sub:#5d6860;
+  --calm-ground:#f7f6f1; --calm-card:#ffffff; --calm-line:#e5e9e3; --calm-line-soft:#edf0eb; --calm-soft:#f1f3ef;
+  --calm-ink:#26352e; --calm-sub:#536559;
   --relation-trusted:#3d5f92; --relation-worked:#6a5590; --relation-suggested:#2f7384; --relation-other:#69757c;
 }
-.feature-cover,.modal-feature-cover{--feature:#34574a;--feature-pale:#edf1ee;--feature-page:var(--calm-ground)}
-.feature-referrals,.modal-feature-referrals{--feature:#6b5a3a;--feature-pale:#f1eee8;--feature-page:var(--calm-ground)}
-.feature-consult,.modal-feature-consult{--feature:#6a5360;--feature-pale:#f1edef;--feature-page:var(--calm-ground)}
-.feature-network,.modal-feature-network{--feature:#4f6277;--feature-pale:#edf0f3;--feature-page:var(--calm-ground)}
-.feature-home,.feature-messages,.feature-library{--feature:#34574a;--feature-pale:#edf1ee;--feature-page:var(--calm-ground)}
-.feature-cover,.workspace.feature-referrals,.workspace.feature-consult,.workspace.feature-network,.workspace.feature-home{background:var(--calm-ground)}
 body{background:var(--calm-ground)}
 
 /* The Hub: quiet white panels, a hairline accent on top, no filled pastel blocks. */

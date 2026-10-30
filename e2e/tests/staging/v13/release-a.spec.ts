@@ -1,0 +1,315 @@
+import { test, expect, type Page, type Browser } from "@playwright/test";
+import { signInAs, account } from "../../../lib/auth";
+import { assertLocal, q, one, asMember } from "../../../lib/staging";
+
+// Release A (brief of 29 Oct 2026): the three-card Hub, the one action list with Later and Set aside kept on the
+// account, the Consult help group and nav dot, navigation order, the phone shell and global search with scopes.
+// Real local database, fictional members only.
+test.beforeEach(({ baseURL }) => assertLocal(baseURL!));
+test.describe.configure({ mode: "serial" });
+
+// Fenn and Dara have no baseline work in the staging data, so the counts below are exact.
+const avery = account("avery"), bram = account("fenn"), cass = account("dara");
+const everyone = [avery.id, bram.id, cass.id];
+const uuid = () => crypto.randomUUID();
+
+const client = (over: Record<string, unknown> = {}) => ({
+  label: "Client 1", focus: "Anxiety/Panic Disorders", secondary: "", state: "NY", age: "", setting: "virtual",
+  insurance: "", frequency: "Weekly", prescribing: false, language: "", city: "", selected: [], ...over,
+});
+const coverPlan = (over: Record<string, unknown> = {}) => ({
+  requestId: uuid(), name: "RA Autumn leave", reason: "short", other: "", start: "2026-11-02", end: "2026-11-13",
+  mode: "sequential", deadline: 48, message: "Weekly appointments.", ...over,
+});
+const rpc = async (who: string, sql: string, params: unknown[] = []) => (await asMember(who, sql, params)).rows[0]?.r;
+
+async function tidy() {
+  await q(`delete from workspace_drafts where profile_id = any($1::uuid[])`, [everyone]);
+  await q(`delete from coverage_plans where profile_id = any($1::uuid[])`, [everyone]);
+  await q(`delete from referral_requests where requesting_profile_id = any($1::uuid[]) and client_request_id is not null`, [everyone]);
+  await q(`delete from consultation_responses where body like 'RA %'`);
+  await q(`delete from consultations where question like 'RA %'`);
+  await q(`delete from conversations where context_key like 'cover-%' or context_key like 'referral-%'`);
+  await q(`update profiles set availability_confirmed_at = now() - interval '5 days' where id = any($1::uuid[])`, [everyone]);
+}
+test.beforeEach(tidy);
+test.afterAll(tidy);
+
+// Bram receives two cover requests (one per client), one referral and one question sent straight to him.
+async function seedForBram() {
+  const plan = await rpc(avery.id, `select public.cover_create_plan($1::jsonb) as r`, [JSON.stringify(coverPlan({ clients: [client({ label: "Client 1", selected: [bram.id] }), client({ label: "Client 2", focus: "Depression", selected: [bram.id] })] }))]);
+  const referral = await rpc(avery.id, `select public.referral_create($1::jsonb) as r`, [JSON.stringify({
+    requestId: uuid(), focus: "Anxiety/Panic Disorders", secondary: "", state: "NY", city: "", age: "", setting: "virtual", insurance: "", language: "",
+    prescribing: false, audience: "selected", selected: [bram.id, cass.id], timeframe: "Within two weeks", message: "Weekly sessions, no identifying details.",
+  })]);
+  const question = await rpc(avery.id, `select public.consult_post($1::jsonb) as r`, [JSON.stringify({
+    title: "RA How do you structure a first session?", body: "Context, no identifying details.", topic: "Clinical practice", tags: [], confirmed: "true",
+    clientRequestId: uuid(), audience: "one", recipients: [bram.id],
+  })]);
+  return { plan, referral, question };
+}
+
+const problems = new WeakMap<Page, string[]>();
+async function openAs(browser: Browser, who: string, baseURL: string, path = "/dashboard", phone = false, width = 390) {
+  const context = await browser.newContext(phone ? { viewport: { width, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true } : { viewport: { width: 1365, height: 900 } });
+  await signInAs(context, who, baseURL);
+  const page = await context.newPage();
+  const errs: string[] = [];
+  problems.set(page, errs);
+  page.on("pageerror", (e) => errs.push(`${e.message} @ ${page.url()}`));
+  await page.goto(path);
+  await expect(page.locator("#app .sidebar, #app .mobile-nav").first()).toBeAttached();
+  return { context, page };
+}
+const clean = (page: Page) => expect(problems.get(page)).toEqual([]);
+const headline = (page: Page) => page.locator(".hub-attn-main, .hub-attn-clear");
+const counted = (page: Page) => page.locator(".hub-group:not(.hub-group-help):not(.hub-group-aside) .hub-row");
+const ensureOpen = async (page: Page) => {
+  const t = page.locator(".hub-attn-toggle");
+  if ((await t.getAttribute("aria-expanded")) !== "true") await t.click();
+  await expect(t).toHaveAttribute("aria-expanded", "true");
+};
+const PATHS: Record<string, string> = { home: "/dashboard", referrals: "/dashboard/referrals", cover: "/dashboard/cover", consult: "/dashboard/consult" };
+const go = async (page: Page, view: string) => {
+  await page.locator(`.sidebar .nav-item[data-action="nav:${view}"]`).click();
+  await expect.poll(() => new URL(page.url()).pathname).toBe(PATHS[view]);
+};
+const plural = (n: number) => (n === 0 ? "You’re up to date" : n === 1 ? "1 thing needs your attention" : `${n} things need your attention`);
+
+test("RA-01 the Hub is a compact heading, one actions control, three plain cards and a small invitation", async ({ browser, baseURL }) => {
+  const { page, context } = await openAs(browser, "avery", baseURL!);
+  const cards = page.locator(".hub-cards .hub-card");
+  await expect(cards).toHaveCount(3);
+  // Referrals first (Nick's order), then Cover, then Consult; each is one button with the action in its name.
+  expect((await cards.allInnerTexts()).map((t) => t.split("\n")[0].trim())).toEqual(["Referrals", "Cover", "Consult"]);
+  await expect(cards.nth(0)).toContainText("Refer a client");
+  await expect(cards.nth(1)).toContainText("Plan cover");
+  await expect(cards.nth(2)).toContainText("Ask a question");
+  for (let i = 0; i < 3; i++) {
+    expect(await cards.nth(i).evaluate((e) => e.tagName)).toBe("BUTTON");
+    expect(await cards.nth(i).locator("button, a, input, [data-action]").count()).toBe(0);
+    await expect(cards.nth(i).locator(".nav-count, .badge, .label, .hub-area-count")).toHaveCount(0);
+  }
+  // None of the removed Hub parts come back.
+  for (const gone of [".hub-areas", ".hub-capacity", ".hub-community", ".pulse-conversations", ".hub-network", "#home-discussions"]) await expect(page.locator(gone)).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Invite a colleague" })).toBeVisible();
+  // Desktop navigation order.
+  expect((await page.locator(".sidebar .nav-item:not(.nav-mobile-only)").allInnerTexts()).map((t) => t.replace(/\d+$/, "").trim())).toEqual(
+    ["The Hub", "Referrals", "Cover", "Consult", "Network / Search", "Messages", "Library"]);
+  await clean(page);
+  await context.close();
+});
+
+test("RA-02 a creation card opens its overlay; it does not navigate, and navigation does not start a plan", async ({ browser, baseURL }) => {
+  const { page, context } = await openAs(browser, "avery", baseURL!);
+  await page.locator(".hub-card", { hasText: "Plan cover" }).click();
+  await expect(page.locator("#cover-name")).toBeVisible();
+  expect(new URL(page.url()).pathname).toBe("/dashboard");
+  await page.keyboard.press("Escape");
+  await page.locator(".hub-card", { hasText: "Refer a client" }).click();
+  await expect(page.locator("#referral-need-form")).toBeVisible();
+  await page.keyboard.press("Escape");
+  await page.locator(".hub-card", { hasText: "Ask a question" }).click();
+  await expect(page.locator(".modal")).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(page.locator(".modal")).toHaveCount(0);
+  // The sidebar Cover opens the overview, not a new plan.
+  await page.locator('.sidebar [data-action="nav:cover"]').click();
+  await expect(page.locator(".modal")).toHaveCount(0);
+  await expect.poll(() => new URL(page.url()).pathname).toBe("/dashboard/cover");
+  await clean(page);
+  await context.close();
+});
+
+test("RA-03 the actions list counts every actionable row, groups reconcile, Collapse works and the state survives navigation", async ({ browser, baseURL }) => {
+  await seedForBram();
+  const { page, context } = await openAs(browser, "fenn", baseURL!);
+  await expect(headline(page)).toHaveText(plural(4));
+  await expect(page.locator(".hub-row")).toHaveCount(0); // collapsed
+  await page.locator(".hub-attn-toggle").click();
+  await expect(page.locator(".hub-attn-toggle")).toHaveAttribute("aria-expanded", "true");
+  // Two cover rows (one per client), the referral and the direct question. A reply deadline is shown where there is one.
+  await expect(counted(page)).toHaveCount(4);
+  await expect(page.locator(".hub-group", { hasText: "Cover" }).locator(".hub-row")).toHaveCount(2);
+  await expect(page.locator(".hub-group", { hasText: "Referrals" }).locator(".hub-row")).toHaveCount(1);
+  await expect(page.locator(".hub-group", { hasText: "Consult" }).locator(".hub-row")).toHaveCount(1);
+  const subtotals = (await page.locator(".hub-group:not(.hub-group-help):not(.hub-group-aside) h2 span").allInnerTexts()).map(Number);
+  expect(subtotals.reduce((a, b) => a + b, 0)).toBe(4);
+  await expect(page.locator(".hub-row", { hasText: "Client 2" })).toContainText("Reply to");
+  // Anonymous context only: no client identity beyond the label and need.
+  await expect(page.locator(".hub-row", { hasText: "Client 1" })).not.toContainText("@");
+  // The state survives a trip to another page.
+  await page.locator('.sidebar [data-action="nav:referrals"]').click();
+  await expect.poll(() => new URL(page.url()).pathname).toBe("/dashboard/referrals");
+  await page.locator('.sidebar .nav-item[data-action="nav:home"]').click();
+  await expect.poll(() => new URL(page.url()).pathname).toBe("/dashboard");
+  await expect(page.locator(".hub-attn-toggle")).toHaveAttribute("aria-expanded", "true");
+  await page.getByRole("button", { name: "Collapse" }).click();
+  await expect(page.locator(".hub-row")).toHaveCount(0);
+  // Clicking an action opens the right arrangement.
+  await page.locator(".hub-attn-toggle").click();
+  await page.locator(".hub-row", { hasText: "referral" }).getByRole("button", { name: /Reply|Continue/ }).first().click();
+  await expect(page.locator(".modal")).toBeVisible();
+  await clean(page);
+  await context.close();
+});
+
+test("RA-04 Later sets a task aside on the account, Restore brings it back, and nothing is accepted by setting it aside", async ({ browser, baseURL }) => {
+  const seeded = await seedForBram();
+  const { page, context } = await openAs(browser, "fenn", baseURL!);
+  await page.locator(".hub-attn-toggle").click();
+  await page.locator(".hub-row", { hasText: "Client 1" }).getByRole("button", { name: /^Later/ }).click();
+  await expect(headline(page)).toHaveText(plural(3));
+  await expect(page.locator(".hub-group-aside .hub-row")).toHaveCount(1);
+  // It is on the server, not only in this browser.
+  await expect.poll(async () => (await q(`select data from workspace_drafts where profile_id = $1 and kind = 'hub-state'`, [bram.id]))[0]?.data?.setAside ? Object.keys((await q(`select data from workspace_drafts where profile_id = $1 and kind = 'hub-state'`, [bram.id]))[0].data.setAside).length : 0).toBe(1);
+  // The underlying request is still open: setting aside does not accept or decline anything.
+  const open = await q(`select count(*)::int n from coverage_requests where requested_profile_id = $1 and status = 'sent'`, [bram.id]);
+  expect(open[0].n).toBe(2);
+  // A fresh browser (another device) sees the same thing.
+  await page.reload();
+  await expect(headline(page)).toHaveText(plural(3));
+  await ensureOpen(page);
+  await page.locator(".hub-group-aside .hub-row").getByRole("button", { name: /^Restore/ }).click();
+  await expect(headline(page)).toHaveText(plural(4));
+  await expect(page.locator(".hub-group-aside")).toHaveCount(0);
+  void seeded;
+  await clean(page);
+  await context.close();
+});
+
+test("RA-05 a materially new event brings a set-aside task back", async ({ browser, baseURL }) => {
+  // Dara owns the referral; Fenn and Bram are asked. Neither has anything else waiting for Dara.
+  const realBram = account("bram");
+  const made = await rpc(cass.id, `select public.referral_create($1::jsonb) as r`, [JSON.stringify({
+    requestId: uuid(), focus: "Anxiety/Panic Disorders", secondary: "", state: "NY", city: "", age: "", setting: "virtual", insurance: "", language: "",
+    prescribing: false, audience: "selected", selected: [bram.id, realBram.id], timeframe: "Within two weeks", message: "Weekly sessions, no identifying details.",
+  })]);
+  await rpc(bram.id, `select public.referral_answer($1::bigint, 'interested', true, null, $2::uuid) as r`, [made.referralId, uuid()]);
+  const { page, context } = await openAs(browser, "dara", baseURL!);
+  await expect(headline(page)).toHaveText(plural(1));
+  await page.locator(".hub-attn-toggle").click();
+  await page.locator(".hub-row").getByRole("button", { name: /^Later/ }).click();
+  await expect(headline(page)).toHaveText("You’re up to date");
+  // The control stays usable so the set-aside list is reachable.
+  await ensureOpen(page);
+  await expect(page.locator(".hub-group-aside .hub-row")).toHaveCount(1);
+  // Bram now answers as well: that is new, so the task is active again.
+  await rpc(realBram.id, `select public.referral_answer($1::bigint, 'interested', true, null, $2::uuid) as r`, [made.referralId, uuid()]);
+  await page.reload();
+  await expect(headline(page)).toHaveText(plural(1));
+  await ensureOpen(page);
+  await expect(page.locator(".hub-row")).toContainText(["2 colleagues are interested"]);
+  await expect(page.locator(".hub-group-aside")).toHaveCount(0);
+  await clean(page);
+  await context.close();
+});
+
+test("RA-06 relevant questions are a separate, uncounted group with a quiet dot on Consult, not a feed", async ({ browser, baseURL }) => {
+  const spec = await q<{ value: string }>(`select lv.value from profile_lookup_values v join lookup_values lv on lv.id = v.lookup_value_id where v.profile_id = $1 and lv.category = 'treatment_specialism' order by v.rank nulls last, lv.value limit 1`, [bram.id]);
+  const word = (spec[0]?.value || "Anxiety").split(/[^A-Za-z]+/).filter((w) => w.length >= 5 && !/disorder/i.test(w))[0] || "Anxiety";
+  await rpc(avery.id, `select public.consult_post($1::jsonb) as r`, [JSON.stringify({
+    title: `RA Thoughts on ${word.toLowerCase()} work?`, body: "No identifying details.", topic: "Clinical practice", tags: [word], confirmed: "true", clientRequestId: uuid(), audience: "network",
+  })]);
+  const { page, context } = await openAs(browser, "fenn", baseURL!);
+  // Nothing needs a decision, so the headline is quiet; the help is mentioned beside it, never counted.
+  await expect(headline(page)).toHaveText("You’re up to date");
+  await expect(page.locator(".hub-attn-note")).toContainText(/question[s]? you could help with/);
+  await expect(page.locator('.sidebar [data-action="nav:consult"] .nav-dot')).toHaveCount(1);
+  await expect(page.locator(".nav-count, .hub-card .label")).not.toContainText("1");
+  await page.locator(".hub-attn-toggle").click();
+  const group = page.locator(".hub-group-help");
+  const mineRow = group.locator(".hub-row", { hasText: "RA Thoughts on" });
+  await expect(mineRow).toHaveCount(1);
+  await expect(group).toContainText("Not required, and not counted above");
+  // Visiting Consult clears the dot; it does not return for the same question.
+  await go(page, "consult");
+  await go(page, "home");
+  await expect(page.locator('.sidebar [data-action="nav:consult"] .nav-dot')).toHaveCount(0);
+  await ensureOpen(page);
+  // Not for me hides that question.
+  await page.locator(".hub-group-help .hub-row", { hasText: "RA Thoughts on" }).getByRole("button", { name: /Not for me/ }).click();
+  await expect(page.locator(".hub-group-help .hub-row", { hasText: "RA Thoughts on" })).toHaveCount(0);
+  await expect.poll(async () => JSON.stringify((await q(`select data from workspace_drafts where profile_id = $1 and kind = 'hub-state'`, [bram.id]))[0]?.data?.notForMe || [])).not.toBe("[]");
+  await clean(page);
+  await context.close();
+});
+
+test("RA-07 the Consult help group can be switched off and stays off on another device", async ({ browser, baseURL }) => {
+  await rpc(avery.id, `select public.consult_post($1::jsonb) as r`, [JSON.stringify({
+    title: "RA A question for a group I am in", body: "No identifying details.", topic: "Clinical practice", tags: [], confirmed: "true", clientRequestId: uuid(), audience: "trusted",
+  })]);
+  await q(`insert into trusted_colleagues (profile_id, colleague_id) values ($1, $2) on conflict do nothing`, [avery.id, bram.id]);
+  const { page, context } = await openAs(browser, "fenn", baseURL!);
+  await expect(page.locator(".hub-attn-note")).toContainText("could help with");
+  await page.locator(".hub-attn-toggle").click();
+  await page.getByRole("button", { name: "Hide this group" }).click();
+  await expect(page.locator(".hub-attn-note")).toHaveCount(0);
+  await expect.poll(async () => (await q(`select data->>'consultHelp' v from workspace_drafts where profile_id = $1 and kind = 'hub-state'`, [bram.id]))[0]?.v).toBe("false");
+  await page.reload();
+  await expect(page.locator(".hub-attn-note")).toHaveCount(0);
+  await q(`delete from trusted_colleagues where profile_id = $1 and colleague_id = $2`, [avery.id, bram.id]);
+  await clean(page);
+  await context.close();
+});
+
+test("RA-08 availability reminder is separate from client work, with a one-tap confirmation", async ({ browser, baseURL }) => {
+  await q(`update profiles set availability_confirmed_at = now() - interval '35 days' where id = $1`, [bram.id]);
+  const { page, context } = await openAs(browser, "fenn", baseURL!);
+  await expect(headline(page)).toHaveText("You’re up to date");
+  const setup = page.locator(".hub-setup");
+  await expect(setup).toContainText("Practice setup");
+  await expect(setup).toContainText("35 days ago");
+  await setup.getByRole("button", { name: "Confirm unchanged" }).click();
+  await expect(page.locator(".hub-setup")).toHaveCount(0);
+  const row = await one(`select availability_confirmed_at > now() - interval '1 hour' as fresh from profiles where id = $1`, [bram.id]);
+  expect(row.fresh).toBe(true);
+  await clean(page);
+  await context.close();
+});
+
+test("RA-09 phone: five bottom items in order, a named Search in the top bar, stacked cards, no sideways scroll at 390 and 320", async ({ browser, baseURL }) => {
+  for (const width of [390, 320]) {
+    const { page, context } = await openAs(browser, "avery", baseURL!, "/dashboard", true, width);
+    expect((await page.locator(".mobile-nav button").allInnerTexts()).map((t) => t.replace(/\d+$/, "").trim())).toEqual(["The Hub", "Referrals", "Cover", "Consult", "Messages"]);
+    const search = page.getByRole("button", { name: "Search", exact: true }).first();
+    await expect(search).toBeVisible();
+    const sb = (await search.boundingBox())!;
+    expect(sb.height).toBeGreaterThanOrEqual(43);
+    expect(sb.x + sb.width).toBeLessThanOrEqual(width);
+    const bell = (await page.getByRole("button", { name: "Notifications" }).boundingBox())!;
+    expect(bell.x + bell.width).toBeLessThanOrEqual(width);
+    const boxes = await page.locator(".hub-card").evaluateAll((els) => els.map((e) => { const r = e.getBoundingClientRect(); return [Math.round(r.left), Math.round(r.width), Math.round(r.top)]; }));
+    expect(new Set(boxes.map((b) => b[0])).size).toBe(1);
+    expect(new Set(boxes.map((b) => b[1])).size).toBe(1);
+    expect(boxes[0][2]).toBeLessThan(boxes[1][2]);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+    // Labels in the bar are not smaller than 11px; the card action is at least 14px.
+    expect(await page.locator(".mobile-nav button span").first().evaluate((e) => parseFloat(getComputedStyle(e).fontSize))).toBeGreaterThanOrEqual(11);
+    expect(await page.locator(".hub-card-go").first().evaluate((e) => parseFloat(getComputedStyle(e).fontSize))).toBeGreaterThanOrEqual(14);
+    // Cards and the main control are real tap targets.
+    for (const h of await page.locator(".hub-card, .hub-attn-toggle").evaluateAll((els) => els.map((e) => e.getBoundingClientRect().height))) expect(h).toBeGreaterThanOrEqual(44);
+    await clean(page);
+    await context.close();
+  }
+});
+
+test("RA-10 search in the top bar has named scopes and filters to them", async ({ browser, baseURL }) => {
+  const { page, context } = await openAs(browser, "avery", baseURL!);
+  await page.getByRole("button", { name: "Search", exact: true }).first().click();
+  const dialog = page.locator(".modal");
+  await expect(dialog.getByRole("group", { name: "Search in" })).toBeVisible();
+  expect((await dialog.locator(".search-scopes button").allInnerTexts())).toEqual(["All", "Colleagues", "Referrals", "Cover", "Consult", "Messages", "Library"]);
+  await dialog.getByRole("searchbox", { name: "Search PsyAlliance" }).fill("a");
+  await dialog.getByRole("button", { name: "Colleagues", exact: true }).click();
+  await expect(dialog.getByRole("button", { name: "Colleagues", exact: true })).toHaveAttribute("aria-pressed", "true");
+  const results = dialog.locator("#global-results .global-result");
+  await expect(results.first()).toBeVisible();
+  for (const text of await results.allInnerTexts()) expect(text).toMatch(/Colleague|Network \/ Search/);
+  await dialog.getByRole("button", { name: "Library", exact: true }).click();
+  for (const text of await dialog.locator("#global-results .global-result").allInnerTexts()) expect(text).toMatch(/Library|No results/);
+  await page.keyboard.press("Escape");
+  await expect(page.locator(".modal")).toHaveCount(0);
+  await clean(page);
+  await context.close();
+});
