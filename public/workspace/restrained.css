@@ -476,8 +476,6 @@ body,.workspace,.workspace.feature-cover,.workspace.feature-referrals,.workspace
 .incoming-response .button{font-size:12px}
 .incoming-response p{font-size:12px}
 .invite-banner .button{font-size:12px}
-.invite-banner h3{font-size:12px}
-.invite-banner p{font-size:12px}
 .invite-journey b{font-size:12px}
 .invite-order-row small{font-size:12px}
 .invite-order-row strong{font-size:12px}
@@ -812,3 +810,181 @@ body,.workspace,.workspace.feature-cover,.workspace.feature-referrals,.workspace
 
 /* Library preview text: darker and not below 12px (found by the contrast sweep) */
 .resource-preview p,.resource-preview li{color:var(--muted);font-size:13px;line-height:1.7}
+
+/* =====================================================================================================================
+   Design pass (Nick, 30 Oct): Hub, Cover and Referrals lists, Network, pop-up forms, Search.
+   One rule of thumb: a list is a white panel with a plain header and hairline-separated rows. No coloured left bars,
+   no tinted blocks, and the same row looks the same whatever its status. Status is said by the pill and the words.
+   ===================================================================================================================== */
+
+/* ---------- Pop-up forms: fields in a grid are spaced by the grid only (a stacking margin made the second column sit lower) ---------- */
+.form-grid>.field,.form-grid>.field+.field,.modal .form-grid>.field+.field,.need-grid>.field{margin:0}
+.need-grid{row-gap:20px;column-gap:20px;align-items:start}
+.need-grid .field.full{margin-top:2px}
+.modal .form-grid .check-line{margin:0}
+
+/* ---------- Relationship colour: the avatar carries it, solid, everywhere a colleague appears ---------- */
+.avatar.relation-trusted{background:var(--relation-trusted);color:#fff;border-color:var(--relation-trusted)}
+.avatar.relation-worked{background:var(--relation-worked);color:#fff;border-color:var(--relation-worked)}
+.avatar.relation-suggested{background:var(--relation-suggested);color:#fff;border-color:var(--relation-suggested)}
+.avatar.relation-other{background:var(--relation-other);color:#fff;border-color:var(--relation-other)}
+
+/* ---------- Search: bigger in the top bar, and a field of its own on the Hub ---------- */
+@media(min-width:761px){
+  .workspace .topbar .top-search{display:inline-flex;align-items:center;gap:10px;min-width:250px;height:40px;padding:0 12px;border:1px solid #cfd8d1;border-radius:var(--r-control);background:#fff;color:var(--muted);font-size:14px}
+  .workspace .topbar .top-search:hover{border-color:var(--forest);color:var(--ink)}
+  .workspace .topbar .top-search svg{width:17px;height:17px;color:var(--forest)}
+  .workspace .topbar .top-search kbd{margin-left:auto;font-size:12px;padding:1px 6px;border-radius:5px}
+}
+.hub-search{display:flex;align-items:center;gap:12px;width:100%;min-height:54px;padding:0 16px;margin:0 0 16px;background:#fff;border:1px solid #cfd8d1;border-radius:var(--r-card);font:inherit;font-size:16px;text-align:left;color:var(--muted);cursor:text}
+.hub-search:hover{border-color:var(--forest)}
+.hub-search svg{width:20px;height:20px;flex:none;color:var(--forest)}
+.hub-search-text{font-weight:600;color:var(--ink);flex:none}
+.hub-search-hint{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:14px}
+.hub-search kbd{flex:none;font:inherit;font-size:12px;padding:2px 7px;border:1px solid var(--line);border-radius:6px;background:var(--cream);color:var(--muted)}
+.global-result.has-avatar{display:flex;align-items:center;gap:12px}
+.global-result.has-avatar .avatar{width:36px;height:36px;font-size:13px;flex:none}
+.global-result h3 .relationship-label{display:inline-block;margin-left:6px;padding:2px 8px;border-radius:999px;border:1px solid;font-size:12px;font-weight:650;line-height:1.4;vertical-align:2px}
+
+/* ---------- Hub: the "up to date" bar, the count on the attention bar, the invitation card ---------- */
+.hub-attn-main strong{display:inline-grid;place-items:center;min-width:30px;height:30px;padding:0 9px;margin-right:10px;border-radius:999px;background:var(--forest);color:#fff;font-size:15px;font-weight:700;vertical-align:middle}
+.hub-clear-bar{display:flex;align-items:center;flex-wrap:wrap;gap:4px 12px;min-height:56px;padding:10px 16px;background:var(--st-ready-pale);border:1px solid #cfe3d6;border-radius:var(--r-card)}
+.hub-clear-mark{display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--st-ready);color:#fff;flex:none}
+.hub-clear-mark svg{width:16px;height:16px}
+.hub-clear-bar .hub-attn-clear{margin:0;padding:0;border:0;background:none;font-size:17px;font-weight:600;color:var(--ink)}
+.hub-clear-sub{margin-left:auto;font-size:14px;color:var(--muted)}
+.hub-invite-card{display:flex;align-items:center;gap:14px;margin:4px 0 0;padding:16px 20px;background:var(--sage);border:1px solid #d6e0d8;border-radius:var(--r-card)}
+.hub-invitecard-mark{display:grid;place-items:center;width:40px;height:40px;border-radius:50%;background:#fff;color:var(--forest);flex:none}
+.hub-invitecard-mark svg{width:20px;height:20px}
+.hub-invitecard-words{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0}
+.hub-invitecard-words strong{font-size:16px;font-weight:650;color:var(--ink)}
+.hub-invitecard-words small{font-size:14px;color:var(--muted)}
+.hub-invite-card .button{flex:none;min-height:40px;background:#fff}
+
+/* ---------- Cover and Referrals: two lists that line up ---------- */
+.split-lists{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;align-items:start}
+@supports (grid-template-rows:subgrid){
+  .split-lists{grid-template-rows:auto 1fr}
+  .split-lists>.panel{display:grid;grid-row:span 2;grid-template-rows:subgrid;row-gap:0}
+}
+.panel[class*="direction-"]{border-radius:var(--r-card)}
+.panel[class*="direction-"] .list-section-header{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:start;gap:0 12px;padding:18px 20px 16px;background:#fff;border-bottom:1px solid var(--line)}
+.panel[class*="direction-"] .list-section-header>div{display:block;min-width:0}
+.panel[class*="direction-"] .list-section-header .action-icon{display:none}
+.panel[class*="direction-"] .list-section-header .direction-caption{margin-bottom:6px;font-size:12px;letter-spacing:1.1px}
+.panel[class*="direction-"] .list-section-header h2{font-size:19px;line-height:1.25}
+.panel[class*="direction-"] .list-section-header p{margin:4px 0 0;font-size:14px;line-height:1.45;color:var(--muted)}
+.panel[class*="direction-"] .list-section-header .label{align-self:start;min-width:30px;text-align:center}
+.panel[class*="direction-"] .list-section-body{display:flex;flex-direction:column;gap:0;padding:0;background:#fff}
+.panel[class*="direction-"] .no-results{padding:28px 20px;font-size:15px;color:var(--muted);text-align:center}
+.arrangement-row,.arrangement-row.row-reply,.arrangement-row.row-ready,.arrangement-row.row-done{border:0;border-top:1px solid var(--line);border-radius:0;background:#fff;box-shadow:none;padding:16px 20px;gap:16px;align-items:center}
+.list-section-body>.arrangement-row:first-child{border-top:0}
+.arrangement-row:hover{background:#f8faf7;box-shadow:none}
+.arrangement-row .plan-date{background:var(--sage);color:var(--forest)}
+.arrangement-row:not(.row-done) .plan-date small,.arrangement-row:not(.row-done) .plan-date b{color:var(--forest)!important}
+.arrangement-row.row-done .arrangement-main strong .text-link{color:#4a554d}
+.arrangement-main{display:flex;flex-direction:column;gap:3px;min-width:0;flex:1}
+.arrangement-main>small{color:var(--muted)!important}
+.arrangement-next{color:var(--muted)!important;font-size:14px!important}
+.arrangement-next.needs-action{color:var(--ink)!important;font-weight:600}
+.arrangement-next.needs-action svg{color:var(--forest)}
+.arrangement-side{display:flex;flex-direction:row;align-items:center;gap:8px;flex:none}
+.arrangement-side .label{min-width:0;text-align:center}
+.arrangement-row .icon-button{width:32px;height:32px;border:0;background:transparent;color:var(--muted)}
+.arrangement-row:hover .icon-button{color:var(--forest)}
+.toolbar{gap:12px;margin-bottom:18px}
+.filter-pills button,.layout-toggle button{min-height:38px}
+.invite-banner{display:flex;align-items:center;gap:12px;margin-top:22px;padding:14px 4px 0;background:transparent;border:0;border-top:1px solid var(--line);border-radius:0}
+.invite-banner .invite-mark{display:grid;place-items:center;width:32px;height:32px;border-radius:50%;background:var(--sage);color:var(--forest);flex:none}
+.invite-banner h3{margin:0;font-size:14px;font-weight:600;color:var(--ink)}
+.invite-banner p{margin:2px 0 0;font-size:13px;color:var(--muted)}
+.invite-banner .button{margin-left:auto;flex:none}
+
+/* ---------- Network: tier groups stacked, one card per colleague ---------- */
+.network-overview{padding:24px 28px;gap:32px;grid-template-columns:220px minmax(0,1fr);margin-bottom:20px}
+.network-overview .circle-map{width:220px}
+.network-overview h2{font-size:20px;letter-spacing:-.2px}
+.network-overview .circle-legend small{display:none}
+.network-overview .circle-legend button:last-child small{display:block}
+.relationship-groups{display:flex;flex-direction:column;gap:20px}
+.relationship-group{border:1px solid var(--line);border-radius:var(--r-card);overflow:hidden;padding:0!important;background:#fff}
+.relationship-group.net-trusted{border-top:3px solid var(--relation-trusted)}
+.relationship-group.net-worked{border-top:3px solid var(--relation-worked)}
+.relationship-group.net-suggested{border-top:3px solid var(--relation-suggested)}
+.relationship-group>header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin:0;padding:16px 20px 14px;background:#fff;border-bottom:1px solid var(--line);box-shadow:none}
+.relationship-group.net-trusted>header,.relationship-group.net-worked>header,.relationship-group.net-suggested>header{box-shadow:none}
+.net-head{min-width:0}
+.net-head h2{display:flex;align-items:center;gap:10px;margin:0;font-size:18px;line-height:1.3;color:var(--ink)}
+.net-head h2 .tier-dot{width:10px;height:10px}
+.net-head p{margin:4px 0 0;font-size:14px;line-height:1.45;color:var(--muted);max-width:640px}
+.net-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;padding:16px 20px 20px}
+.relationship-group .net-list .net-row{display:flex;align-items:flex-start;gap:14px;padding:16px;border:1px solid var(--line);border-radius:var(--r-card);background:#fff}
+.relationship-group .net-row .avatar{width:42px;height:42px;font-size:14px;flex:none}
+.relationship-group .net-row>div{flex:1;min-width:0}
+.relationship-group .net-row strong button{font-size:16px;font-weight:650}
+.relationship-group .net-row small{display:block;font-size:14px;line-height:1.45;margin-top:2px}
+.relationship-group .net-row .net-why{margin-top:6px}
+.relationship-group .net-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.relationship-group .net-actions .button{margin:0;min-height:36px}
+.relationship-group .net-empty{margin:0;padding:18px 20px 20px;font-size:14px;color:var(--muted)}
+.relationship-group .net-pager{border-top:1px solid var(--line);padding:10px 12px}
+
+/* ---------- Phone ---------- */
+@media(max-width:999px){
+  .split-lists{grid-template-columns:minmax(0,1fr);grid-template-rows:none}
+  .split-lists>.panel{display:block;grid-row:auto}
+}
+@media(max-width:760px){
+  .hub-search{min-height:50px;padding:0 14px}
+  .hub-search-hint,.hub-search kbd{display:none}
+  .hub-clear-sub{flex:1 0 100%;margin-left:40px}
+  .hub-invite-card{flex-wrap:wrap;padding:16px}
+  .hub-invitecard-words{flex:1 1 calc(100% - 60px)}
+  .hub-invite-card .button{flex:1 0 100%;min-height:44px}
+  .panel[class*="direction-"] .list-section-header{display:grid;grid-template-columns:minmax(0,1fr) auto;padding:16px}
+  .panel[class*="direction-"] .list-section-header>div{display:block}
+  .arrangement-row,.arrangement-row.row-reply,.arrangement-row.row-ready,.arrangement-row.row-done{padding:14px 16px;gap:12px}
+  .arrangement-side{flex:1 0 100%;justify-content:space-between}
+  .invite-banner{flex-wrap:wrap}
+  .invite-banner .button{margin-left:0}
+  .network-overview{padding:18px 16px;gap:18px;grid-template-columns:minmax(0,1fr)}
+  .network-overview .circle-map{width:100%;max-width:210px;margin:0 auto}
+  .net-list{grid-template-columns:minmax(0,1fr);padding:12px 14px 16px}
+  .relationship-group>header{padding:14px 16px 12px}
+  .relationship-group .net-actions .button{min-height:44px}
+  .need-grid{row-gap:16px}
+}
+
+/* ---------- Cover: calendar and plan detail ---------- */
+.month-day{align-items:flex-start}
+.month-day.today>b{display:grid;place-items:center;width:26px;min-width:26px;height:26px;margin:0 0 0 -3px;align-self:flex-start;border-radius:50%}
+.calendar-month-summary{background:#fff;border-top:1px solid var(--line);padding:18px 25px 6px}
+.calendar-month-summary h3{font-size:17px;margin:0}
+.calendar-month-summary span{font-size:14px;color:var(--muted)}
+.calendar-agenda{padding:12px 25px 25px}
+.tracking-client{border:1px solid var(--line);border-radius:var(--r-card)}
+.tracking-client .label,.tracking-client .request-line .label{font-size:12px;padding:4px 10px}
+.request-details>summary{font-size:13px;color:var(--muted)}
+@media(min-width:761px){
+  .client-table-head,.tracking-client>header{grid-template-columns:minmax(0,1.5fr) minmax(0,1.2fr) 150px!important}
+  .client-table-head{padding:0 15px 8px}
+  .client-table-head span:last-child,.tracking-client>header>.label{justify-self:end;text-align:right}
+}
+.relationship-group>header .label{min-width:30px;padding:3px 10px;font-size:13px;font-weight:650;text-align:center}
+.net-list{grid-template-columns:repeat(auto-fill,minmax(400px,1fr))}
+@media(max-width:760px){.net-list{grid-template-columns:minmax(0,1fr)}}
+
+@media(max-width:760px){
+  .hub-page .welcome-slim{flex-wrap:wrap;align-items:flex-start;row-gap:10px}
+  .hub-page .welcome-slim p{flex:1 1 calc(100% - 44px)}
+  .hub-page .welcome-actions{flex:1 0 100%;padding-left:38px}
+}
+
+/* ---------- Phone: the page title, its sentence and its main action stack instead of squeezing side by side ---------- */
+@media(max-width:760px){
+  .page-heading{flex-direction:column;align-items:stretch;gap:14px}
+  .page-heading h1{max-width:none}
+  .page-heading p{max-width:none}
+  .page-heading .heading-buttons{display:flex}
+  .page-heading .heading-buttons .button{flex:1 1 auto;justify-content:center;min-height:44px}
+}
