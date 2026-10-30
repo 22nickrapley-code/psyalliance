@@ -390,3 +390,25 @@ returns table (body text, link text) language sql stable security definer set se
    order by nd.delivered_at desc limit 1;
 $$;
 grant execute on function public.my_latest_alert() to authenticated;
+
+-- 5. Privacy-minimised lifecycle events ------------------------------------------------------------
+-- Namespaces keep the public guide, the practice sandbox and real account events apart. No identity, no free text.
+create table if not exists public.lifecycle_events (
+  id bigint generated always as identity primary key,
+  namespace text not null check (namespace in ('demo', 'practice', 'real')),
+  event text not null check (event in ('guide_start', 'guide_choice', 'interaction_complete', 'interaction_skip', 'recipient_preview', 'summary_continue', 'handoff_adopted', 'handoff_cleared', 'task_start', 'first_result', 'review_send', 'first_response', 'collaboration_complete', 'return_resume', 'pause', 'delivery_failure')),
+  need text check (need is null or need in ('caseload', 'time_away', 'client_referral', 'perspective', 'reducing', 'explore', 'offer_support')),
+  at timestamptz not null default now()
+);
+alter table public.lifecycle_events enable row level security;
+revoke all on public.lifecycle_events from anon, authenticated;
+
+create or replace function public.log_lifecycle_event(p_namespace text, p_event text, p_need text default null)
+returns void language plpgsql security definer set search_path to 'public' as $$
+begin
+  if p_namespace not in ('demo', 'practice', 'real') then return; end if;
+  insert into lifecycle_events (namespace, event, need) values (p_namespace, p_event, nullif(p_need, ''));
+exception when check_violation then null;  -- an unknown event is ignored, never an error for the visitor
+end;
+$$;
+grant execute on function public.log_lifecycle_event(text, text, text) to anon, authenticated;

@@ -187,6 +187,25 @@ export default async function HomePage() {
           </div>
         </section>
 
+        <section className="public-section lifecycle-band" id="stages" aria-labelledby="stages-title">
+          <div className="section-inner">
+            <h2 id="stages-title" className="serif-title">Support at every stage of practice.</h2>
+            <p className="lead section-lead">
+              Starting out, building an independent practice, taking time away or planning your next chapter, your need for colleagues changes. PsyAlliance brings Cover, Referrals and Consult together, so you can find practical support as your professional life evolves.
+            </p>
+            <div className="stage-lines">
+              <p><strong>Starting out.</strong> Find colleagues to ask and share perspectives with.</p>
+              <p><strong>Established in practice.</strong> Arrange Cover, find an appropriate colleague for a client and get another professional perspective.</p>
+              <p><strong>Changing pace or direction.</strong> Coordinate time away, plan referrals as you reduce your practice and review your options on your return.</p>
+            </div>
+            <p className="section-more">
+              <a className="text-arrow" href="/tour">See how PsyAlliance works &rarr;</a>
+              <a className="text-arrow" href="/start">Show me how PsyAlliance could help &rarr;</a>
+            </p>
+            <p className="micro-note">Membership is for doctoral-level psychologists and psychiatrists with an active US licence, which a person checks before you are listed.</p>
+          </div>
+        </section>
+
         <section className="public-section home-library" id="library">
           <div className="section-inner">
             <div className="section-intro">

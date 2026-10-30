@@ -1,0 +1,20 @@
+.guide-wrap{padding-top:28px}
+.guide-card{background:#fff;border:1px solid #e5e9e3;border-radius:12px;padding:20px;display:grid;gap:14px}
+.guide-card h1,.guide-card h2{margin:0;text-wrap:balance}
+.guide-choices{display:grid;gap:8px;margin:0;padding:0;border:0}
+.guide-choices label{display:flex;gap:10px;align-items:center;min-height:44px;padding:8px 12px;border:1px solid #e5e9e3;border-radius:8px;cursor:pointer;background:#fff}
+.guide-choices label:has(input:checked){border-color:#203b32;background:#e9efea}
+.guide-choices input{accent-color:#203b32;width:18px;height:18px}
+.guide-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.guide-quiet{background:none;border:0;padding:6px 0;color:#203b32;text-decoration:underline;cursor:pointer;font:inherit;min-height:44px}
+.guide-note{color:#536559;font-size:13px;margin:0}
+.guide-fiction{display:inline-block;font-size:12px;color:#536559;border:1px solid #e5e9e3;border-radius:999px;padding:2px 10px;background:#f7f6f1}
+.guide-sim{border:1px dashed #b9c6bd;border-radius:12px;padding:16px;background:#f7f6f1;display:grid;gap:10px}
+.guide-sim h3{margin:0;font-size:16px}
+.guide-sim .ok{background:#e9efea;border-radius:8px;padding:10px 12px;margin:0}
+.guide-sim .sub{display:grid;gap:6px}
+.guide-summary dl{display:grid;gap:10px;margin:0}
+.guide-summary dt{font-weight:600;font-size:13px;color:#536559}
+.guide-summary dd{margin:0}
+.guide-steps{font-size:13px;color:#536559;margin:0}
+@media (max-width:480px){.guide-card{padding:16px}.guide-choices input,.guide-card input[type=text]{font-size:16px}}

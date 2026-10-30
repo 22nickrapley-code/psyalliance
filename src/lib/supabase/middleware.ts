@@ -1,5 +1,6 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { parseHandoff } from "@/lib/start-guide";
 
 /**
  * Refreshes the Supabase auth session on every request to a protected route
@@ -43,6 +44,16 @@ export async function updateSession(request: NextRequest) {
     // On the demo site a signed-out visitor is almost always a sandbox
     // guest, who has no password: explain, rather than show sign-in.
     url.pathname = process.env.NEXT_PUBLIC_APP_ENV === "demo" ? "/sandbox/ended" : "/auth/sign-in";
+    // A link from a notification or email keeps its destination through sign-in. Navigation only.
+    const dest = request.nextUrl.pathname + request.nextUrl.search;
+    url.search = request.method === "GET" && dest !== "/dashboard" && process.env.NEXT_PUBLIC_APP_ENV !== "demo" ? `?next=${encodeURIComponent(dest)}` : "";
+    return NextResponse.redirect(url);
+  }
+
+  // A choice carried from the public guide opens the starting page once, right after sign-in.
+  if (user && request.nextUrl.pathname === "/dashboard" && parseHandoff(request.cookies.get("pa_start")?.value)) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/dashboard/start";
     url.search = "";
     return NextResponse.redirect(url);
   }
