@@ -1,3 +1,4 @@
+import { ParticipationSections } from "./participation";
 import { clinicianName } from "@/lib/profession";
 import { DeleteAccount } from "../profile/delete-account";
 import {
@@ -28,7 +29,7 @@ function nameOf(p: any) {
   return p ? clinicianName(p?.full_name, p?.qualification_level, p?.credential_prefix) : "Member";
 }
 
-export function SettingsView({ sp, email, me, prefs, profile, emergency, excluded, blocked, blockedProfiles, circle, demosHidden = false }: { sp: { saved?: string; error?: string }; email: string; me: string; prefs: any; profile: any; emergency: any; excluded: any[] | null; blocked: { blocked_profile_id: string }[] | null; blockedProfiles: any[] | null; circle: any[] | null; demosHidden?: boolean }) {
+export function SettingsView({ sp, email, me, prefs, profile, emergency, excluded, blocked, blockedProfiles, circle, demosHidden = false, part = {}, vapid = "", smsOn = false }: { sp: { saved?: string; error?: string }; email: string; me: string; prefs: any; profile: any; emergency: any; excluded: any[] | null; blocked: { blocked_profile_id: string }[] | null; blockedProfiles: any[] | null; circle: any[] | null; demosHidden?: boolean; part?: any; vapid?: string; smsOn?: boolean }) {
   const blockedNames = new Map((blockedProfiles || []).map((p: any) => [p.id, nameOf(p)]));
 
   void circle;
@@ -37,7 +38,7 @@ export function SettingsView({ sp, email, me, prefs, profile, emergency, exclude
   const listed = profile?.directory_visible !== false;
 
   const okMsg =
-    sp.saved === "demo-on" ? "Demo network on. You're now seeing the fake demo members, not the real network." : sp.saved === "demo-off" ? "Demo network off. You're back on the real network." : sp.saved === "privacy" ? "Privacy setting saved." : sp.saved === "unblocked" ? "Unblocked. They can find and contact you again." : sp.saved === "blocked" ? "Blocked. They can't contact you and you're hidden from each other." : sp.saved ? "Notification settings saved." : null;
+    sp.saved === "demo-on" ? "Demo network on. You're now seeing the fake demo members, not the real network." : sp.saved === "demo-off" ? "Demo network off. You're back on the real network." : sp.saved === "privacy" ? "Privacy setting saved." : sp.saved === "unblocked" ? "Unblocked. They can find and contact you again." : sp.saved === "blocked" ? "Blocked. They can't contact you and you're hidden from each other." : sp.saved && sp.saved.length > 3 ? sp.saved : sp.saved ? "Notification settings saved." : null;
 
   return (
     <>
@@ -80,6 +81,8 @@ export function SettingsView({ sp, email, me, prefs, profile, emergency, exclude
               <button type="submit" className="btn secondary small-btn">{demosHidden ? "Show Demos" : "Hide Demos"}</button>
             </form>
           </details>
+
+          <ParticipationSections part={part} vapid={vapid} smsOn={smsOn} />
 
           <details className="card settings-group" id="notifications">
             <summary>

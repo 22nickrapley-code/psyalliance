@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+import { vapidPublicKey, smsLive } from "@/lib/alerts";
 import { SettingsView } from "./view";
 
 export const metadata = { title: "Settings" };
@@ -29,6 +30,7 @@ export default async function SettingsPage(props: { searchParams: Promise<{ save
   // Blocked members are hidden from each other everywhere, so their names
   // come from a function that only returns the blocker's own list.
   const { data: blockedProfiles } = (blocked || []).length ? await supabase.rpc("my_blocked_members") : { data: [] as any[] };
+  const { data: part } = await supabase.rpc("my_participation");
   const demosHidden = (await cookies()).get("pa_hide_demos")?.value === "1";
-  return <SettingsView sp={sp} email={user!.email || ""} me={me} prefs={prefs} profile={profile} emergency={emergency} excluded={excluded} blocked={blocked} blockedProfiles={blockedProfiles} circle={circle} demosHidden={demosHidden} />;
+  return <SettingsView sp={sp} email={user!.email || ""} me={me} prefs={prefs} profile={profile} emergency={emergency} excluded={excluded} blocked={blocked} blockedProfiles={blockedProfiles} circle={circle} demosHidden={demosHidden} part={part || {}} vapid={vapidPublicKey()} smsOn={smsLive()} />;
 }

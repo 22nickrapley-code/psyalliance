@@ -378,3 +378,15 @@ begin
 end;
 $$;
 grant execute on function public.group_remove_member(bigint, uuid) to authenticated;
+
+-- 4. What a phone alert says when the device asks (the push itself carries no text) ---------------
+-- The service worker is woken by an empty push and asks for the wording while signed in, so nothing
+-- readable passes through the push service. Returns the newest push alert sent in the last 15 minutes.
+create or replace function public.my_latest_alert()
+returns table (body text, link text) language sql stable security definer set search_path to 'public' as $$
+  select private.alert_text(ev.event_type, ev.actor_profile_id), ev.deep_link
+    from notification_deliveries nd join notification_events ev on ev.id = nd.notification_event_id
+   where nd.recipient_profile_id = auth.uid() and nd.channel = 'push' and nd.status = 'sent' and nd.delivered_at > now() - interval '15 minutes'
+   order by nd.delivered_at desc limit 1;
+$$;
+grant execute on function public.my_latest_alert() to authenticated;
