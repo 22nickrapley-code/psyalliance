@@ -42,8 +42,8 @@ export function PublicLibraryView({ docs, q }: { docs: PublicDoc[]; q: string })
               <div className="eyebrow">Library</div>
               <h1>The Library.</h1>
               <p>
-                Templates and checklists for independent practice, written for psychologists and psychiatrists. See what&rsquo;s in each one here; members open,
-                download and save every template.
+                Templates and checklists for independent practice, written for psychologists and psychiatrists. See what&rsquo;s in each one here. Members open and download
+                the templates that have been released, and each of the others follows once it has completed professional review.
               </p>
             </div>
             <form method="get" action="/library" className="searchbar lib-search">
@@ -51,7 +51,7 @@ export function PublicLibraryView({ docs, q }: { docs: PublicDoc[]; q: string })
               <input type="search" name="q" defaultValue={q} placeholder="Search a topic, such as leave, consent or subpoena" aria-label="Search the library" />
               <button type="submit" className="btn small-btn">Search</button>
             </form>
-            <p className="lib-count micro-note">{docs.length} templates. Members get every template, beside the work it supports.</p>
+            <p className="lib-count micro-note">{docs.length} templates. {docs.filter((x) => x.downloadable).length} released to members now; the rest are added as each completes professional review.</p>
           </div>
         </section>
 
@@ -106,7 +106,7 @@ export function PublicLibraryView({ docs, q }: { docs: PublicDoc[]; q: string })
         <section className="public-section">
           <div className="section-inner pa-cta">
             <div>
-              <div className="eyebrow" style={{ color: "#e2c49c" }}>Members get every template</div>
+              <div className="eyebrow" style={{ color: "#e2c49c" }}>For members</div>
               <h2>Be one of the first 40 in your state.</h2>
               <p>{FOUNDING_LINE} For doctoral-level psychologists and psychiatrists, opening state by state.</p>
             </div>
@@ -158,8 +158,17 @@ export function PublicResourceView({ d, related }: { d: PublicDoc; related: Publ
 
               <aside className="lib-cta card">
                 <div className="eyebrow">Members</div>
-                <h3>Members get it now.</h3>
-                <p className="small">Members get every template in the Library, beside the work it supports: open the {docName(d.code)}, download it and keep a private copy.</p>
+                {d.downloadable ? (
+                  <>
+                    <h3>Members get it now.</h3>
+                    <p className="small">Members open the {docName(d.code)} in the Library beside the work it supports, download it and keep a private copy.</p>
+                  </>
+                ) : (
+                  <>
+                    <h3>Not released yet.</h3>
+                    <p className="small">The {docName(d.code)} is waiting for professional review. Members see it listed in the Library, and it opens for them once it has been released.</p>
+                  </>
+                )}
                 <a className="btn" href={join}>Create your account</a>
                 <p className="lib-who micro-note">For doctoral-level psychologists and psychiatrists. Templates open once your license is verified.</p>
               </aside>

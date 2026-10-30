@@ -60,7 +60,7 @@ export default async function SignUpPage(props: {
               <ol className="join-steps">
                 <li><b>Create your account</b><span>It takes a minute.</span></li>
                 <li><b>Add your license</b><span>A person checks it against the state board before anyone can see you.</span></li>
-                <li><b>Explore while we check</b><span>The Library and a sandbox with fictional colleagues are open to you straight away.</span></li>
+                <li><b>Explore while we check</b><span>A sandbox with fictional colleagues is open to you straight away, and the Library lists every template.</span></li>
                 <li>
                   <b>You&rsquo;re in</b>
                   <span>

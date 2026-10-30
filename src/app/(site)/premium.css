@@ -2833,3 +2833,9 @@
 /* A page of the product shown in a demo frame (profile, license check) */
 .tour-frame .demo-note{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:95;display:flex;gap:14px;align-items:center;max-width:min(520px,calc(100% - 28px));padding:11px 16px;background:#173b31;color:#fff;border-radius:10px;box-shadow:0 18px 55px rgba(20,49,41,.28);font:13px/1.45 Inter,Arial,sans-serif}
 .tour-frame .demo-note button{border:0;background:none;color:#e2c49c;font:600 13px Inter,Arial,sans-serif;cursor:pointer;text-decoration:underline;padding:0}
+.pa .lifecycle-band{background:#f7f6f1;padding-block:32px}
+.pa .lifecycle-band .stage-lines{display:grid;gap:10px;margin-top:16px;max-width:720px}
+.pa .lifecycle-band .stage-lines p{margin:0}
+.pa .lifecycle-band .micro-note{margin:16px 0 0;color:#536559;font-size:13px}
+/* Phone sign-up: the form comes first, the explanation after it. */
+@media (max-width:900px){.pa .join-layout .join-card{order:-1}.pa .join-intro .join-steps{margin-top:8px}}
