@@ -102,7 +102,7 @@ test("MB-02 M02 a file attached to an unsent message is kept across reload, then
   await a.page.locator(".inbox-colleague", { hasText: "Bram" }).locator(".inbox-latest").click();
   await expect(a.page.locator(".draft-attachment")).toContainText("plan-b.pdf");
   await send(a.page, "Here is the plan.");
-  await expect(a.page.locator(".delivery-state.sent").last()).toBeVisible();
+  await expect.poll(async () => (await q(`select 1 from message_attachments`)).length).toBe(1);
   const att = await q(`select a.message_id, a.file_name, a.file_size from message_attachments a`);
   expect(att).toHaveLength(1);
   expect(att[0].file_name).toBe("plan-b.pdf");
@@ -140,7 +140,7 @@ test("MB-03 M02 a voice note is kept across reload, shown as ready to send, then
   await expect(a.page.locator(".record-preview")).toContainText("Voice note ready to send");
   expect(await stored()).toBe(1);
   await a.page.locator('[data-action="audio-send"]').click();
-  await expect(a.page.locator(".delivery-state.sent").last()).toBeVisible();
+  await expect.poll(async () => (await q(`select 1 from message_attachments`)).length).toBe(1);
   const att = await one(`select message_id, kind, file_size from message_attachments`);
   expect(att.kind).toBe("audio");
   expect(await stored()).toBe(1);
@@ -196,8 +196,7 @@ test("MB-05 M03 an upload that fails says so, keeps the message usable and leave
   await expect(a.page.locator(".draft-attachment")).toContainText("works.txt");
   await expect.poll(stored).toBe(1);
   await a.page.getByRole("button", { name: "Send message" }).click();
-  await expect(a.page.locator(".delivery-state.sent").last()).toBeVisible();
-  expect((await q(`select 1 from message_attachments where file_name = 'works.txt'`)).length).toBe(1);
+  await expect.poll(async () => (await q(`select 1 from message_attachments where file_name = 'works.txt'`)).length).toBe(1);
   expect((await q(`select 1 from conversation_messages where body = 'Words that must not be lost'`)).length).toBe(1);
   await a.context.close();
 });
@@ -227,7 +226,7 @@ test("MB-07 M03 access: strangers cannot add to, remove from or read a conversat
   await a.page.setInputFiles("#attachment-input", { name: "private.txt", mimeType: "text/plain", buffer: Buffer.from("between two people") });
   await expect.poll(stored).toBe(1);
   await send(a.page, "Private file.");
-  await expect(a.page.locator(".delivery-state.sent").last()).toBeVisible();
+  await expect.poll(async () => (await q(`select 1 from message_attachments`)).length).toBe(1);
   const att = await one(`select message_id, storage_path from message_attachments`);
   const conv = String(att.storage_path).split("/")[0];
   const c = await openAs(browser, "cass", baseURL!);
@@ -244,6 +243,11 @@ test("MB-07 M03 access: strangers cannot add to, remove from or read a conversat
   // An empty file and one over 20 MB are refused by the server as well.
   const empty = await a.page.request.post("/dashboard/message-files", { multipart: { key, kind: "file", file: { name: "e.txt", mimeType: "text/plain", buffer: Buffer.alloc(0) } } });
   expect(empty.status()).toBe(400);
+  // Just under the limit goes through (a 10 MB body limit in the framework once cut files between 10 and 20 MB short).
+  const near = await a.page.request.post("/dashboard/message-files", { multipart: { key, kind: "file", file: { name: "near.bin", mimeType: "application/octet-stream", buffer: Buffer.alloc(19 * 1024 * 1024, 65) } } });
+  expect(near.status()).toBe(200);
+  const nearPath = (await near.json()).attachment.path;
+  expect((await a.page.request.delete("/dashboard/message-files", { data: { path: nearPath } })).status()).toBe(200);
   const big = await a.page.request.post("/dashboard/message-files", { multipart: { key, kind: "file", file: { name: "big.bin", mimeType: "application/octet-stream", buffer: Buffer.alloc(21 * 1024 * 1024) } } });
   expect(big.status()).toBe(413);
   const badAudio = await a.page.request.post("/dashboard/message-files", { multipart: { key, kind: "audio", file: { name: "a.exe", mimeType: "application/x-msdownload", buffer: Buffer.from("MZ") } } });

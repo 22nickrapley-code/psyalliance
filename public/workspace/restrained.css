@@ -467,7 +467,6 @@ body,.workspace,.workspace.feature-cover,.workspace.feature-referrals,.workspace
 .hub-specialties>span{font-size:12px}
 .hub-state-settings small{font-size:12px}
 .inbox-context{font-size:12px}
-.inbox-context-toggle{font-size:12px}
 .inbox-filters button{font-size:12px}
 .inbox-latest small{font-size:12px}
 .inbox-name small{font-size:12px}
@@ -901,8 +900,8 @@ body,.workspace,.workspace.feature-cover,.workspace.feature-referrals,.workspace
 .invite-banner .button{margin-left:auto;flex:none}
 
 /* ---------- Network: tier groups stacked, one card per colleague ---------- */
-.network-overview{padding:24px 28px;gap:32px;grid-template-columns:220px minmax(0,1fr);margin-bottom:20px}
-.network-overview .circle-map{width:220px}
+.network-overview{padding:24px 28px;gap:32px;grid-template-columns:280px minmax(0,1fr);margin-bottom:20px}
+.network-overview .circle-map{width:280px}
 .network-overview h2{font-size:20px;letter-spacing:-.2px}
 .network-overview .circle-legend small{display:none}
 .network-overview .circle-legend button:last-child small{display:block}
@@ -948,7 +947,7 @@ body,.workspace,.workspace.feature-cover,.workspace.feature-referrals,.workspace
   .invite-banner{flex-wrap:wrap}
   .invite-banner .button{margin-left:0}
   .network-overview{padding:18px 16px;gap:18px;grid-template-columns:minmax(0,1fr)}
-  .network-overview .circle-map{width:100%;max-width:210px;margin:0 auto}
+  .network-overview .circle-map{width:100%;max-width:280px;margin:0 auto}
   .net-list{grid-template-columns:minmax(0,1fr);padding:12px 14px 16px}
   .relationship-group>header{padding:14px 16px 12px}
   .relationship-group .net-actions .button{min-height:44px}
@@ -1070,3 +1069,7 @@ body,.workspace,.workspace.feature-cover,.workspace.feature-referrals,.workspace
 
 /* Release B: a voice note kept across a reload shows its length, not a player. */
 .record-preview .record-kept { display: block; padding: 10px 14px; font-size: 14px; color: var(--ink); background: var(--cream); border: 1px solid var(--line); border-radius: 999px; }
+
+/* Release B: the circle's touch targets never overlap (see fitCircle). */
+.circle-person[hidden] { display: none; }
+@media (max-width: 350px) { .network-overview .circle-map { transform: none; margin: 0 auto; } }
