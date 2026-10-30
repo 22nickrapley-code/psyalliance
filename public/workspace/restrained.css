@@ -1066,3 +1066,7 @@ body,.workspace,.workspace.feature-cover,.workspace.feature-referrals,.workspace
 .message-group.found .bubble{outline:2px solid var(--forest);outline-offset:3px;transition:outline-color .6s}
 .inbox-context-toggle{display:inline-flex;align-items:center;gap:4px;background:none;border:0;padding:4px 2px;color:var(--muted);font-size:12px;cursor:pointer;min-height:32px}
 .inbox-context-toggle .context-count{text-decoration:underline;text-underline-offset:3px}
+.journey-bar.three{grid-template-columns:repeat(3,minmax(0,1fr))}
+
+/* Release B: a voice note kept across a reload shows its length, not a player. */
+.record-preview .record-kept { display: block; padding: 10px 14px; font-size: 14px; color: var(--ink); background: var(--cream); border: 1px solid var(--line); border-radius: 999px; }
