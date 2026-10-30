@@ -155,8 +155,7 @@ test("FOL-04 Availability (G4, D8): three referral choices saved as the member's
   await page.getByRole("button", { name: /Save & confirm availability/ }).click();
   await expect(page.locator("#toast, .toast").first()).toBeVisible();
   await expect.poll(async () => (await one(`select referral_availability as v from profiles where id = $1`, [avery.id])).v).toBe("limited");
-  await page.reload();
-  await page.locator('[data-action="availability"]:visible').first().click();
+  await page.goto("/dashboard?availability=1");
   await expect(page.locator('#availability-form input[type="radio"][value="limited"]')).toBeChecked();
   await clean(page);
   await context.close();
