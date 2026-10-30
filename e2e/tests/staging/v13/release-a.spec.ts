@@ -1,6 +1,6 @@
 import { test, expect, type Page, type Browser } from "@playwright/test";
 import { signInAs, account } from "../../../lib/auth";
-import { assertLocal, q, one, asMember } from "../../../lib/staging";
+import { assertLocal, q, one, asMember, db } from "../../../lib/staging";
 
 // Release A (brief of 29 Oct 2026): the three-card Hub, the one action list with Later and Set aside kept on the
 // account, the Consult help group and nav dot, navigation order, the phone shell and global search with scopes.
@@ -312,4 +312,147 @@ test("RA-10 search in the top bar has named scopes and filters to them", async (
   await expect(page.locator(".modal")).toHaveCount(0);
   await clean(page);
   await context.close();
+});
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Correctness items carried with Release A: F01 (one unread number), F02 (saving made visible), F04 (names on controls),
+// F05/F06 (account pages share the five-item bar), D10 (a long member list stays bounded).
+
+const send = (who: string, key: string, body: string) => rpc(who, `select public.message_send($1, $2, $3::uuid, null) as r`, [key, body, uuid()]);
+const openDirect = async (who: string, person: string) => (await rpc(who, `select public.conversation_open('direct', null, null, $1::uuid) as r`, [person])) as { key: string };
+async function dropConversations() {
+  await q(`delete from conversations where id in (select conversation_id from conversation_participants where profile_id = $1)`, [bram.id]);
+}
+
+test("RA-11 one unread number: the workspace, the account pages and the phone bar agree, and notifications stay separate", async ({ browser, baseURL }) => {
+  await dropConversations();
+  const a = await openDirect(avery.id, bram.id), c = await openDirect(cass.id, bram.id);
+  for (const t of ["one", "two"]) await send(avery.id, a.key, `RA unread ${t}`);
+  for (const t of ["one", "two", "three"]) await send(cass.id, c.key, `RA unread ${t}`);
+  expect((await rpc(bram.id, `select public.my_unread_message_count() as r`))).toBe(5);
+
+  const { page, context } = await openAs(browser, "fenn", baseURL!);
+  await expect(page.locator('.sidebar .nav-item[data-action="nav:messages"] .nav-count')).toHaveText("5");
+  await page.goto("/dashboard/profile");
+  await expect(page.locator('.sidebar a.nav-item[href="/dashboard/messages"] .nav-count')).toHaveText("5");
+  await clean(page);
+  await context.close();
+
+  const phone = await openAs(browser, "fenn", baseURL!, "/dashboard/settings", true, 390);
+  await expect(phone.page.locator('.mobile-nav a[href="/dashboard/messages"] .mobile-badge')).toHaveText("5");
+  await phone.page.goto("/dashboard");
+  await expect(phone.page.locator('.mobile-nav button[data-action="nav:messages"] .mobile-badge')).toHaveText("5");
+  await clean(phone.page);
+  await phone.context.close();
+
+  // Reading one conversation lowers the number everywhere it is shown.
+  await rpc(bram.id, `select public.conversation_read($1) as r`, [a.key]);
+  expect((await rpc(bram.id, `select public.my_unread_message_count() as r`))).toBe(3);
+  await dropConversations();
+});
+
+test("RA-12 account pages: exactly five fully visible destinations at 320px, the same order, a named Search, no More", async ({ browser, baseURL }) => {
+  for (const path of ["/dashboard/profile", "/dashboard/settings", "/dashboard/documents"]) {
+    const { page, context } = await openAs(browser, "fenn", baseURL!, path, true, 320);
+    const links = page.locator(".mobile-nav a");
+    await expect(links).toHaveCount(5);
+    expect((await links.allInnerTexts()).map((t) => t.replace(/\d+$/, "").trim())).toEqual(["The Hub", "Referrals", "Cover", "Consult", "Messages"]);
+    await expect(page.locator(".mobile-nav").getByText("More", { exact: true })).toHaveCount(0);
+    const boxes = await links.evaluateAll((els) => els.map((e) => { const r = e.getBoundingClientRect(); return { l: r.left, r: r.right, h: r.height }; }));
+    for (const b of boxes) { expect(b.l).toBeGreaterThanOrEqual(0); expect(b.r).toBeLessThanOrEqual(320.5); expect(b.h).toBeGreaterThanOrEqual(44); }
+    const fonts = await links.locator("span").evaluateAll((els) => els.map((e) => parseFloat(getComputedStyle(e).fontSize)));
+    for (const f of fonts) expect(f).toBeGreaterThanOrEqual(11);
+    const search = page.getByRole("link", { name: "Search", exact: true }).first();
+    await expect(search).toBeVisible();
+    const sb = (await search.boundingBox())!; expect(sb.x + sb.width).toBeLessThanOrEqual(320); expect(sb.height).toBeGreaterThanOrEqual(43);
+    const bell = (await page.locator('[data-bell]').boundingBox())!; expect(bell.x + bell.width).toBeLessThanOrEqual(320);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
+    await clean(page);
+    await context.close();
+  }
+});
+
+test("RA-13 saving is visible: Saving, Saved, then a plain failure message that recovers with the newest text", async ({ browser, baseURL }) => {
+  const { page, context } = await openAs(browser, "fenn", baseURL!);
+  await page.locator(".hub-card", { hasText: "Plan cover" }).click();
+  const name = page.locator("#cover-name");
+  await expect(name).toBeVisible();
+  const note = page.locator(".save-note");
+  await expect(note).toContainText("Saves as you go");
+  await name.fill("RA first title");
+  await expect(note).toContainText("Saved");
+  await expect.poll(async () => (await q(`select count(*)::int c from workspace_drafts where profile_id = $1 and data::text like '%RA first title%'`, [bram.id]))[0].c).toBe(1);
+
+  await context.setOffline(true);
+  await name.fill("RA newest title");
+  await expect(note).toContainText("Could not save your changes");
+  await name.fill("RA newest title, edited again");
+  await context.setOffline(false);
+  await note.getByRole("button", { name: "Try again" }).click();
+  await expect(note).toContainText("Saved");
+  await expect.poll(async () => (await q(`select count(*)::int c from workspace_drafts where profile_id = $1 and data::text like '%RA newest title, edited again%'`, [bram.id]))[0].c).toBe(1);
+  expect((await q(`select count(*)::int c from workspace_drafts where profile_id = $1 and data::text like '%RA first title%'`, [bram.id]))[0].c).toBe(0);
+  await page.keyboard.press("Escape");
+  await clean(page);
+  await context.close();
+});
+
+test("RA-14 collapsed navigation and person choices have names; a very long colleague list stays bounded and searchable", async ({ browser, baseURL }) => {
+  // Tablet width collapses the sidebar to icons: every button must still say where it goes.
+  const tablet = await browser.newContext({ viewport: { width: 900, height: 900 } });
+  await signInAs(tablet, "fenn", baseURL!);
+  const tp = await tablet.newPage();
+  await tp.goto("/dashboard");
+  await expect(tp.locator(".sidebar .nav-item").first()).toBeAttached();
+  const spanShown = await tp.locator(".sidebar .nav-item:not(.nav-mobile-only) > span").first().evaluate((e) => getComputedStyle(e).display);
+  expect(spanShown).toBe("none");
+  for (const name of ["The Hub", "Referrals", "Cover", "Consult", "Network / Search", "Messages", "Library"]) await expect(tp.getByRole("button", { name, exact: true })).toBeAttached();
+  await expect(tp.getByRole("button", { name: /^Your profile: / })).toBeAttached();
+  await tablet.close();
+
+  // 1,200 fictional members.
+  await q(`delete from auth.users where email like 'ra1200-%@mail.staging.example'`);
+  const seed = await db().connect();
+  try {
+  await seed.query("begin");
+  await seed.query("set local session_replication_role = replica");
+  await seed.query(`insert into auth.users (instance_id, id, aud, role, email, email_confirmed_at, raw_user_meta_data, created_at, updated_at)
+           select '00000000-0000-0000-0000-000000000000', gen_random_uuid(), 'authenticated', 'authenticated', 'ra1200-' || g || '@mail.staging.example', now(),
+                  jsonb_build_object('full_name', 'Zed Colleague ' || lpad(g::text, 4, '0')), now(), now() from generate_series(1, 1200) g`);
+  await seed.query(`insert into profiles (id, full_name, credential_prefix, qualification_level, primary_state, primary_practice_city, states_qualified, verification_status, verified_at,
+             account_kind, account_status, referral_availability, coverage_availability, consultation_availability, availability_confirmed_at, first_availability_confirmed_at, approx_spaces, contact_email)
+           select u.id, u.raw_user_meta_data->>'full_name', 'Dr', 'PhD', 'NY', 'Albany', array['NY'], 'verified', now(), 'clinician', 'active', 'yes', 'yes', 'yes', now(), now(), 3, u.email
+             from auth.users u where u.email like 'ra1200-%@mail.staging.example'`);
+  await seed.query(`insert into licenses (profile_id, state, license_number, license_type, expiration_date, status, notes, reviewed_at)
+           select p.id, 'NY', 'STG-RA-' || substr(p.id::text, 1, 8), 'Psychologist', current_date + 400, 'active', 'Fictional', now() from profiles p where p.contact_email like 'ra1200-%@mail.staging.example'`);
+  await seed.query("commit");
+  } catch (e) { await seed.query("rollback"); throw e; } finally { seed.release(); }
+  try {
+    const { page, context } = await openAs(browser, "fenn", baseURL!);
+    await page.locator(".hub-card", { hasText: "Ask a question" }).click();
+    await expect(page.locator("#peer-title")).toBeVisible();
+    await page.getByLabel(/Choose a colleague|One colleague/i).first().check({ timeout: 3000 }).catch(() => {});
+    const radio = page.locator('.audience-grid input[name="audience"]');
+    const values = await radio.evaluateAll((els) => els.map((e) => (e as HTMLInputElement).value));
+    const pick = values.includes("one") ? "one" : values.includes("few") ? "few" : values[0];
+    await page.locator(`.audience-grid input[name="audience"][value="${pick}"]`).check({ force: true });
+    const rows = page.locator(".audience-person-list .recipient-choice");
+    await expect(rows.first()).toBeVisible();
+    expect(await rows.count()).toBeLessThanOrEqual(45);
+    await expect(page.locator(".audience-person-list")).toContainText("Search by name");
+    // Every row's control names the person.
+    const names = await page.locator('.audience-person-list input[name="recipients"]').evaluateAll((els) => els.map((e) => e.getAttribute("aria-label") || ""));
+    expect(names.every((n) => n.length > 3)).toBe(true);
+    await page.locator("#audience-search").fill("Zed Colleague 0777");
+    await expect(rows).toHaveCount(1);
+    await expect(rows.first()).toContainText("Zed Colleague 0777");
+    await rows.first().locator("input").check();
+    await page.locator("#audience-search").fill("");
+    await expect(page.locator('.audience-person-list input[name="recipients"]:checked')).toHaveCount(1);
+    await page.keyboard.press("Escape");
+    await clean(page);
+    await context.close();
+  } finally {
+    await q(`delete from auth.users where email like 'ra1200-%@mail.staging.example'`);
+  }
 });

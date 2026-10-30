@@ -51,6 +51,7 @@ export default async function DashboardLayout({
     relationships,
     { data: myLookupRows },
     { data: myPlan },
+    { data: unreadMessageRows, error: unreadMessageError },
   ] = await Promise.all([
     supabase
       .rpc("my_profile")
@@ -97,6 +98,8 @@ export default async function DashboardLayout({
     // For colouring Profile's four parts by how complete they are.
     supabase.from("profile_lookup_values").select("lookup_values!inner(category)").eq("profile_id", user.id).in("lookup_values.category", ["treatment_specialism", "insurance"]),
     supabase.from("continuity_plans").select("answers, backup_profile_id").eq("profile_id", user.id).maybeSingle(),
+    // One definition of unread, shared with the workspace (migration 0123): unread messages, nothing else.
+    supabase.rpc("my_unread_message_count"),
   ]);
   const licenceCount = (licenceRows || []).length;
   const hub = computeHubStates({
@@ -198,7 +201,9 @@ export default async function DashboardLayout({
   const groups = buildNavGroups({
     isAdmin: !!profile?.is_admin,
     isOperator,
-    unreadMessages: unreadConversationCount + (unreadNotificationCount || 0),
+    // The same number the workspace shows: unread messages. Company notices count on the bell, not here.
+    // Until migration 0123 has been run, the older conversation count stands in (nothing breaks).
+    unreadMessages: !unreadMessageError && typeof unreadMessageRows === "number" ? unreadMessageRows : unreadConversationCount,
     pendingCoverRequests: pendingCoverageRequestCount || 0,
     pendingReferrals: (pendingProviderReferralCount || 0) + pendingPeerOfferCount,
     hideDemos: cookieJar.get("pa_hide_demos")?.value === "1",
@@ -211,7 +216,7 @@ export default async function DashboardLayout({
       initials={initials}
       avatarUrl={avatarUrl}
       verificationLabel={verificationLabel}
-      unreadNotifications={notificationPipelineUnreadCount || 0}
+      unreadNotifications={(notificationPipelineUnreadCount || 0) + (unreadNotificationCount || 0)}
       signOutAction={signOutAction}
       demoView={!!profile?.demo_view}
       gateNotice={IS_DEMO_SITE ? null : gateNotice}

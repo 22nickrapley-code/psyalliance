@@ -45,6 +45,11 @@ export default function AccountRootLayout({ children }: { children: React.ReactN
         {IS_DEMO_SITE && <link rel="stylesheet" href={`/workspace/sandbox.css?v=${V}`} />}
         {/* eslint-disable-next-line @next/next/no-css-tags */}
         <link rel="stylesheet" href={`/workspace/final.css?v=${V}`} />
+        {/* Same palette and type scale as the workspace (Release A), so the two shells look like one product. */}
+        {/* eslint-disable-next-line @next/next/no-css-tags */}
+        <link rel="stylesheet" href={`/workspace/calm.css?v=${V}`} />
+        {/* eslint-disable-next-line @next/next/no-css-tags */}
+        <link rel="stylesheet" href={`/workspace/restrained.css?v=${V}`} />
       </head>
       <body className="account-body">
         <a className="skip-link" href="#main">Skip to content</a>

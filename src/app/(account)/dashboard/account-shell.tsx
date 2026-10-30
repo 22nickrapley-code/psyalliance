@@ -98,7 +98,7 @@ export default function AccountShell({
     return () => window.removeEventListener("resize", sync);
   }, [open]);
   const primary = MOBILE_PRIMARY.filter((h) => all.some((i) => i.href === h));
-  const inMore = !!current && !primary.includes(current.href);
+  const messageBadge = all.find((i) => i.href === "/dashboard/messages")?.badge || 0;
 
   return (
     <div id="app">
@@ -115,7 +115,7 @@ export default function AccountShell({
                 {g.items.map((item) => {
                   const on = current?.href === item.href;
                   return (
-                    <Link key={item.href} href={item.href} className={`nav-item${on ? " active" : ""}`} aria-current={on ? "page" : undefined}>
+                    <Link key={item.href} href={item.href} className={`nav-item${on ? " active" : ""}`} title={item.label} aria-label={item.badge ? `${item.label}, ${item.badge} unread` : item.label} aria-current={on ? "page" : undefined}>
                       <AcIcon name={ICON[item.glyph] || "layout-grid"} />
                       <span>{item.label}</span>
                       {!!item.badge && <span className="nav-count">{item.badge}</span>}
@@ -136,7 +136,7 @@ export default function AccountShell({
               </div>
             </div>
           )}
-          <Link href="/dashboard/profile" className="profile-button" title={displayName}>
+          <Link href="/dashboard/profile" className="profile-button" title="Your profile" aria-label={`Your profile: ${displayName}`}>
             {avatarUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={avatarUrl} alt="" className="avatar self" style={{ objectFit: "cover" }} />
@@ -177,15 +177,16 @@ export default function AccountShell({
                 <b>Sandbox</b>
               </span>
             )}
-            <Link href="/dashboard?search=1" className="top-search">
-              <AcIcon name="search" size={15} /> Search anything
+            <Link href="/dashboard?search=1" className="top-search" aria-label="Search">
+              <AcIcon name="search" size={15} /> Search
             </Link>
             <span className="top-date" suppressHydrationWarning>
               {new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", timeZone: "America/New_York" })}
             </span>
             <span className="top-divider" />
-            <Link href="/dashboard?search=1" className="icon-button mobile-global-search" aria-label="Search anything">
+            <Link href="/dashboard?search=1" className="mobile-search" aria-label="Search">
               <AcIcon name="search" size={18} />
+              <span>Search</span>
             </Link>
             <Link
               href="/dashboard/notifications"
@@ -261,12 +262,9 @@ export default function AccountShell({
           <Link key={href} href={href} className={current?.href === href ? "active" : ""} aria-current={current?.href === href ? "page" : undefined}>
             <AcIcon name={MOBILE_ICON[href] || "layout-grid"} size={20} />
             <span>{MOBILE_LABEL[href] || href}</span>
+            {href === "/dashboard/messages" && messageBadge > 0 && <b className="mobile-badge" aria-label={`${messageBadge} unread messages`}>{messageBadge}</b>}
           </Link>
         ))}
-        <button type="button" className={inMore ? "active" : ""} onClick={() => setOpen((o) => !o)} aria-expanded={open}>
-          <AcIcon name="grip" size={20} />
-          <span>More</span>
-        </button>
       </nav>
     </div>
   );

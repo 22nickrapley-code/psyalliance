@@ -62,8 +62,8 @@ export function buildNavGroups(opts: {
       label: "Your workspace",
       items: [
         { href: "/dashboard", label: "The Hub", glyph: "home", matches: ["/dashboard/overview", "/dashboard/full"] },
-        { href: "/dashboard/cover", label: "Cover", glyph: "cover", badge: opts.pendingCoverRequests },
-        { href: "/dashboard/referrals", label: "Referrals", glyph: "refer", badge: opts.pendingReferrals },
+        { href: "/dashboard/referrals", label: "Referrals", glyph: "refer" },
+        { href: "/dashboard/cover", label: "Cover", glyph: "cover" },
         { href: "/dashboard/consult", label: "Consult", glyph: "consult" },
         { href: "/dashboard/network", label: "Network / Search", glyph: "members", matches: ["/dashboard/people", "/dashboard/invite"] },
         { href: "/dashboard/messages", label: "Messages", glyph: "messages", badge: opts.unreadMessages },
@@ -87,4 +87,4 @@ export function buildNavGroups(opts: {
 }
 
 // The five destinations on the mobile bottom bar.
-export const MOBILE_PRIMARY = ["/dashboard", "/dashboard/cover", "/dashboard/referrals", "/dashboard/consult", "/dashboard/messages"];
+export const MOBILE_PRIMARY = ["/dashboard", "/dashboard/referrals", "/dashboard/cover", "/dashboard/consult", "/dashboard/messages"];

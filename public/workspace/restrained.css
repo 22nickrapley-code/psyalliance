@@ -301,3 +301,11 @@ body,.workspace,.workspace.feature-cover,.workspace.feature-referrals,.workspace
   .mobile-search{padding:0 8px;margin-right:0;gap:4px}
   .top-actions .icon-button{width:40px}
 }
+
+/* Saving made visible (F02) */
+.save-banner{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 14px;padding:10px 12px;border:1px solid #e1c9c4;background:#f9ece9;color:#7d3329;border-radius:var(--r-control);font-size:14px}
+.save-banner[hidden]{display:none}
+.save-banner svg{width:18px;height:18px;flex:none}
+.save-banner span{flex:1 1 200px}
+.save-note[data-state="failed"]{color:#8a3428;font-weight:600}
+.save-note .text-link{font-size:inherit;margin-left:4px}
