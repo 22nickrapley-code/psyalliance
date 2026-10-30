@@ -111,6 +111,7 @@ test("B-02 C02 mixed eligibility: both views agree, bulk apply says what was add
   await expect(change).toContainText("Nobody was chosen in their place");
   await page.getByRole("button", { name: "Continue to colleagues" }).click();
   await expect(page.locator(".change-note")).toBeVisible();
+  await page.locator('[data-action="match-view:client"]').click();
   await page.locator('[data-action="match-client:3"]').click();
   await expect(page.locator(`input[data-match="cover"][data-client="3"][value="${bram}"]`)).toBeChecked();
   await page.locator('[data-action="match-client:1"]').click();
@@ -321,7 +322,7 @@ async function seedMessages() {
   const mk = async (key: string, a: string, b: string, bodies: { who: string; body: string; ago: number; deleted?: boolean }[]) => {
     const c = await one(`insert into conversations (created_by, title, context_key) values ($1, null, $2) returning id`, [a, key]);
     await q(`insert into conversation_participants (conversation_id, profile_id, last_read_at) values ($1, $2, now()), ($1, $3, now())`, [c.id, a, b]);
-    for (const m of bodies) await q(`insert into conversation_messages (conversation_id, author_id, body, created_at, deleted_at) values ($1, $2, $3, now() - ($4 || ' minutes')::interval, case when $5 then now() else null end)`, [c.id, m.who, m.body, String(m.ago), !!m.deleted]);
+    for (const m of [...bodies].sort((x, y) => y.ago - x.ago)) await q(`insert into conversation_messages (conversation_id, author_id, body, created_at, deleted_at) values ($1, $2, $3, now() - ($4 || ' minutes')::interval, case when $5 then now() else null end)`, [c.id, m.who, m.body, String(m.ago), !!m.deleted]);
     await q(`update conversations set last_message_at = (select max(created_at) from conversation_messages where conversation_id = $1) where id = $1`, [c.id]);
     return c.id as number;
   };
