@@ -108,7 +108,7 @@ export function StepView(p: StepProps) {
           <span>
             {p.demoTitle} &middot; Step {p.index + 1} of {p.total}
           </span>
-          <span className="tp-note">Fictional people. Nothing here is saved or sent.</span>
+          <span className="tp-note">Fictional practice environment. Nothing here is saved or sent.</span>
           <a href={p.joinHref}>Create your account &rarr;</a>
         </div>
         <div className="tp-main">
@@ -143,7 +143,8 @@ export function StepView(p: StepProps) {
           {p.focus && away && (
             <button type="button" className="tp-link" onClick={show}>Show me &darr;</button>
           )}
-          <button type="button" className="tp-link" onClick={() => setRound((n) => n + 1)}>Start this screen again</button>
+          <button type="button" className="tp-link" onClick={() => setRound((n) => n + 1)}>Reset scenario</button>
+          <a className="tp-link" href="/start">Change scenario</a>
         </span>
       </div>
       <div className="tp-stage">

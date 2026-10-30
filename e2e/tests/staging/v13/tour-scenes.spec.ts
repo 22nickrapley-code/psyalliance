@@ -102,8 +102,8 @@ for (const [label, size] of [["desktop", DESKTOP], ["phone", PHONE]] as const) {
     // It is the real control: pressing it moves the screen on.
     await marked.click();
     await expect(iframe.locator(".modal")).toContainText(/Review invitations/i, { timeout: 15000 });
-    // Start this screen again puts the sample back.
-    await page.getByRole("button", { name: "Start this screen again" }).click();
+    // Reset scenario puts the sample back.
+    await page.getByRole("button", { name: "Reset scenario" }).click();
     await expect(iframe.locator(".pa-focus")).toContainText("Continue to colleagues", { timeout: 30000 });
     // Back and Next walk the demo; the last step finishes to the completion page.
     const next = size === PHONE ? page.locator(".tp-mobile a", { hasText: "Next" }) : page.locator(".tp-nav a", { hasText: "Next" });

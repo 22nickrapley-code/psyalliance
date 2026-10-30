@@ -1,0 +1,24 @@
+import { test } from "@playwright/test";
+import { signInAs } from "../../lib/auth";
+import { assertLocal } from "../../lib/staging";
+const OUT = process.env.SHOT_DIR || "/tmp/shots";
+const TAG = process.env.SHOT_TAG || "cur";
+test.beforeEach(({ baseURL }) => assertLocal(baseURL!));
+test("cover flow shots", async ({ browser, baseURL }) => {
+  const context = await browser.newContext({ viewport: { width: 1365, height: 900 } });
+  await signInAs(context, "avery", baseURL!);
+  const page = await context.newPage();
+  const snap = async (n: string, full = false) => { await page.waitForTimeout(700); await page.screenshot({ path: `${OUT}/${TAG}-c-${n}.png`, fullPage: full }); };
+  await page.goto("/dashboard/cover"); await page.waitForTimeout(1200);
+  await page.locator('[data-action="cover-start"]').first().click(); await page.waitForTimeout(700);
+  await snap("modal0");
+  await page.fill("#cover-name", "Design review plan");
+  await page.getByRole("button", { name: "Continue to needs" }).click(); await snap("modal1");
+  await page.keyboard.press("Escape"); await page.waitForTimeout(300);
+  await page.goto("/dashboard/cover"); await page.waitForTimeout(1000);
+  await page.locator(".arrangement-row").first().click(); await snap("detail", true);
+  await page.goto("/dashboard/cover"); await page.waitForTimeout(1000);
+  await page.locator('[data-action="cover-layout:calendar"]').click(); await snap("calendar", true);
+  await page.goto("/dashboard/referrals"); await page.waitForTimeout(1200); await snap("referrals", true);
+  await context.close();
+});

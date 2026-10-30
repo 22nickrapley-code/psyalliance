@@ -105,6 +105,7 @@ export function Guide() {
           <p className="guide-note">This shows what the product can do. It is not a promise of Cover, referrals, placements or response times.</p>
           <div className="guide-actions">
             <a className="btn" href={e.demo} data-demo onClick={() => track("interaction_complete", need)}>Watch the short demo</a>
+            {need !== "explore" && <a className="btn secondary" data-try-scenario href={`${e.demo}#try`}>Try this scenario</a>}
             <button className="btn secondary" type="button" onClick={() => setStage("try")}>Try it myself</button>
             <button className="guide-quiet" type="button" onClick={() => setStage("summary")}>Skip to what comes next</button>
             <button className="guide-quiet" type="button" onClick={restart}>Change my choice</button>
