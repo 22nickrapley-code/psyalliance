@@ -84,7 +84,7 @@ test("EMP-02 a brand-new member's Hub and lists say what to do first", async ({ 
   await page.waitForLoadState("networkidle");
   // The Hub: no actions waiting, an availability card that asks to be set, and the three ways in.
   await expect(page.locator("main, #main").first()).toContainText(/The Hub/i);
-  await expect(page.getByText(/^Your availability$/).first()).toBeVisible();
+  await expect(page.getByText(/^Set your availability$/).first()).toBeVisible();
   for (const section of ["Cover", "Referrals", "Consult"]) await expect(page.locator(".sidebar .nav-item", { hasText: section })).toBeVisible();
   // Each list opens and offers its way in, with no rows to show.
   await page.goto("/dashboard/cover");

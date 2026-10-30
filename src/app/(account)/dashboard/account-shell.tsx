@@ -136,7 +136,7 @@ export default function AccountShell({
               </div>
             </div>
           )}
-          <Link href="/dashboard/profile" className="profile-button" title="Your profile" aria-label={`Your profile: ${displayName}`}>
+          <Link href="/dashboard/profile" className="profile-button" title={displayName} aria-label={`Your profile: ${displayName}`}>
             {avatarUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={avatarUrl} alt="" className="avatar self" style={{ objectFit: "cover" }} />

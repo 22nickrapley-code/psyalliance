@@ -214,7 +214,7 @@ test("DEMO-V14-08 the Availability window carries its own example", async ({ bro
   await signInAs(context, "avery", baseURL!);
   const page = await context.newPage();
   await page.goto("/dashboard");
-  await page.locator("[data-action='availability']:visible").first().click();
+  await page.goto("/dashboard?availability=1");
   const link = page.locator(".modal .example-link [data-action='watch-example:availability']");
   await expect(link).toBeVisible();
   await link.click();

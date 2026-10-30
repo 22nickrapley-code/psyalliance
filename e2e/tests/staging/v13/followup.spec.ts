@@ -142,7 +142,8 @@ test("FOL-03 Consult (G6): a reply ticked as a clarifying question is saved and 
 test("FOL-04 Availability (G4, D8): three referral choices saved as the member's own, the rules explained, and Last confirmed shown", async ({ browser, baseURL }) => {
   const { page, context } = await openAs(browser, "avery", baseURL!);
   await expect(page.locator(".content")).toBeVisible();
-  await page.locator('[data-action="availability"]:visible').first().click();
+  // The Hub keeps availability out of the way unless it is due; the editor opens from the profile, the menu and the reminder email's link.
+  await page.goto("/dashboard?availability=1");
   const form = page.locator("#availability-form");
   await expect(form).toBeVisible();
   for (const label of ["Accepting", "Selected referrals only", "Not accepting"]) await expect(form.locator(".av-seg label", { hasText: label }).first()).toBeVisible();

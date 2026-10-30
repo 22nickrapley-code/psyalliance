@@ -806,3 +806,6 @@ body,.workspace,.workspace.feature-cover,.workspace.feature-referrals,.workspace
   .example-close,.first-visit-close{min-width:44px;min-height:44px}
   .section-tab span{font-size:12px}
 }
+
+/* Search: what Message results cover */
+.search-note{margin:10px 2px 2px;font-size:13px;line-height:1.45;color:var(--muted)}

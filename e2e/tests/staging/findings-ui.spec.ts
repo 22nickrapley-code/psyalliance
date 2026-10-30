@@ -95,6 +95,9 @@ test.describe("N16-03 notification deliveries", () => {
     await bp.goto("/dashboard/messages");
     await bp.locator(".inbox-colleague", { hasText: "Avery" }).locator(".inbox-latest").first().click();
     await expect(bp.getByText(read).first()).toBeVisible();
+    // Opening the conversation records the read in the background; wait for it before the browser is closed.
+    await expect.poll(async () => (await q(`select count(*)::int n from conversation_messages m join conversation_participants cp on cp.conversation_id = m.conversation_id
+        where m.body = $1 and cp.profile_id = $2 and cp.last_read_at >= m.created_at`, [read, account("bram").id]))[0].n).toBe(1);
     await bc.close();
     // The hour passes (staging only): make both emails due now, then run the dispatcher.
     await q(`update notification_deliveries set send_after = now() - interval '1 second'
