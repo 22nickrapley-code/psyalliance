@@ -14,7 +14,7 @@ export default async function DocumentsPage(props: {
   searchParams: Promise<{ tab?: string; q?: string; category?: string; folder?: string; uploaded?: string; copied?: string; error?: string; done?: string }>;
 }) {
   const sp = await props.searchParams;
-  // The Library is one place: the workspace Library. This page now holds only My files (private uploads and copies),
+  // The Library is one place: the workspace Library. This page now holds only My documents (private uploads and copies),
   // and an old Library address lands on the Library, keeping what was searched for.
   if (sp.tab !== "mine") redirect(sp.q ? `/dashboard/library?q=${encodeURIComponent(sp.q)}` : "/dashboard/library");
   const supabase = await createClient();
@@ -63,14 +63,14 @@ export default async function DocumentsPage(props: {
     // One message for the last thing done; each action sets its own.
     const DONE: Record<string, string> = {
       folder: "Folder created.",
-      "folder-removed": "Folder removed. Its documents are still in My Library, under Unfiled.",
+      "folder-removed": "Folder removed. Its documents are still in My documents, under Unfiled.",
       moved: "Moved.",
-      removed: "Removed from My Library.",
+      removed: "Removed from My documents.",
     };
     const notice = sp.done && DONE[sp.done]
       ? DONE[sp.done]
       : sp.copied
-        ? `${/^PA-\d+$/.test(sp.copied) ? `The ${docName(sp.copied)}` : "The PDF"} is saved to My Library. Only you can see it.`
+        ? `${/^PA-\d+$/.test(sp.copied) ? `The ${docName(sp.copied)}` : "The PDF"} is saved to My documents. Only you can see it.`
         : sp.uploaded
           ? "Uploaded. Only you can see it."
           : null;

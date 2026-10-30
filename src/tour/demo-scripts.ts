@@ -505,7 +505,7 @@ const LIBRARY: DemoScript = {
         },
         {
           title: "Saved, and easy to find",
-          text: "Save it and it joins your saved list, private to you. A template that is still being reviewed is listed as Coming soon and opens only when it is ready. Saving a copy puts a private file in My files; it is separate from the bookmark.",
+          text: "Save it and it joins your saved list, private to you. A template that is still being reviewed is listed as Coming soon and opens only when it is ready. Saving a copy puts a private file in My documents; it is separate from the bookmark.",
           beats: [["click", '[data-action="resource-save:102"]'], ["do", "close-modal"], ["click", '[data-action="resource-filter:Saved"]']],
         },
       ],

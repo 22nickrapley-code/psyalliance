@@ -48,7 +48,7 @@ export function PublicLibraryView({ docs, q }: { docs: PublicDoc[]; q: string })
             </div>
             <form method="get" action="/library" className="searchbar lib-search">
               <span className="magnify" aria-hidden="true">&#8981;</span>
-              <input type="search" name="q" defaultValue={q} placeholder="Search a topic, such as leave, consent or subpoena" aria-label="Search the library" />
+              <input type="search" name="q" defaultValue={q} placeholder="Search, such as leave or consent" aria-label="Search the library" />
               <button type="submit" className="btn small-btn">Search</button>
             </form>
             <p className="lib-count micro-note">{docs.length} templates. {docs.filter((x) => x.downloadable).length} available to members now; the rest are added as each is released.</p>

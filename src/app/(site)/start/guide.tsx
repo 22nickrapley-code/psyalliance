@@ -25,7 +25,12 @@ export function Guide() {
     setSaved(!!readCookie());
     track("guide_start");
   }, []);
-  useEffect(() => { head.current?.focus({ preventScroll: false }); }, [stage]);
+  // Move focus to the heading when the stage changes (for keyboard and screen-reader users), not on first load.
+  const first = useRef(true);
+  useEffect(() => {
+    if (first.current) { first.current = false; return; }
+    head.current?.focus({ preventScroll: false });
+  }, [stage]);
   useEffect(() => {
     const u = new URL(location.href);
     need ? u.searchParams.set("need", need) : u.searchParams.delete("need");

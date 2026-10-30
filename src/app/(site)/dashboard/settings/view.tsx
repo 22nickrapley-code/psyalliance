@@ -70,7 +70,7 @@ export function SettingsView({ sp, email, me, prefs, profile, emergency, exclude
 
           <details className="card settings-group" id="menu">
             <summary>
-              <span><h3>Menu</h3><small>{demosHidden ? "Demos is hidden" : "Demos is in the menu"}</small></span>
+              <span><h3>Menu</h3><small>{demosHidden ? "Demos are hidden from the menu" : "Demos are shown in the menu"}</small></span>
             </summary>
             <form action={showDemosAction} className="item row between wrap" style={{ gap: 12 }}>
               <span>
@@ -196,7 +196,7 @@ export function SettingsView({ sp, email, me, prefs, profile, emergency, exclude
             <div className="row wrap">
               <a className="btn secondary small-btn" href="/dashboard/settings/export">Download my data (JSON)</a>
             </div>
-            <p className="micro-note" style={{ marginTop: 8 }}>A copy of your records: profile, credentials, cover, referrals, consultations, groups, continuity plan and messages. Files in My Library are listed, not included; download those from My Library. It isn&rsquo;t a backup.</p>
+            <p className="micro-note" style={{ marginTop: 8 }}>A copy of your records: profile, credentials, cover, referrals, consultations, groups, continuity plan and messages. Files in My documents are listed, not included; download those from My documents. It isn&rsquo;t a backup.</p>
             {email.endsWith("@sandbox.psyalliance.test") ? (
               <p className="small" style={{ marginTop: 14, marginBottom: 0 }}>A sandbox ends on its own when its link expires. To start again, use Start the story again in the sandbox bar.</p>
             ) : (
@@ -214,7 +214,7 @@ export function SettingsView({ sp, email, me, prefs, profile, emergency, exclude
             <ul className="note-list" style={{ paddingLeft: 16, margin: 0 }}>
               <li>Who you&rsquo;ve saved, excluded or blocked</li>
               <li>Your &ldquo;would work with again&rdquo; answers</li>
-              <li>Your My Library files</li>
+              <li>Your files in My documents</li>
               <li>Your renewals and CE log</li>
             </ul>
           </section>

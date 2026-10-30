@@ -127,7 +127,7 @@ export function CredentialsView({ sp, profile, licenses, ce, panels, npiChecks, 
                       {US_STATES.find((s) => s.code === l.state)?.name || l.state} license &middot; #{l.license_number}
                     </strong>
                     <p>
-                      {l.license_type ? `${l.license_type} · ` : ""}Expires {fmt(l.expiration_date)}
+                      {l.license_type ? `${l.license_type} · ` : ""}{l.expiration_date ? `Expires ${fmt(l.expiration_date)}` : "No expiry date given"}
                       {l.reviewed_at ? ` · Reviewed ${fmt(l.reviewed_at)}` : ""}
                     </p>
                   </span>
@@ -136,7 +136,7 @@ export function CredentialsView({ sp, profile, licenses, ce, panels, npiChecks, 
                     {!expired && <DueTag days={days} />}
                     <form action={deleteLicense} className="inline">
                       <input type="hidden" name="id" value={l.id} />
-                      <button type="submit" className="plain-button small">Remove</button>
+                      <button type="submit" className="btn secondary small-btn">Remove</button>
                     </form>
                   </span>
                 </div>
@@ -202,7 +202,7 @@ export function CredentialsView({ sp, profile, licenses, ce, panels, npiChecks, 
                   <span className="small">{c.title}{c.provider ? `, ${c.provider}` : ""} &middot; {Number(c.hours)} h &middot; {fmt(c.completed_date)}</span>
                   <form action={deleteCeCredit} className="inline">
                     <input type="hidden" name="id" value={c.id} />
-                    <button type="submit" className="plain-button small">Remove</button>
+                    <button type="submit" className="btn secondary small-btn">Remove</button>
                   </form>
                 </div>
               ))}
@@ -273,7 +273,7 @@ export function CredentialsView({ sp, profile, licenses, ce, panels, npiChecks, 
                   </span>
                   <form action={deleteInsurancePanel} className="inline">
                     <input type="hidden" name="id" value={p.id} />
-                    <button type="submit" className="plain-button small">Remove</button>
+                    <button type="submit" className="btn secondary small-btn">Remove</button>
                   </form>
                 </div>
               ))}

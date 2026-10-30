@@ -2849,3 +2849,6 @@
 .pa .tp-recipient p{margin:4px 0}
 .pa .scenario-end{display:flex;flex-direction:column;align-items:flex-start;gap:12px;margin:24px 0;padding:20px 22px;border:1px solid #d7e4dc;border-radius:12px;background:#f4f8f5;max-width:720px}
 .pa .scenario-end p{margin:0}
+
+/* Headings that receive focus programmatically (stage changes in the guide) are not tab stops: no ring around them. */
+.pa .serif-title[tabindex="-1"]:focus,.pa .serif-title[tabindex="-1"]:focus-visible{outline:none}

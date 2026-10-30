@@ -1099,3 +1099,10 @@ body,.workspace,.workspace.feature-cover,.workspace.feature-referrals,.workspace
   .continuity-layout .continuity-steps{display:none}
   .continuity-layout .continuity-summary{padding:14px}
 }
+
+/* Sidebar footer: the account and workspace shells share one look (Settings in one, Sign out in the other). */
+@media(min-width:1001px),(max-width:760px){
+.sidebar .profile-button>svg{display:none}
+.sidebar .sidebar-bottom>.button.text,.sidebar .sidebar-bottom .sign-out{width:100%;justify-content:flex-start;gap:8px;min-height:34px;padding:6px 8px 6px 21px;font-size:13px;font-weight:600;color:inherit;border-radius:8px}
+.sidebar .sidebar-bottom>.button.text:hover,.sidebar .sidebar-bottom .sign-out:hover{background:rgba(31,61,48,.06)}
+}

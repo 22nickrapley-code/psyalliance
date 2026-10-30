@@ -27,7 +27,7 @@ export default function VerificationPage() {
           <div className="section-inner">
             <div className="section-intro verify-intro">
               <div className="eyebrow">Verification</div>
-              <h2>Everyone is checked before they appear.</h2>
+              <h1>Everyone is checked before they appear.</h1>
               <p>No self-attestation and no paid badge. Verified means a person reviewed the evidence.</p>
             </div>
             <div className="steps-grid">

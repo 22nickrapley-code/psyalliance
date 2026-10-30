@@ -63,7 +63,7 @@ export async function uploadDocument(formData: FormData) {
   }
 
   // Product Spec v1: the member-facing Library is curated. Members upload
-  // to My Library only; shared resources are added and reviewed by admins
+  // to My documents only; shared resources are added and reviewed by admins
   // in Admin > Library.
   const ownerScope = "personal";
   const storageFolder = "personal";
@@ -250,7 +250,7 @@ export async function moveDocumentToFolder(formData: FormData) {
 }
 
 // "Save a working copy": copies a reviewed Library resource into the
-// member's private My Library so they can fill it in or adapt it. The
+// member's private My documents so they can fill it in or adapt it. The
 // copy records which resource and version it came from in `sources`.
 export async function saveWorkingCopyAction(formData: FormData) {
   const supabase = await createClient();

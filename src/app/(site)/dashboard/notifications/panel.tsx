@@ -152,10 +152,6 @@ export function NotificationsView({ items }: { items: NotificationItem[] }) {
           </form>
         )}
       </div>
-      <p className="small" style={{ marginTop: 0 }}>
-        Replies and requests from Cover, Referrals and Consult, colleagues who add you, license reviews and notices from PsyAlliance. The bell opens this list
-        too.
-      </p>
       {items.length === 0 ? (
         <p className="small notif-empty">Nothing yet. Notifications appear here as they happen.</p>
       ) : (

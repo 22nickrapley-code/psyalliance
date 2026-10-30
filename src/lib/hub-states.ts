@@ -18,17 +18,18 @@ export type HubStates = Record<HubKey, { tone: HubTone; note: string }>;
 const DAY = 86_400_000;
 
 export function computeHubStates(input: {
-  profile: { avatar_path?: string | null; bio?: string | null; primary_practice_city?: string | null; primary_state?: string | null; availability_confirmed_at?: string | null } | null;
+  profile: { full_name?: string | null; qualification_level?: string | null; avatar_path?: string | null; bio?: string | null; primary_practice_city?: string | null; primary_state?: string | null; availability_confirmed_at?: string | null } | null;
   specialties: number;
   insurance: number;
   licences: { status?: string | null; expiration_date?: string | null; reviewed_at?: string | null }[];
   plan: { answers?: Record<string, string> | null; backup_profile_id?: string | null } | null;
 }): HubStates {
   const p = input.profile || {};
-  const parts = [!!p.avatar_path, (p.bio || "").trim().length >= 40, input.specialties >= 3, !!(p.primary_practice_city && p.primary_state), input.insurance > 0];
+  // Same four essentials the Profile page counts, so the tab and the page always agree.
+  const parts = [!!(p.full_name && p.qualification_level), !!(p.primary_practice_city && p.primary_state), input.licences.length > 0, !!p.availability_confirmed_at];
   const have = parts.filter(Boolean).length;
   const profile: HubStates["profile"] =
-    have === parts.length ? { tone: "green", note: "Complete" } : have === 0 ? { tone: "red", note: "Not started" } : { tone: "amber", note: `${have} of ${parts.length} parts done` };
+    have === parts.length ? { tone: "green", note: "Essentials done" } : have === 0 ? { tone: "red", note: "Not started" } : { tone: "amber", note: `${have} of ${parts.length} essentials done` };
 
   const age = p.availability_confirmed_at ? Math.floor((Date.now() - new Date(p.availability_confirmed_at).getTime()) / DAY) : null;
   const availability: HubStates["availability"] =

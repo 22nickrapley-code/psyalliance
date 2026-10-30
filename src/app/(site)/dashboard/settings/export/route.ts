@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 // with the member's own session, so RLS limits it to what they own or take
 // part in. It is a copy of your records, not a backup: files are listed
 // (name and folder) but their contents aren't included; download those
-// from My Library. Any section that couldn't be read is named in
+// from My documents. Any section that couldn't be read is named in
 // `sections_not_included`, never silently left empty (release review R09).
 export async function GET(request: Request) {
   const supabase = await createClient();
@@ -85,7 +85,7 @@ export async function GET(request: Request) {
   const body = {
     exported_at: new Date().toISOString(),
     what_this_is:
-      "A copy of your PsyAlliance records. It is not a backup: files are listed but their contents are not included (download them from My Library), and it can't be imported back.",
+      "A copy of your PsyAlliance records. It is not a backup: files are listed but their contents are not included (download them from My documents), and it can't be imported back.",
     sections_not_included: missing,
     account_email: user.email,
     profile,

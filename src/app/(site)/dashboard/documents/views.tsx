@@ -11,7 +11,7 @@ function shareHref(code: string) {
 import { uploadDocument, deleteDocument, createFolder, deleteFolder, moveDocumentToFolder, saveWorkingCopyAction } from "./actions";
 
 // Library (Product Spec v1). Two tabs: the curated Practice
-// Library and the member's private My Library. Members never see review
+// Library and the member's private My documents. Members never see review
 // status (Nick, 18 Oct): a resource is ready to use, or "coming soon".
 
 export type MyDoc = {
@@ -53,7 +53,7 @@ function LibraryTabs({ tab, mineCount }: { tab: "curated" | "mine"; mineCount: n
     <nav className="tabs" aria-label="Library">
       <a className={`tab${tab === "curated" ? " active" : ""}`} href="/dashboard/documents">Library</a>
       <a className={`tab${tab === "mine" ? " active" : ""}`} href="/dashboard/documents?tab=mine">
-        My Library <span className="micro-note">({mineCount})</span>
+        My documents <span className="micro-note">({mineCount})</span>
       </a>
     </nav>
   );
@@ -83,7 +83,7 @@ export function LibraryView({
         actions={
           <>
             {isReviewer && <a className="btn ghost" href="/dashboard/documents/review">Review desk</a>}
-            <a className="btn secondary" href="/dashboard/documents?tab=mine">My Library</a>
+            <a className="btn secondary" href="/dashboard/documents?tab=mine">My documents</a>
           </>
         }
       />
@@ -111,7 +111,7 @@ export function LibraryView({
           </div>
           {resources.length === 0 ? (
             <Empty
-              symbol={"▧"}
+              symbol={"▤"}
               title={q || category ? "No resources match that search." : "No resources yet."}
               body={q || category ? "Try a task name or a subject." : "Resources appear here once they are added to the Library."}
               action={q || category ? <a className="btn secondary small-btn" href="/dashboard/documents">Clear search</a> : undefined}
@@ -127,7 +127,7 @@ export function LibraryView({
             <div className="eyebrow">How to use them</div>
             <h3>A library with context.</h3>
             <p className="small">
-              Each resource links to the part of PsyAlliance where it helps. Save a PDF to My Library to keep a private copy, and fill it in outside PsyAlliance.
+              Each resource links to the part of PsyAlliance where it helps. Save a PDF to My documents to keep a private copy, and fill it in outside PsyAlliance.
             </p>
             <p className="small" style={{ marginBottom: 0 }}>
               These are templates and guidance, not legal advice. Check your state&rsquo;s rules before you use one with clients.
@@ -179,7 +179,7 @@ export function ResourceDetailView({
             {r.available && (
               <form action={saveWorkingCopyAction} className="inline">
                 <input type="hidden" name="document_id" value={r.id} />
-                <button type="submit" className="btn secondary">Save PDF to My Library</button>
+                <button type="submit" className="btn secondary">Save PDF to My documents</button>
               </form>
             )}
           </>
@@ -217,7 +217,7 @@ export function ResourceDetailView({
             </div>
           )}
           <p className="small" style={{ marginTop: 16, marginBottom: 0 }}>
-            {r.available ? "" : "When it's ready: "}Save PDF to My Library keeps a private copy that only you can see. Print it or fill it in outside PsyAlliance, especially if it will hold client details. Never upload a completed form that identifies a client.
+            {r.available ? "" : "When it's ready: "}Save PDF to My documents keeps a private copy that only you can see. Print it or fill it in outside PsyAlliance, especially if it will hold client details. Never upload a completed form that identifies a client.
           </p>
         </section>
         <aside className="stack">
@@ -270,9 +270,8 @@ export function MyLibraryView({
     <>
       <PageHead
         eyebrow="Private to you"
-        title="My Library"
+        title="My documents"
         lead="Your working copies and uploads. Nobody else can see these."
-        actions={<a className="btn secondary" href="/dashboard/documents">Library</a>}
       />
       <Banner error={error} ok={notice} />
       <div className="split">
@@ -293,7 +292,7 @@ export function MyLibraryView({
           </div>
           {docs.length === 0 ? (
             <Empty
-              symbol={"▧"}
+              symbol={"▤"}
               title={total === 0 ? "Your working copies live here." : "Nothing in this folder."}
               body={total === 0 ? "Open a Library template and save its PDF, or upload your own practice documents." : "Move documents here from the list, or pick another folder."}
               action={total === 0 ? <a className="btn secondary small-btn" href="/dashboard/documents">Browse the Library</a> : undefined}

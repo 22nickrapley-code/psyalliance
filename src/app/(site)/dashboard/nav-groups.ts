@@ -66,7 +66,7 @@ export function buildNavGroups(opts: {
         { href: "/dashboard/cover", label: "Cover", glyph: "cover" },
         { href: "/dashboard/consult", label: "Consult", glyph: "consult" },
         { href: "/dashboard/network", label: "Network / Search", glyph: "members", matches: ["/dashboard/people", "/dashboard/invite"] },
-        { href: "/dashboard/messages", label: "Messages", glyph: "messages", badge: opts.unreadMessages },
+        { href: "/dashboard/messages", label: "Messages", glyph: "messages", badge: opts.unreadMessages, matches: ["/dashboard/notifications"] },
         { href: "/dashboard/library", label: "Library", glyph: "library" },
       ],
     },
