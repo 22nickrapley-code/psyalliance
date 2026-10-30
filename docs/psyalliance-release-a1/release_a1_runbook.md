@@ -4,7 +4,7 @@
 
 ## What it is
 
-Branch `release-a1`, on top of Release A (`release-a`, `5ca2bb9`, which you already deployed to the sandbox). Three commits: "Release A.1 (part 1)", "(part 2)", "(part 3)". Delivered as `psyalliance-release-a1.bundle`.
+Branch `release-a1`, on top of Release A (`release-a`, `5ca2bb9`, which you already deployed to the sandbox). Six commits: "Release A.1 (part 1)" to "(part 6)". Delivered as `psyalliance-release-a1.bundle`, which needs version 14 (`c7e14b9`) in your repository, as the Release A bundle did.
 
 ## Step 1: bring the bundle in (PowerShell)
 
@@ -17,7 +17,7 @@ git log --oneline master..release-a1
 
 `git status` will list your three Cloudflare flag files (`package.json`, `package-lock.json`, `scripts/deploy-demo.mjs`). That is expected; the merge does not touch them.
 
-The last command lists what is new to `master`. If Release A is already merged you see **three** lines starting "Release A.1". If Release A is not merged yet you see those three plus the Release A lines. Anything else, stop and tell me.
+The last command lists what is new to `master`. If Release A is already merged you see **six** lines starting "Release A.1". If Release A is not merged yet you see **eighteen**: four "Version 15" lines, eight "Release A (part" lines and the six A.1 lines. Anything else, stop and tell me.
 
 ## Step 2: merge
 

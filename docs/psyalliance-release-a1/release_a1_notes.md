@@ -21,6 +21,7 @@ Written 30 Oct 2026 for Nick. Branch `release-a1`, on top of Release A (`release
 - **Avatars are solid colour everywhere**, not only in Search, so the colours mean the same on every page.
 - **Consult drafts are a list** (like Cover and Referrals), not one slot. This is how the Consult bug was fixed properly: there is no way to overwrite your earlier question by starting a new one.
 - **Hub search field above the verified strip and the action bar**, so it never moves when the strip is closed.
+- **The sandbox Hub demo** now points at the invite card (its last step still looked for the old line; the full regression caught it).
 
 ## What I did not change
 
@@ -28,7 +29,7 @@ Matching, eligibility, outreach, scheduling, messages, availability, permissions
 
 ## Evidence
 
-Ten new checks (`release-a1.spec.ts`, A1-01 to A1-09 at 390 and 320 wide), all passing on the fresh build:
+Ten new checks (`release-a1.spec.ts`, A1-01 to A1-10, the last ones at 390 and 320 wide), all passing on the final build:
 
 | Check | What it proves |
 | --- | --- |
@@ -41,6 +42,7 @@ Ten new checks (`release-a1.spec.ts`, A1-01 to A1-09 at 390 and 320 wide), all p
 | A1-07 | Cover's two lists start their rows on the same line; no coloured left bars. |
 | A1-08 | Network groups are stacked; cards sit inside their panel; avatars carry the colour; the tier description is in the header. |
 | A1-09 | Nothing scrolls sideways at 390 and 320 on Hub, Cover, Network, Referrals, Consult or the referral pop-up. |
+| A1-10 | Cover pop-up on a phone: the step bar is one slim line, the Profile link sits under the colleague name, one invitation reads "1 invitation goes out first", the reply field is full width. |
 
 The regression results are in `acceptance_ledger_a1.md`.
 
