@@ -12,6 +12,8 @@ const avery = account("avery"), fenn = account("fenn"), dara = account("dara");
 const everyone = [avery.id, fenn.id, dara.id];
 async function tidy() {
   await q(`delete from workspace_drafts where profile_id = any($1::uuid[]) and kind <> 'hub-state'`, [everyone]);
+  await q(`delete from coverage_plans where profile_id = any($1::uuid[]) and title like 'A1 %'`, [everyone]);
+  await q(`delete from conversations where context_key like 'cover-%' and not exists (select 1 from coverage_plans)`);
 }
 test.beforeEach(tidy);
 test.afterAll(tidy);
@@ -134,7 +136,22 @@ test("A1-06 'You are up to date' is a status bar of its own, and the invite is a
 });
 
 test("A1-07 Cover lists line up: same header height, same row look whatever the status", async ({ browser, baseURL }) => {
+  // Other Cover tests clear the plans, so this one makes its own: a plan with one invitation sent.
   const { page, context } = await openAs(browser, "avery", baseURL!, "/dashboard/cover");
+  await page.locator('[data-action="cover-start"]').first().click();
+  await page.locator("#cover-name").fill("A1 Autumn leave");
+  await page.getByRole("button", { name: "Continue to needs" }).click();
+  await page.locator("#cover-focus").selectOption("Anxiety/Panic Disorders");
+  await page.locator("#cover-setting").selectOption("virtual");
+  await page.getByRole("button", { name: "Save client", exact: true }).click();
+  await page.getByRole("button", { name: "Continue to colleagues" }).click();
+  await page.locator('input[data-match="cover"]').first().check();
+  await page.getByRole("button", { name: "Review invitations" }).click();
+  await page.locator('#cover-send-form input[name="reviewed"]').check();
+  await page.getByRole("button", { name: "Send cover requests" }).click();
+  await expect(page.locator("#toast")).toContainText("Cover requests sent");
+  await page.goto("/dashboard/cover");
+  await expect(page.locator(".arrangement-row").first()).toBeVisible();
   const panels = page.locator(".split-lists > .panel");
   await expect(panels).toHaveCount(2);
   const bodies = page.locator(".split-lists > .panel .list-section-body");
@@ -180,3 +197,28 @@ for (const width of [390, 320]) {
     await context.close();
   });
 }
+
+test("A1-10 Cover pop-up on a phone: the step bar does not wrap, the colleague card is tidy, one invitation reads correctly", async ({ browser, baseURL }) => {
+  const { page, context } = await openAs(browser, "avery", baseURL!, "/dashboard/cover", 390);
+  await page.locator('[data-action="cover-start"]').first().click();
+  await page.locator("#cover-name").fill("A1 Phone check");
+  await page.getByRole("button", { name: "Continue to needs" }).click();
+  await page.locator("#cover-focus").selectOption("Anxiety/Panic Disorders");
+  await page.locator("#cover-setting").selectOption("virtual");
+  await page.getByRole("button", { name: "Save client", exact: true }).click();
+  await page.getByRole("button", { name: "Continue to colleagues" }).click();
+  await page.waitForTimeout(900);
+  const steps = (await page.locator(".workflow-steps").boundingBox())!;
+  expect(steps.height).toBeLessThan(64);
+  await expect(page.locator(".workflow-step.active")).toContainText("Colleagues");
+  const card = page.locator(".match-card").first();
+  const link = (await card.locator(".match-profile-link").boundingBox())!, name = (await card.locator(".match-card-select strong").boundingBox())!;
+  expect(link.y).toBeGreaterThan(name.y); // the Profile link sits under the name, not squeezed beside it
+  expect(await noSidewaysScroll(page)).toBe(true);
+  await page.locator('input[data-match="cover"]').first().check();
+  await page.getByRole("button", { name: "Review invitations" }).click();
+  await expect(page.locator(".outreach-summary")).toContainText("1 invitation goes out first, one per client.");
+  const field = (await page.locator("#cover-deadline").boundingBox())!, modal = (await page.locator(".modal").boundingBox())!;
+  expect(field.width).toBeGreaterThan(modal.width * 0.7); // full width, not half beside the note
+  await context.close();
+});

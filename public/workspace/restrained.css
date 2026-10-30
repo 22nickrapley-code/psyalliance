@@ -1009,3 +1009,7 @@ body,.workspace,.workspace.feature-cover,.workspace.feature-referrals,.workspace
   /* Review: stack the reply-time field and the explanation */
   .modal .form-grid:has(>.outreach-summary){grid-template-columns:1fr}
 }
+/* Cover review: the up and down buttons are a comfortable pair, not two slivers */
+.invite-order-row .order-controls{display:flex;flex-direction:row;gap:2px;align-items:center}
+.invite-order-row .order-controls .icon-button{width:34px;height:34px;min-width:34px;min-height:34px;padding:0;display:inline-flex;align-items:center;justify-content:center;border-radius:8px}
+.invite-order-row .order-controls .icon-button svg{width:16px;height:16px}
