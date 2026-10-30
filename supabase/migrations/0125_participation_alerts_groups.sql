@@ -43,12 +43,11 @@ create policy "own participation only" on public.member_participation
 
 create or replace function private.service_paused(p_member uuid, p_kind text)
 returns boolean language sql stable security definer set search_path to 'public' as $$
+  -- The end date never reopens a service by itself: it only asks the member to review (see my_participation).
+  -- Until the member resumes, new requests stay stopped, so nothing is silently presented as accepting again.
   select coalesce((
-    select case p_kind
-      when 'referral' then mp.paused_referrals and (mp.pause_referrals_until is null or mp.pause_referrals_until >= current_date)
-      when 'cover' then mp.paused_cover and (mp.pause_cover_until is null or mp.pause_cover_until >= current_date)
-      when 'consult' then mp.paused_consult and (mp.pause_consult_until is null or mp.pause_consult_until >= current_date)
-    end from member_participation mp where mp.profile_id = p_member), false);
+    select case p_kind when 'referral' then mp.paused_referrals when 'cover' then mp.paused_cover when 'consult' then mp.paused_consult end
+      from member_participation mp where mp.profile_id = p_member), false);
 $$;
 revoke all on function private.service_paused(uuid, text) from public, anon, authenticated;
 
@@ -323,7 +322,8 @@ begin
       insert into consultation_group_charters (group_id, version, body, edited_by) values (new.id, new.charter_version, new.charter_body, auth.uid()) on conflict do nothing;
     end if;
   elsif new.charter_body is distinct from old.charter_body and new.charter_body is not null then
-    new.charter_version := old.charter_version + 1;
+    -- The first charter written is version 1; each later change is the next version.
+    new.charter_version := case when old.charter_body is null then greatest(old.charter_version, 1) else old.charter_version + 1 end;
     insert into consultation_group_charters (group_id, version, body, edited_by) values (new.id, new.charter_version, new.charter_body, auth.uid()) on conflict do nothing;
   end if;
   return new;
@@ -333,6 +333,34 @@ drop trigger if exists group_charter_versioning_ins on public.consultation_group
 create trigger group_charter_versioning_ins after insert on public.consultation_groups for each row execute function private.group_charter_versioning();
 drop trigger if exists group_charter_versioning_upd on public.consultation_groups;
 create trigger group_charter_versioning_upd before update of charter_body on public.consultation_groups for each row execute function private.group_charter_versioning();
+
+
+-- The membership guard trusts only database jobs and the two organiser functions below (they check the caller themselves
+-- and mark their own transaction); it still refuses every other change from a signed-in caller.
+create or replace function public.guard_group_membership_change()
+returns trigger language plpgsql security definer set search_path to 'public' as $function$
+begin
+  if auth.uid() is null or current_setting('pa.group_organiser_action', true) = '1' then
+    return new;
+  end if;
+  if new.group_id is distinct from old.group_id or new.profile_id is distinct from old.profile_id or new.role is distinct from old.role
+     or new.external_email is distinct from old.external_email or new.invited_at is distinct from old.invited_at or new.id is distinct from old.id then
+    raise exception 'A group membership can''t be moved or changed.' using errcode = 'P0001';
+  end if;
+  if new.status is distinct from old.status then
+    if auth.uid() = old.profile_id then
+      if not ((old.status = 'invited' and new.status in ('joined', 'declined')) or (old.status = 'joined' and new.status = 'left')) then
+        raise exception 'That change isn''t possible for this group.' using errcode = 'P0001';
+      end if;
+    elsif private.is_group_creator(old.group_id) then
+      if new.status = 'joined' then raise exception 'Members join a group themselves, from their invitation.' using errcode = 'P0001'; end if;
+    else
+      raise exception 'That change isn''t possible for this group.' using errcode = 'P0001';
+    end if;
+  end if;
+  return new;
+end;
+$function$;
 
 -- Organisers are the creator and any coordinator. Only they edit the charter, invite and remove; only the creator
 -- appoints coordinators. Ordinary members can read, post and leave.
@@ -362,6 +390,7 @@ begin
     raise exception 'Only the person who started the group can appoint organisers.' using errcode = '42501';
   end if;
   if p_role not in ('coordinator', 'member') then raise exception 'Unknown role.' using errcode = 'P0001'; end if;
+  perform set_config('pa.group_organiser_action', '1', true);
   update consultation_group_members set role = p_role where group_id = p_group and profile_id = p_member and status = 'joined' and role <> 'creator';
   if not found then raise exception 'That person is not a joined member.' using errcode = 'P0001'; end if;
 end;
@@ -375,6 +404,7 @@ begin
   if exists (select 1 from consultation_groups g where g.id = p_group and g.created_by = p_member) then
     raise exception 'The person who started the group cannot be removed.' using errcode = 'P0001';
   end if;
+  perform set_config('pa.group_organiser_action', '1', true);
   update consultation_group_members set status = 'removed', responded_at = now() where group_id = p_group and profile_id = p_member and status in ('joined', 'invited');
 end;
 $$;
