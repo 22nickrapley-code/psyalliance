@@ -212,7 +212,7 @@ test("C-06b F01-F03 each alert keeps its own context; a claim is leased; one dev
   await q(`delete from push_subscriptions where endpoint = 'http://127.0.0.1:3601/push/fail'`);
   // Two alerts, each opening its own context, whatever order they are fetched in.
   await notifyCover(bram, avery, "rc-b2");
-  await q(`select private.notify_member('referral_request', $1, $2, 'sent a referral', '/dashboard/referrals?referral=7', 'rc-b3', '{}'::jsonb, false)`, [bram, avery]);
+  await q(`select private.notify_member('referral_sent', $1, $2, 'sent a referral', '/dashboard/referrals?referral=7', 'rc-b3', '{}'::jsonb, false)`, [bram, avery]);
   await dispatch(baseURL!);
   const shown = await asMember(bram, `select * from public.my_device_alerts('http://127.0.0.1:3601/push/ok')`);
   const links = shown.rows.map((r: any) => r.link);

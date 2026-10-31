@@ -200,7 +200,8 @@ begin
        where id = p_delivery;
     else
       update notification_deliveries set claim_token = null, lease_until = null,
-             status = case when v_sent > 0 then 'sent' else 'failed' end, delivered_at = case when v_sent > 0 then now() end
+             status = case when v_sent > 0 then 'sent' else 'failed' end, delivered_at = case when v_sent > 0 then now() end,
+             error = case when v_sent > 0 then null else coalesce(left(p_error, 300), error) end
        where id = p_delivery;
     end if;
   end if;
