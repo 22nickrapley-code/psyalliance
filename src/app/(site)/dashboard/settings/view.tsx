@@ -29,7 +29,7 @@ function nameOf(p: any) {
   return p ? clinicianName(p?.full_name, p?.qualification_level, p?.credential_prefix) : "Member";
 }
 
-export function SettingsView({ sp, email, me, prefs, profile, emergency, excluded, blocked, blockedProfiles, circle, demosHidden = false, part = {}, vapid = "", smsOn = false }: { sp: { saved?: string; error?: string }; email: string; me: string; prefs: any; profile: any; emergency: any; excluded: any[] | null; blocked: { blocked_profile_id: string }[] | null; blockedProfiles: any[] | null; circle: any[] | null; demosHidden?: boolean; part?: any; vapid?: string; smsOn?: boolean }) {
+export function SettingsView({ sp, email, me, prefs, profile, emergency, excluded, blocked, blockedProfiles, circle, demosHidden = false, part = {}, vapid = "", smsOn = false, alertsOn = false }: { sp: { saved?: string; error?: string }; email: string; me: string; prefs: any; profile: any; emergency: any; excluded: any[] | null; blocked: { blocked_profile_id: string }[] | null; blockedProfiles: any[] | null; circle: any[] | null; demosHidden?: boolean; part?: any; vapid?: string; smsOn?: boolean; alertsOn?: boolean }) {
   const blockedNames = new Map((blockedProfiles || []).map((p: any) => [p.id, nameOf(p)]));
 
   void circle;
@@ -82,7 +82,7 @@ export function SettingsView({ sp, email, me, prefs, profile, emergency, exclude
             </form>
           </details>
 
-          <ParticipationSections part={part} vapid={vapid} smsOn={smsOn} />
+          <ParticipationSections part={part} vapid={vapid} smsOn={smsOn} alertsOn={alertsOn} />
 
           <details className="card settings-group" id="notifications">
             <summary>

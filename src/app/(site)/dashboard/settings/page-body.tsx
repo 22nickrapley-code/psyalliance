@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
-import { vapidPublicKey, smsLive } from "@/lib/alerts";
+import { vapidPublicKey, smsLive, phoneAlertsOn } from "@/lib/alerts";
 import { SettingsView } from "./view";
 
 export const metadata = { title: "Settings" };
@@ -32,5 +32,5 @@ export default async function SettingsPage(props: { searchParams: Promise<{ save
   const { data: blockedProfiles } = (blocked || []).length ? await supabase.rpc("my_blocked_members") : { data: [] as any[] };
   const { data: part } = await supabase.rpc("my_participation");
   const demosHidden = (await cookies()).get("pa_hide_demos")?.value === "1";
-  return <SettingsView sp={sp} email={user!.email || ""} me={me} prefs={prefs} profile={profile} emergency={emergency} excluded={excluded} blocked={blocked} blockedProfiles={blockedProfiles} circle={circle} demosHidden={demosHidden} part={part || {}} vapid={vapidPublicKey()} smsOn={smsLive()} />;
+  return <SettingsView sp={sp} email={user!.email || ""} me={me} prefs={prefs} profile={profile} emergency={emergency} excluded={excluded} blocked={blocked} blockedProfiles={blockedProfiles} circle={circle} demosHidden={demosHidden} part={part || {}} vapid={vapidPublicKey()} smsOn={smsLive()} alertsOn={phoneAlertsOn()} />;
 }

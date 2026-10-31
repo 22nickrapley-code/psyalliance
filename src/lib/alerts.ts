@@ -18,11 +18,30 @@ async function vapidJwt(audience: string): Promise<string> {
 
 export type SendResult = { ok: boolean; gone?: boolean; error?: string };
 
+// Phone alerts stay hidden until they have been tested on real phones (PHONE_ALERTS=on switches them on).
+export const phoneAlertsOn = () => process.env.PHONE_ALERTS === "on";
+
+// Only the browsers' own push services are accepted (review F04): HTTPS, a known host, no user info, no odd port.
+// A local mock endpoint is allowed only when PUSH_TEST_LOCAL=1 (the automated tests), never in production.
+const PUSH_HOSTS = [/^fcm\.googleapis\.com$/, /^android\.googleapis\.com$/, /^updates\.push\.services\.mozilla\.com$/, /^[a-z0-9-]+\.push\.services\.mozilla\.com$/, /^web\.push\.apple\.com$/, /^[a-z0-9-]+\.notify\.windows\.com$/];
+export function validPushEndpoint(raw: string): boolean {
+  if (!raw || raw.length > 1000) return false;
+  let u: URL;
+  try { u = new URL(raw); } catch { return false; }
+  if (u.username || u.password) return false;
+  if (process.env.PUSH_TEST_LOCAL === "1" && u.protocol === "http:" && u.hostname === "127.0.0.1") return true;
+  if (u.protocol !== "https:" || (u.port && u.port !== "443")) return false;
+  return PUSH_HOSTS.some((h) => h.test(u.hostname.toLowerCase()));
+}
+// Browser subscription keys: p256dh is a 65-byte public key, auth a 16-byte secret, both base64url.
+export const validPushKeys = (p256dh: string, auth: string) => /^[A-Za-z0-9_-]{86,88}$/.test(p256dh) && /^[A-Za-z0-9_-]{21,24}$/.test(auth);
+
 export async function sendPush(endpoint: string): Promise<SendResult> {
   if (!vapidPublicKey() || !process.env.VAPID_PRIVATE_KEY) return { ok: false, error: "Push is not configured" };
+  if (!validPushEndpoint(endpoint)) return { ok: false, gone: true, error: "Not a supported push service" };
   try {
     const jwt = await vapidJwt(new URL(endpoint).origin);
-    const res = await fetch(endpoint, { method: "POST", headers: { TTL: "3600", Urgency: "normal", "Content-Length": "0", Authorization: `vapid t=${jwt}, k=${vapidPublicKey()}` } });
+    const res = await fetch(endpoint, { method: "POST", redirect: "manual", headers: { TTL: "3600", Urgency: "normal", "Content-Length": "0", Authorization: `vapid t=${jwt}, k=${vapidPublicKey()}` } });
     if (res.status === 404 || res.status === 410) return { ok: false, gone: true, error: `Subscription gone (${res.status})` };
     return res.ok ? { ok: true } : { ok: false, error: `Push service said ${res.status}` };
   } catch (e: any) {

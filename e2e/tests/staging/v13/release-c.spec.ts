@@ -191,6 +191,43 @@ test("C-06 L08 failed delivery is visible and retried, a gone device is revoked,
   expect((await q(`select 1 from notification_deliveries nd join notification_events e on e.id = nd.notification_event_id where e.dedup_key = 'rc-5' and nd.channel = 'push'`)).length).toBe(1);
 });
 
+test("C-06b F01-F03 each alert keeps its own context; a claim is leased; one device failing never resends to another; consent and quiet hours are checked at sending", async ({ baseURL }) => {
+  await optIn(bram);
+  await q(`insert into push_subscriptions (profile_id, endpoint, p256dh, auth) values ($1, 'http://127.0.0.1:3601/push/fail', 'p', 'a') on conflict (endpoint) do update set revoked_at = null, profile_id = $1`, [bram]);
+  await notifyCover(bram, avery, "rc-b1");
+  // A second dispatcher cannot claim what the first holds.
+  const first = await q(`select delivery_id, token, endpoint from public.claim_alerts(25)`);
+  expect(first.length).toBe(2);
+  expect((await q(`select * from public.claim_alerts(25)`)).length).toBe(0);
+  const id = first[0].delivery_id, token = first[0].token;
+  // A stale token is refused.
+  expect((await one(`select public.finish_alert($1, gen_random_uuid(), 'http://127.0.0.1:3601/push/ok', true) as ok`, [id])).ok).toBe(false);
+  await q(`select public.finish_alert($1, $2, 'http://127.0.0.1:3601/push/ok', true)`, [id, token]);
+  await q(`select public.finish_alert($1, $2, 'http://127.0.0.1:3601/push/fail', false, 'Push service said 500')`, [id, token]);
+  // Only the failed device is retried.
+  await q(`update notification_deliveries set send_after = now() where id = $1`, [id]);
+  const again = await q(`select endpoint from public.claim_alerts(25) where delivery_id = $1`, [id]);
+  expect(again.map((r: any) => r.endpoint)).toEqual(["http://127.0.0.1:3601/push/fail"]);
+  await q(`update notification_deliveries set status = 'failed', claim_token = null, lease_until = null where id = $1`, [id]);
+  await q(`delete from push_subscriptions where endpoint = 'http://127.0.0.1:3601/push/fail'`);
+  // Two alerts, each opening its own context, whatever order they are fetched in.
+  await notifyCover(bram, avery, "rc-b2");
+  await q(`select private.notify_member('referral_request', $1, $2, 'sent a referral', '/dashboard/referrals?referral=7', 'rc-b3', '{}'::jsonb, false)`, [bram, avery]);
+  await dispatch(baseURL!);
+  const shown = await asMember(bram, `select * from public.my_device_alerts('http://127.0.0.1:3601/push/ok')`);
+  const links = shown.rows.map((r: any) => r.link);
+  expect(links).toEqual(expect.arrayContaining(["/dashboard/cover?plan=1", "/dashboard/referrals?referral=7"]));
+  expect((await asMember(bram, `select * from public.my_device_alerts('http://127.0.0.1:3601/push/ok')`)).rowCount).toBe(0);
+  expect((await asMember(cass, `select * from public.my_device_alerts('http://127.0.0.1:3601/push/ok')`)).rowCount).toBe(0);
+  // Switched off after queueing: not sent.
+  await notifyCover(bram, avery, "rc-b4");
+  await q(`update member_participation set alert_push = false where profile_id = $1`, [bram]);
+  pushes.length = 0;
+  await dispatch(baseURL!);
+  expect(pushes).toHaveLength(0);
+  expect((await one(`select status from notification_deliveries where channel = 'push' and notification_event_id = (select id from notification_events where dedup_key = 'rc-b4')`)).status).toBe("suppressed_closed");
+});
+
 test("C-07 phone number alerts by text: consent required, mock sender gets the generic line only, removal clears everything", async ({ browser, baseURL }) => {
   const { page, context } = await openAs(browser, "bram", baseURL!);
   await page.locator("#alerts summary").click();
@@ -222,12 +259,19 @@ test("C-08 L07 push subscription belongs to the signed-in member only; the alert
   const anon = await fetch(`${baseURL}/api/alerts/subscribe`, { method: "POST", headers: { "content-type": "application/json" }, body: "{}" });
   expect(anon.status).toBe(401);
   const { page, context } = await openAs(browser, "bram", baseURL!);
-  const ok = await page.evaluate(async () => (await fetch("/api/alerts/subscribe", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ endpoint: "http://127.0.0.1:3601/push/ok", keys: { p256dh: "p", auth: "a" } }) })).status);
+  // Only real push services (and, in tests, the local mock) are accepted, with keys of the right shape (review F04).
+  const post = (endpoint: string, keys: any) => page.evaluate(async ([e, k]) => (await fetch("/api/alerts/subscribe", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ endpoint: e, keys: k }) })).status, [endpoint, keys] as const);
+  for (const bad of ["https://evil.example/push", "http://localhost:3601/push/ok", "https://fcm.googleapis.com.evil.example/x", "https://user@fcm.googleapis.com/x", "https://fcm.googleapis.com:8443/x", "ftp://fcm.googleapis.com/x"]) expect(await post(bad, { p256dh: "B" + "A".repeat(86), auth: "Q".repeat(22) }), bad).toBe(400);
+  expect(await post("http://127.0.0.1:3601/push/ok", { p256dh: "p", auth: "a" })).toBe(400);
+  const ok = await page.evaluate(async () => (await fetch("/api/alerts/subscribe", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ endpoint: "http://127.0.0.1:3601/push/ok", keys: { p256dh: "B" + "A".repeat(86), auth: "Q".repeat(22) } }) })).status);
   expect(ok).toBe(200);
   expect((await one(`select profile_id, alert_push from push_subscriptions s join member_participation m using (profile_id) where endpoint = 'http://127.0.0.1:3601/push/ok'`)).profile_id).toBe(bram);
   expect((await asMember(cass, `select * from push_subscriptions`)).rowCount).toBe(0);
-  const latest = await page.evaluate(async () => (await fetch("/api/alerts/latest")).json());
-  expect(latest.body).toBeTruthy();
+  // The device asks for ITS alerts by endpoint; another account's endpoint returns nothing.
+  const mine = await page.evaluate(async () => (await fetch("/api/alerts/latest", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ endpoint: "http://127.0.0.1:3601/push/ok" }) })).json());
+  expect(Array.isArray(mine.alerts)).toBe(true);
+  const anonLatest = await (await fetch(`${baseURL}/api/alerts/latest`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ endpoint: "http://127.0.0.1:3601/push/ok" }) })).json();
+  expect(anonLatest.alerts).toEqual([]);
   await context.close();
 });
 

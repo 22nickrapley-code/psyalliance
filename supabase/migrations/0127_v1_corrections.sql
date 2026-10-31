@@ -92,3 +92,144 @@ as $function$
 $function$;
 revoke all on function public.workspace_people() from public, anon;
 grant execute on function public.workspace_people() to authenticated;
+
+-- 3. Phone alerts: one claim at a time, one attempt per device, checks at the last moment (review F01-F03) ----
+-- A claimed delivery carries a token and a short lease, so two dispatchers can never send it twice; a lease that
+-- runs out (a crashed dispatcher) is picked up again. Each device (or the phone number) has its own attempt, so one
+-- device failing never resends to another that already received it. Consent, quiet hours and "already read" are
+-- checked again at claim time. The device asks for the alerts sent to IT (by endpoint), each with its own link.
+alter table public.notification_deliveries add column if not exists claim_token uuid;
+alter table public.notification_deliveries add column if not exists lease_until timestamptz;
+
+create table if not exists public.alert_attempts (
+  delivery_id bigint not null references public.notification_deliveries (id) on delete cascade,
+  target text not null,                       -- a push endpoint, or 'sms'
+  status text not null default 'pending' check (status in ('pending', 'sending', 'sent', 'failed', 'gone')),
+  tries integer not null default 0,
+  error text,
+  sent_at timestamptz,
+  shown_at timestamptz,                       -- the device fetched this alert's wording and link
+  primary key (delivery_id, target)
+);
+alter table public.alert_attempts enable row level security;
+revoke all on public.alert_attempts from anon, authenticated;
+
+drop function if exists public.claim_alerts(integer);
+create or replace function public.claim_alerts(p_limit integer default 25)
+returns table (delivery_id bigint, token uuid, channel text, recipient uuid, body text, link text, endpoint text, p256dh text, auth text, phone text)
+language plpgsql security definer set search_path to 'public' as $$
+#variable_conflict use_column
+declare r record; v_token uuid; v_quiet timestamptz;
+begin
+  update notification_deliveries set status = 'failed', error = 'Not sent: too old', claim_token = null, lease_until = null
+   where channel in ('push', 'sms') and status = 'pending' and created_at < now() - interval '1 day';
+  for r in
+    select nd.id, nd.channel as ch, nd.recipient_profile_id as rid, ev.event_type, ev.actor_profile_id, ev.deep_link, p.is_demo, p.account_status,
+           mp.alert_push, mp.alert_sms, mp.sms_consent_at, mp.sms_phone,
+           exists (select 1 from notification_deliveries i where i.notification_event_id = nd.notification_event_id and i.recipient_profile_id = nd.recipient_profile_id and i.channel = 'in_app' and i.read_at is not null) as seen
+      from notification_deliveries nd
+      join notification_events ev on ev.id = nd.notification_event_id
+      join profiles p on p.id = nd.recipient_profile_id
+      left join member_participation mp on mp.profile_id = nd.recipient_profile_id
+     where nd.channel in ('push', 'sms') and nd.status = 'pending' and nd.send_after <= now() and nd.retry_count < 3
+       and (nd.lease_until is null or nd.lease_until < now())
+     order by nd.send_after limit p_limit for update of nd skip locked
+  loop
+    if r.is_demo or r.account_status <> 'active' then
+      update notification_deliveries set status = 'suppressed_demo', attempted_at = now(), claim_token = null, lease_until = null where id = r.id; continue;
+    end if;
+    if r.seen then
+      update notification_deliveries set status = 'suppressed_read', attempted_at = now(), claim_token = null, lease_until = null where id = r.id; continue;
+    end if;
+    -- Consent as it is NOW, not as it was when the alert was queued.
+    if (r.ch = 'push' and not coalesce(r.alert_push, false)) or (r.ch = 'sms' and not (coalesce(r.alert_sms, false) and r.sms_consent_at is not null and r.sms_phone is not null)) then
+      update notification_deliveries set status = 'suppressed_closed', attempted_at = now(), error = 'Alerts switched off before sending', claim_token = null, lease_until = null where id = r.id; continue;
+    end if;
+    -- Quiet hours as they are NOW.
+    v_quiet := private.after_quiet(r.rid, now());
+    if v_quiet > now() then
+      update notification_deliveries set send_after = v_quiet where id = r.id; continue;
+    end if;
+    v_token := gen_random_uuid();
+    update notification_deliveries set attempted_at = now(), retry_count = retry_count + 1, claim_token = v_token, lease_until = now() + interval '2 minutes' where id = r.id;
+    if r.ch = 'push' then
+      insert into alert_attempts (delivery_id, target)
+        select r.id, s.endpoint from push_subscriptions s where s.profile_id = r.rid and s.revoked_at is null
+        on conflict do nothing;
+      update alert_attempts a set status = 'sending', tries = tries + 1
+        from push_subscriptions s
+       where a.delivery_id = r.id and a.target = s.endpoint and s.profile_id = r.rid and s.revoked_at is null and a.status in ('pending', 'failed');
+      return query select r.id, v_token, 'push'::text, r.rid, private.alert_text(r.event_type, r.actor_profile_id), r.deep_link, s.endpoint, s.p256dh, s.auth, null::text
+        from push_subscriptions s join alert_attempts a on a.delivery_id = r.id and a.target = s.endpoint
+       where s.profile_id = r.rid and s.revoked_at is null and a.status = 'sending';
+    else
+      insert into alert_attempts (delivery_id, target) values (r.id, 'sms') on conflict do nothing;
+      update alert_attempts set status = 'sending', tries = tries + 1 where delivery_id = r.id and target = 'sms' and status in ('pending', 'failed');
+      return query select r.id, v_token, 'sms'::text, r.rid, private.alert_text(r.event_type, r.actor_profile_id), r.deep_link, null::text, null::text, null::text, r.sms_phone
+        where exists (select 1 from alert_attempts a where a.delivery_id = r.id and a.target = 'sms' and a.status = 'sending');
+    end if;
+    -- Nothing left to send (no active device): close it rather than retrying forever.
+    if not exists (select 1 from alert_attempts a where a.delivery_id = r.id and a.status = 'sending') then
+      update notification_deliveries set status = case when exists (select 1 from alert_attempts a where a.delivery_id = r.id and a.status = 'sent') then 'sent' else 'failed' end,
+             error = coalesce(error, 'No active device'), claim_token = null, lease_until = null where id = r.id;
+    end if;
+  end loop;
+end;
+$$;
+revoke all on function public.claim_alerts(integer) from public, anon, authenticated;
+
+-- One device's result. Only the dispatcher holding the current token can record it.
+drop function if exists public.finish_alert(bigint, boolean, text, text);
+create or replace function public.finish_alert(p_delivery bigint, p_token uuid, p_target text, p_ok boolean, p_error text default null, p_gone boolean default false)
+returns boolean language plpgsql security definer set search_path to 'public' as $$
+declare v_open integer; v_sent integer;
+begin
+  if not exists (select 1 from notification_deliveries where id = p_delivery and claim_token = p_token) then return false; end if;
+  update alert_attempts set status = case when p_ok then 'sent' when p_gone then 'gone' else 'failed' end,
+         sent_at = case when p_ok then now() else sent_at end, error = case when p_ok then null else left(p_error, 300) end
+   where delivery_id = p_delivery and target = p_target and status = 'sending';
+  if p_gone and p_target <> 'sms' then update push_subscriptions set revoked_at = now() where endpoint = p_target; end if;
+  select count(*) filter (where status = 'sending'), count(*) filter (where status = 'sent') into v_open, v_sent from alert_attempts where delivery_id = p_delivery;
+  if v_open = 0 then
+    if exists (select 1 from alert_attempts where delivery_id = p_delivery and status = 'failed') then
+      -- Retry only the devices that failed; the ones that received it are not sent again.
+      update notification_deliveries set claim_token = null, lease_until = null, error = left(p_error, 300),
+             status = case when retry_count >= 3 then (case when v_sent > 0 then 'sent' else 'failed' end) else 'pending' end,
+             delivered_at = case when v_sent > 0 then coalesce(delivered_at, now()) else delivered_at end,
+             send_after = now() + interval '5 minutes'
+       where id = p_delivery;
+    else
+      update notification_deliveries set claim_token = null, lease_until = null,
+             status = case when v_sent > 0 then 'sent' else 'failed' end, delivered_at = case when v_sent > 0 then now() end
+       where id = p_delivery;
+    end if;
+  end if;
+  return true;
+end;
+$$;
+revoke all on function public.finish_alert(bigint, uuid, text, boolean, text, boolean) from public, anon, authenticated;
+
+-- The device asks for the alerts sent to it, oldest first, each with its own wording and link (never "the latest").
+drop function if exists public.my_device_alerts(text);
+create or replace function public.my_device_alerts(p_endpoint text)
+returns table (id bigint, body text, link text) language plpgsql security definer set search_path to 'public' as $$
+begin
+  if auth.uid() is null or not exists (select 1 from push_subscriptions where endpoint = p_endpoint and profile_id = auth.uid()) then return; end if;
+  return query
+  with mine as (
+    select a.delivery_id from alert_attempts a join notification_deliveries nd on nd.id = a.delivery_id
+     where a.target = p_endpoint and a.status in ('sending', 'sent') and a.shown_at is null
+       and nd.recipient_profile_id = auth.uid() and nd.created_at > now() - interval '1 day'
+     order by a.delivery_id limit 5
+  ), marked as (
+    update alert_attempts a set shown_at = now() from mine where a.delivery_id = mine.delivery_id and a.target = p_endpoint returning a.delivery_id
+  )
+  select nd.id, private.alert_text(ev.event_type, ev.actor_profile_id), ev.deep_link
+    from marked join notification_deliveries nd on nd.id = marked.delivery_id join notification_events ev on ev.id = nd.notification_event_id
+   order by nd.id;
+end;
+$$;
+revoke all on function public.my_device_alerts(text) from public, anon;
+grant execute on function public.my_device_alerts(text) to authenticated;
+-- The old "latest alert" lookup could open the wrong context; it is retired.
+drop function if exists public.my_latest_alert();

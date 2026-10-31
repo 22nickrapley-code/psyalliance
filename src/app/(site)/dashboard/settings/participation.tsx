@@ -18,7 +18,7 @@ const SERVICES = [
   { k: "consult", key: "Consult", label: "Consult invitations", what: "Colleagues can invite you into a consultation. Pausing stops new invitations; discussions you are in carry on." },
 ];
 
-export function ParticipationSections({ part, vapid = "", smsOn = false }: { part: any; vapid?: string; smsOn?: boolean }) {
+export function ParticipationSections({ part, vapid = "", smsOn = false, alertsOn = false }: { part: any; vapid?: string; smsOn?: boolean; alertsOn?: boolean }) {
   const sit: string[] = part?.situations || [];
   return (
     <>
@@ -69,6 +69,7 @@ export function ParticipationSections({ part, vapid = "", smsOn = false }: { par
         </form>
       </details>
 
+      {alertsOn && (
       <details className="card settings-group" id="alerts">
         <summary><span><h3>Alerts on your phone</h3><small>Optional. They only tell you something is waiting</small></span></summary>
         <PushControl enabled={!!part?.alertPush} vapid={vapid} />
@@ -105,6 +106,7 @@ export function ParticipationSections({ part, vapid = "", smsOn = false }: { par
           </div>
         </form>
       </details>
+      )}
     </>
   );
 }

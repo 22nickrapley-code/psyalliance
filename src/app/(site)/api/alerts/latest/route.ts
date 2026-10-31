@@ -1,10 +1,14 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 
-// Read by the service worker when a push arrives: the wording is fetched while signed in, never carried by the push.
-export async function GET() {
+// Read by the service worker when a push arrives. It sends its own subscription endpoint and gets back the alerts
+// sent to THIS device that it has not shown yet, each with its own wording and link (review F01). Signed in only;
+// another account's endpoint returns nothing. The push itself carries no text.
+export async function POST(req: Request) {
   const supabase = await createClient();
-  const { data } = await supabase.rpc("my_latest_alert");
-  const row = Array.isArray(data) ? data[0] : data;
-  return NextResponse.json({ body: row?.body || "You have something waiting in PsyAlliance. Review request.", link: row?.link || "/dashboard" }, { headers: { "cache-control": "no-store" } });
+  const b = await req.json().catch(() => null);
+  const endpoint = String(b?.endpoint || "").slice(0, 1000);
+  const { data } = endpoint ? await supabase.rpc("my_device_alerts", { p_endpoint: endpoint }) : { data: [] };
+  const alerts = ((data as any[]) || []).map((r) => ({ id: r.id, body: r.body, link: typeof r.link === "string" && r.link.startsWith("/") ? r.link : "/dashboard" }));
+  return NextResponse.json({ alerts }, { headers: { "cache-control": "no-store" } });
 }

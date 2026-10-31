@@ -14,7 +14,8 @@ export async function POST(req: Request) {
   let sent = 0, failed = 0;
   for (const r of (data || []) as any[]) {
     const res = r.channel === "push" ? await sendPush(r.endpoint) : await sendSms(r.phone, `${r.body} psyalliance.org/dashboard`);
-    await db.rpc("finish_alert", { p_delivery: r.delivery_id, p_ok: res.ok, p_error: res.error ?? null, p_gone_endpoint: res.gone ? r.endpoint : null });
+    // Recorded against this claim's token and this device only: a stale dispatcher cannot overwrite a newer claim.
+    await db.rpc("finish_alert", { p_delivery: r.delivery_id, p_token: r.token, p_target: r.channel === "push" ? r.endpoint : "sms", p_ok: res.ok, p_error: res.error ?? null, p_gone: !!res.gone });
     res.ok ? sent++ : failed++;
   }
   return NextResponse.json({ claimed: (data || []).length, sent, failed });
