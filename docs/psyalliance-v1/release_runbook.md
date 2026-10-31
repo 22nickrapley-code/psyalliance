@@ -6,43 +6,28 @@
 
 Branch `v1`, delivered as one Git bundle (`psyalliance-v1.bundle`). It needs version 14 (`c7e14b9`) in your repository. It is cumulative: it contains Release A, A.1, B, C and 1.0, so it works whether or not Release C is already merged. The order is: bring the bundle in, merge, install, run the SQL on the sandbox, deploy the sandbox, check it, then do the same for live.
 
-## Step 1: bring the bundle in (PowerShell)
+## Step 1 and 2: bring the bundle in and merge (PowerShell)
+
+Your copy (checked 31 Oct) is on Release C with about 90 files showing as changed. Almost all of that is line endings only. Your only real edits are the `--dangerouslyUseUnsupportedNextVersion` flag in `package.json` and `scripts/deploy-demo.mjs`, plus npm's own changes to `package-lock.json`. **1.0 now includes that flag in both files**, so you no longer need to keep them by hand. Type these lines one at a time:
 
 ```
 cd C:\Users\Nick\Documents\psyalliance
+git diff > ..\psyalliance-local-changes-31oct.patch
+git checkout -- .
 git status
 git fetch C:\Users\Nick\Downloads\psyalliance-v1.bundle v1:v1
 git log --oneline master..v1
-```
-
-`git status` lists your Cloudflare flag files (`package.json`, `package-lock.json`, `scripts/deploy-demo.mjs`). That is expected. The last command lists what is new. If Release C is already merged, you will see only lines starting "1.0" (seventeen of them). If Release C is not merged, you will see the "Release C" lines (and earlier ones) before them. If you see anything else, stop and tell me.
-
-## Step 2: merge, keeping your flag files
-
-1.0 updates `package.json` and `package-lock.json` (a security update to Next.js and sharp), so put your local changes aside first, then put them back:
-
-```
-git diff > ..\my-cloudflare-flags.patch
-git stash
 git checkout master
 git merge --ff-only v1
-git stash pop
 npm install
 ```
 
-- `git diff` saves a copy of your flag changes next to the project folder, just in case.
-- If `git stash pop` says **CONFLICT in package-lock.json**, type these three lines:
-
-  ```
-  git checkout HEAD -- package-lock.json
-  npm install
-  git stash drop
-  ```
-
-- If it says CONFLICT in `package.json` or `deploy-demo.mjs`, stop and send me what it printed. Your changes are safe in the stash and in the patch file.
+- The first `git diff` saves a copy of everything that was changed, next to the project folder, just in case.
+- `git checkout -- .` puts the files back exactly as committed (this clears the line-ending noise).
+- After that, `git status` should list nothing under "Changes not staged". New untracked files are fine.
+- `git log` should show eighteen lines starting "1.0". If you see anything else, stop and tell me.
 - If `git merge` refuses, do not force it. Send me `git log --oneline -3 master`.
-
-`npm install` is needed either way, because the Next.js version changed.
+- `npm install` is needed because the Next.js version changed. It may change `package-lock.json` again; that is fine.
 
 ## Step 3: SQL on the sandbox first
 

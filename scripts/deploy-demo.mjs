@@ -43,5 +43,5 @@ if (process.argv.includes("--dev")) {
   run("npx", ["next", "dev", "-p", "3001"]);
   process.exit(0);
 }
-run("npx", ["opennextjs-cloudflare", "build"]);
+run("npx", ["opennextjs-cloudflare", "build", "--dangerouslyUseUnsupportedNextVersion"]);
 if (!process.argv.includes("--build-only")) run("npx", ["opennextjs-cloudflare", "deploy", "--env", "demo"]);
