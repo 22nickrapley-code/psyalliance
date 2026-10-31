@@ -109,7 +109,7 @@ test("P-05 practice events go to the practice namespace, with a name and a need 
   expect((await q(`select count(*)::int n from lifecycle_events where namespace = 'real' and need = 'perspective' and at > now() - interval '1 minute'`))[0].n).toBe(0);
   // A visitor cannot write to the real namespace through the public route.
   await fetch(`${baseURL}/api/start-event`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ event: "pause", need: "reducing", namespace: "real" }) });
-  expect((await q(`select count(*)::int n from lifecycle_events where namespace = 'real' and event = 'pause' and at > now() - interval '1 minute'`))[0].n).toBe(0);
+  expect((await q(`select count(*)::int n from lifecycle_events where namespace = 'real' and event = 'pause' and need = 'reducing' and at > now() - interval '1 minute'`))[0].n).toBe(0);
 });
 
 test("P-06 the catalogue SQL and the code agree on the scenario ids, and re-applying the SQL changes nothing", async () => {

@@ -82,3 +82,18 @@ The practice workspace runs **in the visitor's browser** on fixture data (`src/t
 | `/dashboard/documents/review` | unchanged |
 | starting page "demo" per need | `/tour/caseload`, `/tour/time-away`, `/tour/client-referral`, `/tour/perspective`, `/tour/reducing`, `/tour/offer-support` (Just explore: `/tour`) |
 | `/tour/scene/<demo>/<step>` | same; the walkthroughs load their scenario by demo key |
+
+## Final audit pass (design and process inspection of every page)
+
+Every public page, account page and walkthrough was opened on desktop and phone and read for design, wording and process. What was changed:
+
+- **Profile tab count.** The tab said "3 of 5 parts done" while the page said "Essential 4 of 4". The tab now counts the same four essentials as the page ("Essentials done", or "N of 4 essentials done").
+- **Credentials.** A license with no expiry date now says "No expiry date given" instead of "Expires Not given". The Remove buttons are now proper small buttons.
+- **Notifications.** The top bar names the page under Messages (it said "Account") and the introduction is said once, not twice.
+- **One name for your files.** The menu item, the tab, the page heading and the messages all say "My documents" (they said My documents, My Library and My files in different places). The stray Library button in that page's header is gone and the empty state uses the Library icon.
+- **Sidebar footer.** Settings (Hub and workspace pages) and Sign out (account pages) now share one style and line up with your avatar; your name is no longer cut short by a decorative icon.
+- **Settings.** "Demos is in the menu" now reads "Demos are shown in the menu".
+- **Verification page** has a proper page heading. **Public Library** search hint is shorter so it is not cut off on a phone.
+- **/start** no longer draws a box round its heading when the page first opens; moving between steps still moves focus for keyboard and screen-reader users.
+
+No new SQL. No new packages.

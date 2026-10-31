@@ -73,3 +73,18 @@ Watch/try routes `/tour/<key>` for: cover, refer, consult, circle, verified, lib
 - The six `/sandbox/request` route tests (need outside access).
 - Scenario-specific accounts stored in the sandbox database (not built; see the release notes).
 - Role fixtures beyond the existing suites (prelicensed, retired); L09 unchanged.
+
+## Final audit pass
+
+| Item | Status |
+|---|---|
+| Every page inspected on desktop and 390 wide for design, wording, headings, names and focus | **Done** (automated crawl plus a read of every screenshot) |
+| Profile tab and page agree on completeness | **Fixed** (AU-03) |
+| Credentials expiry wording and Remove buttons | **Fixed** (AU-04) |
+| Notifications top bar and repeated introduction | **Fixed** (AU-05) |
+| One name for private files: My documents | **Fixed** (AU-06) |
+| Public Library search hint fits a phone | **Fixed** (AU-07) |
+| Sidebar footer consistent across shells | **Fixed** (AU-08) |
+| One page heading on /verification; no focus box on /start first load | **Fixed** (AU-01, AU-02) |
+| Hub banner stacking on small screens | **Left as it was** (works; changing it risks the approved layout) |
+| Progress dots in the demo players have no names for screen readers | **Left** (they are not tab stops; the steps themselves are named) |
