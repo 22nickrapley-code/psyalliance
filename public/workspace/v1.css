@@ -119,3 +119,6 @@ body,.workspace,.workspace.feature-cover,.workspace.feature-referrals,.workspace
 .mention-opt .avatar{width:30px;height:30px;font-size:11px;flex:none}
 .mention-foot,.mention-empty{font-size:12px;color:#6B6E67;padding:8px 10px;border-top:1px solid var(--line);margin-top:4px}
 .mention-empty{border-top:0;margin:0}
+.topbar .top-date{white-space:nowrap}
+.topbar .top-search{max-width:420px}
+@media (max-width:1380px){.topbar .top-date{display:none}.topbar .top-date + .top-divider{display:none}}

@@ -177,8 +177,10 @@ export default function AccountShell({
                 <b>Sandbox</b>
               </span>
             )}
-            <Link href="/dashboard?search=1" className="top-search" aria-label="Search">
-              <AcIcon name="search" size={15} /> Search
+            <Link href="/dashboard?search=1" className="top-search" aria-label="Search PsyAlliance">
+              <AcIcon name="search" size={15} />
+              <span className="top-search-text">Search colleagues, referrals, cover, consults, Library</span>
+              <kbd>⌘ K</kbd>
             </Link>
             <span className="top-date" suppressHydrationWarning>
               {new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", timeZone: "America/New_York" })}
