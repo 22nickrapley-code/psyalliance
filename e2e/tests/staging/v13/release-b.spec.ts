@@ -174,7 +174,7 @@ test("B-03 C03 workload before review: totals per colleague, first and queued, g
   const cassLine = work.locator("li", { hasText: "Cass Morrowgate" });
   await expect(cassLine).toContainText("1 request");
   await expect(cassLine).toContainText("1 queued");
-  await expect(page.locator(".outreach-summary")).toContainText("3 invitations go out first, one per client.");
+  await expect(page.locator(".outreach-summary")).toContainText("3 invitations go out first, one per client with a colleague selected.");
   // Reordering: only where there is someone to reorder with, and not past either end.
   const clientOne = page.locator("details.review-client").nth(0), clientTwo = page.locator("details.review-client").nth(1);
   await expect(clientTwo.locator(".order-controls")).toHaveCount(0);
@@ -208,7 +208,7 @@ test("B-03b C03 twenty requests to one colleague are visible, counted and asked 
   const line = page.locator(".workload-list li", { hasText: "Bram Tellinghast" });
   await expect(line).toContainText("20 requests");
   await expect(line).toContainText("20 asked first");
-  await expect(page.locator(".outreach-summary")).toContainText("20 invitations go out first, one per client.");
+  await expect(page.locator(".outreach-summary")).toContainText("20 invitations go out first, one per client with a colleague selected.");
   expect((await q(`select 1 from coverage_plans where profile_id = $1 and title = 'B Twenty requests'`, [avery])).length).toBe(0); // nothing was sent
   await context.close();
 });

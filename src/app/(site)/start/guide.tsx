@@ -17,6 +17,8 @@ export function Guide() {
   const [helps, setHelps] = useState<Help[]>([]);
   const [saved, setSaved] = useState(false);
   const head = useRef<HTMLHeadingElement>(null);
+  // The exercise lives here, so the recipient preview and back keep it, and Reset clears it.
+  const [sim, setSim] = useState<Sim>(SIM0);
 
   useEffect(() => {
     const q = new URLSearchParams(location.search);
@@ -37,7 +39,7 @@ export function Guide() {
     history.replaceState(null, "", u.toString());
   }, [need]);
 
-  const choose = (n: Need) => { setNeed(n); track("guide_choice", n); setStage(n === "explore" ? "benefit" : "follow"); };
+  const choose = (n: Need) => { setNeed(n); setSim(SIM0); track("guide_choice", n); setStage(n === "explore" ? "benefit" : "follow"); };
   const e = need ? GUIDE[need] : null;
 
   function keep() {
@@ -47,7 +49,7 @@ export function Guide() {
     setSaved(true); track("summary_continue", need);
   }
   function clear() { document.cookie = `${HANDOFF_COOKIE}=; Max-Age=0; Path=/; SameSite=Lax`; setSaved(false); }
-  const restart = () => { setNeed(null); setCtx(""); setHelps([]); setStage("choose"); };
+  const restart = () => { setNeed(null); setCtx(""); setHelps([]); setSim(SIM0); setStage("choose"); };
 
   return (
     <div className="guide-card" data-guide data-stage={stage} data-need={need || ""}>
@@ -56,7 +58,7 @@ export function Guide() {
       {stage === "choose" && (
         <>
           <h1 ref={head} tabIndex={-1} className="serif-title">What would be useful to you at the moment?</h1>
-          <p className="guide-note">Choose one. You do not need an email address, and nothing you pick here is sent anywhere.</p>
+          <p className="guide-note">Choose one. You do not need an email address. We count which need is chosen, anonymously, to improve this page; nothing is linked to you.</p>
           <fieldset className="guide-choices">
             <legend className="sr-only">What would be useful to you at the moment?</legend>
             {PRIMARY.map((n) => (
@@ -109,7 +111,7 @@ export function Guide() {
           <p data-benefit>{e.benefit}</p>
           <p className="guide-note">This shows what the product can do. It is not a promise of Cover, referrals, placements or response times.</p>
           <div className="guide-actions">
-            <a className="btn" href={e.demo} data-demo onClick={() => track("interaction_complete", need)}>Watch the short demo</a>
+            <a className="btn" href={e.demo} data-demo onClick={() => track("demo_started", need)}>Watch the short demo</a>
             {need !== "explore" && <a className="btn secondary" data-try-scenario href={`${e.demo}#try`}>Try this scenario</a>}
             <button className="btn secondary" type="button" onClick={() => setStage("try")}>Try it myself</button>
             <button className="guide-quiet" type="button" onClick={() => setStage("summary")}>Skip to what comes next</button>
@@ -121,12 +123,12 @@ export function Guide() {
       {stage === "try" && need && (
         <>
           <h2 ref={head} tabIndex={-1} className="serif-title">Try it</h2>
-          <Interaction need={need} onDone={() => track("interaction_complete", need)} />
+          <Interaction need={need} sim={sim} setSim={setSim} onDone={() => track("interaction_complete", need)} />
           <div className="guide-actions">
             {need !== "explore" && need !== "caseload" && <button className="btn secondary" type="button" onClick={() => { track("recipient_preview", need); setStage("preview"); }}>What will they receive?</button>}
             <button className="btn" type="button" onClick={() => setStage("summary")}>Continue</button>
             <button className="guide-quiet" type="button" onClick={() => { track("interaction_skip", need); setStage("summary"); }}>Skip</button>
-            <button className="guide-quiet" type="button" onClick={() => setStage("try")}>Reset</button>
+            <button className="guide-quiet" type="button" data-reset onClick={() => setSim(SIM0)}>Reset</button>
             <button className="guide-quiet" type="button" onClick={restart}>Change my choice</button>
           </div>
         </>
@@ -154,14 +156,13 @@ export function Guide() {
           </dl>
           <p className="guide-note">Why we built it: <a href="/#why">read the founder&rsquo;s story</a>. <a href="/verification">How verification works</a>. <a href="/privacy">Privacy</a>.</p>
           <div className="guide-actions">
-            <a className="btn" data-continue href="/auth/sign-up" onClick={keep}>Continue with these choices</a>
-            <a className="btn secondary" href="/auth/sign-up">{e.cta}</a>
+            <a className="btn" data-continue href="/auth/sign-up" onClick={keep}>{e.cta}</a>
             <a className="guide-quiet" href="/dashboard" data-skip-signup>Take me to the Hub instead</a>
           </div>
           <p className="guide-note">We&rsquo;ll use these choices to get you started. They stay in this browser for {HANDOFF_HOURS} hours and hold only your selections, nothing you typed.{saved ? " Choices are saved on this device." : ""}</p>
           <div className="guide-actions">
             <button className="guide-quiet" type="button" onClick={() => setStage("benefit")}>Review or change</button>
-            <button className="guide-quiet" type="button" onClick={restart}>Start fresh</button>
+            <button className="guide-quiet" type="button" onClick={() => { clear(); restart(); }}>Start fresh</button>
             {saved && <button className="guide-quiet" type="button" data-clear onClick={clear}>Clear my choices</button>}
           </div>
         </div>
@@ -170,9 +171,13 @@ export function Guide() {
   );
 }
 
-function Interaction({ need, onDone }: { need: Need; onDone: () => void }) {
-  const [a, setA] = useState(false);
-  const [b, setB] = useState("");
+type Sim = { a: boolean; b: string };
+const SIM0: Sim = { a: false, b: "" };
+
+function Interaction({ need, sim, setSim, onDone }: { need: Need; sim: Sim; setSim: (s: Sim) => void; onDone: () => void }) {
+  const { a, b } = sim;
+  const setA = (v: boolean) => setSim({ ...sim, a: v });
+  const setB = (v: string) => setSim({ ...sim, b: v });
   const done = () => onDone();
   if (need === "time_away")
     return (

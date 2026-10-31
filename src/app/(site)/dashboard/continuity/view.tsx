@@ -6,6 +6,7 @@ import { ProfileTabs } from "../_components/profile-tabs";
 import { BackLink, BackField } from "../_components/back-link";
 import { ColleaguePicker } from "../_components/colleague-picker";
 import { saveContinuitySection, markContinuityReviewed } from "./actions";
+import { ContinuityDrafts } from "./drafts";
 
 type Named = { id: string; name: string; status: string } | null;
 
@@ -69,6 +70,7 @@ export function ContinuityView({
         error={sp.error}
         ok={sp.reviewed ? "Marked as reviewed today." : savedTitle ? `${savedTitle} saved.` : null}
       />
+      <ContinuityDrafts savedSection={sp.saved || null} />
 
       <div className="split continuity-layout">
         <div className="stack">
@@ -192,7 +194,7 @@ export function ContinuityView({
                   })}
                   <div className="continuity-save">
                     <button type="submit" className="btn">{i < CONTINUITY_SECTIONS.length - 1 ? "Save and continue" : "Save"}</button>
-                    <span className="micro-note">Saved as you go. Come back any time.</span>
+                    <span className="micro-note">This section is saved when you press Save. Until then, changes are kept on this device.</span>
                   </div>
                 </form>
               </details>

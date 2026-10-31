@@ -217,7 +217,7 @@ test("A1-10 Cover pop-up on a phone: the step bar does not wrap, the colleague c
   expect(await noSidewaysScroll(page)).toBe(true);
   await page.locator('input[data-match="cover"]').first().check();
   await page.getByRole("button", { name: "Review invitations" }).click();
-  await expect(page.locator(".outreach-summary")).toContainText("1 invitation goes out first, one per client.");
+  await expect(page.locator(".outreach-summary")).toContainText("1 invitation goes out first, one per client with a colleague selected.");
   const field = (await page.locator("#cover-deadline").boundingBox())!, modal = (await page.locator(".modal").boundingBox())!;
   expect(field.width).toBeGreaterThan(modal.width * 0.7); // full width, not half beside the note
   await context.close();

@@ -19,7 +19,8 @@ export default async function StartPage(props: { searchParams: Promise<{ route?:
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   const { data: mp } = user ? await supabase.from("member_participation").select("open_referrals, open_cover, open_consult, situations_updated_at").eq("profile_id", user.id).maybeSingle() : { data: null };
-  const decided = !!mp?.situations_updated_at;
+  // Any saved participation row means the account has its own choices (review F06): they win by default, whether or not the optional situations question was ever answered.
+  const decided = !!mp;
   const current: Record<string, boolean> = { referrals: mp?.open_referrals ?? true, cover: mp?.open_cover ?? true, consult: mp?.open_consult ?? true };
   return (
     <>
