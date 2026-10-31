@@ -29,7 +29,7 @@ body{background:var(--cream);color:var(--ink);-webkit-font-smoothing:antialiased
 .page-heading h1{font-size:30px;line-height:1.12;letter-spacing:-.028em}
 .page-heading p{color:var(--muted)}
 .eyebrow,.workspace .eyebrow,.nav-caption{color:var(--brass-ink);letter-spacing:.14em}
-.nav-caption{color:#7E7563}
+.nav-caption{color:#6A6252}
 
 /* Shell: warm paper sidebar and top bar, hairline rules. */
 body,.workspace,.workspace.feature-cover,.workspace.feature-referrals,.workspace.feature-consult,.workspace.feature-network,.workspace.feature-home,.workspace.feature-library,.workspace.feature-messages{background:var(--cream)}
@@ -124,3 +124,6 @@ body,.workspace,.workspace.feature-cover,.workspace.feature-referrals,.workspace
 @media (max-width:1380px){.topbar .top-date{display:none}.topbar .top-date + .top-divider{display:none}}
 .topbar .top-search kbd{white-space:nowrap;flex:none}
 .topbar .top-search svg{flex:none}
+.waiting-explore{margin:2px 0 0;font-size:13.5px;color:#5E4A1E}
+.waiting-explore a{font-weight:600;color:var(--forest)}
+.network-overview>div>p{color:#5A6159}

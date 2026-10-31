@@ -78,10 +78,12 @@ async function startReferral(page: Page) {
 }
 const ticked = (page: Page) => page.locator('input[data-match="referral"]:checked').evaluateAll((els) => els.map((e) => (e as HTMLInputElement).value));
 
-test("FOL-01 Hub (Release A): the greeting is in the top bar, three service cards lead, no discussion list and no year line", async ({ browser, baseURL }) => {
+test("FOL-01 Hub (1.0): a visible greeting, three service cards lead, no discussion list and no year line", async ({ browser, baseURL }) => {
   await seedQuestions();
   const { page, context } = await openAs(browser, "avery", baseURL!);
-  await expect(page.locator(".topbar .breadcrumbs strong")).toHaveText(/^Good (morning|afternoon|evening), Avery$/);
+  // 1.0: the greeting is a visible heading on the Hub; the top bar names the place.
+  await expect(page.locator(".hub-hello")).toHaveText(/^Good (morning|afternoon|evening), Avery$/);
+  await expect(page.locator(".topbar .breadcrumbs strong")).toHaveText("The Hub");
   await expect(page.locator(".hub-cards .hub-card")).toHaveCount(3);
   await expect(page.locator(".hub-cards .hub-card")).toContainText(["Referrals", "Cover", "Consult"]);
   // The old busy parts are gone: the year line and the "actions waiting" block.

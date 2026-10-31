@@ -2870,7 +2870,6 @@
 .pa .public-nav{background:rgba(251,249,244,.94); border-bottom:1px solid var(--line)}
 .pa .public-nav .text-link{color:#4A534D; font-weight:500}
 .pa .public-footer{background:#1E3A2F; color:#E9E3D6}
-.pa .card{background:var(--paper); border-color:var(--line)}
 .pa button:focus-visible,.pa a:focus-visible,.pa input:focus-visible,.pa select:focus-visible,.pa textarea:focus-visible{outline:3px solid #B78A53; outline-offset:3px}
 
 /* Homepage 1.0 */
@@ -2885,7 +2884,7 @@
 .pa.v1 .v1-proof li{display:flex; align-items:center; gap:8px}
 .pa.v1 .v1-proof svg{width:16px; height:16px; stroke:#1E6B47; fill:none; stroke-width:2}
 .pa.v1 .v1-panel{background:#F1ECE1; border:1px solid var(--line); border-radius:18px; padding:22px; display:flex; flex-direction:column; gap:12px; min-width:0}
-.pa.v1 .v1-panel-bar{display:flex; justify-content:space-between; gap:12px; font-size:12px; color:#6B6E67; font-weight:600; letter-spacing:.04em; text-transform:uppercase}
+.pa.v1 .v1-panel-bar{display:flex; justify-content:space-between; gap:12px; font-size:12px; color:#575B54; font-weight:600; letter-spacing:.04em; text-transform:uppercase}
 .pa.v1 .v1-plan{background:var(--paper); border:1px solid var(--line); border-radius:12px; padding:18px 20px}
 .pa.v1 .v1-plan h3{font-size:20px; margin:6px 0 0}
 .pa.v1 .v1-prog{display:flex; gap:6px; margin-top:14px}
