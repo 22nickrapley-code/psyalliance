@@ -165,18 +165,21 @@ test("A1-07 Cover lists line up: same header height, same row look whatever the 
   await context.close();
 });
 
-test("A1-08 Network groups are stacked, cards sit inside their panel, avatars carry the relationship colour", async ({ browser, baseURL }) => {
+test("A1-08 Network groups sit in three columns on a computer (1.0, Nick 31 Oct), rows inside their panel, avatars carry the relationship colour", async ({ browser, baseURL }) => {
   const { page, context } = await openAs(browser, "avery", baseURL!, "/dashboard/network");
   const groups = page.locator(".relationship-groups > .relationship-group");
   await expect(groups).toHaveCount(3);
-  const ys = [];
-  for (let i = 0; i < 3; i++) ys.push(Math.round((await groups.nth(i).boundingBox())!.y));
-  expect(ys[0] < ys[1] && ys[1] < ys[2]).toBe(true);
+  const boxes = [];
+  for (let i = 0; i < 3; i++) boxes.push((await groups.nth(i).boundingBox())!);
+  expect(Math.abs(boxes[0].y - boxes[1].y)).toBeLessThan(2);
+  expect(Math.abs(boxes[1].y - boxes[2].y)).toBeLessThan(2);
+  expect(boxes[0].x < boxes[1].x && boxes[1].x < boxes[2].x).toBe(true);
   const group = page.locator("#net-worked");
   const card = group.locator(".net-list .net-row").first();
   await expect(card).toBeVisible();
   const g = (await group.boundingBox())!, c = (await card.boundingBox())!;
-  expect(c.x - g.x).toBeGreaterThanOrEqual(12);
+  expect(c.x - g.x).toBeGreaterThanOrEqual(0);
+  expect(c.x + c.width).toBeLessThanOrEqual(g.x + g.width + 1);
   await expect(card.locator(".avatar")).toHaveClass(/relation-worked/);
   const bg = await card.locator(".avatar").evaluate((e) => getComputedStyle(e).backgroundColor);
   expect(bg).not.toBe("rgba(0, 0, 0, 0)");

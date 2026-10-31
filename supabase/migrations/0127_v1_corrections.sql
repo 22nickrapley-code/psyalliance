@@ -321,3 +321,87 @@ end;
 $function$;
 revoke all on function public.workspace_boot() from public, anon;
 grant execute on function public.workspace_boot() to authenticated;
+
+-- 6. @mentions (1.0) -------------------------------------------------------------------------------------
+-- In Messages (one-to-one and group conversations), Consult replies and group discussions. The author picks people
+-- from those who can already see the thread; this checks it again, then sends each one a notification ("mentioned
+-- you", in the app and the bell; no email) that opens the exact message or discussion. Nobody is added to a thread by being mentioned.
+do $$
+declare def text;
+begin
+  select pg_get_constraintdef(oid) into def from pg_constraint
+   where conname = 'notification_events_event_type_check' and conrelid = 'public.notification_events'::regclass;
+  if def is not null and position('''mention''' in def) = 0 then
+    execute 'alter table public.notification_events drop constraint notification_events_event_type_check';
+    execute 'alter table public.notification_events add constraint notification_events_event_type_check ' || regexp_replace(def, 'ARRAY\[', 'ARRAY[''mention''::text, ');
+  end if;
+end $$;
+
+create or replace function public.mention_notify(p_kind text, p_ref bigint, p_ids uuid[])
+returns integer
+language plpgsql
+security definer
+set search_path to 'public'
+as $function$
+declare
+  me uuid := auth.uid();
+  v_conv bigint;
+  v_key text;
+  v_consult bigint;
+  v_id uuid;
+  n integer := 0;
+begin
+  if me is null or p_ids is null or cardinality(p_ids) = 0 then
+    return 0;
+  end if;
+  if cardinality(p_ids) > 10 then
+    raise exception 'Mention up to 10 people in one message.' using errcode = 'P0001';
+  end if;
+  if p_kind = 'message' then
+    select m.conversation_id into v_conv from conversation_messages m where m.id = p_ref and m.author_id = me;
+    if v_conv is null then return 0; end if;
+    select coalesce(c.context_key, 'c-' || c.id) into v_key from conversations c where c.id = v_conv;
+    foreach v_id in array p_ids loop
+      if v_id <> me and exists (select 1 from conversation_participants cp where cp.conversation_id = v_conv and cp.profile_id = v_id) then
+        perform private.notify_member('mention', v_id, me, 'mentioned you in a message', '/dashboard/messages?thread=' || v_key || '&message=' || p_ref,
+                                      'mention:message:' || p_ref || ':' || v_id, jsonb_build_object('conversationId', v_conv, 'messageId', p_ref), false);
+        n := n + 1;
+      end if;
+    end loop;
+  elsif p_kind = 'consult' then
+    select r.consultation_id into v_consult from consultation_responses r where r.id = p_ref and r.responder_profile_id = me;
+    if v_consult is null then return 0; end if;
+    foreach v_id in array p_ids loop
+      if v_id <> me and private.consult_can_see(v_consult, v_id) and not public.is_blocked_between(me, v_id) then
+        perform private.notify_member('mention', v_id, me, 'mentioned you in a discussion', '/dashboard/consult?discussion=' || v_consult || '&reply=r' || p_ref,
+                                      'mention:consult:' || p_ref || ':' || v_id, jsonb_build_object('consultationId', v_consult, 'responseId', p_ref), false);
+        n := n + 1;
+      end if;
+    end loop;
+  end if;
+  return n;
+end;
+$function$;
+revoke all on function public.mention_notify(text, bigint, uuid[]) from public, anon;
+grant execute on function public.mention_notify(text, bigint, uuid[]) to authenticated;
+
+-- Who can be mentioned in a discussion: members who can see it (the asker, repliers, followers, and for a group
+-- discussion its members). Never anyone else, so a mention cannot widen who sees a question.
+create or replace function public.consult_mentionable(p_consultation bigint)
+returns table (id uuid)
+language sql
+stable
+security definer
+set search_path to 'public'
+as $function$
+  select distinct x.pid from (
+    select c.author_profile_id pid from consultations c where c.id = p_consultation
+    union select r.responder_profile_id from consultation_responses r where r.consultation_id = p_consultation
+    union select f.profile_id from consultation_follows f where f.consultation_id = p_consultation
+    union select m.profile_id from consultations c join consultation_group_members m on m.group_id = c.group_id and m.status = 'joined' where c.id = p_consultation
+  ) x
+  where auth.uid() is not null and private.consult_can_see(p_consultation, auth.uid())
+    and x.pid <> auth.uid() and private.consult_can_see(p_consultation, x.pid);
+$function$;
+revoke all on function public.consult_mentionable(bigint) from public, anon;
+grant execute on function public.consult_mentionable(bigint) to authenticated;

@@ -30,6 +30,7 @@ export type NotificationEventType =
   | "credential_reminder"
   | "availability_reminder"
   | "message_received"
+  | "mention"
   | "system_notice"
   | "weekly_digest";
 

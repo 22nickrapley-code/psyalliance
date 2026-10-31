@@ -27,6 +27,7 @@ const LABELS: Record<NotificationEventType, string> = {
   credential_reminder: "Credentials",
   availability_reminder: "Availability",
   message_received: "Messages",
+  mention: "Mentions",
   system_notice: "PsyAlliance",
   weekly_digest: "Digest",
 };

@@ -37,6 +37,8 @@ async function threadPatch(ctx: Ctx, data: any) {
 const text = (v: unknown, max: number) => String(v ?? "").trim().slice(0, max);
 const idList = (v: unknown) => (Array.isArray(v) ? v.map((x) => String(x)).filter((x) => /^[0-9a-f-]{36}$/i.test(x)) : []);
 const num = (v: unknown) => Number(v);
+// Mentioned member ids from the browser: uuids only, at most 10. The database decides who may be notified.
+const mentionIds = (v: unknown) => Array.from(new Set(idList(v))).slice(0, 10);
 const bad = (error: string): Result => ({ ok: false, error });
 const fail = (error: any, fallback?: string): Result => ({ ok: false, error: friendly(error, fallback) });
 
@@ -257,6 +259,9 @@ export const handlers: Record<string, Handler> = {
         : null,
     });
     if (error) return fail(error, "That message didn't send. You can try again.");
+    // @mentions: the database checks each person is in the conversation before notifying them.
+    const ids = mentionIds(a.mentions);
+    if (ids.length && data && !(data as any).duplicate) await ctx.supabase.rpc("mention_notify", { p_kind: "message", p_ref: Number((data as any).dbId), p_ids: ids });
     return { ok: true, data };
   },
 
@@ -365,11 +370,23 @@ export const handlers: Record<string, Handler> = {
     if (!Number.isInteger(id) || !/^[0-9a-f-]{36}$/i.test(String(a.clientId || ""))) return bad("That reply can't be posted.");
     const { data, error } = await ctx.supabase.rpc("consult_reply", { p_consultation: id, p_body: body, p_client_id: String(a.clientId), p_kind: a.kind === "clarifying" ? "clarifying_question" : "reply" });
     if (error) return fail(error, "That reply didn't post. You can try again.");
+    const ids = mentionIds(a.mentions);
+    const rid = Number(String((data as any)?.id || "").replace(/^r/, ""));
+    if (ids.length && rid && !(data as any)?.existing) await ctx.supabase.rpc("mention_notify", { p_kind: "consult", p_ref: rid, p_ids: ids });
     const [{ data: discussion }, { data: following }] = await Promise.all([
       ctx.supabase.rpc("workspace_discussion", { p_id: id }),
       ctx.supabase.rpc("my_consult_follows"),
     ]);
     return { ok: true, data, patch: { discussion: discussion || null, following: following || [] } };
+  },
+
+  // Who can be mentioned in a discussion: only people who can already see it.
+  "consult.mentionable": async (ctx, a) => {
+    const id = Number(a.id);
+    if (!Number.isInteger(id)) return bad("That discussion is not available.");
+    const { data, error } = await ctx.supabase.rpc("consult_mentionable", { p_consultation: id });
+    if (error) return fail(error, "That discussion is not available.");
+    return { ok: true, data: ((data as any[]) || []).map((r) => r.id) };
   },
 
   // One discussion in full, when it is opened.

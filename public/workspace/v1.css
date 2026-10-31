@@ -87,3 +87,35 @@ body,.workspace,.workspace.feature-cover,.workspace.feature-referrals,.workspace
 .waiting-steps a{color:var(--forest);font-weight:600}
 @media (max-width:1100px){.topbar .top-search{min-width:0;flex:1 1 auto}}
 @media (max-width:760px){.topbar .top-search .top-search-text,.topbar .top-search kbd{display:none}.topbar .top-search{min-width:0;flex:0 0 auto;width:40px;padding:0;justify-content:center}.hub-page .hub-hello{font-size:25px}}
+
+/* Network (1.0, Nick 31 Oct): Trusted, Worked with before and Suggested side by side in three columns, compact rows. */
+@media (min-width:1100px){
+  .relationship-groups{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;align-items:start}
+  .relationship-group .net-list{padding:0}
+  .relationship-group .net-list .net-row{border:0;border-bottom:1px solid var(--line);border-radius:0;padding:14px 18px;gap:12px}
+  .relationship-group .net-list .net-row:last-child{border-bottom:0}
+  .relationship-group .net-row .avatar{width:36px;height:36px;font-size:12px}
+  .relationship-group .net-row strong button{font-size:14.5px}
+  .relationship-group .net-row small{font-size:13px}
+  .relationship-group .net-row .net-why{font-size:12.5px;margin-top:4px}
+  .relationship-group .net-actions{margin-top:9px;gap:6px}
+  .relationship-group .net-actions .button{min-height:34px;padding:0 10px;font-size:12.5px}
+  .relationship-group>header{padding:16px 18px 12px}
+  .relationship-group>header h2{font-size:15.5px}
+  .relationship-group .net-head p{font-size:13px}
+}
+.relationship-group{background:var(--paper);box-shadow:var(--shadow)}
+.relationship-group>header{background:var(--paper)}
+
+/* @mentions (1.0) */
+.mention{color:var(--forest);background:#E3EBE2;border-radius:5px;padding:0 3px;font-weight:600}
+.outgoing .bubble .mention{background:rgba(255,255,255,.18);color:inherit}
+.mention-pop{position:absolute;left:0;bottom:calc(100% + 6px);z-index:60;width:min(340px,100%);max-height:320px;overflow:auto;background:var(--paper);border:1px solid #D9D1C0;border-radius:12px;box-shadow:0 18px 40px rgba(24,35,30,.14);padding:6px}
+.mention-head{font-size:11.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#6B6E67;padding:8px 10px}
+.mention-opt{display:flex;align-items:center;gap:10px;width:100%;min-height:44px;padding:6px 10px;border:0;border-radius:8px;background:none;text-align:left;cursor:pointer;color:var(--ink);font:inherit}
+.mention-opt.on,.mention-opt:hover{background:var(--sage)}
+.mention-opt b{display:block;font-size:14px}
+.mention-opt small{display:block;font-size:12px;color:#6B6E67}
+.mention-opt .avatar{width:30px;height:30px;font-size:11px;flex:none}
+.mention-foot,.mention-empty{font-size:12px;color:#6B6E67;padding:8px 10px;border-top:1px solid var(--line);margin-top:4px}
+.mention-empty{border-top:0;margin:0}
