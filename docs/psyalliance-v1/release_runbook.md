@@ -15,7 +15,7 @@ git fetch C:\Users\Nick\Downloads\psyalliance-v1.bundle v1:v1
 git log --oneline master..v1
 ```
 
-`git status` lists your Cloudflare flag files (`package.json`, `package-lock.json`, `scripts/deploy-demo.mjs`). That is expected. The last command lists what is new. If Release C is already merged, you will see only lines starting "1.0" (twelve of them). If Release C is not merged, you will see the "Release C" lines (and earlier ones) before them. If you see anything else, stop and tell me.
+`git status` lists your Cloudflare flag files (`package.json`, `package-lock.json`, `scripts/deploy-demo.mjs`). That is expected. The last command lists what is new. If Release C is already merged, you will see only lines starting "1.0" (sixteen of them). If Release C is not merged, you will see the "Release C" lines (and earlier ones) before them. If you see anything else, stop and tell me.
 
 ## Step 2: merge, keeping your flag files
 

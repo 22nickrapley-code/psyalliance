@@ -42,6 +42,13 @@ Build: branch `v1` on top of Release C, local staging copy (fictional members, l
 | Network in three columns | **Done** | A1-08 |
 | @mentions in Messages, Consult replies and group discussions | **Done** (in-app notification) | V1-06, V1-07, V1-08 |
 
+## Test runs (local copy, build of commit `31e0571`, then the affected suites again on the final build)
+
+- Full desktop suite: 876 passed, 26 skipped (need outside services or fixtures), 7 failed. Six of those are the known `/sandbox/request` route checks, which need outside access and fail the same way on Release C. The seventh, NB-03, depended on timing: the availability window closed after "Confirm unchanged" and only reopened through a later sync. The window now stays open and shows the new date. NB-03 then passes, and the affected suites were rerun on the final build.
+- Phone suite: 2 of 2 passed. Public suites (desktop and phone): 14 of 14 passed.
+- Automated accessibility (axe, WCAG 2.1 A and AA, colour contrast included) passes on every public and member page in the suite, at desktop and phone widths.
+- Screenshots were checked at 1440, 390 and 320 wide for the homepage, the trial, a demo, the Library, verification, sign-in, sign-up, the Hub, Cover, Consult, Network, Messages and edit profile.
+
 ## Tests changed by decisions (not regressions)
 
 A1-05 (search now in the top bar only), A1-08 (Network in columns), V15-08 (visible greeting), AV-09 and ACC-07 (waiting members get the Hub), C-01 (new stages heading), B-03, B-03b and the A.1 Cover test (exact first-wave wording), C-08 (valid push keys; endpoint list), C-01 (US spelling "license").

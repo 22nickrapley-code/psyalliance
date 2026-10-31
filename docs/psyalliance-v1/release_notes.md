@@ -48,6 +48,7 @@ A's precision with B's warmth: a warm paper background, deep green, brass detail
   - Spelling is US (license, organizer).
   - Group message authors' names open their profiles.
   - The "Closing or reducing practice" Cover reason no longer implies a permanent placement.
+  - "Confirm unchanged" keeps the Availability window open and shows the new date.
 
 ## Behind the scenes
 
