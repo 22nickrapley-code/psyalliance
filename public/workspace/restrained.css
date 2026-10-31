@@ -1106,3 +1106,7 @@ body,.workspace,.workspace.feature-cover,.workspace.feature-referrals,.workspace
 .sidebar .sidebar-bottom>.button.text,.sidebar .sidebar-bottom .sign-out{width:100%;justify-content:flex-start;gap:8px;min-height:34px;padding:6px 8px 6px 5px;font-size:13px;font-weight:600;color:inherit;border-radius:8px}
 .sidebar .sidebar-bottom>.button.text:hover,.sidebar .sidebar-bottom .sign-out:hover{background:rgba(31,61,48,.06)}
 }
+
+/* A group message author's name opens their profile, like every other name (review F17). */
+.bubble-author .person-link{background:none;border:0;padding:0;font:inherit;font-weight:600;color:inherit;cursor:pointer;text-decoration:underline;text-decoration-color:transparent;text-underline-offset:2px}
+.bubble-author .person-link:hover,.bubble-author .person-link:focus-visible{text-decoration-color:currentColor}

@@ -152,7 +152,7 @@ export function Guide() {
           <dl>
             <div><dt>You have chosen</dt><dd>{e.choice}{ctx ? ` (${CONTEXT_LABEL[ctx]})` : ""}{need === "offer_support" && helps.length ? `: ${helps.map((h) => HELP_LABEL[h]).join(", ")}` : ""}</dd></div>
             <div><dt>You will need</dt><dd>{e.needs}</dd></div>
-            <div><dt>Still to be confirmed</dt><dd>Membership is for doctoral-level psychologists and psychiatrists with an active US licence. A person checks each licence before you are listed, and until then what you can do may be limited. Nothing is sent without your review.</dd></div>
+            <div><dt>Still to be confirmed</dt><dd>Membership is for doctoral-level psychologists and psychiatrists with an active US license. A person checks each license before you are listed, and until then what you can do may be limited. Nothing is sent without your review.</dd></div>
           </dl>
           <p className="guide-note">Why we built it: <a href="/#why">read the founder&rsquo;s story</a>. <a href="/verification">How verification works</a>. <a href="/privacy">Privacy</a>.</p>
           <div className="guide-actions">

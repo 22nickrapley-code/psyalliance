@@ -41,7 +41,7 @@ export default async function StartPage(props: { searchParams: Promise<{ route?:
               ) : null}
             </ul>
             <p className="small">{e.summary}</p>
-            <p className="small">Your licence is still checked by a person. Until it is, some actions may be limited, and you will be told which.</p>
+            <p className="small">Your license is still checked by a person. Until it is, some actions may be limited, and you will be told which.</p>
           </>
         ) : null}
 

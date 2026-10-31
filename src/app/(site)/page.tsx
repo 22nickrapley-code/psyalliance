@@ -202,7 +202,7 @@ export default async function HomePage() {
               <a className="text-arrow" href="/tour">See how PsyAlliance works &rarr;</a>
               <a className="text-arrow" href="/start">Show me how PsyAlliance could help &rarr;</a>
             </p>
-            <p className="micro-note">Membership is for doctoral-level psychologists and psychiatrists with an active US licence, which a person checks before you are listed.</p>
+            <p className="micro-note">Membership is for doctoral-level psychologists and psychiatrists with an active US license, which a person checks before you are listed.</p>
           </div>
         </section>
 

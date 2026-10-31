@@ -31,7 +31,7 @@ export const ABSENCE: Record<string, { label: string; blurb: string }> = {
   short_planned: { label: "Short planned absence", blurb: "A holiday or conference. One backup colleague is often enough." },
   extended_leave: { label: "Extended leave", blurb: "Maternity, illness or sabbatical. A staged handoff per client." },
   unexpected: { label: "Unexpected absence", blurb: "Illness or emergency. Trusted colleagues are asked first." },
-  closing_practice: { label: "Closing or reducing practice", blurb: "Retirement or relocation. Each client is placed with a colleague permanently." },
+  closing_practice: { label: "Closing or reducing practice", blurb: "Temporary cover while you close or reduce your practice. A permanent move for a client is a referral." },
   reciprocal: { label: "Reciprocal arrangement", blurb: "A standing cover agreement with a colleague." },
 };
 

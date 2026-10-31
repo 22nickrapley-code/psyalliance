@@ -66,7 +66,7 @@ export const GUIDE: Record<Need, Entry> = {
     headline: "Cover, Referrals and Consult in one place",
     benefit: "A short tour of the three services. Move through it at your own pace.",
     demo: "/tour",
-    summary: "You can look around first. When you are ready, creating an account takes a few minutes and a person then checks your licence.",
+    summary: "You can look around first. When you are ready, creating an account takes a few minutes and a person then checks your license.",
     needs: "Nothing yet.",
     cta: "Create your account",
     target: "/dashboard",

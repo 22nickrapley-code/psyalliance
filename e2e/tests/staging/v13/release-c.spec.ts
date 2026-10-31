@@ -66,7 +66,7 @@ test("C-01 L01 homepage lifecycle band: placement, copy, routes, phone widths, n
     expect(order).toEqual([...order].sort((a, b) => a - b));
     await expect(band.getByRole("link", { name: /See how PsyAlliance works/ })).toHaveAttribute("href", "/tour");
     await expect(band.getByRole("link", { name: /Show me how PsyAlliance could help/ })).toHaveAttribute("href", "/start");
-    await expect(band).toContainText("doctoral-level psychologists and psychiatrists with an active US licence");
+    await expect(band).toContainText("doctoral-level psychologists and psychiatrists with an active US license");
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     const text = (await band.innerText()).toLowerCase();
     for (const bad of ["retire", "trainee", "guarantee", "student", "graduate"]) expect(text).not.toContain(bad);
@@ -412,7 +412,7 @@ test("C-15 Q02 groups: charter is versioned with history; only organisers edit; 
   await edit(avery, "Version two: confidentiality, de-identification and consultation, not supervision, no recording.");
   expect((await one(`select charter_version v from consultation_groups where id = $1`, [g.id])).v).toBe(2);
   expect((await q(`select version from consultation_group_charters where group_id = $1 order by version`, [g.id])).map((r) => r.version)).toEqual([1, 2]);
-  await expect(edit(bram, "Version three from an ordinary member, which must not be allowed.")).rejects.toThrow(/Only the group's organisers/);
+  await expect(edit(bram, "Version three from an ordinary member, which must not be allowed.")).rejects.toThrow(/Only the group's organizers/);
   await expect(asMember(bram, `select public.group_set_role($1, $2, 'coordinator')`, [g.id, cass])).rejects.toThrow(/Only the person who started the group/);
   await asMember(avery, `select public.group_set_role($1, $2, 'coordinator')`, [g.id, bram]);
   await edit(bram, "Version three by an appointed organiser: confidentiality and de-identification first.");

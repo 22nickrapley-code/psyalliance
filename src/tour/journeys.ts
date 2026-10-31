@@ -345,7 +345,7 @@ const CONSULT: Journey = {
 const CIRCLE: Journey = {
   key: "circle",
   title: "Your day and your circle",
-  blurb: "The Hub, the colleagues around you, and one conversation per context: how a busy week stays organised.",
+  blurb: "The Hub, the colleagues around you, and one conversation per context: how a busy week stays organized.",
   minutes: "2½ minutes",
   outcome: "What needs you, who is around you, and every conversation in its own place.",
   learned: [

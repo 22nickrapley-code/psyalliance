@@ -233,3 +233,41 @@ revoke all on function public.my_device_alerts(text) from public, anon;
 grant execute on function public.my_device_alerts(text) to authenticated;
 -- The old "latest alert" lookup could open the wrong context; it is retired.
 drop function if exists public.my_latest_alert();
+
+
+-- 4. US spelling in the group messages members see (review F17). Bodies otherwise unchanged from 0125.
+create or replace function public.group_edit_charter(p_group bigint, p_body text)
+returns integer language plpgsql security definer set search_path to 'public' as $$
+declare v integer;
+begin
+  if not private.group_is_organiser(p_group, auth.uid()) then raise exception 'Only the group''s organizers can change its charter.' using errcode = '42501'; end if;
+  if char_length(trim(coalesce(p_body, ''))) < 20 then raise exception 'Write a charter of at least a couple of sentences.' using errcode = 'P0001'; end if;
+  update consultation_groups set charter_body = p_body where id = p_group returning charter_version into v;
+  return v;
+end;
+$$;
+
+create or replace function public.group_set_role(p_group bigint, p_member uuid, p_role text)
+returns void language plpgsql security definer set search_path to 'public' as $$
+begin
+  if not exists (select 1 from consultation_groups g where g.id = p_group and g.created_by = auth.uid()) then
+    raise exception 'Only the person who started the group can appoint organizers.' using errcode = '42501';
+  end if;
+  if p_role not in ('coordinator', 'member') then raise exception 'Unknown role.' using errcode = 'P0001'; end if;
+  perform set_config('pa.group_organiser_action', '1', true);
+  update consultation_group_members set role = p_role where group_id = p_group and profile_id = p_member and status = 'joined' and role <> 'creator';
+  if not found then raise exception 'That person is not a joined member.' using errcode = 'P0001'; end if;
+end;
+$$;
+
+create or replace function public.group_remove_member(p_group bigint, p_member uuid)
+returns void language plpgsql security definer set search_path to 'public' as $$
+begin
+  if not private.group_is_organiser(p_group, auth.uid()) then raise exception 'Only the group''s organizers can remove a member.' using errcode = '42501'; end if;
+  if exists (select 1 from consultation_groups g where g.id = p_group and g.created_by = p_member) then
+    raise exception 'The person who started the group cannot be removed.' using errcode = 'P0001';
+  end if;
+  perform set_config('pa.group_organiser_action', '1', true);
+  update consultation_group_members set status = 'removed', responded_at = now() where group_id = p_group and profile_id = p_member and status in ('joined', 'invited');
+end;
+$$;
