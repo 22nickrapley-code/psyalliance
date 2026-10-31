@@ -122,3 +122,5 @@ body,.workspace,.workspace.feature-cover,.workspace.feature-referrals,.workspace
 .topbar .top-date{white-space:nowrap}
 .topbar .top-search{max-width:420px}
 @media (max-width:1380px){.topbar .top-date{display:none}.topbar .top-date + .top-divider{display:none}}
+.topbar .top-search kbd{white-space:nowrap;flex:none}
+.topbar .top-search svg{flex:none}
