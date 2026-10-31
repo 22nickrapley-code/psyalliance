@@ -224,10 +224,10 @@ export default function BioImportBox({ prominent = true, demo }: { prominent?: b
       <div className="quick-start-head">
         <div>
           <div className="eyebrow">Quick start</div>
-          <h3>Import your profile from elsewhere</h3>
+          <h3>Start from a profile you already have</h3>
           <p className="small" style={{ margin: 0 }}>
-            Copy your Psychology Today profile (or your practice website, LinkedIn or CV) and paste or drop it here. We fill in the form, your photo and your top
-            specialties; nothing is saved until you press Save.
+            Paste a link to your Psychology Today profile, or the text of your profile, practice website or CV. We fill in the fields, your photo and your top
+            specialties for you to check. Nothing is saved until you press Save.
           </p>
         </div>
         {!open && (
@@ -242,8 +242,8 @@ export default function BioImportBox({ prominent = true, demo }: { prominent?: b
             onChange={(e) => setBioText(e.target.value)}
             onPaste={onPaste}
             onDrop={onDrop}
-            rows={6}
-            placeholder="Paste or drop your existing profile here"
+            rows={4}
+            placeholder="https://www.psychologytoday.com/us/therapists/… or paste your profile text"
             aria-label="Your existing profile"
           />
           {photo && (
@@ -255,7 +255,7 @@ export default function BioImportBox({ prominent = true, demo }: { prominent?: b
           )}
           <div className="row wrap" style={{ marginTop: 10, gap: 12 }}>
             <button type="button" className="btn" onClick={handleParse} disabled={isPending || !bioText.trim()}>
-              {isPending ? "Reading..." : "Fill in from this text"}
+              {isPending ? "Reading..." : /^https?:\/\/\S+$/i.test(bioText.trim()) ? "Fill in from this link" : "Fill in from this text"}
             </button>
             {message && (
               <span className="small" role="status" style={{ color: isError ? "#9b2c22" : undefined }}>

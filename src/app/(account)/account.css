@@ -96,3 +96,49 @@ body.account-body{margin:0;background:var(--cream);color:var(--ink);font-family:
   /* On a phone the four profile parts are small pills; the status dot sits after the name instead of on top of it. */
   .account-page .profile-tabs .hub-dot{position:static;flex:0 0 auto;margin-left:2px;box-shadow:none}
 }
+
+/* 4. PsyAlliance 1.0 -------------------------------------------------------------------------------------------------
+   Same tokens as the workspace (v1.css): warm paper, deep green, brass; Inter for text, Inter Tight for headings. */
+.account-page{
+  --paper:#FFFEFB;--forest:#1F4A3A;--ink:#18231E;--muted:#5A6159;--line:#E7E1D4;--sage:#E9EEE6;--soft:#F2EEE5;
+  --brass:#7A5C25;--brass-soft:#F4EAD6;--shadow:0 1px 2px rgba(24,35,30,.04),0 8px 22px rgba(24,35,30,.045);
+  --display:"Inter Tight",Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  font-size:14px;
+}
+.account-page h1{font-size:30px;line-height:1.12;letter-spacing:-.028em}
+.account-page h1 em,.account-page h2 em{font-style:normal;color:inherit}
+.account-page .card{border-radius:14px;box-shadow:var(--shadow)}
+.account-page .btn{border-radius:10px}
+
+/* Edit profile: section menu | one section | live preview. */
+.account-page .profile-edit{display:grid;grid-template-columns:minmax(0,220px) minmax(0,1fr) minmax(0,300px);gap:24px;align-items:start;margin-top:18px}
+.account-page .profile-secnav{position:sticky;top:16px;display:flex;flex-direction:column;gap:12px}
+.account-page .profile-secnav ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
+.account-page .profile-secnav a{display:flex;align-items:center;gap:10px;min-height:42px;padding:0 12px;border-radius:9px;text-decoration:none;color:#454C46;font-size:14px;font-weight:500;border:1px solid transparent}
+.account-page .profile-secnav a:hover{background:#F2EEE5}
+.account-page .profile-secnav a.on{background:var(--paper);color:var(--ink);font-weight:600;border-color:var(--line);box-shadow:var(--shadow)}
+.account-page .profile-secnav .st{margin-left:auto;font-size:12px;color:#6B6E67;font-weight:500}
+.account-page .profile-secnav .st-done{color:#1E6B47}
+.account-page .profile-secnav .st-todo{color:#835614}
+.account-page .profile-secnav .profile-next{align-self:flex-start}
+.account-page .profile-edit.js .profile-section:not(.is-on){display:none}
+.account-page .profile-edit:not(.js) .profile-next{display:none}
+.account-page .profile-section{padding:26px 28px}
+.account-page .profile-section-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.account-page .profile-section-title{font:600 21px/1.2 var(--display);letter-spacing:-.02em;margin:0;color:var(--ink)}
+.account-page .profile-section-title:focus{outline:none}
+.account-page .profile-section-help{margin:6px 0 16px;color:var(--muted)}
+.account-page .profile-main{min-width:0}
+.account-page .profile-aside{position:sticky;top:16px}
+.account-page .quick-start{border:1px solid var(--line);background:var(--paper);box-shadow:var(--shadow);margin-top:18px}
+.account-page .quick-start-head h3{font:600 18px/1.25 var(--display);letter-spacing:-.02em}
+.account-page .quick-start-drop{border:1px solid #D9D1C0;border-radius:10px;min-height:96px;font-size:15px}
+@media(max-width:1100px){.account-page .profile-edit{grid-template-columns:minmax(0,200px) minmax(0,1fr)}.account-page .profile-aside{grid-column:1 / -1;position:static}}
+@media(max-width:760px){
+  .account-page .profile-edit{grid-template-columns:minmax(0,1fr);gap:14px}
+  .account-page .profile-secnav{position:static}
+  .account-page .profile-secnav ul{flex-direction:row;overflow-x:auto;gap:6px;padding-bottom:4px;scrollbar-width:none}
+  .account-page .profile-secnav a{white-space:nowrap;min-height:40px;border-color:var(--line);background:var(--paper)}
+  .account-page .profile-secnav .st{display:none}
+  .account-page .profile-section{padding:20px 18px}
+}

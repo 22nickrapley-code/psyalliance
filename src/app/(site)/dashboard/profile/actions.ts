@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { safeBack, backWith } from "@/lib/back";
 import { IS_DEMO_SITE } from "@/lib/env";
-import { extractStructuredData, AiNotConfiguredError } from "@/lib/ai/anthropic";
+import { extractStructuredData, AiNotConfiguredError, AiCallError } from "@/lib/ai/anthropic";
 import { friendly } from "@/lib/friendly-error";
 
 // A plain `throw` inside a server action wired to a bare <form action={fn}>
@@ -337,6 +337,36 @@ export async function saveAvailability(formData: FormData) {
 // for the client component to apply to the DOM itself - this never writes
 // to the database; the user still reviews everything and clicks "Save
 // profile" themselves.
+// Lines that are site navigation, not the clinician's profile (Psychology Today and similar sites).
+const BOILERPLATE = /^(therapists?|psychiatrists?|treatment centers?|support groups?|therapy guide|get help|find a therapist|magazine|today|sign in|log in|join|for professionals|united states|©.*|cookie.*|privacy.*|terms.*|share|email|call|website|view|see all|show more|show less|back|next|menu|search|home)$/i;
+
+function cleanPastedProfile(text: string): string {
+  const seen = new Set<string>();
+  const lines = text.replace(/\r/g, "").split("\n").map((l) => l.replace(/\s+/g, " ").trim())
+    .filter((l) => l.length > 1 && !BOILERPLATE.test(l))
+    .filter((l) => { const k = l.toLowerCase(); if (seen.has(k)) return false; seen.add(k); return true; });
+  return lines.join("\n").slice(0, 15000);
+}
+
+async function fetchProfilePage(url: string): Promise<string | null> {
+  let u: URL;
+  try { u = new URL(url); } catch { return null; }
+  if (u.protocol !== "https:" || !/^(www\.)?psychologytoday\.com$/i.test(u.hostname) || u.username || u.password) return null;
+  try {
+    const res = await fetch(u.toString(), { redirect: "manual", headers: { accept: "text/html", "user-agent": "PsyAlliance profile import (member request)" } });
+    if (!res.ok) return null;
+    const html = (await res.text()).slice(0, 2_000_000);
+    const text = html
+      .replace(/<(script|style|noscript|svg)[\s\S]*?<\/\1>/gi, " ")
+      .replace(/<(br|\/p|\/div|\/li|\/h[1-6])[^>]*>/gi, "\n")
+      .replace(/<[^>]+>/g, " ")
+      .replace(/&nbsp;/g, " ").replace(/&amp;/g, "&").replace(/&#39;|&rsquo;/g, "'").replace(/&quot;/g, '"');
+    return text.trim().length > 200 ? text : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function parseProfileBio(bioText: string): Promise<{
   fields?: {
     full_name: string | null;
@@ -355,9 +385,17 @@ export async function parseProfileBio(bioText: string): Promise<{
   rankedSpecialtyIds?: number[];
   error?: string;
 }> {
-  const trimmed = bioText.trim();
-  if (!trimmed) return { error: "Paste some bio text first." };
-  if (trimmed.length > 20000) return { error: "That's a lot of text - trim it to the essentials (under ~20,000 characters) and try again." };
+  let raw = bioText.trim();
+  if (!raw) return { error: "Paste a link to your profile, or its text, first." };
+  // A link: only a Psychology Today profile page is opened by us (a known host, no redirects, a size cap).
+  if (/^https?:\/\/\S+$/i.test(raw)) {
+    const page = await fetchProfilePage(raw);
+    if (!page) return { error: "We couldn't open that page. Open your profile, select all its text, copy it and paste it here instead." };
+    raw = page;
+  }
+  // A pasted web page carries menus and footers; keep the profile itself and stay within a sensible size.
+  const trimmed = cleanPastedProfile(raw);
+  if (trimmed.length < 40) return { error: "There isn't enough here to go on. Paste the full text of your profile." };
 
   const supabase = await createClient();
   const { data: lookups } = await supabase
@@ -481,6 +519,9 @@ export async function parseProfileBio(bioText: string): Promise<{
       };
     }
     console.error("profile import", err);
+    const status = err instanceof AiCallError ? err.status : 0;
+    if (status === 429 || status === 529 || status === 503) return { error: "The import is busy just now. Please try again in a minute, or fill in the form below." };
+    if (status === 400) return { error: "We couldn't read that text. Try pasting only your profile (name, specialties, approach), or fill in the form below." };
     return { error: "We couldn't read that just now. Please try again, or fill in the form below." };
   }
 }

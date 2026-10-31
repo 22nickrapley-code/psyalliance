@@ -4,6 +4,7 @@ import { effectiveReferral } from "@/lib/availability";
 import { saveProfile, uploadAvatar } from "./actions";
 import { professionFor, professionLabel, clinicianName, roleLabel } from "@/lib/profession";
 import { US_STATES } from "@/lib/us-states";
+import { ProfileSectionNav, type NavSection } from "./sections";
 import BioImportBox, { AutofillMarks, type ImportDemo } from "./bio-import";
 import { FirstVisit } from "../_components/first-visit";
 import { TOUR_URL } from "@/lib/env";
@@ -45,16 +46,17 @@ function CheckGrid({ items, selected }: { items: LV[]; selected: Map<number, num
 // Each part of the editor folds away and says whether it's done, so the
 // long form reads as a short checklist. Everything is one form: nothing is
 // lost by folding a section, and one Save covers them all.
-function Section({ title, help, children, id, done, open }: { title: string; help?: string; children: React.ReactNode; id?: string; done?: boolean; open?: boolean }) {
+// 1.0: one section at a time (the menu on the left switches between them); every field stays in the one form, so one Save covers all.
+function Section({ title, help, children, id, done }: { title: string; help?: string; children: React.ReactNode; id?: string; done?: boolean; open?: boolean }) {
   return (
-    <details className="card profile-section" id={id} open={open}>
-      <summary>
-        <span className="profile-section-title">{title}</span>
+    <section className="card profile-section" id={id} data-sec={id}>
+      <div className="profile-section-head">
+        <h2 className="profile-section-title">{title}</h2>
         {done === undefined ? <span className="micro-note">Optional</span> : done ? <Status>Done</Status> : <Status tone="warn">To do</Status>}
-      </summary>
-      {help && <p className="small" style={{ marginTop: 10 }}>{help}</p>}
+      </div>
+      {help && <p className="small profile-section-help">{help}</p>}
       {children}
-    </details>
+    </section>
   );
 }
 
@@ -126,6 +128,20 @@ export function ProfileView({
   const optional = checks.filter((c) => !ESSENTIAL.includes(c.label));
   const essDone = essential.filter((c) => c.done).length;
   const optDone = optional.filter((c) => c.done).length;
+  // The section menu (1.0): each section with its state, in the order of the form.
+  const doneOf = (label: string) => checks.find((c) => c.label === label)?.done;
+  const NAV: NavSection[] = [
+    { id: "basics", title: "Basics", state: basicsDone ? "done" : "todo" },
+    { id: "photo", title: "Photo", state: profile?.avatar_path ? "done" : "todo" },
+    { id: "specialties", title: "Specialties", state: doneOf("Top specialties ranked") ? "done" : "todo" },
+    { id: "populations", title: "Clients and sessions", state: pick("age_group_specialism").length > 0 && pick("session_type").length > 0 ? "done" : "todo" },
+    { id: "modalities", title: "Modalities", state: doneOf("Modalities") ? "done" : "todo" },
+    { id: "insurance", title: "Insurance", state: doneOf("Insurance") ? "done" : "todo" },
+    { id: "languages", title: "Languages", state: doneOf("Languages") ? "done" : "todo" },
+    { id: "consult-pref", title: "Consult", state: "optional" },
+    { id: "contact", title: "Contact details", state: "optional" },
+    { id: "about", title: "About you", state: "optional" },
+  ];
 
   const name = profile?.full_name || "Your name";
   const display = clinicianName(name, profile?.qualification_level, profile?.credential_prefix);
@@ -245,12 +261,12 @@ export function ProfileView({
         ok={sp.availability_saved ? "Availability saved and confirmed as of today. This is what colleagues now see." : sp.saved ? "Profile saved." : sp.avatar_saved ? "Photo updated." : null}
       />
       <HashOpener />
-      <div className="split">
-        <div className="stack">
-          <BioImportBox prominent={pct < 70 || !!importDemo} demo={importDemo} />
-
-          <section className="card" id="photo">
-            <div className="card-title"><h3>Photo</h3>{profile?.avatar_path ? <Status>Done</Status> : <Status tone="warn">To do</Status>}</div>
+      <BioImportBox prominent={pct < 70 || !!importDemo} demo={importDemo} />
+      <div className="profile-edit" data-profile-edit>
+        <ProfileSectionNav sections={NAV} />
+        <div className="stack profile-main">
+          <section className="card profile-section" id="photo" data-sec="photo">
+            <div className="card-title"><h2 className="profile-section-title">Photo</h2>{profile?.avatar_path ? <Status>Done</Status> : <Status tone="warn">To do</Status>}</div>
             <p className="small">A professional headshot. Only verified, signed-in members see it.</p>
             <div className="row wrap" style={{ gap: 16, alignItems: "center" }}>
               <span data-self-avatar="" data-size="72"><PersonAvatar name={name} url={avatarUrl} size={72} rel="you" /></span>
@@ -261,7 +277,7 @@ export function ProfileView({
           <form action={saveProfile} id="profile-form" className="stack">
             <BackField back={back} />
             {importDemo?.marks && <AutofillMarks ids={importDemo.marks} ranks={importDemo.ranks} />}
-            <Section title="The basics" id="basics" done={basicsDone} open={!basicsDone}>
+            <Section title="Basics" id="basics" done={basicsDone} help="Your name, qualification and where you practice. These decide who you can be matched with.">
               <div className="fields">
                 <label className="field">
                   Full name
@@ -352,7 +368,7 @@ export function ProfileView({
               </div>
             </Section>
 
-            <Section title="Who you see" id="populations" done={pick("age_group_specialism").length > 0 && pick("session_type").length > 0} help="Age groups and session types are used in matching; populations are shown on your profile.">
+            <Section title="Clients and sessions" id="populations" done={pick("age_group_specialism").length > 0 && pick("session_type").length > 0} help="Age groups and session types are used in matching; populations are shown on your profile.">
               <p className="label-line">Age groups</p>
               <CheckGrid items={by.age_group_specialism || []} selected={selected} />
               <p className="label-line" style={{ marginTop: 14 }}>Session types</p>
@@ -388,7 +404,7 @@ export function ProfileView({
               </details>
             </Section>
 
-            <Section title="Consult" help="Shown on your profile and used to suggest you in Consult.">
+            <Section title="Consult" id="consult-pref" help="Shown on your profile and used to suggest you in Consult.">
               <div className="stack" style={{ gap: 8 }}>
                 <label className="checkline">
                   <input type="checkbox" name="open_to_group_consultation" defaultChecked={profile?.open_to_group_consultation ?? true} />
@@ -410,10 +426,9 @@ export function ProfileView({
               </div>
             </Section>
 
-            <details className="card">
-              <summary style={{ cursor: "pointer" }}>
-                <strong>About you</strong> <span className="small">(optional self-disclosure, never used for matching)</span>
-              </summary>
+            <section className="card profile-section" id="about" data-sec="about">
+              <div className="profile-section-head"><h2 className="profile-section-title">About you</h2><span className="micro-note">Optional</span></div>
+              <p className="small profile-section-help">Optional self-disclosure, never used for matching.</p>
               <p className="small" style={{ marginTop: 10 }}>Some clients look for a clinician who shares part of their background. Leave any of this blank.</p>
               <label className="field" style={{ maxWidth: 240 }}>
                 Pronouns
@@ -439,16 +454,16 @@ export function ProfileView({
                   </div>
                 </div>
               ))}
-            </details>
+            </section>
 
             <div className="save-bar">
-              <span className="small">One save covers every section, including folded ones.</span>
+              <span className="small">One save covers every section. If you leave with changes, we ask first.</span>
               <button type="submit" className="btn">Save profile</button>
             </div>
           </form>
         </div>
 
-        <aside className="stack">
+        <aside className="stack profile-aside">
           <section className="card tint">
             <div className="card-title">
               <h3>Setup and profile</h3>

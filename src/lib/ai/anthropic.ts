@@ -25,6 +25,14 @@ export class AiNotConfiguredError extends Error {
   }
 }
 
+// A failed call, with the HTTP status so callers can tell members something useful without setup details.
+export class AiCallError extends Error {
+  constructor(public status: number, message: string) {
+    super(message);
+    this.name = "AiCallError";
+  }
+}
+
 /**
  * Calls Claude with a single forced tool call and returns that tool's
  * parsed `input` object - the standard reliable pattern for getting
@@ -41,34 +49,41 @@ export async function extractStructuredData<T = Record<string, unknown>>(opts: {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) throw new AiNotConfiguredError();
 
-  const model = process.env.ANTHROPIC_MODEL || DEFAULT_MODEL;
+  // The configured model first, then current aliases, so a retired model name never breaks the import.
+  const models = Array.from(new Set([process.env.ANTHROPIC_MODEL, DEFAULT_MODEL, "claude-haiku-4-5", "claude-sonnet-4-5"].filter(Boolean))) as string[];
+  let response: Response | null = null;
+  for (const model of models) {
+    response = await fetch(ANTHROPIC_API_URL, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+      },
+      body: JSON.stringify({
+        model,
+        max_tokens: 4096,
+        system: opts.system,
+        messages: [{ role: "user", content: opts.userContent }],
+        tools: [
+          {
+            name: opts.toolName,
+            description: opts.toolDescription,
+            input_schema: opts.inputSchema,
+          },
+        ],
+        tool_choice: { type: "tool", name: opts.toolName },
+      }),
+    });
+    // Model not found: try the next name. Anything else is the answer.
+    if (response.status !== 404) break;
+    console.error(`AI model ${model} not available, trying the next`);
+  }
 
-  const response = await fetch(ANTHROPIC_API_URL, {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      "x-api-key": apiKey,
-      "anthropic-version": "2023-06-01",
-    },
-    body: JSON.stringify({
-      model,
-      max_tokens: 4096,
-      system: opts.system,
-      messages: [{ role: "user", content: opts.userContent }],
-      tools: [
-        {
-          name: opts.toolName,
-          description: opts.toolDescription,
-          input_schema: opts.inputSchema,
-        },
-      ],
-      tool_choice: { type: "tool", name: opts.toolName },
-    }),
-  });
-
-  if (!response.ok) {
-    const bodyText = await response.text().catch(() => "");
-    throw new Error(`Anthropic API error (${response.status}): ${bodyText.slice(0, 300)}`);
+  if (!response || !response.ok) {
+    const status = response?.status ?? 0;
+    const bodyText = response ? await response.text().catch(() => "") : "";
+    throw new AiCallError(status, `Anthropic API error (${status}): ${bodyText.slice(0, 300)}`);
   }
 
   const data: any = await response.json();
