@@ -2980,3 +2980,6 @@
 .pa .join-goal{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;background:#E9EEE6;border-radius:10px;padding:12px 16px;font-size:14.5px;color:#143327}
 .pa .join-goal a{margin-left:auto;font-weight:600;color:var(--forest)}
 @media (max-width:900px){.pa .join-v1{background:var(--canvas);padding-top:28px}.pa .join-v1 .join-layout{grid-template-columns:minmax(0,1fr);gap:32px}}
+/* 1.0: the phone header stays on one line at 320. */
+.pa .public-nav .links a{white-space:nowrap}
+@media (max-width:360px){.pa .public-nav{gap:10px;padding:0 14px}.pa .public-nav .links{gap:2px}.pa .public-nav .links .text-link{padding-left:6px;padding-right:6px}.pa .public-nav .brand-logo{max-width:118px}}

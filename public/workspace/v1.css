@@ -9,14 +9,14 @@
   --shadow:0 1px 2px rgba(24,35,30,.04),0 8px 22px rgba(24,35,30,.045);
   --calm-ground:#F6F3EC; --calm-card:#FFFEFB; --calm-line:#E7E1D4; --calm-line-soft:#EEE9DD; --calm-soft:#F2EEE5; --calm-ink:#18231E; --calm-sub:#5A6159;
   --bold-line:#E7E1D4;
-  --svc-cover:#1F6B55; --svc-referrals:#9A5B26; --svc-consult:#5E4A86; --svc-search:#3D6489;
+  --svc-cover:#1F6B55; --svc-referrals:#8E5321; --svc-consult:#5E4A86; --svc-search:#3D6489;
   --r-control:10px; --r-card:14px;
   --font-text:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
   --font-display:"Inter Tight","Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
   --font-serif:"Newsreader",Georgia,serif;
 }
 .feature-cover,.modal-feature-cover{--feature:#1F6B55;--feature-pale:#E4EFEA;--feature-page:var(--cream)}
-.feature-referrals,.modal-feature-referrals{--feature:#9A5B26;--feature-pale:#F4E8DA;--feature-page:var(--cream)}
+.feature-referrals,.modal-feature-referrals{--feature:#8E5321;--feature-pale:#F4E8DA;--feature-page:var(--cream)}
 .feature-consult,.modal-feature-consult{--feature:#5E4A86;--feature-pale:#ECE7F2;--feature-page:var(--cream)}
 .feature-network,.modal-feature-network{--feature:#3D6489;--feature-pale:#E8EEF4;--feature-page:var(--cream)}
 .feature-home,.feature-messages,.feature-library,.modal-feature-home,.modal-feature-library{--feature:#1F4A3A;--feature-pale:#E9EEE6;--feature-page:var(--cream)}
@@ -86,12 +86,12 @@ body,.workspace,.workspace.feature-cover,.workspace.feature-referrals,.workspace
 .waiting-steps li.done span{color:#1E6B47}
 .waiting-steps a{color:var(--forest);font-weight:600}
 @media (max-width:1100px){.topbar .top-search{min-width:0;flex:1 1 auto}}
-@media (max-width:760px){.topbar .top-search .top-search-text,.topbar .top-search kbd{display:none}.topbar .top-search{min-width:0;flex:0 0 auto;width:40px;padding:0;justify-content:center}.hub-page .hub-hello{font-size:25px}}
+@media (max-width:760px){.topbar .top-search{display:none}.hub-page .hub-hello{font-size:25px}}
 
 /* Network (1.0, Nick 31 Oct): Trusted, Worked with before and Suggested side by side in three columns, compact rows. */
 @media (min-width:1100px){
   .relationship-groups{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;align-items:start}
-  .relationship-group .net-list{padding:0}
+  .relationship-group .net-list{padding:0;grid-template-columns:minmax(0,1fr)}
   .relationship-group .net-list .net-row{border:0;border-bottom:1px solid var(--line);border-radius:0;padding:14px 18px;gap:12px}
   .relationship-group .net-list .net-row:last-child{border-bottom:0}
   .relationship-group .net-row .avatar{width:36px;height:36px;font-size:12px}
