@@ -122,8 +122,12 @@ test("AV-08 spaces are one overall number, not multiplied by licensed states", a
   }
 });
 
-test("AV-09 a member whose verification is still in progress keeps the existing overview", async ({ page, context, baseURL }) => {
+test("AV-09 a member whose verification is still in progress gets the Hub with a waiting note, and the old Home redirects there", async ({ page, context, baseURL }) => {
   await signInAs(context, "pell", baseURL!);
   await page.goto("/dashboard");
-  await expect(page).toHaveURL(/\/dashboard\/overview$/);
+  await expect(page).toHaveURL(/\/dashboard$/);
+  await expect(page.locator(".waiting-note")).toContainText("Nothing reaches a colleague until you are verified");
+  await expect(page.locator(".hub-card")).toHaveCount(3);
+  await page.goto("/dashboard/overview");
+  await expect(page).toHaveURL(/\/dashboard$/);
 });

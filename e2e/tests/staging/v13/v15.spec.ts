@@ -187,12 +187,12 @@ test("V15-07 your own profile uses the same layout as a colleague's", async ({ b
   await context.close();
 });
 
-test("V15-08 Hub: greeting in the top bar, three service cards in one row, nothing else crowding", async ({ browser, baseURL }) => {
+test("V15-08 Hub: a visible greeting, three service cards in one row, nothing else crowding", async ({ browser, baseURL }) => {
   const { page, context } = await openAs(browser, "avery", baseURL!, "/dashboard");
-  await expect(page.locator(".topbar .breadcrumbs strong")).toContainText(/Good (morning|afternoon|evening), Avery/);
-  // Only the top bar shows it on a computer; the heading stays for screen readers, drawn one pixel wide.
+  // 1.0: a short visible greeting on the page; the top bar names the place.
+  await expect(page.locator(".topbar .breadcrumbs strong")).toHaveText("The Hub");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^Good (morning|afternoon|evening), Avery$/);
-  expect((await page.locator(".hub-hello").boundingBox())!.width).toBeLessThanOrEqual(1);
+  await expect(page.locator(".hub-hello")).toBeVisible();
   const areas = page.locator(".hub-card");
   await expect(areas).toHaveCount(3);
   const boxes = await areas.evaluateAll((els) => els.map((e) => e.getBoundingClientRect().top));

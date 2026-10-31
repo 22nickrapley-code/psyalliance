@@ -1,3 +1,6 @@
-// The page itself lives beside its code in (site)/dashboard; this puts it in the account frame (see (account)/dashboard/layout.tsx).
-export { default } from "@/app/(site)/dashboard/full/page-body";
-export const dynamic = "force-dynamic";
+import { redirect } from "next/navigation";
+
+// The old Home is retired (1.0): every member, verified or waiting, uses the Hub.
+export default function RetiredHome() {
+  redirect("/dashboard");
+}

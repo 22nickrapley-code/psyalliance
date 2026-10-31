@@ -59,8 +59,8 @@ test("C-01 L01 homepage lifecycle band: placement, copy, routes, phone widths, n
     const page = await context.newPage();
     await page.goto(baseURL! + "/");
     const band = page.locator("#stages");
-    await expect(band.getByRole("heading", { name: "Support at every stage of practice." })).toBeVisible();
-    for (const t of ["Starting out.", "Established in practice.", "Changing pace or direction."]) await expect(band.getByText(t)).toBeVisible();
+    await expect(band.getByRole("heading", { name: "The colleagues you need change. The place to find them shouldn’t." })).toBeVisible();
+    for (const t of ["Starting out", "Building", "Established", "Changing pace"]) await expect(band.getByText(t, { exact: true })).toBeVisible();
     // After the short service explanation (How it works), before the founder story and secondary resources.
     const order = await page.evaluate(() => ["how", "stages", "library", "why"].map((id) => document.getElementById(id)!.getBoundingClientRect().top + scrollY));
     expect(order).toEqual([...order].sort((a, b) => a - b));
@@ -74,7 +74,7 @@ test("C-01 L01 homepage lifecycle band: placement, copy, routes, phone widths, n
   }
   const { page, context } = await openAs(browser, "avery", baseURL!, "/dashboard");
   await expect(page.locator("#app")).toBeAttached();
-  expect(await page.locator("body").innerText()).not.toContain("Support at every stage of practice");
+  expect(await page.locator("body").innerText()).not.toContain("The place to find them");
   await context.close();
 });
 

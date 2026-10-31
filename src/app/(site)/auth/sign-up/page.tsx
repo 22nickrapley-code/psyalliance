@@ -11,6 +11,8 @@ import { PasswordField } from "../../_public/password-field";
 import { clinicianName } from "@/lib/profession";
 import { FOUNDING_AFTER, FOUNDING_HOW, FOUNDING_LINE } from "@/lib/founding";
 import { FoundingCount } from "../../_public/founding-count";
+import { cookies } from "next/headers";
+import { GUIDE, HANDOFF_COOKIE, parseHandoff } from "@/lib/start-guide";
 
 export const metadata = {
   title: "Create your account",
@@ -38,12 +40,15 @@ export default async function SignUpPage(props: {
   const inviterName = inviter ? clinicianName((inviter as any).full_name, (inviter as any).qualification_level, (inviter as any).credential_prefix) : null;
   const openText = stateList(open);
   const first = [...open, ...NORTHEAST.filter((c) => !open.includes(c))];
+  // A goal chosen on the public trial (structured choice only) is shown so the member knows where they will land.
+  const handoff = parseHandoff((await cookies()).get(HANDOFF_COOKIE)?.value);
+  const goal = handoff?.need ? GUIDE[handoff.need] : null;
 
   return (
     <div className="pa">
       <PublicNav />
       <main>
-        <section className="public-section join-page">
+        <section className="public-section join-page join-v1">
           <div className="section-inner join-layout">
             <div className="join-intro">
               {inviterName && (
@@ -58,9 +63,9 @@ export default async function SignUpPage(props: {
                 join.
               </p>
               <ol className="join-steps">
-                <li><b>Create your account</b><span>It takes a minute.</span></li>
+                <li><b>Create your account</b><span>About two minutes.</span></li>
                 <li><b>Add your license</b><span>A person checks it against the state board before anyone can see you.</span></li>
-                <li><b>Explore while we check</b><span>A sandbox with fictional colleagues is open to you straight away, and the Library lists every template.</span></li>
+                <li><b>Start while we check</b><span>Fill in your profile in a minute from your Psychology Today page or website, draft a cover plan, referral or question, and try the sandbox with fictional colleagues. Nothing reaches a real colleague until you&rsquo;re verified.</span></li>
                 <li>
                   <b>You&rsquo;re in</b>
                   <span>
@@ -99,6 +104,12 @@ export default async function SignUpPage(props: {
                 {invite && <input type="hidden" name="invite" value={invite} />}
                 {inviterName && <input type="hidden" name="connect" value={connect} />}
                 {source && <input type="hidden" name="source" value={source} />}
+                {goal && (
+                  <div className="join-goal" data-join-goal>
+                    <span><b>Your goal: {goal.choice}.</b> After sign-up we open the right place for it, empty and unsent.</span>
+                    <a href="/start">Change</a>
+                  </div>
+                )}
                 {sp.error && <div className="banner error" role="alert">{sp.error}</div>}
                 <DegreeField />
                 <div className="join-rest">

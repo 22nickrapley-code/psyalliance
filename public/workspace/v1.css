@@ -1,0 +1,89 @@
+/* PsyAlliance 1.0: the one design system for the workspace and account pages. Loads last, so it wins.
+   A's precision and B's warmth: warm paper ground, deep green, brass details; Inter for text, Inter Tight for
+   headings; service colours only on small icons, pills and status. Public pages use the same tokens (v1-public.css). */
+@import url("/fonts/fonts.css");
+
+:root{
+  --forest:#1F4A3A; --forest-dark:#143327; --green:#2E5E4B; --sage:#E9EEE6; --cream:#F6F3EC; --paper:#FFFEFB;
+  --ink:#18231E; --muted:#5A6159; --line:#E7E1D4; --gold:#8C6A2F; --brass:#8C6A2F; --brass-ink:#7A5C25;
+  --shadow:0 1px 2px rgba(24,35,30,.04),0 8px 22px rgba(24,35,30,.045);
+  --calm-ground:#F6F3EC; --calm-card:#FFFEFB; --calm-line:#E7E1D4; --calm-line-soft:#EEE9DD; --calm-soft:#F2EEE5; --calm-ink:#18231E; --calm-sub:#5A6159;
+  --bold-line:#E7E1D4;
+  --svc-cover:#1F6B55; --svc-referrals:#9A5B26; --svc-consult:#5E4A86; --svc-search:#3D6489;
+  --r-control:10px; --r-card:14px;
+  --font-text:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  --font-display:"Inter Tight","Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  --font-serif:"Newsreader",Georgia,serif;
+}
+.feature-cover,.modal-feature-cover{--feature:#1F6B55;--feature-pale:#E4EFEA;--feature-page:var(--cream)}
+.feature-referrals,.modal-feature-referrals{--feature:#9A5B26;--feature-pale:#F4E8DA;--feature-page:var(--cream)}
+.feature-consult,.modal-feature-consult{--feature:#5E4A86;--feature-pale:#ECE7F2;--feature-page:var(--cream)}
+.feature-network,.modal-feature-network{--feature:#3D6489;--feature-pale:#E8EEF4;--feature-page:var(--cream)}
+.feature-home,.feature-messages,.feature-library,.modal-feature-home,.modal-feature-library{--feature:#1F4A3A;--feature-pale:#E9EEE6;--feature-page:var(--cream)}
+
+/* Type: one text face, one display face. */
+html,body,button,input,select,textarea{font-family:var(--font-text)}
+body{background:var(--cream);color:var(--ink);-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;font-feature-settings:"cv11","ss01"}
+.workspace h1,.workspace h2,.workspace h3,.modal h2,.modal h3,.page-heading h1,.account-main h1,.account-main h2{font-family:var(--font-display);letter-spacing:-.022em;color:var(--ink)}
+.workspace h1,.page-heading h1{font-weight:600}
+.page-heading h1{font-size:30px;line-height:1.12;letter-spacing:-.028em}
+.page-heading p{color:var(--muted)}
+.eyebrow,.workspace .eyebrow,.nav-caption{color:var(--brass-ink);letter-spacing:.14em}
+.nav-caption{color:#7E7563}
+
+/* Shell: warm paper sidebar and top bar, hairline rules. */
+body,.workspace,.workspace.feature-cover,.workspace.feature-referrals,.workspace.feature-consult,.workspace.feature-network,.workspace.feature-home,.workspace.feature-library,.workspace.feature-messages{background:var(--cream)}
+.sidebar,.topbar{background:#FBF9F4}
+.sidebar{border-right:1px solid var(--line)}
+.topbar{border-bottom:1px solid var(--line)}
+.nav-item{border-radius:9px;color:#454C46;font-weight:500}
+.nav-item:hover{background:#F2EEE5}
+.nav-item.active,.nav-item[aria-current="page"]{background:var(--sage);color:var(--forest-dark);font-weight:600}
+.nav-item.active:before{background:var(--forest)}
+.sidebar .profile-button{border-radius:12px}
+.sidebar .profile-button:hover{background:#F2EEE5}
+.topbar .search-trigger,.topbar .top-search,.topbar .search-field{background:#fff;border-color:#DDD5C4}
+
+/* Surfaces and controls. */
+.workspace .panel,.workspace .card,.account-main .card{background:var(--paper);border-color:var(--line);border-radius:var(--r-card);box-shadow:var(--shadow)}
+.workspace .button,.workspace .field input,.workspace .field select,.workspace .field textarea,.workspace .search-field,.modal .button,.modal .field input,.modal .field select,.modal .field textarea{border-radius:var(--r-control)}
+.workspace .button.primary,.modal .button.primary,.account-main .btn:not(.secondary):not(.ghost){background:var(--forest);border-color:var(--forest);color:#fff}
+.workspace .button.primary:hover,.modal .button.primary:hover{background:var(--forest-dark);border-color:var(--forest-dark)}
+.workspace .button.secondary,.modal .button.secondary{background:#fff;border:1px solid #D9D1C0;color:var(--forest)}
+.workspace .button.secondary:hover,.modal .button.secondary:hover{background:#F2EEE5}
+.workspace .field input,.workspace .field select,.workspace .field textarea,.modal .field input,.modal .field select,.modal .field textarea{border-color:#D9D1C0;background:#fff}
+.workspace .field input:focus,.workspace .field select:focus,.workspace .field textarea:focus,.modal .field input:focus,.modal .field select:focus,.modal .field textarea:focus{border-color:var(--forest);box-shadow:0 0 0 3px rgba(31,74,58,.12);outline:none}
+.workspace :focus-visible,.modal :focus-visible{outline:2px solid var(--forest);outline-offset:2px}
+.modal{background:var(--paper);border-color:var(--line)}
+.modal-header{border-bottom-color:var(--line)}
+.modal-footer{border-top-color:var(--line);background:#FBF9F4}
+
+/* Mobile bar keeps the deep green. */
+.mobile-nav{background:var(--forest-dark)}
+
+/* Waiting members (licence not yet reviewed): a quiet line, never a wall. */
+.waiting-note{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;padding:14px 18px;border:1px solid #EADFC6;background:#FBF4E4;border-radius:12px;color:#5E4A1E;font-size:14px}
+.waiting-note b{color:#4B3B1C}
+.waiting-note a{margin-left:auto;color:var(--forest);font-weight:600}
+
+/* The Hub (1.0): a short visible greeting, one search in the top bar, the waiting note, then work. */
+.hub-page .hub-head{display:flex;flex-direction:column;gap:4px;margin:0 0 18px}
+.hub-page .hub-hello{position:static;width:auto;height:auto;margin:0;overflow:visible;clip:auto;white-space:normal;display:block;font:600 30px/1.12 var(--font-display);letter-spacing:-.028em;color:var(--ink)}
+.hub-page .hub-sub{margin:0;color:var(--muted);font-size:14px}
+.hub-page .hub-search{display:none}
+.topbar .top-search{display:inline-flex;align-items:center;gap:10px;min-width:340px;max-width:460px;flex:0 1 460px;height:40px;padding:0 12px;border:1px solid #D9D1C0;border-radius:var(--r-control);background:#fff;color:#5A6159;font-size:14px;cursor:pointer}
+.topbar .top-search .top-search-text{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.topbar .top-search kbd{margin-left:auto;font:600 11px/1 var(--font-text);border:1px solid #DDD5C4;border-radius:5px;padding:4px 6px;color:#6B6E67;background:#FBF9F4}
+.topbar .top-search:hover{border-color:#C9BFA9}
+.waiting-note{align-items:flex-start;margin:0 0 18px}
+.waiting-note > svg{width:20px;height:20px;flex:none;margin-top:2px;color:#8C6A2F}
+.waiting-body{display:flex;flex-direction:column;gap:4px;min-width:0;flex:1}
+.waiting-body > b{font-size:15px}
+.waiting-steps{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-wrap:wrap;gap:6px 18px}
+.waiting-steps li{display:flex;align-items:center;gap:7px;font-size:13.5px;color:#5E4A1E}
+.waiting-steps li svg{width:15px;height:15px;color:#1E6B47}
+.waiting-steps li i{width:13px;height:13px;border:1.5px solid #C9AE7C;border-radius:50%}
+.waiting-steps li.done span{color:#1E6B47}
+.waiting-steps a{color:var(--forest);font-weight:600}
+@media (max-width:1100px){.topbar .top-search{min-width:0;flex:1 1 auto}}
+@media (max-width:760px){.topbar .top-search .top-search-text,.topbar .top-search kbd{display:none}.topbar .top-search{min-width:0;flex:0 0 auto;width:40px;padding:0;justify-content:center}.hub-page .hub-hello{font-size:25px}}

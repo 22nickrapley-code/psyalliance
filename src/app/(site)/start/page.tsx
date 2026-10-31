@@ -14,7 +14,7 @@ export default function StartPage() {
       <PublicNav />
       <main>
         <section className="public-section guide-wrap">
-          <div className="section-inner" style={{ maxWidth: 760 }}>
+          <div className="section-inner guide-inner">
             <Guide />
           </div>
         </section>

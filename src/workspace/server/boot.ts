@@ -24,7 +24,8 @@ export async function loadWorkspaceBoot(path: string): Promise<LiveBoot> {
   if (!boot) redirect(IS_DEMO_SITE ? "/sandbox/ended" : "/auth/sign-in");
   if (boot.gate === "no_profile") redirect("/dashboard/profile");
   if (boot.gate === "operator") redirect("/dashboard/admin");
-  if (boot.gate === "waiting") redirect("/dashboard/overview");
+  // Suspended or closed accounts: their settings, where they can see their status and manage the account.
+  if (boot.gate === "inactive") redirect("/dashboard/settings");
   // A light presence signal used only to order equally good matches ("last login"); not awaited.
   supabase.from("profiles").update({ last_active_at: new Date().toISOString() }).eq("id", user.id).then(() => {});
   const { saved, ...rest } = boot;

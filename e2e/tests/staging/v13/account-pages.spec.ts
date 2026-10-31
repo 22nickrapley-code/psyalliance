@@ -111,7 +111,9 @@ test("ACC-06 phone: the menu button opens the menu, Escape closes it and focus r
 
 test("ACC-07 the waiting member's home marks The Hub; a colleague's page marks Network", async ({ browser, baseURL }) => {
   const p = await open(browser, "pell", baseURL!, "/dashboard");
-  await expect(p.page).toHaveURL(/\/dashboard\/overview/);
+  // 1.0: a waiting member gets the real Hub, with a note on getting verified.
+  await expect(p.page).toHaveURL(/\/dashboard$/);
+  await expect(p.page.locator(".waiting-note")).toBeVisible();
   await expect(p.page.locator(".sidebar .nav-item.active")).toContainText("The Hub");
   await p.context.close();
   const a = await open(browser, "avery", baseURL!, `/dashboard/people/${bram}`);

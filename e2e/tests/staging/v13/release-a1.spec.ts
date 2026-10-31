@@ -109,12 +109,14 @@ test("A1-04 colleagues in Search carry their relationship colour and name", asyn
   await context.close();
 });
 
-test("A1-05 the Hub has a search field in the dash, and opening it opens Search", async ({ browser, baseURL }) => {
+test("A1-05 Search is one prominent field in the top bar (1.0: not repeated on the Hub), and opening it opens Search", async ({ browser, baseURL }) => {
   const { page, context } = await openAs(browser, "avery", baseURL!);
-  const field = page.locator(".hub-page .hub-search");
+  await expect(page.locator(".hub-page .hub-search")).toHaveCount(0);
+  const field = page.locator(".topbar .top-search");
   await expect(field).toBeVisible();
+  await expect(field).toContainText("Search colleagues, referrals, cover, consults, Library");
   const box = (await field.boundingBox())!;
-  expect(box.width).toBeGreaterThan(500);
+  expect(box.width).toBeGreaterThan(300);
   await field.click();
   await expect(page.locator(".modal").getByRole("searchbox", { name: "Search PsyAlliance" })).toBeVisible();
   await context.close();

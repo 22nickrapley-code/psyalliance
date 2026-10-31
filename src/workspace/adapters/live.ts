@@ -45,6 +45,9 @@ export function buildLiveEnv(boot: LiveBoot, view: WorkspaceView) {
     me: boot.me,
     userId: boot.userId,
     previewControls: !!boot.sandbox,
+    // A member whose license is not reviewed yet (1.0): the Hub opens with a waiting note.
+    waiting: boot.waiting || null,
+    participation: boot.myServices || null,
     sandbox: boot.sandbox || null,
     account: { admin: !!boot.me?.isAdmin, physician: Number(boot.inbound?.physician || 0), demoSite: !!boot.demo },
     data: {

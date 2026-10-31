@@ -56,22 +56,33 @@ const faqData = {
 
 const DEMO = (path = "") => `/tour${path}`;
 
-const MOMENTS: [string, string, string][] = [
-  [
-    "Cover",
-    "You’re away.",
-    "Leave, illness, an emergency. Get each client covered by a colleague licensed in the right state, suited to the client and actually free, without the phone calls and favors.",
-  ],
-  [
-    "Referrals",
-    "You’re full.",
-    "Send an inquiry you can’t take to the right colleague, matched by license, focus and insurance, not whoever you happen to remember.",
-  ],
-  [
-    "Consult",
-    "You’re unsure.",
-    "Ask colleagues you trust a focused question between consultations, instead of strangers on a listserv.",
-  ],
+// The three moments: what it is like on your own today, and what PsyAlliance does instead.
+const MOMENTS: { key: string; svc: string; title: string; today: string; with: string; demo: string; label: string }[] = [
+  {
+    key: "Cover", svc: "cover", title: "You’re away.",
+    today: "You call around, hoping someone licensed in the right state is free and suited to each client.",
+    with: "One cover plan. Each client is matched to a colleague who is licensed, suited and actually available, and every handover is tracked.",
+    demo: DEMO("/cover"), label: "Watch how Cover works",
+  },
+  {
+    key: "Referrals", svc: "ref", title: "You’re full.",
+    today: "The inquiry goes on a waitlist, or to a name you half remember.",
+    with: "Send it to the right colleague, matched by license, focus and insurance, without sharing who the client is.",
+    demo: DEMO("/refer"), label: "Watch how Referrals work",
+  },
+  {
+    key: "Consult", svc: "con", title: "You’re unsure.",
+    today: "You post to a listserv of strangers, or carry it alone.",
+    with: "Ask colleagues you trust one focused question between sessions, with no client details.",
+    demo: DEMO("/consult"), label: "Watch how Consult works",
+  },
+];
+
+const STAGES: [string, string, string][] = [
+  ["Starting out", "Someone to ask.", "Find colleagues to ask, and share perspectives with people who have built a practice before you."],
+  ["Building", "Work that fits.", "Receive referrals that match your focus from colleagues who are full, and start from Library templates instead of a blank page."],
+  ["Established", "A group behind you.", "Arrange cover, place a client with the right colleague and get another professional perspective."],
+  ["Changing pace", "A careful next chapter.", "Plan time away, reduce your caseload responsibly and put a professional will in place."],
 ];
 
 const LIBRARY_PICKS: [string, string, string][] = [ // [PA number, title, line]
@@ -81,199 +92,173 @@ const LIBRARY_PICKS: [string, string, string][] = [ // [PA number, title, line]
 ];
 
 const TRUST: [string, string][] = [
-  [
-    "Doctoral-level only.",
-    "Psychologists (PhD, PsyD, EdD) and psychiatrists (MD, DO). A person checks each license against the state board before you’re listed.",
-  ],
+  ["Doctoral-level only.", "Psychologists (PhD, PsyD, EdD) and psychiatrists (MD, DO). A person checks each license against the state board before you’re listed."],
   ["Needs, not names.", "Clients are described by need. The clinical handoff happens through your own secure channel."],
-  [
-    "Your data stays yours.",
-    "It is never sold or used for advertising, and nothing is sent until you’ve seen who will receive it.",
-  ],
+  ["Your data stays yours.", "Never sold or used for advertising, and nothing is sent until you’ve seen who will receive it."],
 ];
+
+const Tick = () => (
+  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12l5 5L20 7" /></svg>
+);
 
 export default async function HomePage() {
   // The demo site opens on the demo library.
   if (IS_DEMO_SITE) redirect(REAL_SITE_URL);
   const open = stateList(await loadOpenStates(await createClient()));
   return (
-    <div className="pa">
+    <div className="pa v1">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqData) }} />
       <PublicNav home />
 
       <main>
-        <section className="public-hero home-hero">
+        <section className="v1-wrap v1-hero">
           <div>
             <div className="eyebrow">For doctoral psychologists and psychiatrists in private practice</div>
             <h1>
               Your own practice, <em>with a group behind you.</em>
             </h1>
-            <p className="lead">
-              PsyAlliance gives independent psychologists and psychiatrists the best of group practice: colleagues who cover your clients when you&rsquo;re away,
-              take the referrals you can&rsquo;t, and talk a hard decision through with you. Every member is verified.
+            <p className="v1-lead">
+              Colleagues who cover your clients when you&rsquo;re away, take the referrals you can&rsquo;t, and talk a hard decision through with you. Every member is verified by a person.
             </p>
-            <div className="hero-actions">
+            <div className="v1-cta">
               <a className="btn lg" href="/auth/sign-up">Create your account</a>
-              <a className="btn secondary lg" href={DEMO()}>See it in two minutes &rarr;</a>
+              <a className="btn secondary lg" href="/start">Show me how it could help</a>
             </div>
-            <p className="hero-free">{FOUNDING_LINE}</p>
+            <p className="v1-found">{FOUNDING_LINE}</p>
             <FoundingCount className="founding-count hero-count" />
-            <ul className="hero-trust" aria-label="Who it's for">
-              <li>Doctoral-level only</li>
-              <li>Every license checked by a person</li>
-              <li>Co-founded by a licensed psychologist</li>
+            <ul className="v1-proof" aria-label="Who it's for">
+              <li><Tick />Doctoral-level only</li>
+              <li><Tick />Every license checked by a person</li>
+              <li><Tick />Co-founded by a licensed psychologist</li>
             </ul>
           </div>
-          <div className="hero-visual" aria-label="Example cover plan">
-            <div className="visual-top">
-              <span>Inside PsyAlliance</span>
-              <span>Example &middot; fictional people</span>
+          <div className="v1-panel" aria-label="Example cover plan">
+            <div className="v1-panel-bar"><span>Inside PsyAlliance</span><span>Example &middot; fictional people</span></div>
+            <div className="v1-plan">
+              <div className="eyebrow">Cover plan &middot; six weeks&rsquo; parental leave</div>
+              <h3>3 of 3 clients covered. Handovers ready.</h3>
+              <div className="v1-prog" aria-hidden="true"><i /><i /><i /></div>
             </div>
-            <div className="visual-card">
-              <div className="eyebrow">Cover plan &middot; Six weeks&rsquo; parental leave</div>
-              <h3>3 of 3 handovers ready.</h3>
-              <p>Each client described by need, never by name.</p>
-            </div>
-            <div className="visual-card visual-match">
-              <div className="row between wrap" style={{ gap: 8 }}>
-                <b>Client 1 &middot; Trauma/PTSD</b>
-                <span className="status">Handover ready</span>
+            {[
+              ["MC", "#2F5E8A", "Client 1 · Trauma/PTSD", "Maya Calderwick, PsyD · Brooklyn · NY license reviewed"],
+              ["SB", "#6A4E8C", "Client 2 · Teen anxiety", "Samuel Brindlemoor, PhD · Queens · Aetna"],
+              ["EK", "#9A5B26", "Client 3 · Needs prescribing", "Eli Kestrelby, MD · Manhattan · Psychiatry"],
+            ].map(([i, c, t, s]) => (
+              <div key={i} className="v1-case">
+                <span className="v1-av" style={{ background: c }} aria-hidden="true">{i}</span>
+                <span><b>{t}</b><small>{s}</small></span>
+                <span className="v1-ok">Ready</span>
               </div>
-              <div className="visual-person">
-                <span className="avatar" aria-hidden="true">MC</span>
-                <span><b>Maya Calderwick, PsyD</b><small>Trusted colleague &middot; Brooklyn</small></span>
-              </div>
-              <ul className="reasons">
-                <li>Trauma specialist, NY license reviewed</li>
-              </ul>
-            </div>
-            <div className="visual-card visual-list">
-              <div className="line">
-                <b>Client 2 &middot; Teen anxiety</b>
-                <span className="who">Samuel Brindlemoor, PhD</span>
-                <span className="status">Handover ready</span>
-              </div>
-              <div className="line">
-                <b>Client 3 &middot; Needs prescribing</b>
-                <span className="who">Eli Kestrelby, MD</span>
-                <span className="status">Handover ready</span>
-              </div>
-            </div>
+            ))}
           </div>
         </section>
 
-        <section className="public-section tint" id="how">
-          <div className="section-inner">
-            <div className="section-intro">
-              <div className="eyebrow">How it works</div>
-              <h2>Three moments every independent clinician knows.</h2>
-            </div>
-            <div className="three-grid problems">
-              {MOMENTS.map(([k, t, b]) => (
-                <article key={k} className="editorial-card">
-                  <div className="n">{k}</div>
-                  <h3>{t}</h3>
-                  <p>{b}</p>
-                  <a className="text-arrow moment-watch" href={DEMO(`?chapter=${k.toLowerCase()}`)}>
-                    <span aria-hidden="true">&#9654;</span> Watch how {k} works
-                  </a>
-                </article>
-              ))}
-            </div>
-            <p className="section-more">
-              <a className="text-arrow" href={DEMO()}>Or watch the whole story in two minutes &rarr;</a>
-            </p>
-          </div>
-        </section>
-
-        <section className="public-section lifecycle-band" id="stages" aria-labelledby="stages-title">
-          <div className="section-inner">
-            <h2 id="stages-title" className="serif-title">Support at every stage of practice.</h2>
-            <p className="lead section-lead">
-              Starting out, building an independent practice, taking time away or planning your next chapter, your need for colleagues changes. PsyAlliance brings Cover, Referrals and Consult together, so you can find practical support as your professional life evolves.
-            </p>
-            <div className="stage-lines">
-              <p><strong>Starting out.</strong> Find colleagues to ask and share perspectives with.</p>
-              <p><strong>Established in practice.</strong> Arrange Cover, find an appropriate colleague for a client and get another professional perspective.</p>
-              <p><strong>Changing pace or direction.</strong> Coordinate time away, plan referrals as you reduce your practice and review your options on your return.</p>
-            </div>
-            <p className="section-more">
-              <a className="text-arrow" href="/tour">See how PsyAlliance works &rarr;</a>
-              <a className="text-arrow" href="/start">Show me how PsyAlliance could help &rarr;</a>
-            </p>
-            <p className="micro-note">Membership is for doctoral-level psychologists and psychiatrists with an active US license, which a person checks before you are listed.</p>
-          </div>
-        </section>
-
-        <section className="public-section home-library" id="library">
-          <div className="section-inner">
-            <div className="section-intro">
-              <div className="eyebrow">Library</div>
-              <h2>Templates for the hard moments of independent practice.</h2>
-              <p className="lead section-lead">
-                In a group practice, the leave plan, the referral letter and the professional will already exist. On your own, you write them yourself, usually
-                when time is shortest. Start from one of twenty templates instead, each beside the work it supports.
+        <section className="v1-band v1-paper" id="how">
+          <div className="v1-wrap">
+            <div className="v1-intro">
+              <div className="eyebrow">The problem</div>
+              <h2>Private practice works well, <em>until the day it doesn&rsquo;t.</em></h2>
+              <p>
+                In a group practice someone covers your clients when you&rsquo;re ill, takes the referral you can&rsquo;t, and is down the corridor when a case keeps you up at night. On your own, each of those becomes phone calls, favors and listserv posts, usually when you have least time.
               </p>
             </div>
-            <div className="lib-grid">
+            <div className="v1-compare" role="table" aria-label="On your own today, and with PsyAlliance">
+              <div className="v1-crow v1-chead" role="row"><div role="columnheader">The moment</div><div role="columnheader">On your own today</div><div role="columnheader">With PsyAlliance</div></div>
+              {MOMENTS.map((m) => (
+                <div key={m.key} className={`v1-crow svc-${m.svc}`} role="row">
+                  <div className="v1-m" role="rowheader"><small>{m.key}</small><b>{m.title}</b></div>
+                  <div className="v1-today" role="cell">{m.today}</div>
+                  <div className="v1-with" role="cell">{m.with}<a className="moment-watch" href={m.demo}>{m.label} &rarr;</a></div>
+                </div>
+              ))}
+            </div>
+            <p className="v1-more"><a href={DEMO()}>Or watch the whole story in two minutes &rarr;</a></p>
+          </div>
+        </section>
+
+        <section className="v1-band" id="stages" aria-labelledby="stages-title">
+          <div className="v1-wrap">
+            <div className="v1-intro">
+              <div className="eyebrow">For every stage of a career</div>
+              <h2 id="stages-title">The colleagues you need change. <em>The place to find them shouldn&rsquo;t.</em></h2>
+            </div>
+            <div className="v1-stages">
+              {STAGES.map(([k, t, b]) => (
+                <div key={k} className="v1-stage"><div className="k">{k}</div><h3>{t}</h3><p>{b}</p></div>
+              ))}
+            </div>
+            <p className="v1-more">
+              <a href="/start">Show me how PsyAlliance could help &rarr;</a>
+              <a href="/tour">See how PsyAlliance works &rarr;</a>
+            </p>
+            <p className="v1-note">Membership is for doctoral-level psychologists and psychiatrists with an active US license, which a person checks before you are listed.</p>
+          </div>
+        </section>
+
+        <section className="v1-band v1-paper" id="library">
+          <div className="v1-wrap">
+            <div className="v1-intro">
+              <div className="eyebrow">The Library</div>
+              <h2>Templates for the hard moments <em>of independent practice.</em></h2>
+              <p>
+                In a group practice, the leave plan, the referral letter and the professional will already exist. On your own, you write them yourself, usually when time is shortest. Start from a template instead, each beside the work it supports.
+              </p>
+            </div>
+            <div className="v1-libgrid">
               {LIBRARY_PICKS.map(([code, title, line]) => (
-                <article key={code} className="lib-card">
-                  <div className="lib-code">Coverage &amp; continuity</div>
+                <article key={code} className="v1-lib">
+                  <div className="k">Coverage &amp; continuity</div>
                   <h3><a href={publicLibraryHref(code)}>{title}</a></h3>
                   <p>{line}</p>
                 </article>
               ))}
             </div>
-            <p className="section-more">
-              <a className="text-arrow" href="/library">Browse all 20 templates &rarr;</a>
-            </p>
+            <p className="v1-more"><a href="/library">Browse all 20 templates &rarr;</a></p>
           </div>
         </section>
 
-        <section className="public-section tint" id="why">
-          <div className="section-inner founder">
+        <section className="v1-band v1-dark" id="why">
+          <div className="v1-wrap v1-story">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/team/rena-pazienza.jpg" alt="Rena Pazienza, PhD" />
             <div>
               <div className="eyebrow">Why we built it</div>
-              <h2 className="founder-line">A directory helps patients find you. PsyAlliance helps clinicians find each other.</h2>
+              <blockquote>A directory helps patients find you. <em>PsyAlliance helps clinicians find each other.</em></blockquote>
               <p>
                 Going on maternity leave, Rena Pazienza, PhD, needed her clients covered by someone qualified, and there was no good way to find them. So she
                 co-founded PsyAlliance with Nick Rapley to build the professional circle she wished she&rsquo;d had.
               </p>
+              <div className="v1-sig">Rena Pazienza, PhD, co-founder</div>
             </div>
           </div>
         </section>
 
-        <section className="public-section" id="verification">
-          <div className="section-inner">
-            <div className="section-intro">
+        <section className="v1-band" id="verification">
+          <div className="v1-wrap">
+            <div className="v1-intro">
               <div className="eyebrow">Trust</div>
-              <h2>Verified by a person. Private by design.</h2>
+              <h2>Verified by a person. <em>Private by design.</em></h2>
             </div>
-            <div className="steps-grid">
+            <div className="v1-trust">
               {TRUST.map(([t, b]) => (
-                <div key={t} className="step">
-                  <b>{t}</b>
-                  <p>{b}</p>
-                </div>
+                <div key={t}><b>{t}</b><p>{b}</p></div>
               ))}
             </div>
-            <p className="section-more">
-              <a className="text-arrow" href="/verification">How verification works &rarr;</a>
-              <a className="text-arrow" href="/privacy">Our privacy rules &rarr;</a>
+            <p className="v1-more">
+              <a href="/verification">How verification works &rarr;</a>
+              <a href="/privacy">Our privacy rules &rarr;</a>
             </p>
           </div>
         </section>
 
-        <section className="public-section tint" id="faq">
-          <div className="section-inner" style={{ maxWidth: 780 }}>
-            <div className="section-intro">
+        <section className="v1-band v1-paper" id="faq">
+          <div className="v1-wrap v1-narrow">
+            <div className="v1-intro">
               <div className="eyebrow">Questions</div>
               <h2>What clinicians ask first.</h2>
             </div>
-            <div className="faq">
+            <div className="v1-faq">
               {FAQ.map(([q, a]) => (
                 <details key={q}>
                   <summary>{q}</summary>
@@ -284,15 +269,17 @@ export default async function HomePage() {
           </div>
         </section>
 
-        <section className="public-section">
-          <div className="section-inner pa-cta">
-            <div>
-              <div className="eyebrow" style={{ color: "#e2c49c" }}>Founding members</div>
-              <h2>Be one of the first 40 in your state.</h2>
-              <p>{FOUNDING_LINE} Open now in {open || "the Northeast"}; other states open as colleagues join.</p>
-              <FoundingCount className="founding-count on-dark" />
+        <section className="v1-band v1-last">
+          <div className="v1-wrap">
+            <div className="v1-final">
+              <div>
+                <div className="eyebrow">Founding members</div>
+                <h2>Be one of the first 40 <em>in your state.</em></h2>
+                <p>{FOUNDING_LINE} Open now in {open || "the Northeast"}; other states open as colleagues join.</p>
+                <FoundingCount className="founding-count on-dark" />
+              </div>
+              <a className="btn lg" href="/auth/sign-up">Create your account</a>
             </div>
-            <a className="btn" href="/auth/sign-up">Create your account &rarr;</a>
           </div>
         </section>
       </main>

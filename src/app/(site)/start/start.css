@@ -1,20 +1,51 @@
-.guide-wrap{padding-top:28px}
-.guide-card{background:#fff;border:1px solid #e5e9e3;border-radius:12px;padding:20px;display:grid;gap:14px}
-.guide-card h1,.guide-card h2{margin:0;text-wrap:balance}
+/* The trial ("Show me how PsyAlliance could help"), 1.0: choose a need on the left, see it handled on the right. */
+.pa .guide-wrap{padding-top:48px;padding-bottom:80px;background:var(--canvas)}
+.pa .guide-inner{max-width:1200px}
+.guide-card{display:grid;gap:14px}
+.guide-v1{grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);gap:48px;align-items:start;background:none;border:0;padding:0}
+.guide-v1 h1,.guide-v1 h2{margin:0;text-wrap:balance}
+.guide-pick{display:grid;gap:14px;align-content:start}
+.guide-pick h1{font-size:clamp(34px,3.6vw,48px);line-height:1.08}
+.guide-pick-title{margin:0;font-size:12px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:#7A5C25}
 .guide-choices{display:grid;gap:8px;margin:0;padding:0;border:0}
-.guide-choices label{display:flex;gap:10px;align-items:center;min-height:44px;padding:8px 12px;border:1px solid #e5e9e3;border-radius:8px;cursor:pointer;background:#fff}
-.guide-choices label:has(input:checked){border-color:#203b32;background:#e9efea}
-.guide-choices input{accent-color:#203b32;width:18px;height:18px}
-.guide-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
-.guide-quiet{background:none;border:0;padding:6px 0;color:#203b32;text-decoration:underline;cursor:pointer;font:inherit;min-height:44px}
-.guide-note{color:#536559;font-size:13px;margin:0}
-.guide-fiction{display:inline-block;font-size:12px;color:#536559;border:1px solid #e5e9e3;border-radius:999px;padding:2px 10px;background:#f7f6f1}
-.guide-sim{border:1px dashed #b9c6bd;border-radius:12px;padding:16px;background:#f7f6f1;display:grid;gap:10px}
+.guide-choices label{display:flex;gap:12px;align-items:center;min-height:48px;padding:10px 14px;border:1px solid #D3CBBA;border-radius:12px;cursor:pointer;background:#FFFEFB;font-size:15px}
+.guide-choices label:has(input:checked){border-color:#1F4A3A;background:#F3F6F1;box-shadow:inset 0 0 0 1px #1F4A3A}
+.guide-choices input{accent-color:#1F4A3A;width:18px;height:18px;flex:none}
+.guide-needs{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.guide-needs label{align-items:flex-start;padding:16px;gap:12px}
+.guide-needs input{position:absolute;opacity:0;width:1px;height:1px}
+.guide-needs label:has(input:focus-visible){outline:3px solid #B78A53;outline-offset:2px}
+.guide-needs .need-ic{width:40px;height:40px;border-radius:10px;display:grid;place-items:center;flex:none;background:var(--svc-bg,#EFEAE0);color:var(--svc,#4A534D)}
+.guide-needs .need-txt b{display:block;font-size:15.5px;color:#18231E}
+.guide-needs .need-txt small{display:block;font-size:13.5px;color:#4A534D;margin-top:2px;line-height:1.45}
+.need-time_away,.need-reducing{--svc:#1F6B55;--svc-bg:#E4EFEA}
+.need-client_referral,.need-caseload{--svc:#9A5B26;--svc-bg:#F4E8DA}
+.need-perspective{--svc:#5E4A86;--svc-bg:#ECE7F2}
+.guide-offer{margin:4px 0 0;font-size:15px;color:#4A534D}
+.guide-offer .guide-quiet{min-height:0;padding:0;font-weight:600}
+.guide-panel{background:#FFFEFB;border:1px solid #E7E1D4;border-radius:18px;padding:30px;display:grid;gap:16px;box-shadow:0 20px 50px -30px rgba(24,35,30,.3);min-width:0}
+.guide-panel h2{font-size:clamp(28px,2.8vw,36px);line-height:1.12}
+.guide-intro{display:grid;gap:14px}
+.guide-intro ol{margin:0;padding-left:20px;display:grid;gap:10px;color:#4A534D}
+.guide-intro ol b{color:#18231E}
+.guide-actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.guide-quiet{background:none;border:0;padding:6px 0;color:#1F4A3A;text-decoration:underline;text-underline-offset:3px;cursor:pointer;font:inherit;min-height:44px}
+.guide-note{color:#4A534D;font-size:13.5px;margin:0}
+.guide-fiction{justify-self:start;display:inline-block;font-size:12px;color:#5F635C;border:1px solid #E7E1D4;border-radius:999px;padding:3px 11px;background:#F6F3EC}
+.guide-sim{border:1px dashed #C9BFA9;border-radius:12px;padding:18px;background:#FBF9F4;display:grid;gap:10px}
 .guide-sim h3{margin:0;font-size:16px}
-.guide-sim .ok{background:#e9efea;border-radius:8px;padding:10px 12px;margin:0}
+.guide-sim .ok{background:#E9EEE6;border-radius:8px;padding:10px 12px;margin:0;color:#143327}
 .guide-sim .sub{display:grid;gap:6px}
+.guide-summary{display:grid;gap:14px}
 .guide-summary dl{display:grid;gap:10px;margin:0}
-.guide-summary dt{font-weight:600;font-size:13px;color:#536559}
+.guide-summary dt{font-weight:600;font-size:13px;color:#5F635C}
 .guide-summary dd{margin:0}
-.guide-steps{font-size:13px;color:#536559;margin:0}
-@media (max-width:480px){.guide-card{padding:16px}.guide-choices input,.guide-card input[type=text]{font-size:16px}}
+.guide-steps{font-size:13px;color:#4A534D;margin:0}
+@media (max-width:900px){
+  .guide-v1{grid-template-columns:minmax(0,1fr);gap:24px}
+  /* After a choice, the result comes first on a phone; the choices stay below to change it. */
+  .guide-v1:not([data-stage="choose"]) .guide-panel{order:-1}
+  .guide-v1:not([data-stage="choose"]) .guide-pick .guide-note{display:none}
+  .guide-panel{padding:20px}
+}
+@media (max-width:560px){.guide-needs{grid-template-columns:minmax(0,1fr)}.guide-choices input,.guide-card input[type=text]{font-size:16px}}

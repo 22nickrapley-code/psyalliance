@@ -272,3 +272,52 @@ begin
   update consultation_group_members set status = 'removed', responded_at = now() where group_id = p_group and profile_id = p_member and status in ('joined', 'invited');
 end;
 $$;
+
+-- 5. Members waiting for license review get the real Hub (1.0) ---------------------------------------
+-- They used to be sent to an old page. Now the workspace opens with their own (empty) data and a "waiting"
+-- note; every action that reaches a colleague is still refused by the server until they are verified.
+-- "myServices" says whether the member is open to new referral, cover and consult requests (Hub status line).
+create or replace function public.workspace_boot()
+returns jsonb
+language plpgsql
+stable
+security definer
+set search_path to 'public'
+as $function$
+declare
+  me uuid := auth.uid();
+  v_services jsonb;
+begin
+  if me is null then
+    return null;
+  end if;
+  if not exists (select 1 from profiles where id = me) then
+    return jsonb_build_object('gate', 'no_profile');
+  end if;
+  if exists (select 1 from profiles where id = me and account_kind = 'operator') then
+    return jsonb_build_object('gate', 'operator');
+  end if;
+  v_services := jsonb_build_object(
+    'referral', private.service_open(me, 'referral') and not private.service_paused(me, 'referral'),
+    'cover', private.service_open(me, 'cover') and not private.service_paused(me, 'cover'),
+    'consult', private.service_open(me, 'consult') and not private.service_paused(me, 'consult'));
+  if not private.is_network_member(me) then
+    if exists (select 1 from profiles where id = me and account_status <> 'active') then
+      return jsonb_build_object('gate', 'inactive');
+    end if;
+    return jsonb_build_object('gate', 'ok', 'serverNow', now(), 'options', public.workspace_options(), 'myServices', v_services,
+             'waiting', jsonb_build_object(
+               'hasLicense', exists (select 1 from licenses l where l.profile_id = me),
+               'verified', exists (select 1 from profiles p where p.id = me and p.verification_status = 'verified') and public.has_active_licence(me),
+               'profileDone', exists (select 1 from profiles p where p.id = me and p.primary_state is not null and p.primary_practice_city is not null)
+                              and exists (select 1 from profile_lookup_values v join lookup_values lv on lv.id = v.lookup_value_id where v.profile_id = me and lv.category = 'treatment_specialism')))
+         || public.workspace_slice(array['me', 'availability', 'drafts', 'plans', 'referrals', 'threads', 'consult', 'resources', 'preferences', 'year'])
+         || jsonb_build_object('people', '[]'::jsonb, 'known', '[]'::jsonb, 'inbound', jsonb_build_object('physician', 0),
+              'tiers', jsonb_build_object('trust', '[]'::jsonb, 'worked', '[]'::jsonb, 'suggested', '[]'::jsonb, 'workedReasons', '{}'::jsonb));
+  end if;
+  return jsonb_build_object('gate', 'ok', 'serverNow', now(), 'options', public.workspace_options(), 'myServices', v_services)
+         || public.workspace_slice(array['me', 'people', 'known', 'tiers', 'availability', 'drafts', 'plans', 'referrals', 'threads', 'inbound', 'consult', 'resources', 'preferences', 'year']);
+end;
+$function$;
+revoke all on function public.workspace_boot() from public, anon;
+grant execute on function public.workspace_boot() to authenticated;

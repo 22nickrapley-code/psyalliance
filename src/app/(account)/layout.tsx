@@ -30,7 +30,7 @@ export const viewport: Viewport = {
 } as Viewport;
 
 const STYLES = ["styles", "product", "refinements", "home", "pulse", "directions", "polish", "feedback", "hub"];
-const V = "16";
+const V = "17";
 
 export default function AccountRootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -50,6 +50,9 @@ export default function AccountRootLayout({ children }: { children: React.ReactN
         <link rel="stylesheet" href={`/workspace/calm.css?v=${V}`} />
         {/* eslint-disable-next-line @next/next/no-css-tags */}
         <link rel="stylesheet" href={`/workspace/restrained.css?v=${V}`} />
+        {/* PsyAlliance 1.0: the one design system (fonts and tokens). Last, so it wins. */}
+        {/* eslint-disable-next-line @next/next/no-css-tags */}
+        <link rel="stylesheet" href={`/workspace/v1.css?v=${V}`} />
       </head>
       <body className="account-body">
         <a className="skip-link" href="#main">Skip to content</a>

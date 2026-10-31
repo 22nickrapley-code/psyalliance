@@ -5,6 +5,28 @@ import { GUIDE, NEED_IDS, HELPS, HELP_LABEL, CONTEXT_LABEL, CONTEXTS, HANDOFF_CO
 const PRIMARY: Need[] = ["time_away", "client_referral", "caseload", "perspective", "reducing", "explore"];
 type Stage = "choose" | "follow" | "benefit" | "try" | "preview" | "summary";
 
+const NEED_LINE: Record<Need, string> = {
+  time_away: "Leave, illness or a break, with each client covered.",
+  client_referral: "An inquiry you can’t take, placed well.",
+  caseload: "Referrals that fit your focus, from colleagues who are full.",
+  perspective: "A focused question to colleagues you trust.",
+  reducing: "Place clients carefully and plan what comes next.",
+  explore: "A two-minute look at the whole product.",
+  offer_support: "Be there for colleagues who need cover, referrals or advice.",
+};
+const NEED_PATH: Record<Need, string> = {
+  time_away: "M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z",
+  client_referral: "M4 8h14l-3-3M20 16H6l3 3",
+  caseload: "M9 11.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM3 20c.8-3.5 3.2-5.5 6-5.5s5.2 2 6 5.5M18 8v6M15 11h6",
+  perspective: "M5 18l-1 3 4-1.5A8 8 0 1 0 5 18z",
+  reducing: "M4 12h10M10 6l6 6-6 6M20 5v14",
+  explore: "M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM20 20l-3.5-3.5",
+  offer_support: "M12 20s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.5-7 10-7 10z",
+};
+function NeedIcon({ need }: { need: Need }) {
+  return <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d={NEED_PATH[need]} /></svg>;
+}
+
 function track(event: string, need?: string) {
   try { void fetch("/api/start-event", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ event, need }), keepalive: true }); } catch {}
 }
@@ -52,121 +74,140 @@ export function Guide() {
   const restart = () => { setNeed(null); setCtx(""); setHelps([]); setSim(SIM0); setStage("choose"); };
 
   return (
-    <div className="guide-card" data-guide data-stage={stage} data-need={need || ""}>
-      <span className="guide-fiction">Every person and request shown here is fictional</span>
-
-      {stage === "choose" && (
-        <>
-          <h1 ref={head} tabIndex={-1} className="serif-title">What would be useful to you at the moment?</h1>
-          <p className="guide-note">Choose one. You do not need an email address. We count which need is chosen, anonymously, to improve this page; nothing is linked to you.</p>
-          <fieldset className="guide-choices">
+    <div className="guide-card guide-v1" data-guide data-stage={stage} data-need={need || ""}>
+        <aside className="guide-pick" aria-label="What would be useful">
+          {stage === "choose" ? (
+            <h1 ref={head} tabIndex={-1} className="serif-title">What would be useful to you <em>at the moment?</em></h1>
+          ) : (
+            <p className="guide-pick-title">You chose</p>
+          )}
+          <p className="guide-note">Pick one. You&rsquo;ll see how PsyAlliance handles it, using fictional colleagues. No email address needed.</p>
+          <fieldset className="guide-choices guide-needs">
             <legend className="sr-only">What would be useful to you at the moment?</legend>
             {PRIMARY.map((n) => (
-              <label key={n}><input type="radio" name="need" value={n} onChange={() => choose(n)} checked={need === n} /> {GUIDE[n].choice}</label>
+              <label key={n} className={`need-${n}`}>
+                <input type="radio" name="need" value={n} onChange={() => choose(n)} checked={need === n} />
+                <span className="need-ic" aria-hidden="true"><NeedIcon need={n} /></span>
+                <span className="need-txt"><b>{GUIDE[n].choice}</b><small>{NEED_LINE[n]}</small></span>
+              </label>
             ))}
           </fieldset>
-          <button type="button" className="guide-quiet" data-offer onClick={() => choose("offer_support")}>I&rsquo;m here to offer support</button>
-          <p className="guide-note">Prefer to go straight on? <a href="/auth/sign-up">Create your account</a> or <a href="/tour">watch the demos</a>.</p>
-        </>
-      )}
+          <p className="guide-offer">Here to support colleagues rather than ask for help? <button type="button" className="guide-quiet" data-offer onClick={() => choose("offer_support")}>I&rsquo;m here to offer support</button></p>
+          <p className="guide-note">We count which need is chosen, anonymously, to improve this page; nothing is linked to you unless you create an account and choose to carry it over.</p>
+        </aside>
+        <section className="guide-panel" aria-live="polite">
+          <span className="guide-fiction">Every person and request shown here is fictional</span>
+          {stage === "choose" && (
+            <div className="guide-intro">
+              <div className="eyebrow">How it works</div>
+              <h2 className="serif-title">Choose a need, <em>see it handled.</em></h2>
+              <ol>
+                <li><b>See what it looks like.</b> A short walkthrough with fictional colleagues.</li>
+                <li><b>Try it yourself.</b> One small step, then see what the colleague would receive.</li>
+                <li><b>Start for real, if you like.</b> Your choice carries into an empty, unsent start. Nothing is sent without your review.</li>
+              </ol>
+              <p className="guide-note">Prefer to go straight on? <a href="/auth/sign-up">Create your account</a> or <a href="/tour">watch the demos</a>.</p>
+            </div>
+          )}
+        {stage === "follow" && need && need !== "offer_support" && (
+          <>
+            <h2 ref={head} tabIndex={-1} className="serif-title">Which describes you best? <span className="guide-note">(optional)</span></h2>
+            <fieldset className="guide-choices">
+              <legend className="sr-only">Optional: your professional circumstance</legend>
+              {CONTEXTS.map((c) => (
+                <label key={c}><input type="radio" name="ctx" value={c} checked={ctx === c} onChange={() => setCtx(c)} /> {CONTEXT_LABEL[c]}</label>
+              ))}
+            </fieldset>
+            <div className="guide-actions">
+              <button className="btn" type="button" onClick={() => setStage("benefit")}>Continue</button>
+              <button className="guide-quiet" type="button" data-skip onClick={() => { setCtx(""); setStage("benefit"); }}>Skip</button>
+              <button className="guide-quiet" type="button" onClick={restart}>Change my choice</button>
+            </div>
+          </>
+        )}
 
-      {stage === "follow" && need && need !== "offer_support" && (
-        <>
-          <h2 ref={head} tabIndex={-1} className="serif-title">Which describes you best? <span className="guide-note">(optional)</span></h2>
-          <fieldset className="guide-choices">
-            <legend className="sr-only">Optional: your professional circumstance</legend>
-            {CONTEXTS.map((c) => (
-              <label key={c}><input type="radio" name="ctx" value={c} checked={ctx === c} onChange={() => setCtx(c)} /> {CONTEXT_LABEL[c]}</label>
-            ))}
-          </fieldset>
-          <div className="guide-actions">
-            <button className="btn" type="button" onClick={() => setStage("benefit")}>Continue</button>
-            <button className="guide-quiet" type="button" data-skip onClick={() => { setCtx(""); setStage("benefit"); }}>Skip</button>
-            <button className="guide-quiet" type="button" onClick={restart}>Change my choice</button>
-          </div>
-        </>
-      )}
+        {stage === "follow" && need === "offer_support" && (
+          <>
+            <h2 ref={head} tabIndex={-1} className="serif-title">Which kinds of request would you consider? <span className="guide-note">(optional)</span></h2>
+            <p className="guide-note">Considering requests is not a commitment to accept any. Having no referral places does not stop you offering Cover or Consult.</p>
+            <fieldset className="guide-choices">
+              <legend className="sr-only">Kinds of request you would consider</legend>
+              {HELPS.map((h) => (
+                <label key={h}><input type="checkbox" checked={helps.includes(h)} onChange={() => setHelps(helps.includes(h) ? helps.filter((x) => x !== h) : [...helps, h])} /> {HELP_LABEL[h]}</label>
+              ))}
+            </fieldset>
+            <div className="guide-actions">
+              <button className="btn" type="button" onClick={() => setStage("benefit")}>Continue</button>
+              <button className="guide-quiet" type="button" data-skip onClick={() => { setHelps([]); setStage("benefit"); }}>Skip</button>
+              <button className="guide-quiet" type="button" onClick={restart}>Change my choice</button>
+            </div>
+          </>
+        )}
 
-      {stage === "follow" && need === "offer_support" && (
-        <>
-          <h2 ref={head} tabIndex={-1} className="serif-title">Which kinds of request would you consider? <span className="guide-note">(optional)</span></h2>
-          <p className="guide-note">Considering requests is not a commitment to accept any. Having no referral places does not stop you offering Cover or Consult.</p>
-          <fieldset className="guide-choices">
-            <legend className="sr-only">Kinds of request you would consider</legend>
-            {HELPS.map((h) => (
-              <label key={h}><input type="checkbox" checked={helps.includes(h)} onChange={() => setHelps(helps.includes(h) ? helps.filter((x) => x !== h) : [...helps, h])} /> {HELP_LABEL[h]}</label>
-            ))}
-          </fieldset>
-          <div className="guide-actions">
-            <button className="btn" type="button" onClick={() => setStage("benefit")}>Continue</button>
-            <button className="guide-quiet" type="button" data-skip onClick={() => { setHelps([]); setStage("benefit"); }}>Skip</button>
-            <button className="guide-quiet" type="button" onClick={restart}>Change my choice</button>
-          </div>
-        </>
-      )}
+        {stage === "benefit" && e && need && (
+          <>
+            <h2 ref={head} tabIndex={-1} className="serif-title" data-headline>{e.headline}</h2>
+            <p data-benefit>{e.benefit}</p>
+            <p className="guide-note">This shows what the product can do. It is not a promise of Cover, referrals, placements or response times.</p>
+            <div className="guide-actions">
+              <a className="btn" href={e.demo} data-demo onClick={() => track("demo_started", need)}>Watch the short demo</a>
+              {need !== "explore" && <a className="btn secondary" data-try-scenario href={`${e.demo}#try`}>Try this scenario</a>}
+              <button className="btn secondary" type="button" onClick={() => setStage("try")}>Try it myself</button>
+              <button className="guide-quiet" type="button" onClick={() => setStage("summary")}>Skip to what comes next</button>
+              <button className="guide-quiet" type="button" onClick={restart}>Change my choice</button>
+            </div>
+          </>
+        )}
 
-      {stage === "benefit" && e && need && (
-        <>
-          <h2 ref={head} tabIndex={-1} className="serif-title" data-headline>{e.headline}</h2>
-          <p data-benefit>{e.benefit}</p>
-          <p className="guide-note">This shows what the product can do. It is not a promise of Cover, referrals, placements or response times.</p>
-          <div className="guide-actions">
-            <a className="btn" href={e.demo} data-demo onClick={() => track("demo_started", need)}>Watch the short demo</a>
-            {need !== "explore" && <a className="btn secondary" data-try-scenario href={`${e.demo}#try`}>Try this scenario</a>}
-            <button className="btn secondary" type="button" onClick={() => setStage("try")}>Try it myself</button>
-            <button className="guide-quiet" type="button" onClick={() => setStage("summary")}>Skip to what comes next</button>
-            <button className="guide-quiet" type="button" onClick={restart}>Change my choice</button>
-          </div>
-        </>
-      )}
+        {stage === "try" && need && (
+          <>
+            <h2 ref={head} tabIndex={-1} className="serif-title">Try it</h2>
+            <Interaction need={need} sim={sim} setSim={setSim} onDone={() => track("interaction_complete", need)} />
+            <div className="guide-actions">
+              {need !== "explore" && need !== "caseload" && <button className="btn secondary" type="button" onClick={() => { track("recipient_preview", need); setStage("preview"); }}>What will they receive?</button>}
+              <button className="btn" type="button" onClick={() => setStage("summary")}>Continue</button>
+              <button className="guide-quiet" type="button" onClick={() => { track("interaction_skip", need); setStage("summary"); }}>Skip</button>
+              <button className="guide-quiet" type="button" data-reset onClick={() => setSim(SIM0)}>Reset</button>
+              <button className="guide-quiet" type="button" onClick={restart}>Change my choice</button>
+            </div>
+          </>
+        )}
 
-      {stage === "try" && need && (
-        <>
-          <h2 ref={head} tabIndex={-1} className="serif-title">Try it</h2>
-          <Interaction need={need} sim={sim} setSim={setSim} onDone={() => track("interaction_complete", need)} />
-          <div className="guide-actions">
-            {need !== "explore" && need !== "caseload" && <button className="btn secondary" type="button" onClick={() => { track("recipient_preview", need); setStage("preview"); }}>What will they receive?</button>}
-            <button className="btn" type="button" onClick={() => setStage("summary")}>Continue</button>
-            <button className="guide-quiet" type="button" onClick={() => { track("interaction_skip", need); setStage("summary"); }}>Skip</button>
-            <button className="guide-quiet" type="button" data-reset onClick={() => setSim(SIM0)}>Reset</button>
-            <button className="guide-quiet" type="button" onClick={restart}>Change my choice</button>
-          </div>
-        </>
-      )}
+        {stage === "preview" && need && (
+          <>
+            <h2 ref={head} tabIndex={-1} className="serif-title">What they would receive</h2>
+            <span className="guide-fiction">Example of the recipient&rsquo;s view</span>
+            <Recipient need={need} />
+            <div className="guide-actions">
+              <button className="btn" type="button" onClick={() => setStage("try")}>Back to my view</button>
+            </div>
+          </>
+        )}
 
-      {stage === "preview" && need && (
-        <>
-          <h2 ref={head} tabIndex={-1} className="serif-title">What they would receive</h2>
-          <span className="guide-fiction">Example of the recipient&rsquo;s view</span>
-          <Recipient need={need} />
-          <div className="guide-actions">
-            <button className="btn" type="button" onClick={() => setStage("try")}>Back to my view</button>
+        {stage === "summary" && e && need && (
+          <div className="guide-summary" data-summary>
+            <h2 ref={head} tabIndex={-1} className="serif-title">Your starting point</h2>
+            <p data-summary-text>{e.summary}</p>
+            <dl>
+              <div><dt>You have chosen</dt><dd>{e.choice}{ctx ? ` (${CONTEXT_LABEL[ctx]})` : ""}{need === "offer_support" && helps.length ? `: ${helps.map((h) => HELP_LABEL[h]).join(", ")}` : ""}</dd></div>
+              <div><dt>You will need</dt><dd>{e.needs}</dd></div>
+              <div><dt>Still to be confirmed</dt><dd>Membership is for doctoral-level psychologists and psychiatrists with an active US license. A person checks each license before you are listed, and until then what you can do may be limited. Nothing is sent without your review.</dd></div>
+            </dl>
+            <p className="guide-note">Why we built it: <a href="/#why">read the founder&rsquo;s story</a>. <a href="/verification">How verification works</a>. <a href="/privacy">Privacy</a>.</p>
+            <div className="guide-actions">
+              <a className="btn" data-continue href="/auth/sign-up" onClick={keep}>{e.cta}</a>
+              <a className="guide-quiet" href="/dashboard" data-skip-signup>Take me to the Hub instead</a>
+            </div>
+            <p className="guide-note">We&rsquo;ll use these choices to get you started. They stay in this browser for {HANDOFF_HOURS} hours and hold only your selections, nothing you typed.{saved ? " Choices are saved on this device." : ""}</p>
+            <div className="guide-actions">
+              <button className="guide-quiet" type="button" onClick={() => setStage("benefit")}>Review or change</button>
+              <button className="guide-quiet" type="button" onClick={() => { clear(); restart(); }}>Start fresh</button>
+              {saved && <button className="guide-quiet" type="button" data-clear onClick={clear}>Clear my choices</button>}
+            </div>
           </div>
-        </>
-      )}
+        )}
 
-      {stage === "summary" && e && need && (
-        <div className="guide-summary" data-summary>
-          <h2 ref={head} tabIndex={-1} className="serif-title">Your starting point</h2>
-          <p data-summary-text>{e.summary}</p>
-          <dl>
-            <div><dt>You have chosen</dt><dd>{e.choice}{ctx ? ` (${CONTEXT_LABEL[ctx]})` : ""}{need === "offer_support" && helps.length ? `: ${helps.map((h) => HELP_LABEL[h]).join(", ")}` : ""}</dd></div>
-            <div><dt>You will need</dt><dd>{e.needs}</dd></div>
-            <div><dt>Still to be confirmed</dt><dd>Membership is for doctoral-level psychologists and psychiatrists with an active US license. A person checks each license before you are listed, and until then what you can do may be limited. Nothing is sent without your review.</dd></div>
-          </dl>
-          <p className="guide-note">Why we built it: <a href="/#why">read the founder&rsquo;s story</a>. <a href="/verification">How verification works</a>. <a href="/privacy">Privacy</a>.</p>
-          <div className="guide-actions">
-            <a className="btn" data-continue href="/auth/sign-up" onClick={keep}>{e.cta}</a>
-            <a className="guide-quiet" href="/dashboard" data-skip-signup>Take me to the Hub instead</a>
-          </div>
-          <p className="guide-note">We&rsquo;ll use these choices to get you started. They stay in this browser for {HANDOFF_HOURS} hours and hold only your selections, nothing you typed.{saved ? " Choices are saved on this device." : ""}</p>
-          <div className="guide-actions">
-            <button className="guide-quiet" type="button" onClick={() => setStage("benefit")}>Review or change</button>
-            <button className="guide-quiet" type="button" onClick={() => { clear(); restart(); }}>Start fresh</button>
-            {saved && <button className="guide-quiet" type="button" data-clear onClick={clear}>Clear my choices</button>}
-          </div>
-        </div>
-      )}
+        </section>
     </div>
   );
 }
