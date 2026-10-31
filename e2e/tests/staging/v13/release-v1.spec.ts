@@ -5,6 +5,7 @@ import { assertLocal, q, one, asMember } from "../../../lib/staging";
 // PsyAlliance 1.0: the one design (homepage, trial, sign-up, Hub, edit profile, Network) and @mentions.
 // Fictional people only. Local database.
 test.beforeEach(({ baseURL }) => assertLocal(baseURL!));
+test.describe.configure({ mode: "serial" });
 
 const avery = account("avery").id, bram = account("bram").id, cass = account("cass").id;
 
@@ -89,7 +90,28 @@ test("V1-05 quick start: a link that isn't a Psychology Today profile is not ope
   await context.close();
 });
 
-test("V1-06 @mention in a message: only people in the conversation are notified, and the notification opens that message", async () => {
+test("V1-06 typing @ in a message offers the people in that conversation, and choosing one inserts their name", async ({ browser, baseURL }) => {
+  const { context, page } = await as(browser, "avery", baseURL!);
+  await page.goto(`${baseURL}/dashboard/messages`);
+  await page.getByRole("button", { name: "New message" }).click();
+  await page.locator(`[data-action="person-message:${bram}"]`).click();
+  const box = page.locator("#message-input");
+  await expect(box).toBeVisible();
+  await box.fill("");
+  await box.pressSequentially("Thanks @");
+  const pop = page.locator(".mention-pop");
+  await expect(pop).toBeVisible();
+  const option = pop.locator(".mention-opt").first();
+  await expect(option).toBeVisible();
+  const name = (await option.locator("b").innerText()).trim();
+  await box.press("Enter");
+  await expect(pop).toHaveCount(0);
+  await expect(box).toHaveValue(`Thanks @${name} `);
+  await box.fill("");
+  await context.close();
+});
+
+test("V1-07 @mention in a message: only people in the conversation are notified, and the notification opens that message", async () => {
   const conv = await one(`select cp.conversation_id from conversation_participants cp join conversation_participants o on o.conversation_id = cp.conversation_id and o.profile_id = $2
                            where cp.profile_id = $1 limit 1`, [avery, bram]).catch(() => null);
   test.skip(!conv, "no avery-bram conversation in the fixtures");
@@ -106,9 +128,10 @@ test("V1-06 @mention in a message: only people in the conversation are notified,
   await q(`delete from conversation_messages where id = $1`, [msg.id]);
 });
 
-test("V1-07 @mention in a Consult reply: only members who can already see the discussion are notified", async () => {
-  const c = await one(`select c.id from consultations c where private.consult_can_see(c.id, $1) and private.consult_can_see(c.id, $2) limit 1`, [avery, bram]).catch(() => null);
-  test.skip(!c, "no discussion both can see");
+test("V1-08 @mention in a Consult reply: only members who can already see the discussion are notified", async () => {
+  // A wider-network question by Bram (fictional), which Avery can see.
+  const c = await one(`insert into consultations (author_profile_id, question, audience_type, status, deidentification_confirmed) values ($1, 'QA V1: what makes a useful handover?', 'wider_network', 'open', true) returning id`, [bram]);
+  expect((await one(`select private.consult_can_see($1, $2) as a`, [c.id, avery])).a).toBe(true);
   const r = await one(`insert into consultation_responses (consultation_id, responder_profile_id, response_type, body) values ($1, $2, 'reply', 'QA V1 reply @Bram') returning id`, [c.id, avery]);
   const outsider = await one(`select p.id from profiles p where p.account_kind = 'clinician' and p.id not in ($2, $3) and not private.consult_can_see($1, p.id) limit 1`, [c.id, avery, bram]).catch(() => null);
   const ids = outsider ? [bram, outsider.id] : [bram];
@@ -118,25 +141,6 @@ test("V1-07 @mention in a Consult reply: only members who can already see the di
   if (outsider) expect(who.rows.map((x: any) => x.id)).not.toContain(outsider.id);
   await q(`delete from notification_events where dedup_key like 'mention:consult:' || $1 || ':%'`, [r.id]);
   await q(`delete from consultation_responses where id = $1`, [r.id]);
+  await q(`delete from consultations where id = $1`, [c.id]);
 });
 
-test("V1-08 typing @ in a message offers the people in that conversation, and choosing one inserts their name", async ({ browser, baseURL }) => {
-  const { context, page } = await as(browser, "avery", baseURL!);
-  await page.goto(`${baseURL}/dashboard/messages`);
-  const first = page.locator("#inbox-list button, #inbox-list [data-action^='thread:']").first();
-  await first.click();
-  const box = page.locator("#message-input");
-  await expect(box).toBeVisible();
-  await box.fill("");
-  await box.pressSequentially("Thanks @");
-  const pop = page.locator(".mention-pop");
-  await expect(pop).toBeVisible();
-  const option = pop.locator(".mention-opt").first();
-  await expect(option).toBeVisible();
-  const name = (await option.locator("b").innerText()).trim();
-  await box.press("Enter");
-  await expect(pop).toHaveCount(0);
-  await expect(box).toHaveValue(`Thanks @${name} `);
-  await box.fill("");
-  await context.close();
-});
