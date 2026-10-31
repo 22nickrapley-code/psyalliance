@@ -69,7 +69,8 @@ test("AU-07 the public Library search placeholder fits a phone", async ({ browse
   const fits = await input.evaluate((e: HTMLInputElement) => {
     const c = document.createElement("canvas").getContext("2d")!;
     c.font = getComputedStyle(e).font;
-    return c.measureText(e.placeholder).width <= e.clientWidth - 8;
+    const cs = getComputedStyle(e);
+    return c.measureText(e.placeholder).width <= e.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) - 4;
   });
   expect(fits).toBe(true);
   await context.close();
