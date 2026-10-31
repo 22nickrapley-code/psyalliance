@@ -6,6 +6,8 @@ Build: branch `release-c`, local staging copy (fictional members, local database
 
 **Full run on the final Part 2 build (rc6): 908 tests selected (staging, phone, public, public-phone), 861 passed, 26 skipped, 9 failed, 12 did not run.** The nine failures: six are the known `/sandbox/request` route tests (they need outside access; unchanged since Release A). Three were mine and are fixed: R18-11 and RA-12 still pointed at the old Documents page (it now redirects to the Library, so the tests now check the Library and My files), and C-09 expected the old demo link for each need (they now open the six new walkthroughs). The 12 that did not run were later tests in the Release C file, which runs in order and stopped at C-09. After the three fixes those three tests plus all 18 Release C tests were re-run: **20 passed**. P-11 had a test-timing fix and passed on rerun. Standing result: **everything passes except the six known `/sandbox/request` tests**. The 26 skips are the same preview-build and state-dependent skips as before (for example the Library preview tests need a build with the preview setting).
 
+**Final audit pass (rc9, the code in the bundle): 894 tests selected (staging and phone), 855 passed on the first full run and 9 failed: the six known `/sandbox/request` tests, plus EMP-01, NCU-06 and P-05, which passed when re-run alone and in their own files (timing clashes between tests that run at the same moment; P-05 now looks only at its own event). The eight new checks AU-01 to AU-08 (`release-c3.spec.ts`) pass on the final build, as do the Release C and Part 2 files. Standing result: everything passes except the six known `/sandbox/request` tests.**
+
 ## Scenarios
 
 | Scenario | Result | Evidence and limits |
