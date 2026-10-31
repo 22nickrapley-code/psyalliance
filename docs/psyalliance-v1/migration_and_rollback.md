@@ -2,6 +2,8 @@
 
 One new SQL file: `supabase/migrations/0127_v1_corrections.sql`. Run it after 0123 to 0126 (Release B and C). It can be run twice with no harm: it was applied twice on the local copy, and the full test run happened after the second run. Nothing has been run on the sandbox or live projects.
 
+`0125` gained one guard line in 1.0, so the whole list 0123 to 0127 can be run again, in order, after 0127 is already in place. This was tested by running all five files twice in a row; the end state is the 1.0 one.
+
 ## What it changes
 
 1. **Guide events (review F09).** `log_lifecycle_event` ignores a visitor who is not signed in when they try to write the "real" namespace. There is a new event, `demo_started`, so opening a demo is no longer counted as finishing an exercise.
