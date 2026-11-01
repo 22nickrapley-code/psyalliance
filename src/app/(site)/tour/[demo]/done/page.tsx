@@ -22,6 +22,8 @@ export default async function DemoDonePage({ params }: { params: Promise<{ demo:
   if (IS_DEMO_SITE && process.env.NODE_ENV === "production") redirect(`${REAL_SITE_URL}/tour/${encodeURIComponent(demo)}/done`);
   const d = findJourney(demo);
   if (!d) redirect("/tour");
+  // The end of the old "try it yourself" path: public visitors now only watch (Nick, 1 Nov).
+  if (d) redirect(`/tour/${d.key}`);
   return (
     <div className="pa">
       <PublicNav />

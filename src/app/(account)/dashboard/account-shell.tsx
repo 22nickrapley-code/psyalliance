@@ -26,6 +26,12 @@ const ICON: Record<string, string> = {
 const MOBILE_ICON: Record<string, string> = { "/dashboard": "layout-grid", "/dashboard/cover": "shield-check", "/dashboard/referrals": "arrow-right-left", "/dashboard/consult": "message-circle-more", "/dashboard/messages": "messages-square" };
 const MOBILE_LABEL: Record<string, string> = { "/dashboard": "The Hub", "/dashboard/cover": "Cover", "/dashboard/referrals": "Referrals", "/dashboard/consult": "Consult", "/dashboard/messages": "Messages" };
 
+const PAGE_LABEL: Record<string, string> = {
+  "/dashboard/profile": "Your profile", "/dashboard/credentials": "Credentials", "/dashboard/continuity": "Continuity plan",
+  "/dashboard/settings": "Account and privacy", "/dashboard/notifications": "Notifications", "/dashboard/demos": "Demos",
+  "/dashboard/documents": "My files", "/dashboard/start": "Getting started",
+};
+
 function isActive(pathname: string, item: NavItem) {
   if (item.href === "/dashboard") return pathname === "/dashboard" || (item.matches || []).some((m) => pathname === m || pathname.startsWith(m + "/"));
   if (pathname === item.href || pathname.startsWith(item.href + "/")) return true;
@@ -67,6 +73,18 @@ export default function AccountShell({
 }) {
   const pathname = usePathname() || "/dashboard";
   const [open, setOpen] = useState(false);
+  // "Back" to where the member came from (Nick, 1 Nov): pages opened from Settings, a card or another page carry ?back=.
+  const [back, setBack] = useState<{ href: string; label: string } | null>(null);
+  useEffect(() => {
+    try {
+      const b = new URLSearchParams(location.search).get("back") || "";
+      if (!/^\/dashboard(\/[a-z0-9\-/]*)?(\?[a-z0-9=&%\-_.]*)?$/i.test(b)) return setBack(null);
+      const to = b.includes("settings=1") ? "Back to Settings" : b.startsWith("/dashboard/profile") ? "Back to your profile" : "Back";
+      setBack({ href: b, label: to });
+    } catch {
+      setBack(null);
+    }
+  }, [pathname]);
   useEffect(() => setOpen(false), [pathname]);
   const opener = useRef<HTMLButtonElement>(null);
   useEffect(() => {
@@ -149,8 +167,12 @@ export default function AccountShell({
             </span>
             <AcIcon name="user-round" />
           </Link>
-          <form action={signOutAction}>
-            <button type="submit" className="button text small sign-out">Sign out</button>
+          {/* One Settings, the same as the workspace's (Nick, 1 Nov): it opens over this page and comes back here. */}
+          <a href={`/dashboard?settings=1&back=${encodeURIComponent(pathname)}`} className="button text small settings-link">
+            Settings &amp; preview controls
+          </a>
+          <form action={signOutAction} hidden>
+            <button type="submit" className="sign-out">Sign out</button>
           </form>
         </div>
       </aside>
@@ -159,7 +181,7 @@ export default function AccountShell({
       <div className="workspace feature-account">
         <header className="topbar">
           <div className="breadcrumbs">
-            {current?.group || "Your practice"} <AcIcon name="chevron-right" size={14} /> <strong>{current?.label || "Account"}</strong>
+            {current && current.href !== "/dashboard/profile" ? current.group : "Your account"} <AcIcon name="chevron-right" size={14} /> <strong>{(current && current.href !== "/dashboard/profile" ? current.label : PAGE_LABEL[pathname.split("/").slice(0, 3).join("/")]) || "Account"}</strong>
           </div>
           <div className="mobile-brand">
             <button type="button" className="icon-button mobile-menu" ref={opener} onClick={() => setOpen((o) => !o)} aria-label={open ? "Close navigation" : "Open navigation"} aria-expanded={open}>
@@ -245,9 +267,12 @@ export default function AccountShell({
             Demo network: everyone you see here is fake. <Link href="/dashboard/settings#demo">Switch back to the real network</Link>
           </div>
         )}
-        {gateNotice && !demoView && (
-          <div className="demo-bar gate-bar" role="status">
-            {gateNotice} <a href="/dashboard/sandbox/open" data-reload="">Your sandbox</a> &middot; <Link href="/dashboard/library">Library</Link> &middot; <Link href="/dashboard/credentials">Credentials</Link>
+        {/* The waiting-for-review notice now lives in the Hub's Actions (Profile setup), not as a banner (Nick, 1 Nov). */}
+        {back && (
+          <div className="back-bar">
+            <a href={back.href} data-back="">
+              <AcIcon name="arrow-left" size={16} /> {back.label}
+            </a>
           </div>
         )}
         <div className="pa account-page">

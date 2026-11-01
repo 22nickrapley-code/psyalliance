@@ -186,7 +186,7 @@ export function AvailabilityView({ p, sp, back }: { p: AvailabilityData; sp: { c
           <section className="card">
             <div className="eyebrow">How it&rsquo;s used</div>
             <p className="small" style={{ marginBottom: 0 }}>
-              Confirmed in the last 30 days ranks normally. 30 to 90 days shows as not recently confirmed. Over 90 days drops out of referral and cover suggestions until you reconfirm.
+              Confirmed in the last 60 days ranks normally. 60 to 120 days shows as not recently confirmed. Over 120 days drops out of referral and cover suggestions until you reconfirm.
             </p>
           </section>
         </aside>

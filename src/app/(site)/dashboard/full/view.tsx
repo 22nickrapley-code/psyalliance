@@ -211,7 +211,7 @@ export function FullView({
             <div className="eyebrow">What visitors see</div>
             <ul className="continuity-rules">
               <li>Your name, your message, and each colleague&rsquo;s name, credentials, location, focus and the contact details they chose.</li>
-              <li>Only colleagues who are taking referrals and confirmed it in the last 90 days.</li>
+              <li>Only colleagues who are taking referrals and confirmed it in the last 120 days.</li>
               <li>Nothing about your clients, and no way to message through PsyAlliance.</li>
             </ul>
           </section>

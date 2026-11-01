@@ -226,7 +226,7 @@ export function CliniciansView({
           {pages > 1 && <span>Showing {from}&ndash;{to}</span>}
         </div>
       )}
-      {total > 0 && <p className="why-line">Your trusted colleagues and people you&rsquo;ve worked with come first, then members who confirmed their availability in the last 30 days.</p>}
+      {total > 0 && <p className="why-line">Your trusted colleagues and people you&rsquo;ve worked with come first, then members who confirmed their availability in the last 60 days.</p>}
 
       {people.length === 0 && networkSize === 0 ? (
         <div style={{ marginTop: 16 }}>

@@ -207,6 +207,7 @@ export default async function DashboardLayout({
     pendingCoverRequests: pendingCoverageRequestCount || 0,
     pendingReferrals: (pendingProviderReferralCount || 0) + pendingPeerOfferCount,
     hideDemos: cookieJar.get("pa_hide_demos")?.value === "1",
+    setupIncomplete: !isOperator && hub.profile.tone !== "green",
   });
 
   return (

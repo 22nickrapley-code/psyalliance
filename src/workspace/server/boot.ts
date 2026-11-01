@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { IS_DEMO_SITE } from "@/lib/env";
 import type { LiveBoot, WorkspaceView } from "../adapters/live";
 import { shapeLibrary } from "./library";
+import { computeHubStates } from "@/lib/hub-states";
 
 // Loads the signed-in member's workspace in one request, as that member
 // (their own session; row-level security and the database's own rules
@@ -35,7 +36,31 @@ export async function loadWorkspaceBoot(path: string): Promise<LiveBoot> {
     const { data: info } = await supabase.rpc("sandbox_info");
     sandbox = info || null;
   }
-  return { ...rest, ...shapeLibrary({ resources: boot.resources, saved }), demo: IS_DEMO_SITE, sandbox, userId: user.id } as LiveBoot;
+  // Profile setup (Nick, 1 Nov): what a member still has to do, shown in the Hub's Actions as "Profile setup"
+  // and, until the essentials are done, as "Finish setup" in the sidebar. Same rules as the Profile page.
+  const [{ data: prof }, { data: lic }, { data: looks }, { data: plan }] = await Promise.all([
+    supabase.rpc("my_profile").select("full_name, qualification_level, avatar_path, bio, primary_practice_city, primary_state, availability_confirmed_at").maybeSingle<any>(),
+    supabase.from("licenses").select("status, expiration_date, reviewed_at").eq("profile_id", user.id),
+    supabase.from("profile_lookup_values").select("lookup_values!inner(category)").eq("profile_id", user.id).in("lookup_values.category", ["treatment_specialism", "insurance"]),
+    supabase.from("continuity_plans").select("answers, backup_profile_id").eq("profile_id", user.id).maybeSingle(),
+  ]);
+  const hub = computeHubStates({
+    profile: prof || null,
+    specialties: ((looks as any[]) || []).filter((r) => r.lookup_values?.category === "treatment_specialism").length,
+    insurance: ((looks as any[]) || []).filter((r) => r.lookup_values?.category === "insurance").length,
+    licences: (lic as any[]) || [],
+    plan: (plan as any) || null,
+  });
+  const setup = {
+    states: hub,
+    photo: !!prof?.avatar_path,
+    bio: !!String(prof?.bio || "").trim(),
+    specialties: ((looks as any[]) || []).filter((r) => r.lookup_values?.category === "treatment_specialism").length,
+    licence: ((lic as any[]) || []).length > 0,
+    reviewed: ((lic as any[]) || []).some((l) => !!l.reviewed_at),
+    availability: !!prof?.availability_confirmed_at,
+  };
+  return { ...rest, ...shapeLibrary({ resources: boot.resources, saved }), demo: IS_DEMO_SITE, sandbox, userId: user.id, setup } as LiveBoot;
 }
 
 export type { WorkspaceView };

@@ -2962,7 +2962,6 @@
   .pa.v1 .v1-chead{display:none}
   .pa.v1 .v1-crow > div{padding:18px 20px}
   .pa.v1 .v1-crow .v1-today{padding-top:0; padding-bottom:0}
-  .pa.v1 .v1-crow .v1-today:before{content:"Today: "; font-weight:600}
   .pa.v1 .v1-stage{border-right:0; margin-right:0; padding:22px 0; border-bottom:1px solid var(--line)}
   .pa.v1 .v1-final{padding:36px 28px}
   .pa.v1 .v1-story img{max-width:280px}
@@ -2983,3 +2982,34 @@
 /* 1.0: the phone header stays on one line at 320. */
 .pa .public-nav .links a{white-space:nowrap}
 @media (max-width:360px){.pa .public-nav{gap:10px;padding:0 14px}.pa .public-nav .links{gap:2px}.pa .public-nav .links .text-link{padding-left:6px;padding-right:6px}.pa .public-nav .brand-logo{max-width:118px}}
+
+/* 1 Nov: Without / With PsyAlliance. Without is plain; With carries the product's colours. */
+.pa.v1 .svc-cover{--svc-pale:#E6F0EA}.pa.v1 .svc-ref{--svc:#8E5321;--svc-pale:#F5EBDD}.pa.v1 .svc-con{--svc-pale:#EDE8F4}
+.pa.v1 .v1-tag{display:none}
+.pa.v1 .v1-today{background:#fff;color:#2B302C}
+.pa.v1 .v1-with{background:var(--svc-pale,#EEF2EC);color:var(--ink);border-left:3px solid var(--svc)}
+.pa.v1 .v1-chead .v1-chead-with{background:var(--forest);color:#fff}
+@media (max-width:900px){
+  .pa.v1 .v1-tag{display:block;margin:0 0 6px;font-size:11.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
+  .pa.v1 .v1-today .v1-tag{color:#5F635C}
+  .pa.v1 .v1-with .v1-tag{color:var(--svc)}
+  .pa.v1 .v1-crow .v1-today{padding:16px 20px}
+  .pa.v1 .v1-with{border-left:0;border-top:3px solid var(--svc)}
+}
+/* The Library on the homepage: three featured, the rest in place. */
+.pa.v1 .v1-libnote{font-size:15px!important;font-weight:600;color:var(--forest)!important;margin-top:12px!important}
+.pa.v1 .v1-liball{margin-top:26px}
+.pa.v1 .v1-liball summary{display:inline-flex;align-items:center;gap:8px;font-weight:600;color:var(--forest);cursor:pointer;list-style:none;min-height:44px}
+.pa.v1 .v1-liball summary::-webkit-details-marker{display:none}
+.pa.v1 .v1-liball summary:after{content:"+";font:400 22px/1 var(--display);color:#8C6A2F}
+.pa.v1 .v1-liball[open] summary:after{content:"\2013"}
+.pa.v1 .v1-libmore{list-style:none;margin:14px 0 0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.pa.v1 .v1-libmore li{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:14px 16px;display:grid;gap:3px;min-width:0}
+.pa.v1 .v1-libmore small{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#7A5C25}
+.pa.v1 .v1-libmore b{font-size:15px;color:var(--ink);line-height:1.3}
+.pa.v1 .v1-libmore span{font-size:13.5px;color:var(--muted);line-height:1.4}
+@media (max-width:900px){.pa.v1 .v1-libmore{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:560px){.pa.v1 .v1-libmore{grid-template-columns:minmax(0,1fr)}}
+.pa .demo-home{display:inline-flex}
+/* Sign-up on a phone (Nick, 1 Nov): the explanation first, then the form. Desktop keeps both side by side. */
+@media (max-width:900px){.pa .join-v1 .join-layout .join-card{order:1}.pa .join-v1 .join-layout .join-intro{order:0}}

@@ -21,7 +21,7 @@ export function NextMoves() {
           Twenty templates for independent practice, from a professional will to a reciprocal cover agreement. Each shows whether it has been independently
           reviewed.
         </p>
-        <a className="btn secondary" href={JOIN_HREF.replace("/auth/sign-up", "/library")}>Browse the Library</a>
+        <a className="btn secondary" href={JOIN_HREF.replace("/auth/sign-up", "/#library")}>Browse the Library</a>
       </section>
     </div>
   );

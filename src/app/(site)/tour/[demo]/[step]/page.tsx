@@ -22,5 +22,7 @@ export default async function DemoStepPage({ params }: { params: Promise<{ demo:
     const moved = LEGACY_STEPS[`${d.key}/${step}`];
     redirect(`/tour/${d.key}/${moved || d.steps[0].slug}`);
   }
-  return <DemoStepScreen demo={d} index={i} />;
+  // Public visitors watch; clicking through the screens yourself is for members, in the sandbox (Nick, 1 Nov).
+  void DemoStepScreen;
+  redirect(`/tour/${d.key}`);
 }

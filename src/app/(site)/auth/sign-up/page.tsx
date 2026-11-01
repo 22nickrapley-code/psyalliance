@@ -95,7 +95,7 @@ export default async function SignUpPage(props: {
                   everyone, and every template can be used by master&rsquo;s-level clinicians.
                 </p>
                 <div className="row wrap" style={{ gap: 10 }}>
-                  <a className="btn" href="/library">Browse the Library</a>
+                  <a className="btn" href="/#library">See the Library</a>
                   <a className="btn secondary" href={`/auth/sign-up${source ? `?from=${source}` : ""}`}>Back</a>
                 </div>
               </div>

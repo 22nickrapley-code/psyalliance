@@ -5,10 +5,8 @@ import { IS_DEMO_SITE } from "@/lib/env";
 // shell as a prop (importing a helper from a "use client" file into server
 // code breaks under production bundling).
 //
-// Your workspace: the same seven places, with the same names, as the approved
-// workspace (version 13). Your practice: the pages the workspace does not
-// cover (profile with availability, credentials and the continuity plan
-// inside it, My documents, Demos and Settings).
+// Your workspace: the same seven places, with the same names, everywhere in
+// PsyAlliance (workspace and account pages alike).
 
 export type NavItem = {
   href: string;
@@ -31,8 +29,10 @@ export function buildNavGroups(opts: {
   unreadMessages: number;
   pendingCoverRequests: number;
   pendingReferrals: number;
-  // "I know my way around" on the Demos page.
+  // "I know my way around" on the Demos page (kept for callers; demos now live in Settings).
   hideDemos?: boolean;
+  // A new member still setting up: one extra "Finish setup" item below the seven (Nick, 1 Nov).
+  setupIncomplete?: boolean;
 }): NavGroup[] {
   const adminItems: NavItem[] = [
     { href: "/dashboard/admin", label: "Overview", glyph: "overview" },
@@ -67,16 +67,10 @@ export function buildNavGroups(opts: {
         { href: "/dashboard/consult", label: "Consult", glyph: "consult" },
         { href: "/dashboard/network", label: "Network / Search", glyph: "members", matches: ["/dashboard/people", "/dashboard/invite"] },
         { href: "/dashboard/messages", label: "Messages", glyph: "messages", badge: opts.unreadMessages, matches: ["/dashboard/notifications"] },
-        { href: "/dashboard/library", label: "Library", glyph: "library" },
-      ],
-    },
-    {
-      label: "Your practice",
-      items: [
-        { href: "/dashboard/profile", label: "Profile", glyph: "profile", matches: ["/dashboard/availability", "/dashboard/credentials", "/dashboard/continuity"] },
-        { href: "/dashboard/documents?tab=mine", label: "My documents", glyph: "library", matches: ["/dashboard/documents"] },
-        ...(opts.hideDemos ? [] : [{ href: "/dashboard/demos", label: "Demos", glyph: "play" } as NavItem]),
-        { href: "/dashboard/settings", label: "Settings", glyph: "settings" },
+        { href: "/dashboard/library", label: "Library", glyph: "library", matches: ["/dashboard/documents"] },
+        // The sidebar is the same seven places everywhere (Nick, 1 Nov). Profile opens from your name,
+        // Settings from "Settings & preview controls", My files inside the Library, demos from Settings.
+        ...(opts.setupIncomplete ? [{ href: "/dashboard/profile", label: "Finish setup", glyph: "check", matches: ["/dashboard/credentials", "/dashboard/continuity", "/dashboard/availability"] } as NavItem] : []),
       ],
     },
   ];

@@ -4,8 +4,8 @@ import { planProgress } from "@/lib/continuity";
 // 18 Oct), using the rules PsyAlliance already applies elsewhere:
 //   Profile       green: photo, bio, 3+ specialties, location, insurance
 //                 amber: some of those; red: name only
-//   Availability  green: confirmed in the last 30 days; amber: 31 to 90;
-//                 red: over 90 (matching stops trusting it) or never
+//   Availability  green: confirmed in the last 60 days; amber: 61 to 120;
+//                 red: over 120 (matching stops trusting it) or never
 //   Credentials   green: a reviewed license, none expiring within 60 days
 //                 amber: awaiting review, or expiring within 60 days
 //                 red: none, or none active
@@ -35,9 +35,9 @@ export function computeHubStates(input: {
   const availability: HubStates["availability"] =
     age === null
       ? { tone: "red", note: "Not set" }
-      : age <= 30
+      : age <= 60
         ? { tone: "green", note: age === 0 ? "Confirmed today" : `Confirmed ${age} day${age === 1 ? "" : "s"} ago` }
-        : age <= 90
+        : age <= 120
           ? { tone: "amber", note: `Confirmed ${age} days ago` }
           : { tone: "red", note: "Out of date" };
 

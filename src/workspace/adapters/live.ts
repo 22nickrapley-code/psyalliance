@@ -12,6 +12,8 @@ export type LiveBoot = {
   demo: boolean;
   // Set only on the demo site, for a sandbox guest.
   sandbox?: { label: string; expiresAt: string; arrivals: { done: number; total: number } } | null;
+  // Profile setup state (1.1): drives "Profile setup" in Actions and "Finish setup" in the sidebar.
+  setup?: any;
   me: any;
   people: any[];
   known?: any[];
@@ -48,6 +50,7 @@ export function buildLiveEnv(boot: LiveBoot, view: WorkspaceView) {
     // A member whose license is not reviewed yet (1.0): the Hub opens with a waiting note.
     waiting: boot.waiting || null,
     participation: boot.myServices || null,
+    setup: boot.setup || null,
     sandbox: boot.sandbox || null,
     account: { admin: !!boot.me?.isAdmin, physician: Number(boot.inbound?.physician || 0), demoSite: !!boot.demo },
     data: {

@@ -4,7 +4,6 @@ import { IS_DEMO_SITE, REAL_SITE_URL, SITE_URL } from "@/lib/env";
 import { createClient } from "@/lib/supabase/server";
 import { loadOpenStates, stateList } from "@/lib/open-states";
 import { PublicNav, PublicFooter } from "./_public/chrome";
-import { publicLibraryHref } from "@/lib/library";
 import { FOUNDING_LINE } from "@/lib/founding";
 import { FoundingCount } from "./_public/founding-count";
 
@@ -25,7 +24,7 @@ const FAQ: [string, string][] = [
   ],
   [
     "What's in the Library?",
-    "Twenty templates for independent practice, from a professional will to a reciprocal cover agreement. Browse the titles here. Members open the ones available now, placed beside the work they support, and the rest follow as each is released.",
+    "Twenty templates for independent practice, from a professional will to a reciprocal cover agreement. You can see every title here. Members open and download them inside PsyAlliance once their license is verified.",
   ],
   [
     "Do client details go into PsyAlliance?",
@@ -56,25 +55,25 @@ const faqData = {
 
 const DEMO = (path = "") => `/tour${path}`;
 
-// The three moments: what it is like on your own today, and what PsyAlliance does instead.
-const MOMENTS: { key: string; svc: string; title: string; today: string; with: string; demo: string; label: string }[] = [
+// The three moments: without PsyAlliance, and with it (Nick, 1 Nov).
+const MOMENTS: { key: string; svc: string; title: string; without: string; with: string; demo: string; label: string }[] = [
   {
     key: "Cover", svc: "cover", title: "You’re away.",
-    today: "You call around, hoping someone licensed in the right state is free and suited to each client.",
-    with: "One cover plan. Each client is matched to a colleague who is licensed, suited and actually available, and every handover is tracked.",
-    demo: DEMO("/cover"), label: "Watch how Cover works",
+    without: "You call around, hoping someone licensed in the right state is free and suited to each client.",
+    with: "Each client is matched to a colleague who is licensed, suited and actually available, and every handover is tracked through the platform.",
+    demo: "/tour/time-away", label: "Watch how Cover works",
   },
   {
     key: "Referrals", svc: "ref", title: "You’re full.",
-    today: "The inquiry goes on a waitlist, or to a name you half remember.",
-    with: "Send it to the right colleague, matched by license, focus and insurance, without sharing who the client is.",
-    demo: DEMO("/refer"), label: "Watch how Referrals work",
+    without: "The inquiry goes on a waitlist, or to a name you half remember.",
+    with: "The referral is matched to the right colleague by license, focus and insurance, for much better continuity of care for your client.",
+    demo: "/tour/client-referral", label: "Watch how Referrals work",
   },
   {
     key: "Consult", svc: "con", title: "You’re unsure.",
-    today: "You post to a listserv of strangers, or carry it alone.",
-    with: "Ask colleagues you trust one focused question between sessions, with no client details.",
-    demo: DEMO("/consult"), label: "Watch how Consult works",
+    without: "You post to a listserv of strangers, or carry it alone.",
+    with: "You ask colleagues you trust or have worked with before, choosing the right group for the question.",
+    demo: "/tour/perspective", label: "Watch how Consult works",
   },
 ];
 
@@ -85,11 +84,32 @@ const STAGES: [string, string, string][] = [
   ["Changing pace", "A careful next chapter.", "Plan time away, reduce your caseload responsibly and put a professional will in place."],
 ];
 
-const LIBRARY_PICKS: [string, string, string][] = [ // [PA number, title, line]
-  ["PA-03", "Professional Will & Practice Succession Plan", "Who looks after your clients and records if you can’t."],
-  ["PA-02", "Extended Leave Pack", "Step away for more than two weeks without stranding clients."],
-  ["PA-01", "Reciprocal Coverage Agreement", "A standing cover arrangement with a colleague you trust."],
+// The Library on the homepage (Nick, 1 Nov): titles and one line each. Members open the full
+// templates inside PsyAlliance once their license is verified; there is no public Library page.
+const LIBRARY: { code: string; cat: string; title: string; line: string }[] = [
+  { code: "PA-03", cat: "Coverage & continuity", title: "Professional Will and Practice Succession Plan", line: "Who looks after your clients and records if you can’t. Many clinicians are expected to have one; few do." },
+  { code: "PA-02", cat: "Coverage & continuity", title: "Extended Leave Pack", line: "Step away for parental leave, illness or a sabbatical without stranding clients." },
+  { code: "PA-07", cat: "Referrals", title: "Referral, Termination and Transfer of Care Toolkit", line: "Letters and steps for referring on, ending treatment or transferring care well." },
+  { code: "PA-01", cat: "Coverage & continuity", title: "Reciprocal Coverage Agreement", line: "A standing cover arrangement with a colleague you trust." },
+  { code: "PA-04", cat: "Consultation", title: "Peer Consultation Group Charter", line: "Purpose, membership and ground rules for a consultation group." },
+  { code: "PA-05", cat: "Consultation", title: "Case Consultation Template", line: "Present a case to colleagues clearly, without identifying details." },
+  { code: "PA-06", cat: "Consultation", title: "Clinical Supervision Agreement and Log", line: "Set out supervision terms and keep a record of each session." },
+  { code: "PA-08", cat: "Referrals", title: "Split-Treatment Collaboration Agreement", line: "Who does what when a therapist and a prescriber share a client." },
+  { code: "PA-09", cat: "Clinical practice", title: "Informed Consent for Psychotherapy", line: "Plain-language consent covering fees, confidentiality and its limits." },
+  { code: "PA-10", cat: "Clinical practice", title: "Telepsychology Consent and Multi-State Checklist", line: "Consent for telehealth, plus checks before seeing clients across state lines." },
+  { code: "PA-11", cat: "Clinical practice", title: "AI Tools Consent and Policy", line: "Vet AI scribes and tools, and get consent before using them." },
+  { code: "PA-12", cat: "Clinical practice", title: "Clinical Documentation Pack", line: "Intake, progress note and treatment plan templates." },
+  { code: "PA-13", cat: "Clinical practice", title: "Suicide Risk, Safety Planning and Follow-Up Pack", line: "Structure risk assessment, safety plans and follow-up." },
+  { code: "PA-14", cat: "Clinical practice", title: "Telepsychiatry Prescribing Kit", line: "Telehealth and controlled-substance prescribing compliance for psychiatrists." },
+  { code: "PA-15", cat: "Practice essentials", title: "Financial Policy and Good Faith Estimate", line: "Fees, cancellations, Good Faith Estimates and superbills." },
+  { code: "PA-16", cat: "Practice essentials", title: "Group Practice Agreement Kit", line: "An agreement for clinicians working together as a group." },
+  { code: "PA-17", cat: "Practice essentials", title: "Privacy Notice and Release of Information Pack", line: "Your notice of privacy practices and release-of-information forms." },
+  { code: "PA-18", cat: "Practice essentials", title: "HIPAA Security Risk Analysis", line: "Assess security risks and plan your response to a breach." },
+  { code: "PA-19", cat: "Practice essentials", title: "Compliance Calendar and Renewal Tracker", line: "Track license renewals, CE deadlines and yearly compliance tasks." },
+  { code: "PA-20", cat: "Practice essentials", title: "Subpoena Response Guide", line: "What to do when a subpoena, court order or records request arrives." },
 ];
+const FEATURED = LIBRARY.slice(0, 3);
+const MORE_LIBRARY = LIBRARY.slice(3);
 
 const TRUST: [string, string][] = [
   ["Doctoral-level only.", "Psychologists (PhD, PsyD, EdD) and psychiatrists (MD, DO). A person checks each license against the state board before you’re listed."],
@@ -158,22 +178,22 @@ export default async function HomePage() {
           <div className="v1-wrap">
             <div className="v1-intro">
               <div className="eyebrow">The problem</div>
-              <h2>Private practice works well, <em>until the day it doesn&rsquo;t.</em></h2>
+              <h2>Private practice works well, <em>until you need a colleague.</em></h2>
               <p>
                 In a group practice someone covers your clients when you&rsquo;re ill, takes the referral you can&rsquo;t, and is down the corridor when a case keeps you up at night. On your own, each of those becomes phone calls, favors and listserv posts, usually when you have least time.
               </p>
             </div>
-            <div className="v1-compare" role="table" aria-label="On your own today, and with PsyAlliance">
-              <div className="v1-crow v1-chead" role="row"><div role="columnheader">The moment</div><div role="columnheader">On your own today</div><div role="columnheader">With PsyAlliance</div></div>
+            <div className="v1-compare" role="table" aria-label="Without PsyAlliance, and with PsyAlliance">
+              <div className="v1-crow v1-chead" role="row"><div role="columnheader">The moment</div><div role="columnheader">Without PsyAlliance</div><div role="columnheader" className="v1-chead-with">With PsyAlliance</div></div>
               {MOMENTS.map((m) => (
                 <div key={m.key} className={`v1-crow svc-${m.svc}`} role="row">
                   <div className="v1-m" role="rowheader"><small>{m.key}</small><b>{m.title}</b></div>
-                  <div className="v1-today" role="cell">{m.today}</div>
-                  <div className="v1-with" role="cell">{m.with}<a className="moment-watch" href={m.demo}>{m.label} &rarr;</a></div>
+                  <div className="v1-today" role="cell"><span className="v1-tag">Without PsyAlliance</span>{m.without}</div>
+                  <div className="v1-with" role="cell"><span className="v1-tag">With PsyAlliance</span>{m.with}<a className="moment-watch" href={m.demo}>{m.label} &rarr;</a></div>
                 </div>
               ))}
             </div>
-            <p className="v1-more"><a href={DEMO()}>Or watch the whole story in two minutes &rarr;</a></p>
+            <p className="v1-more"><a href={DEMO()}>Watch the whole story in two minutes &rarr;</a></p>
           </div>
         </section>
 
@@ -190,7 +210,6 @@ export default async function HomePage() {
             </div>
             <p className="v1-more">
               <a href="/start">Show me how PsyAlliance could help &rarr;</a>
-              <a href="/tour">See how PsyAlliance works &rarr;</a>
             </p>
             <p className="v1-note">Membership is for doctoral-level psychologists and psychiatrists with an active US license, which a person checks before you are listed.</p>
           </div>
@@ -202,19 +221,31 @@ export default async function HomePage() {
               <div className="eyebrow">The Library</div>
               <h2>Templates for the hard moments <em>of independent practice.</em></h2>
               <p>
-                In a group practice, the leave plan, the referral letter and the professional will already exist. On your own, you write them yourself, usually when time is shortest. Start from a template instead, each beside the work it supports.
+                In a group practice, the leave plan, the referral letter and the professional will already exist. On your own, you write them yourself, usually when time is shortest. Start from a PsyAlliance Library template instead, each found in the relevant section of the platform.
               </p>
+              <p className="v1-libnote">All templates are available to members once their license is verified.</p>
             </div>
             <div className="v1-libgrid">
-              {LIBRARY_PICKS.map(([code, title, line]) => (
-                <article key={code} className="v1-lib">
-                  <div className="k">Coverage &amp; continuity</div>
-                  <h3><a href={publicLibraryHref(code)}>{title}</a></h3>
-                  <p>{line}</p>
+              {FEATURED.map((d) => (
+                <article key={d.code} className="v1-lib">
+                  <div className="k">{d.cat}</div>
+                  <h3>{d.title}</h3>
+                  <p>{d.line}</p>
                 </article>
               ))}
             </div>
-            <p className="v1-more"><a href="/library">Browse all 20 templates &rarr;</a></p>
+            <details className="v1-liball">
+              <summary>Browse all {LIBRARY.length} templates</summary>
+              <ul className="v1-libmore" aria-label="The other templates">
+                {MORE_LIBRARY.map((d) => (
+                  <li key={d.code}>
+                    <small>{d.cat}</small>
+                    <b>{d.title}</b>
+                    <span>{d.line}</span>
+                  </li>
+                ))}
+              </ul>
+            </details>
           </div>
         </section>
 
@@ -246,8 +277,8 @@ export default async function HomePage() {
               ))}
             </div>
             <p className="v1-more">
-              <a href="/verification">How verification works &rarr;</a>
-              <a href="/privacy">Our privacy rules &rarr;</a>
+              <a href="/verification" target="_blank" rel="noopener">How verification works &rarr;</a>
+              <a href="/privacy" target="_blank" rel="noopener">Our privacy rules &rarr;</a>
             </p>
           </div>
         </section>

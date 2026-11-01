@@ -443,7 +443,7 @@ const VERIFIED: Journey = {
   learned: [
     "Every license is checked against the state board by a person.",
     "Availability is one number across your states, and you confirm it as things change.",
-    "A confirmation counts for 90 days. After that, matching stops treating it as current.",
+    "A confirmation counts for 120 days. After that, matching stops treating it as current.",
     "Your profile shows facts colleagues can rely on.",
   ],
   steps: [
@@ -467,7 +467,7 @@ const VERIFIED: Journey = {
     },
     {
       slug: "fresh",
-      title: "Confirmed within 90 days",
+      title: "Confirmed within 120 days",
       what: "A confirmation counts through the 90th day, inclusive. Until then you are matched as available, and anyone expressing interest in a referral confirms their own capacity as well.",
       focusNote: "Confirm unchanged keeps it current.",
       scene: w("home", "availability-90"),
@@ -476,7 +476,7 @@ const VERIFIED: Journey = {
     },
     {
       slug: "stale",
-      title: "After 90 days, it needs confirming",
+      title: "After 120 days, it needs confirming",
       what: "On the 91st day, you are no longer matched as available until you confirm again. A reminder says so, and confirming takes one click.",
       focusNote: "Confirm today.",
       scene: w("home", "availability-91"),

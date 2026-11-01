@@ -38,7 +38,7 @@ export function DegreeField() {
             The network is for psychologists with a PhD, PsyD or EdD and psychiatrists with an MD or DO. The Library is open to everyone, and every
             template can be used by master&rsquo;s-level clinicians.
           </p>
-          <a className="btn" href="/library">Browse the Library</a>
+          <a className="btn" href="/#library">See the Library</a>
         </div>
       )}
     </>

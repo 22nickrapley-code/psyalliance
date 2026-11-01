@@ -1,4 +1,6 @@
 import "../premium.css";
+import "../start/start.css";
+import { OtherNeeds } from "../start/needs";
 import { notFound, redirect } from "next/navigation";
 import { TOUR_ENABLED, IS_DEMO_SITE, REAL_SITE_URL, JOIN_HREF } from "@/lib/env";
 import { PublicNav, PublicFooter } from "../_public/chrome";
@@ -13,10 +15,10 @@ export const metadata = { title: "See PsyAlliance in two minutes", robots: { ind
 // people). The longer demos, and a sandbox to try everything in, are for
 // members: one story here, the detail once you've joined (Nick, 11 Oct: two
 // layers of demos was too much, too soon).
-export default async function DemoStoryPage(props: { searchParams: Promise<{ chapter?: string }> }) {
+export default async function DemoStoryPage(props: { searchParams: Promise<{ chapter?: string; ctx?: string }> }) {
   if (!TOUR_ENABLED) notFound();
   if (IS_DEMO_SITE && process.env.NODE_ENV === "production") redirect(REAL_SITE_URL + "/tour");
-  const { chapter } = await props.searchParams;
+  const { chapter, ctx } = await props.searchParams;
   // The homepage's "Watch how" links start the story at the part they are about.
   const startChapter = ({ cover: 0, refer: 1, referrals: 1, consult: 2, messages: 3 } as Record<string, number>)[chapter || ""] || 0;
   return (
@@ -25,10 +27,8 @@ export default async function DemoStoryPage(props: { searchParams: Promise<{ cha
       <main>
         <section className="public-section demo-hub">
           <div className="section-inner" style={{ maxWidth: 1120 }}>
-            <a className="text-arrow back-home" href="/">
-              &larr; Back to the homepage
-            </a>
-            <div className="demo-hub-head story-head">
+            <a className="btn secondary small-btn demo-home back-home" href="/" data-return-home>&larr; Return to homepage</a>
+            <div className="demo-hub-head story-head" style={{ marginTop: 18 }}>
               <div>
                 <div className="eyebrow">PsyAlliance in two minutes &middot; fictional people</div>
                 <h1>Your own practice, with a group behind you.</h1>
@@ -48,6 +48,8 @@ export default async function DemoStoryPage(props: { searchParams: Promise<{ cha
                 tryLabel: "Create your account",
               }}
             />
+            <h2 className="serif-title demo-next-title">Watch another</h2>
+            <OtherNeeds current="explore" ctx={ctx} />
             {/* What happens next, in order (Nick, 18 Oct). */}
             <section className="card demo-join">
               <div>
@@ -58,8 +60,8 @@ export default async function DemoStoryPage(props: { searchParams: Promise<{ cha
                     <b>You&rsquo;ve seen the homepage and these short demos.</b>
                   </li>
                   <li>
-                    <b>Create your account.</b> Inside are longer demos of every part of PsyAlliance, and your own sandbox: a fictional practice with colleagues,
-                    clients and requests to practice on. Nothing you do there reaches anyone.
+                    <b>Create your account.</b> Inside are a demo of every part of PsyAlliance and a guided sandbox, where you try each task yourself with
+                    fictional colleagues. Nothing you do there reaches anyone.
                   </li>
                   <li>
                     <b>We verify your license.</b>
@@ -72,7 +74,7 @@ export default async function DemoStoryPage(props: { searchParams: Promise<{ cha
               </div>
               <div className="demo-join-actions">
                 <a className="btn lg" href={JOIN_HREF}>Create your account</a>
-                <a className="btn secondary" href="/">Back to the homepage</a>
+                <a className="btn secondary" href="/">Return to homepage</a>
               </div>
             </section>
             <p className="micro-note" style={{ marginTop: 22 }}>
