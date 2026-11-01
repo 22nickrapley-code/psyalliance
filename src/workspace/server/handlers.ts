@@ -134,6 +134,13 @@ export const handlers: Record<string, Handler> = {
     return { ok: true, data, patch: await slices(ctx, ["plans", "known"]) };
   },
 
+  // The member who asked chooses among the colleagues who said they are interested (Nick, 1 Nov): no instant agreements.
+  "cover.confirm": async (ctx, a) => {
+    const { data, error } = await ctx.supabase.rpc("cover_confirm", { p_request: num(a.request) });
+    if (error) return fail(error, "That didn't save, so nobody was chosen yet. Please try again.");
+    return { ok: true, data, patch: await slices(ctx, ["plans", "tiers", "known"]) };
+  },
+
   "cover.handover": async (ctx, a) => {
     const { data, error } = await ctx.supabase.rpc("cover_confirm_handover", {
       p_plan: num(a.plan), p_case: num(a.case), p_contact: a.contact === true, p_summary: a.summary === true, p_client: a.client === true,

@@ -321,3 +321,57 @@ html.in-card .overlay .modal-header .icon-button[data-action="close-modal"]{disp
 .drafts-list{border-top:1px solid var(--line);padding:4px 14px 10px}
 .drafts-list .draft-banner{border:0;border-bottom:1px solid var(--line);border-radius:0;background:none;padding:10px 0;margin:0}
 .drafts-list .draft-banner:last-child{border-bottom:0}
+#main>.demo-line{max-width:1440px;margin:14px auto 0;padding:0 36px}
+@media (max-width:760px){#main>.demo-line{padding:0 16px}}
+.list-section-body .list-pager{margin-top:auto}
+/* Cover plan as visuals (Nick, 1 Nov): the caseload as client discs, each opening in place. */
+.resp-pill.tone-bad{background:#F8E5E1;color:#8F2F22}
+.cover-caseload{display:grid;gap:14px;margin-top:6px}
+.cdisc-row{display:flex;gap:10px;flex-wrap:wrap}
+.cdisc{display:flex;flex-direction:column;align-items:center;gap:4px;width:104px;padding:10px 6px 8px;border:1px solid transparent;border-radius:14px;background:transparent;cursor:pointer;font:inherit;color:var(--ink);text-align:center}
+.cdisc:hover{background:#F7F4EC}
+.cdisc.is-sel{background:#fff;border-color:#D9D1C0;box-shadow:0 1px 3px rgba(30,40,35,.08)}
+.cdisc-ring{width:52px;height:52px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;border:3px solid #D9D1C0;background:#fff;font-size:15px;font-weight:700;color:#4A534D}
+.cdisc-ring .avatar{width:42px;height:42px;font-size:13px}
+.cdisc strong{font-size:13px;line-height:1.2}
+.cdisc small{font-size:11.5px;line-height:1.25;color:#5b6b61}
+.cdisc.tone-needs .cdisc-ring{border-color:#C0503E;background:#FBEDEA;color:#8F2F22}
+.cdisc.tone-waiting .cdisc-ring{border-color:#D9A441;background:#FDF6E7;color:#7A5C25}
+.cdisc.tone-interest .cdisc-ring{border-color:#4E9B73;background:#EEF6F1;color:#1E5A3F;border-style:dashed}
+.cdisc.tone-chosen .cdisc-ring{border-color:#1E6B47}
+.cdisc.tone-ready .cdisc-ring{border-color:#1E6B47;box-shadow:0 0 0 3px #CFE5D8}
+.cover-client-card{border:1px solid var(--line);border-radius:14px;background:#FBFAF6;padding:14px 16px;display:grid;gap:12px}
+.cover-client-card>header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.cover-client-card>header>div{display:grid;gap:2px;min-width:0}
+.cover-client-card>header strong{font-size:16px}
+.cover-client-card>header span{color:#4c5a52;font-size:13.5px}
+.cover-next{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:#EEF6F1;border-radius:12px;padding:10px 14px}
+.cover-next>svg{width:20px;height:20px;color:#1E6B47;flex:none}
+.cover-next>span{display:grid;gap:2px;flex:1;min-width:200px}
+.cover-next small{color:#4c5a52}
+.cover-client-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.cover-client-foot .inline-note{margin:0}
+.cover-client-card .incoming-response{margin:0}
+@media (max-width:640px){.cdisc{width:84px}.cdisc-ring{width:46px;height:46px}.cover-client-card{padding:12px}}
+/* Cover calendar: the legend is the filter (Nick, 1 Nov). Both green, your plans blue, cover for colleagues gold. */
+.legend-filter button{display:inline-flex;align-items:center;gap:8px;font-weight:600}
+.legend-filter button i{width:10px;height:10px;border-radius:50%;flex:none}
+.legend-filter .scope-all i{background:#1E6B47}.legend-filter .scope-own i{background:#46677F}.legend-filter .scope-colleagues i{background:#9A7A3F}
+.legend-filter .scope-all{border-color:#BFD8C9;color:#1E5A3F}.legend-filter .scope-own{border-color:#C9D9E5;color:#3B5A71}.legend-filter .scope-colleagues{border-color:#E1D5BD;color:#7C663E}
+.legend-filter .scope-all[aria-pressed=true]{background:#1E6B47;border-color:#1E6B47;color:#fff}
+.legend-filter .scope-own[aria-pressed=true]{background:#46677F;border-color:#46677F;color:#fff}
+.legend-filter .scope-colleagues[aria-pressed=true]{background:#8A6A33;border-color:#8A6A33;color:#fff}
+.legend-filter button[aria-pressed=true] i{background:#fff}
+.cal-dots i.own{background:#46677F}.cal-dots i.peer{background:#9A7A3F;border:0}
+/* Cover plan steps: clients as discs, review collapsed. */
+.client-discs{margin:4px 0 10px}
+.client-entry-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.client-entry-head>div{display:flex;gap:6px;flex-wrap:wrap}
+.review-who{border:1px solid var(--line);border-radius:14px;background:#fff;margin:12px 0}
+.review-who>summary{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;cursor:pointer;list-style:none}
+.review-who>summary::-webkit-details-marker{display:none}
+.review-who>summary>span{display:grid;gap:2px}
+.review-who>summary small{color:#5b6b61}
+.review-who[open]>summary svg{transform:rotate(180deg)}
+.review-who>.view-tabs{margin:0 16px 10px}
+.review-who>.review-section{margin:0;padding:0 16px 16px;border:0}
