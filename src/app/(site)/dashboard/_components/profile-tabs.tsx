@@ -22,7 +22,17 @@ const TABS: [k: "profile" | "availability" | "credentials" | "continuity", label
   ["continuity", "Continuity plan", "/dashboard/continuity", "If you can't practice"],
 ];
 
-export function ProfileTabs({ active, back }: { active: "profile" | "availability" | "credentials" | "continuity"; back?: string | null }) {
+export function useHub() {
+  return useContext(HubCtx);
+}
+
+// The four big tabs were retired (Nick, 1 Nov: too bold, and the four parts behaved differently). Profile now
+// lists Availability, Credentials and the Continuity plan as rows that all open the same way, as cards.
+export function ProfileTabs(_props: { active: "profile" | "availability" | "credentials" | "continuity"; back?: string | null }) {
+  return null;
+}
+
+export function OldProfileTabs({ active, back }: { active: "profile" | "availability" | "credentials" | "continuity"; back?: string | null }) {
   const hub = useContext(HubCtx);
   // Moving between tabs keeps the way back to where you started.
   const keep = back && !back.startsWith("/dashboard/profile") ? `?back=${encodeURIComponent(back)}` : "";

@@ -14,7 +14,7 @@ import { friendly } from "@/lib/friendly-error";
 // this instead, so a bad input or a failed insert sends the user back to this
 // same page with an inline banner rather than taking the page down.
 function profileError(message: string, back?: string | null): never {
-  redirect(`/dashboard/profile?edit=1&error=${encodeURIComponent(message)}${back ? `&back=${encodeURIComponent(back)}` : ""}`);
+  redirect(`/dashboard/profile?error=${encodeURIComponent(message)}${back ? `&back=${encodeURIComponent(back)}` : ""}`);
 }
 
 // A photo address found in pasted profile text is fetched with care:
@@ -522,7 +522,9 @@ export async function parseProfileBio(bioText: string): Promise<{
     const status = err instanceof AiCallError ? err.status : 0;
     if (status === 429 || status === 529 || status === 503) return { error: "The import is busy just now. Please try again in a minute, or fill in the form below." };
     if (status === 400) return { error: "We couldn't read that text. Try pasting only your profile (name, specialties, approach), or fill in the form below." };
-    return { error: "We couldn't read that just now. Please try again, or fill in the form below." };
+    // A short reference, so a failure can be traced without showing setup details (401/403: the key was refused).
+    const ref = status ? `AI-${status}` : err instanceof Error && /structured data/.test(err.message) ? "AI-NODATA" : "AI-NET";
+    return { error: `We couldn't read that just now. Please try again, or fill in the form below. (Reference ${ref})` };
   }
 }
 
@@ -591,7 +593,7 @@ export async function uploadAvatar(formData: FormData) {
 
   revalidatePath("/dashboard/profile");
   revalidatePath("/dashboard");
-  redirect("/dashboard/profile?edit=1&avatar_saved=1#photo");
+  redirect("/dashboard/profile?avatar_saved=1");
 }
 
 export async function submitCredentialVerification(formData: FormData) {

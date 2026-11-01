@@ -73,6 +73,12 @@ export default function AccountShell({
 }) {
   const pathname = usePathname() || "/dashboard";
   const [open, setOpen] = useState(false);
+  // Opened as a card over another page (PageCardLink): the page drops its own frame.
+  useEffect(() => {
+    try {
+      if (window.self !== window.top && window.name === "pa-card") document.documentElement.classList.add("in-card");
+    } catch {}
+  }, []);
   // "Back" to where the member came from (Nick, 1 Nov): pages opened from Settings, a card or another page carry ?back=.
   const [back, setBack] = useState<{ href: string; label: string } | null>(null);
   useEffect(() => {

@@ -1,55 +1,18 @@
-import "../../../premium.css";
 import { notFound, redirect } from "next/navigation";
 import { TOUR_ENABLED, IS_DEMO_SITE, REAL_SITE_URL } from "@/lib/env";
-import { PublicNav, PublicFooter } from "../../../_public/chrome";
-import { JOURNEYS, CLOSER_LOOKS, findJourney } from "@/tour/journeys";
-import { NextMoves } from "../../next-moves";
-import { DemoGrid, MarkDone } from "../../demo-progress";
-import { watchLength } from "../../story-reel";
-import { ScenarioEnd } from "../../scenario-end";
+import { JOURNEYS, findJourney } from "@/tour/journeys";
 
-export const metadata = { title: "Demo complete", robots: { index: false, follow: false } };
+export const metadata = { title: "Demo", robots: { index: false, follow: false } };
 
 export function generateStaticParams() {
   return JOURNEYS.map((d) => ({ demo: d.key }));
 }
 
-// The end of one demo: what it showed, then "what would you like to see
-// next?" with the demos not yet watched first, then the two ways forward.
+// The end of the old "try it yourself" path. Public visitors now only watch (Nick, 1 Nov), so this lands on the demo.
 export default async function DemoDonePage({ params }: { params: Promise<{ demo: string }> }) {
   if (!TOUR_ENABLED) notFound();
   const { demo } = await params;
-  if (IS_DEMO_SITE && process.env.NODE_ENV === "production") redirect(`${REAL_SITE_URL}/tour/${encodeURIComponent(demo)}/done`);
+  if (IS_DEMO_SITE && process.env.NODE_ENV === "production") redirect(`${REAL_SITE_URL}/tour/${encodeURIComponent(demo)}`);
   const d = findJourney(demo);
-  if (!d) redirect("/tour");
-  // The end of the old "try it yourself" path: public visitors now only watch (Nick, 1 Nov).
-  if (d) redirect(`/tour/${d.key}`);
-  return (
-    <div className="pa">
-      <PublicNav />
-      <MarkDone demo={d.key} />
-      <main>
-        <section className="public-section">
-          <div className="section-inner" style={{ maxWidth: 1040 }}>
-            <div className="demo-done-head">
-              <div className="eyebrow">Demo complete &middot; {d.title}</div>
-              <h1>{d.outcome}</h1>
-              <ul className="learned">
-                {d.learned.map((l) => <li key={l}>{l}</li>)}
-              </ul>
-            </div>
-            {d.summary && d.cta && d.scenario && <ScenarioEnd need={d.scenario} summary={d.summary} label={d.cta.label} href={d.cta.href} />}
-            <h2 className="serif-title demo-next-title">Ready when you are</h2>
-            <NextMoves />
-            <h2 className="serif-title demo-next-title">{d.key === "overview" ? "Or take a closer look" : "Another closer look"}</h2>
-            <DemoGrid
-              demos={JOURNEYS.filter((x) => CLOSER_LOOKS.includes(x.key) && x.key !== d.key).map((x) => ({ key: x.key, title: x.title, blurb: x.blurb, minutes: watchLength(x), screens: x.steps.length }))}
-              current={d.key}
-            />
-          </div>
-        </section>
-      </main>
-      <PublicFooter />
-    </div>
-  );
+  redirect(d ? `/tour/${d.key}` : "/tour");
 }
