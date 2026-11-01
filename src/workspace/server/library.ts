@@ -1,5 +1,6 @@
 import { REFERENCE_DATA } from "../fixtures/reference-data";
 import { isAvailable, isReviewed, monthYear } from "@/lib/library";
+import { templateBefore, withGuides } from "../fixtures/library-guidance";
 
 // The Library as the screens read it: the six workflow guides that are part
 // of the product, then the templates the database holds. A template's review
@@ -14,7 +15,7 @@ type Row = {
 };
 
 const REF: any[] = REFERENCE_DATA.resources;
-const guides = REF.filter((r) => r.type !== "PDF template");
+const guides = withGuides(REF.filter((r) => r.type !== "PDF template"));
 const byCode = new Map<string, any>(REF.filter((r) => r.type === "PDF template").map((r) => [`PA-${String(r.id - 100).padStart(2, "0")}`, r]));
 
 export function shapeLibrary(raw: { resources?: Row[]; saved?: string[] } | null | undefined) {
@@ -26,14 +27,11 @@ export function shapeLibrary(raw: { resources?: Row[]; saved?: string[] } | null
     const reviewed = isReviewed(doc);
     const available = isAvailable(doc) && d.hasFile;
     const inside = ref?.description || d.summary || "";
-    const sections: [string, string][] = [["What’s inside", d.contents.length ? `${inside} ${d.contents.join(", ")}.`.trim() : inside]];
-    sections.push([
-      "Review status",
-      reviewed
-        ? `Reviewed ${monthYear(d.reviewDate)}${d.nextReviewDate ? `. Next review ${monthYear(d.nextReviewDate)}` : ""}. Adapt it to your state and your practice before use.`
-        : ref?.sections?.[1]?.[1] || "Supplied draft template. Professional and jurisdiction-specific review is pending. Adapt it with the appropriate professional advice before use.",
-    ]);
-    if (d.warning) sections.push(["Before you use it", d.warning]);
+    // Overview (Nick, 1 Nov): what is inside and "Before you use it"; no review status (everything is reviewed before release).
+    const sections: [string, string][] = [
+      ["What’s inside", d.contents.length ? `${inside} ${d.contents.join(", ")}.`.trim() : inside],
+      ["Before you use it", templateBefore(d.code, d.warning)],
+    ];
     return {
       id: 100 + n,
       key: d.code,

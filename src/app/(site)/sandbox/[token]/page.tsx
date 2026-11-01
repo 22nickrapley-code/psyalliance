@@ -33,9 +33,9 @@ export default async function SandboxPage(props: { params: Promise<{ token: stri
               <div className="eyebrow">Your personal sandbox</div>
               <h2>Step into Rachel&rsquo;s practice.</h2>
               <p>
-                The real PsyAlliance workspace, set up with Rachel Davis&rsquo;s own Cover plans, referrals, messages and discussions, and 1,200
-                fictional colleagues across six Northeast states. A few minutes in, colleagues start getting in touch. Nothing is emailed and
-                nothing reaches the real network.
+                The real PsyAlliance workspace, with Rachel Davis&rsquo;s practice and 1,200 fictional colleagues across six Northeast
+                states. You start with nothing waiting: pick something to try and we walk you through it. Nothing is emailed and nothing
+                reaches the real network.
               </p>
             </div>
             {error && <div className="banner error" role="alert">{error}</div>}
@@ -63,13 +63,13 @@ export default async function SandboxPage(props: { params: Promise<{ token: stri
                 </div>
               </div>
               <div>
-                <div className="eyebrow" style={{ marginBottom: 10 }}>A good order to explore</div>
+                <div className="eyebrow" style={{ marginBottom: 10 }}>How it works</div>
                 <div className="chapter-list">
                   {[
-                    ["Start on The Hub", "Your actions are waiting: Sophie has a question about Client 3, Alex is asking you about a client, and Eli has sent you a referral."],
-                    ["See Cover as it really is", "Fall leave has three clients in three different places: Handover ready, agreed but not yet ready, and waiting on a question."],
-                    ["Place a referral", "Your New York referral has a colleague who is interested. Interested is not placed: you choose."],
-                    ["Try the whole journey", "In Settings, Sandbox controls let a colleague answer, a response deadline pass, or a handover be confirmed. Colleagues also get in touch on their own, a few minutes apart."],
+                    ["Pick something to try", "The Hub asks what you’d like to try: refer a client, plan cover, ask a question, message a colleague or set your availability."],
+                    ["We take you there", "Each task opens in the right place, with a short note on what to do next."],
+                    ["Your work comes back to you", "A colleague answers what you sent, and it arrives in your Hub’s Actions, just as it would in practice."],
+                    ["Then try something else, or look around", "Do another task, or look around freely: the full story of Rachel’s practice, with colleagues getting in touch as you go."],
                   ].map(([t, b], n) => (
                     <div key={t} className="chapter">
                       <div className="chapter-head"><span className="n">{n + 1}</span><h3>{t}</h3></div>

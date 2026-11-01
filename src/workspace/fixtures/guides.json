@@ -1,0 +1,67 @@
+[
+ {"id":1,"slug":"planning-your-practice-cover","code":"G-01","category":"Cover & continuity","title":"Planning your practice cover","subtitle":"A step-by-step checklist for planned time away: who covers whom, what is shared, and how clients are told.","format":"Checklist","time":"20 minutes",
+  "what":"A practical checklist for arranging temporary cover for your clients while you are on leave, at a conference or otherwise away.",
+  "when":"Two to six weeks before planned time away, or when you set up a cover plan in PsyAlliance.",
+  "customize":"Your state's rules on who may see your clients, your malpractice carrier's expectations, and what your informed consent already says about cover.",
+  "sections":[
+   ["Before your time away",["Confirm your dates, including the day you return and the first day you are reachable again.","List the clients who need cover and what each one needs: crisis contact only, or continued sessions.","Check that each covering colleague is licensed in the client's state for the setting you have in mind (virtual or in person).","Check your informed consent and any existing coverage agreement (PA-01) for what clients have already been told.","Ask your malpractice carrier whether they need anything in writing about the arrangement."]],
+   ["Agree the arrangement with each colleague",["Agree what cover means for each client: urgent contact, crisis assessment, or routine sessions.","Agree how urgent contacts reach the covering colleague and the expected response time.","Agree what happens if the covering colleague is unavailable too (a second contact or local crisis services).","Agree billing and records: who documents, where, and who bills for any session.","Record the agreement in writing, even if only a short email."]],
+   ["Prepare a clean handover",["Share the minimum necessary information through your own secure, HIPAA-compliant channel, never through PsyAlliance messages.","For each client: presenting concerns, current risk, safety plan, medication and prescriber, emergency contacts.","Tell each client who is covering, how to reach them and for which dates.","Set your voicemail and email auto-reply with the covering arrangements and crisis numbers (988 and 911).","Confirm the handover is ready in your PsyAlliance plan."]],
+   ["When you return",["Get a short debrief from each covering colleague: contacts, sessions held, any risk events.","Add the covering colleague's notes to the client record as your state and policies require.","Thank your colleague, and offer to return the favour."]]
+  ],
+  "before":"Cover arrangements are shaped by state licensure, your informed consent and your malpractice policy. A covering colleague must be licensed in the state where the client is located at the time of contact. Share client information only through your own secure systems, on a minimum-necessary basis. This checklist is educational and is not legal or clinical advice."},
+ {"id":2,"slug":"your-peer-consultation-charter","code":"G-02","category":"Consultation","title":"Your peer consultation charter","subtitle":"How to agree a short charter for a peer consultation group: purpose, confidentiality, time and how disagreements are handled.","format":"Guide and template","time":"30 minutes with the group",
+  "what":"A guide for writing a one-page charter that every member of a consultation group can agree to.",
+  "when":"When a new group forms, when members join, and once a year to review it together.",
+  "customize":"The group's purpose, how often it meets and how it handles case material. The full template is PA-04.",
+  "sections":[
+   ["Establish a shared purpose",["Agree what the group is for: case consultation, professional support, skills or a mix.","Agree who can join and how new members are invited.","Agree the meeting rhythm, length and format (virtual, in person or hybrid)."]],
+   ["Create consistent boundaries",["Confidentiality: what is shared in the group stays in the group.","Case material is de-identified: no names, dates of birth, employers, or details that together identify a client.","Consultation does not transfer clinical responsibility: each member stays responsible for their own clients.","Attendance: what members do if they cannot come, and how the group responds to repeated absence."]],
+   ["Share the time well",["Agree a simple structure, for example: check-in, one or two case presentations, reflection.","Agree how presenters frame a question (PA-05 helps).","Agree how the group gives feedback: curious, specific and respectful."]],
+   ["Review together",["Revisit the charter once a year or when membership changes.","Agree how concerns about a member's conduct are raised, privately and early.","Record the agreed version in the group's PsyAlliance card so every member can read it."]]
+  ],
+  "before":"A consultation group is not a substitute for formal supervision where your license requires it, and consultation does not move clinical responsibility to the group. Keep all case material de-identified. Check your licensing board's rules if the group will count towards continuing education or supervision hours. This guide is educational and is not legal or clinical advice."},
+ {"id":3,"slug":"a-thoughtful-referral-conversation","code":"G-03","category":"Referrals","title":"A thoughtful referral conversation","subtitle":"A checklist for referring a client to a colleague: sharing the need, checking the fit and closing the loop.","format":"Checklist","time":"10 minutes",
+  "what":"A short checklist for the conversation with a colleague before and after a referral.",
+  "when":"Each time you refer a client out, or a colleague asks whether you can see someone.",
+  "customize":"What your client has consented to share, and your state's rules on releases of information. PA-07 covers termination and transfer of care.",
+  "sections":[
+   ["Start with the essentials",["Share the clinical area, the client's state, setting (virtual or in person), age group and any practical needs such as insurance or language.","Use an anonymous label. No names or identifying details until the client consents and a colleague has agreed.","Say how soon the client needs to be seen."]],
+   ["Check the fit",["Confirm the colleague is licensed where the client is located.","Ask about current availability and realistic wait times.","Ask whether the work is within their competence and how they usually approach it.","Check practical fit: fees, insurance, location, hours, language."]],
+   ["Make the handover",["Obtain the client's written authorization before sharing identifying or clinical information.","Give the client the colleague's contact details and what to expect at first contact.","Share records through your own secure process, on a minimum-necessary basis."]],
+   ["Close the loop",["Confirm with the client that contact was made.","Thank your colleague; ask for a brief acknowledgement once care has started, if the client agrees.","Record the referral and the outcome in the client record."]]
+  ],
+  "before":"Share identifying information only with the client's written authorization, and only what is necessary. A colleague must be licensed in the state where the client is located. Referral fees and fee-splitting arrangements are restricted by ethics codes and many state laws; PsyAlliance never takes or pays them. This checklist is educational and is not legal or clinical advice."},
+ {"id":4,"slug":"building-your-trusted-network","code":"G-04","category":"Your network","title":"Building your trusted network","subtitle":"How to build a small circle of colleagues you can refer to, ask for cover and consult with.","format":"Guide","time":"15 minutes, then ongoing",
+  "what":"A guide to choosing and keeping a trusted circle of colleagues, the way a group practice works.",
+  "when":"When you join PsyAlliance, and every few months as your practice changes.",
+  "customize":"Your specialties, your states and the kinds of help you most often need.",
+  "sections":[
+   ["Start with a conversation",["Pick three to five colleagues whose work you respect and whose practice complements yours.","Have a short call: how they work, who they see, when they are available.","Agree how you prefer to be contacted for referrals, cover and consultation."]],
+   ["Look for complementary practice",["At least one colleague licensed in each state where your clients are.","Colleagues who see the clients you do not: other age groups, specialties or a prescriber.","A colleague who could cover your clients at short notice."]],
+   ["Keep it useful",["Keep your availability current so colleagues know when to ask you.","Make considered introductions when there is a good fit, and say why.","Close the loop on every referral and thank people who help."]],
+   ["Review it",["Every few months, check that your trusted circle still matches your practice.","Add colleagues you have worked with well; remove those you no longer refer to."]]
+  ],
+  "before":"Trust in PsyAlliance ranks colleagues in your matches; it is not an endorsement and does not replace your own professional judgment about competence and fit for a client. Referral relationships must not involve payment for referrals. This guide is educational and is not legal or clinical advice."},
+ {"id":5,"slug":"your-continuity-essentials","code":"G-05","category":"Cover & continuity","title":"Your continuity essentials","subtitle":"A checklist for unexpected absence: who steps in, what they can reach, and how clients are told.","format":"Checklist","time":"30 minutes, then yearly",
+  "what":"A checklist for the arrangements that protect your clients if you are suddenly unable to practice.",
+  "when":"Now, then once a year, and whenever your practice systems or nominated colleagues change.",
+  "customize":"Your state's rules on records custody and your malpractice carrier's requirements. The full document is PA-03, Professional Will and Succession Plan.",
+  "sections":[
+   ["Name the right people",["Nominate a professional executor: a licensed colleague who agrees to act if you cannot.","Name a backup in case they are unavailable.","Make sure a trusted person in your personal life knows who to call."]],
+   ["Make access possible",["List where records, schedules and contact lists are kept, and how the executor gets secure access.","Keep credentials in a password manager with an emergency-access feature, never in a plain document.","Check your EHR and phone provider's process for authorised access."]],
+   ["Make the plan practical",["Write the steps for telling clients, rescheduling and offering referrals.","Include what your malpractice carrier and licensing board need to be told.","Agree how records are kept for the period your state requires, and by whom."]],
+   ["Review your arrangements",["Review the plan once a year and after any change in systems or people.","Record the date of the last review in PsyAlliance so colleagues see it is current."]]
+  ],
+  "before":"Records custody and retention periods are set by state law and your board's rules, and some states have specific professional-will requirements. Never store passwords or client lists in an unsecured document. This checklist is educational and is not legal or clinical advice; consider asking a healthcare attorney to review your plan."},
+ {"id":6,"slug":"making-the-most-of-consultation","code":"G-06","category":"Consultation","title":"Making the most of consultation","subtitle":"How to ask a consultation question colleagues can answer well, and what to do with the answers.","format":"Guide","time":"10 minutes",
+  "what":"A guide to preparing a consultation question and following through on what you learn.",
+  "when":"Before you post a question in Consult or bring a case to your group.",
+  "customize":"How much context the question needs and what you are hoping to gain. PA-05 is a fuller presentation template.",
+  "sections":[
+   ["Prepare your question",["Say what you hope to gain: a perspective, a resource, a referral or a check on your thinking.","Give the context that matters: setting, age group, the question you are stuck on.","Remove anything that could identify the client, alone or in combination: names, dates, employers, rare details, locations."]],
+   ["Choose who to ask",["One trusted colleague for a sensitive or narrow question.","Your consultation group for a case you want to think through together.","The wider network for a resource or a common clinical question."]],
+   ["Reflect and follow through",["Note the perspectives that fit your client and your approach, and the ones that do not.","Record the consultation in the client record as your policies require.","Thank colleagues and mark the question resolved when it is answered."]]
+  ],
+  "before":"Consultation does not transfer clinical responsibility: decisions about your client remain yours. Keep everything de-identified; if a detail could identify the client to someone who knows them, leave it out. This guide is educational and is not legal or clinical advice."}
+]

@@ -1,6 +1,7 @@
 "use client";
 import { useEffect } from "react";
 import { REFERENCE_DATA } from "./fixtures/reference-data";
+import { withGuides } from "./fixtures/library-guidance";
 import { buildLiveEnv, type LiveBoot, type WorkspaceView } from "./adapters/live";
 import { workspaceCall } from "./server/actions";
 import { scenarioEnv } from "@/tour/scenarios";
@@ -43,7 +44,7 @@ export default function Workspace({ mode = "fixture", boot, view = "home", scene
     import("./engine").then(async ({ startWorkspace }) => {
       if (cancelled) return;
       const live = mode === "live" && boot;
-      const env = live ? { ...buildLiveEnv(boot, view), call: workspaceCall } : { mode: "fixture", ...(scene?.scenario ? scenarioEnv(scene.scenario) : { data: REFERENCE_DATA }), view, ...(scene ? { ephemeral: true } : {}) };
+      const env = live ? { ...buildLiveEnv(boot, view), call: workspaceCall } : { mode: "fixture", ...(scene?.scenario ? scenarioEnv(scene.scenario) : { data: { ...REFERENCE_DATA, resources: withGuides(REFERENCE_DATA.resources as any[]) } }), view, ...(scene ? { ephemeral: true } : {}) };
       stop = startWorkspace(env);
       if (!scene) return;
       const tell = (state: "ready" | "error", message?: string) => {

@@ -467,3 +467,41 @@ dialog.pf-card .pf-card-foot{display:flex;justify-content:flex-end;gap:10px;padd
 .peer-tags .form-grid .field select,.peer-tags .form-grid .field input{height:46px!important;margin:0!important;box-sizing:border-box;width:100%}
 .peer-tags .form-grid .select-wrap{margin:0!important}
 .peer-tags .form-grid>.field{margin:0!important;align-self:start}
+/* Library (Nick, 1 Nov): smaller tiles with overview, PDF and save; Saved is its own pill; the overview is information only. */
+.resource-grid.compact{gap:14px}
+.resource-grid.compact .resource-card{padding:16px 18px;display:flex;flex-direction:column;gap:6px;min-height:0}
+.resource-grid.compact .resource-card h3{font-size:16px;line-height:1.3;margin:0}
+.resource-grid.compact .resource-card p{font-size:13.5px;line-height:1.45;margin:0;color:#3F5247;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.resource-grid.compact .resource-actions{margin-top:auto;padding-top:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.filter-pills .saved-pill{border-color:#D9C7A2;background:#FBF4E4;color:#7A5C25}
+.filter-pills .saved-pill.active{background:#8A6A33;border-color:#8A6A33;color:#fff}
+.library-tabs a{font-size:12px;padding:10px 0 13px;color:#73806c;text-decoration:none}
+.resource-preview.overview{display:grid;gap:14px}
+.resource-preview.overview .resource-lede{font-size:15px;margin:0}
+.resource-preview.overview h3{margin:0 0 4px;font-size:15px}
+.resource-preview.overview p{margin:0;line-height:1.55}
+.resource-preview.overview .before-use{border-left:3px solid #C9A24A;background:#FBF6EA;border-radius:0 10px 10px 0;padding:12px 14px}
+/* Guided sandbox (Nick, 1 Nov) */
+.guide-panel{border:1px solid #CFE0D5;background:#F4F8F4;border-radius:18px;padding:20px 22px;margin:0 0 18px;display:grid;gap:14px}
+.guide-head h2,.guide-panel h2{margin:0;font:600 22px/1.2 var(--font-display);letter-spacing:-.01em}
+.guide-head p,.guide-panel p{margin:4px 0 0;color:#3F5247}
+.guide-tasks{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
+.guide-task{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;text-align:left;border:1px solid var(--line);background:#fff;border-radius:14px;padding:14px;font:inherit;color:inherit;cursor:pointer}
+.guide-task:hover{border-color:#9FBFA9;box-shadow:0 2px 8px rgba(30,60,40,.08)}
+.guide-task strong{display:block;font-size:15px}.guide-task small{display:block;color:#5b6b61;font-size:13px;line-height:1.4;margin-top:2px}
+.guide-task>svg{width:18px;height:18px;color:var(--forest)}
+.guide-skip{justify-self:start}
+.guide-panel.is-done{grid-template-columns:auto minmax(0,1fr);align-items:center}
+.guide-panel.is-done .guide-mark svg{width:28px;height:28px;color:#1E6B47}
+.guide-panel.is-done .guide-actions{grid-column:1/-1;display:flex;gap:10px;flex-wrap:wrap}
+.guide-bar{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));z-index:60;display:flex;align-items:center;gap:12px;background:#1F3D2E;color:#fff;border-radius:14px;padding:10px 16px;box-shadow:0 10px 30px rgba(0,0,0,.25);max-width:min(560px,calc(100vw - 32px))}
+.guide-bar strong{display:block;font-size:14px}.guide-bar small{display:block;color:#CFE0D5;font-size:12.5px}
+.guide-bar .text-link{color:#fff;text-decoration:underline}
+.guide-bar-mark svg{width:20px;height:20px;color:#E9C46A}
+@media (max-width:760px){.guide-bar{bottom:calc(76px + env(safe-area-inset-bottom,0px))}.guide-panel{padding:16px}}
+.resource-grid.compact .resource-actions{flex-wrap:nowrap;gap:6px}
+.resource-grid.compact .resource-actions .button{padding:7px 10px;font-size:12.5px;white-space:nowrap}
+.resource-grid.compact .resource-actions .resource-dl{text-decoration:none}
+.resource-grid.compact .resource-actions .icon-button{margin-left:auto;flex:none}
+.content .toolbar .filter-pills button{padding:8px 14px;font-size:14px}
+@media (max-width:400px){.resource-grid.compact .resource-actions{flex-wrap:wrap}}
