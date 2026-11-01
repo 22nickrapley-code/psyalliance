@@ -20,26 +20,20 @@ export function FirstVisit({
   length?: string;
   title?: string;
 }) {
-  const key = `pa-help-${id}`;
   const [show, setShow] = useState(false);
   const [open, setOpen] = useState(false);
   const dialog = useRef<HTMLDialogElement>(null);
   const frame = useRef<HTMLIFrameElement>(null);
 
   useEffect(() => {
-    let closed = false;
+    // Demo prompts can be turned off for every section at once (Nick, 1 Nov); the demos stay in Settings.
+    let off = false;
     try {
-      closed = window.localStorage.getItem(key) === "closed";
+      off = window.localStorage.getItem("pa-demos-off") === "1" || /(?:^|; )pa_hide_demos=1/.test(document.cookie);
     } catch {}
-    setShow(!closed);
-  }, [key]);
+    setShow(!off);
+  }, [id]);
 
-  const close = () => {
-    try {
-      window.localStorage.setItem(key, "closed");
-    } catch {}
-    setShow(false);
-  };
 
   // The video's own "Try it yourself" button asks to be closed.
   useEffect(() => {
@@ -60,7 +54,6 @@ export function FirstVisit({
   };
   const finished = () => {
     setOpen(false);
-    close();
     // The note goes away with the example, so focus returns to the page.
     document.getElementById("main")?.focus({ preventScroll: true });
   };
@@ -68,13 +61,17 @@ export function FirstVisit({
   if (!show) return null;
   return (
     <>
-      <aside className="first-visit" aria-label="Watch an example">
-        <span className="first-visit-icon" aria-hidden="true">&#9654;</span>
-        <a className="first-visit-text" href={exampleHref} target="_blank" rel="noopener" onClick={watch}>
-          <b>{title || `New to ${what}?`}</b> Watch a {length} example, then try it yourself <span aria-hidden="true">&rarr;</span>
+      <div className="demo-line">
+        <a className="demo-line-watch" href={exampleHref} target="_blank" rel="noopener" onClick={watch}>
+          <span className="demo-line-icon" aria-hidden="true">&#9654;</span>
+          <span>
+            <b>Need a demo?</b> Watch a {length} demo of how {title ? what.toLowerCase() : what} works
+          </span>
         </a>
-        <button type="button" className="first-visit-close" aria-label="Close" onClick={close}>&times;</button>
-      </aside>
+        <a className="demo-line-off" href={`/dashboard?demos=1&back=${encodeURIComponent(typeof window !== "undefined" ? location.pathname : "/dashboard")}`}>
+          Know your way around? Remove demos
+        </a>
+      </div>
       <dialog ref={dialog} className="example-dialog" aria-label={`${what}: an example`} onClose={finished}>
         <div className="example-bar">
           <span>

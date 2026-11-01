@@ -22,6 +22,7 @@ export function openOf(sp: URLSearchParams | Params, view: WorkspaceView = "home
   // From the account pages' top bar and the retired availability page.
   if (get("search") === "1") return { type: "search" };
   if (get("settings") === "1") return { type: "settings" };
+  if (get("demos") === "1") return { type: "demos" };
   if (get("availability") === "1" && view === "home") return { type: "availability" };
   const referral = num(get("referral"));
   if (referral && view === "referrals") return { type: "referral", id: Number(referral) };

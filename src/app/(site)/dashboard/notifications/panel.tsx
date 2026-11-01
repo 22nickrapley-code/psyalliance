@@ -20,6 +20,7 @@ const LABELS: Record<NotificationEventType, string> = {
   referral_sent: "Referrals",
   referral_response: "Referrals",
   referral_connected: "Referrals",
+  referral_closed: "Referrals",
   consultation_response: "Consult",
   consultation_invite: "Consult",
   trusted_invitation_sent: "Network",

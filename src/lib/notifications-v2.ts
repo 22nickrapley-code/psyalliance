@@ -23,6 +23,7 @@ export type NotificationEventType =
   | "referral_sent"
   | "referral_response"
   | "referral_connected"
+  | "referral_closed"
   | "consultation_response"
   | "consultation_invite"
   | "trusted_invitation_sent"
@@ -44,6 +45,7 @@ const PREFERENCE_COLUMN_BY_EVENT_TYPE: Partial<Record<NotificationEventType, str
   referral_sent: "email_on_referral_request",
   referral_response: "email_on_referral_response",
   referral_connected: "email_on_referral_response",
+  referral_closed: "email_on_referral_response",
   consultation_response: "email_on_consultation_response",
   consultation_invite: "email_on_consultation_invite",
   trusted_invitation_sent: "email_on_trusted_invitation",

@@ -222,3 +222,102 @@ html.in-card .overlay .modal-header .icon-button[data-action="close-modal"]{disp
 .import-bar{position:sticky;top:0;z-index:20;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin:14px 0 0;padding:12px 16px;border-radius:12px;background:#FBF1DC;border:1px solid #EAD9B6;color:#4B3B1C}
 @media (max-width:1100px){.pf-layout{grid-template-columns:minmax(0,1fr)}.pf-aside{position:static}}
 @media (max-width:640px){.pf-head-row{flex-wrap:wrap}.pf-head-row>.pf-edit{position:absolute;right:16px;top:16px}.pf-head{position:relative;padding:20px!important}.pf-name{font-size:24px}.pf-card{width:100vw;max-height:100dvh;border-radius:0;margin:0}.pf-card-body{padding:16px}}
+/* "Need a demo?" (1.1): one quiet line at the top of each section, and a way to turn the prompts off. */
+.demo-line{display:flex;flex-wrap:wrap;align-items:center;gap:6px 18px;margin:0 0 14px}
+.demo-line button{background:none;border:0;padding:6px 0;font:inherit;cursor:pointer;color:var(--forest)}
+.demo-line-watch{display:inline-flex;align-items:center;gap:10px;font-size:14px}
+.demo-line-watch b{font-weight:600}
+.demo-line-icon{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;background:#7A5C25;color:#fff;font-size:10px}
+.demo-line-off{font-size:13px;color:var(--muted)!important;text-decoration:underline;text-underline-offset:3px}
+.demo-list{list-style:none;margin:0;padding:0}
+.demo-list li{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
+.demo-list b{display:block;font-size:15px}.demo-list small{color:var(--muted);font-size:13px}
+.demo-toggle{margin-top:16px}
+.support-line{margin:12px 0 0;font-size:13.5px;color:var(--muted)}.support-line a{color:var(--forest);font-weight:600}
+/* Colleague cards (1.1): two lines. Green is how they match; amber is "partly", red is what they lack. */
+.match-lines{display:grid;gap:6px;margin-top:10px;min-width:0}
+.match-line{display:flex;gap:6px;flex-wrap:nowrap;overflow:hidden;mask-image:linear-gradient(90deg,#000 92%,transparent);-webkit-mask-image:linear-gradient(90deg,#000 92%,transparent)}
+.match-line:hover{overflow-x:auto;mask-image:none;-webkit-mask-image:none}
+.mchip{display:inline-flex;align-items:center;gap:5px;flex:none;white-space:nowrap;font-size:12.5px;font-weight:500;padding:4px 9px;border-radius:999px;border:1px solid}
+.mchip svg{width:13px;height:13px}
+.mchip.good{background:#EEF4EE;border-color:#CFE0D2;color:#1E5A3F}
+.mchip.warn{background:#FBF1DC;border-color:#EAD9B6;color:#7A5C25}
+.mchip.gap{background:#FBE9E5;border-color:#F0C9C0;color:#8A3B2E}
+.match-name{background:none;border:0;padding:0;font:inherit;font-weight:600;color:var(--ink);cursor:pointer;display:inline-flex;align-items:center;gap:4px}
+.match-name svg{width:14px;height:14px;color:var(--forest)}
+.match-name:hover{text-decoration:underline}
+.match-card .match-profile-link{display:none}
+.match-card.is-hard{opacity:.6;background:#F6F3EC;cursor:not-allowed}
+.match-card.is-hard .match-name{pointer-events:auto}
+.match-hard{display:flex;align-items:center;gap:8px;margin:10px 0 0;font-size:13px;color:#5A6159}
+.match-hard svg{width:15px;height:15px}
+.match-hard-head{margin:18px 0 6px;font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#6A6252}
+/* Who a request goes to, as overlapping discs. */
+.disc-stack{display:inline-flex;align-items:center}
+.disc-stack .avatar{width:34px;height:34px;font-size:11px;border:2px solid var(--paper);margin-left:-10px}
+.disc-stack .avatar:first-child{margin-left:0}
+.disc-stack.is-wide .avatar{margin-left:-14px}
+.disc-more{display:inline-grid;place-items:center;min-width:34px;height:34px;padding:0 6px;margin-left:-10px;border-radius:999px;background:var(--forest);color:#fff;font-size:11px;font-weight:700;border:2px solid var(--paper)}
+.review-hero{position:relative}
+.review-recipients{margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;gap:6px;align-self:center}
+.review-recipients small{font-size:12.5px;color:var(--muted)}
+/* Labels bold, values regular, everywhere (Nick, 1 Nov). */
+.detail-grid dt{font-weight:700!important;color:var(--ink)!important;font-size:13.5px!important;letter-spacing:0!important;text-transform:none!important}
+.detail-grid dd{font-weight:400!important;color:#3E4540!important;font-size:14.5px!important}
+.glance li span{font-weight:700;color:var(--ink)}
+.glance li strong{font-weight:400;color:#3E4540}
+/* A record's name in the card header, with its pencil. */
+.title-edit{display:inline-grid;place-items:center;width:32px;height:32px;margin-left:10px;vertical-align:middle;border-radius:9px;border:1px solid rgba(0,0,0,.12);background:rgba(255,255,255,.7);color:var(--forest);cursor:pointer}
+.title-edit svg{width:15px;height:15px}
+.title-edit:hover{background:#fff}
+/* Progress: the step just reached is green, earlier steps gold (Nick, 1 Nov). */
+.journey-stage.done.earlier .journey-dot{background:#B78A53!important;border-color:#B78A53!important;color:#fff!important}
+.journey-stage.done.latest .journey-dot{background:#1E6B47!important;border-color:#1E6B47!important;color:#fff!important}
+.journey-stage.done.latest strong{color:#1E6B47}
+.referral-journey.is-placed .journey-stage.done.latest strong{color:#1E6B47}
+/* Responses, compact: one line each, the conversation opens in place. */
+.referral-responses.compact{display:grid;gap:8px}
+.response-row{border:1px solid var(--line);border-radius:12px;background:#fff;padding:10px 14px}
+.response-row.is-open{border-color:#C9BFA9}
+.response-main{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.response-main .avatar{width:36px;height:36px;font-size:12px}
+.response-who{display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-width:0;flex:1}
+.response-who .person-link{font-weight:600;color:var(--ink);display:inline-flex;align-items:center;gap:4px}
+.response-who .person-link svg{width:13px;height:13px;color:var(--forest)}
+.resp-pill{font-size:12.5px;font-weight:600;padding:4px 10px;border-radius:999px;background:#F1EEE6;color:#4A534D}
+.resp-pill.tone-good{background:#E6F0E9;color:#1E5A3F}.resp-pill.tone-gold{background:#FBF1DC;color:#7A5C25}.resp-pill.tone-placed{background:#1E6B47;color:#fff}
+.response-main .response-actions{display:flex;gap:8px;margin:0}
+.quick-thread{margin-top:12px;border-top:1px solid var(--line);padding-top:12px;display:grid;gap:10px}
+.quick-msgs{max-height:280px;overflow:auto;display:grid;gap:8px;padding-right:4px}
+.quick-form{display:flex;gap:8px;align-items:flex-end}
+.quick-form textarea{flex:1;min-height:44px;border:1px solid #D9D1C0;border-radius:10px;padding:10px 12px;font:inherit;resize:vertical}
+.quick-open{justify-self:start}
+/* Choosing a colleague: you, the referral, them. */
+.handover-visual{display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;margin:6px 0 18px}
+.hv-person{display:flex;flex-direction:column;align-items:center;gap:6px;max-width:110px;text-align:center}
+.hv-person .avatar{width:52px;height:52px;font-size:16px}
+.hv-person small{font-size:12.5px;font-weight:600;color:var(--ink)}
+.hv-arrow{color:#B78A53}
+.hv-card{display:grid;gap:3px;min-width:180px;max-width:260px;padding:14px 16px;border:1px solid #E7D7C2;border-radius:12px;background:#FBF4EA;font-size:13px;color:#4A534D}
+.hv-card strong{font-size:14.5px;color:var(--ink)}
+/* Lists (1.1): active rows soft yellow, completed soft green, matching tabs; five a page; a line between rows. */
+.arrangement-row.tint-active{background:#FCF6E6}
+.arrangement-row.tint-completed{background:#EDF5EF}
+.arrangement-row.tint-closed{background:#F4F2EE}
+.list-section-body .arrangement-row{border-bottom:1px solid var(--line)!important}
+.list-section-body .arrangement-row:last-child{border-bottom:0!important}
+.filter-pills button[data-action$=":discussion"].active,.filter-pills button[data-action$=":active"].active{background:#E9C46A!important;border-color:#E9C46A!important;color:#3D2E0E!important}
+.filter-pills button[data-action$=":placed"].active,.filter-pills button[data-action$=":past"].active{background:#1E6B47!important;border-color:#1E6B47!important;color:#fff!important}
+.filter-pills button[data-action$=":discussion"]:not(.active),.filter-pills button[data-action$=":active"]:not(.active){background:#FCF6E6;border-color:#EAD9B6}
+.filter-pills button[data-action$=":placed"]:not(.active),.filter-pills button[data-action$=":past"]:not(.active){background:#EDF5EF;border-color:#CFE0D2}
+.list-pager{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 18px;border-top:1px solid var(--line);font-size:13px;color:var(--muted)}
+/* Drafts as one quiet control. */
+.drafts-drop{margin:0 0 16px;border:1px solid var(--line);border-radius:12px;background:var(--paper)}
+.drafts-drop summary{display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;list-style:none;font-weight:600;font-size:14px;color:var(--ink)}
+.drafts-drop summary::-webkit-details-marker{display:none}
+.drafts-drop summary b{display:inline-grid;place-items:center;min-width:24px;height:24px;border-radius:999px;background:#F4EBD9;color:#7A5C25;font-size:12.5px}
+.drafts-drop summary svg:last-child{margin-left:auto}
+.drafts-drop[open] summary svg:last-child{transform:rotate(180deg)}
+.drafts-list{border-top:1px solid var(--line);padding:4px 14px 10px}
+.drafts-list .draft-banner{border:0;border-bottom:1px solid var(--line);border-radius:0;background:none;padding:10px 0;margin:0}
+.drafts-list .draft-banner:last-child{border-bottom:0}

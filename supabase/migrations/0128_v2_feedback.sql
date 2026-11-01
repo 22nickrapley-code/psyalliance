@@ -140,3 +140,74 @@ begin
   return public.my_availability();
 end;
 $function$;
+
+-- 3. Advise, don't block (Nick, 1 Nov) --------------------------------------------------------------
+-- Only three things stop a colleague being asked or chosen: no reviewed license in the client's state, a colleague
+-- who has paused or closed that service (or is away), and members who cannot see each other (blocked). Everything
+-- else (a second focus, an age group, insurance, setting, language, city, prescribing) is shown as a warning and the
+-- member decides. The full list is kept as private.cover_all_exclusions; cover_exclusions now returns only the
+-- hard stops, so referrals, cover requests, answers and placements all follow the same rule.
+do $$
+declare d text;
+begin
+  if to_regprocedure('private.cover_all_exclusions(uuid,text,text,boolean,text,text,text,text,text,text,text)') is null then
+    select pg_get_functiondef('private.cover_exclusions(uuid,text,text,boolean,text,text,text,text,text,text,text)'::regprocedure) into d;
+    d := replace(d, 'FUNCTION private.cover_exclusions(', 'FUNCTION private.cover_all_exclusions(');
+    execute d;
+  end if;
+end $$;
+
+create or replace function private.cover_exclusions(p_candidate uuid, p_state text, p_setting text, p_prescribing boolean, p_focus text, p_secondary text, p_age text, p_insurance text, p_language text, p_city text, p_kind text default 'cover')
+returns text[]
+language sql
+stable
+security definer
+set search_path to 'public'
+as $function$
+  select coalesce(array_agg(x) filter (where x like 'Not a colleague%' or x like 'No reviewed %' or x like 'Paused %' or x like 'Not open to cover%' or x like 'Not taking %'), '{}')
+    from unnest(private.cover_all_exclusions(p_candidate, p_state, p_setting, p_prescribing, p_focus, p_secondary, p_age, p_insurance, p_language, p_city, p_kind)) x;
+$function$;
+
+-- 4. Referrals go to the whole audience the member chose (Nick, 1 Nov) -----------------------------------
+-- Selected colleagues, trusted colleagues or the verified network: everyone in it is asked, apart from the hard
+-- stops above. The member confirms first when choosing the whole network. The width limit moves to 5,000.
+do $$
+declare d text;
+begin
+  select pg_get_functiondef('public.referral_create(jsonb)'::regprocedure) into d;
+  if d is not null and strpos(d, 'array_length(cand, 1) > 500') > 0 then
+    d := replace(d, 'array_length(cand, 1) > 500', 'array_length(cand, 1) > 5000');
+    execute d;
+  end if;
+end $$;
+
+-- 5. When a referral is placed, everyone else who was asked hears so, kindly (Nick, 1 Nov) ----------------
+do $$
+declare def text;
+begin
+  select pg_get_constraintdef(oid) into def from pg_constraint
+   where conname = 'notification_events_event_type_check' and conrelid = 'public.notification_events'::regclass;
+  if def is not null and position('''referral_closed''' in def) = 0 then
+    execute 'alter table public.notification_events drop constraint notification_events_event_type_check';
+    execute 'alter table public.notification_events add constraint notification_events_event_type_check ' || regexp_replace(def, 'ARRAY\[', 'ARRAY[''referral_closed''::text, ');
+  end if;
+end $$;
+
+do $$
+declare d text;
+begin
+  select pg_get_functiondef('public.referral_place(bigint,uuid)'::regprocedure) into d;
+  if d is not null and strpos(d, 'referral_closed') = 0 then
+    d := replace(d, '  return jsonb_build_object(''unchanged'', false);
+end;',
+'  perform private.notify_member(''referral_closed'', rr.profile_id, me,
+            ''chose another colleague for this referral, based on fit. Thank you for responding; they may contact you directly.'',
+            ''/dashboard/referrals?referral='' || p_referral, ''referral_closed:'' || p_referral || '':'' || rr.profile_id,
+            jsonb_build_object(''referralRequestId'', p_referral))
+     from referral_recipients rr
+    where rr.referral_request_id = p_referral and rr.profile_id <> p_colleague;
+  return jsonb_build_object(''unchanged'', false);
+end;');
+    execute d;
+  end if;
+end $$;

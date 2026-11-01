@@ -175,7 +175,7 @@ export default function AccountShell({
           </Link>
           {/* One Settings, the same as the workspace's (Nick, 1 Nov): it opens over this page and comes back here. */}
           <a href={`/dashboard?settings=1&back=${encodeURIComponent(pathname)}`} className="button text small settings-link">
-            Settings &amp; preview controls
+            {demoSite ? "Settings & preview controls" : "Settings"}
           </a>
           <form action={signOutAction} hidden>
             <button type="submit" className="sign-out">Sign out</button>
