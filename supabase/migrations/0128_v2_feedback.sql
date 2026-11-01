@@ -428,3 +428,101 @@ begin
     execute d;
   end if;
 end $$;
+
+-- 9. A chat inside each consultation group (Nick, 1 Nov): one conversation per group, its participants kept to the
+-- members who have joined.
+do $$
+declare d text;
+begin
+  select pg_get_functiondef(to_regproc('public.conversation_open')) into d;
+  if d is not null and strpos(d, '''group-''') = 0 then
+    d := replace(d, '  elsif p_kind = ''referral'' then',
+'  elsif p_kind = ''group'' then
+    if not exists (select 1 from consultation_group_members m where m.group_id = p_a and m.profile_id = me and m.status = ''joined'') then
+      raise exception ''Conversation not found.'' using errcode = ''P0001'';
+    end if;
+    ckey := ''group-'' || p_a;
+    conv := private.context_conversation(ckey, coalesce((select g.name from consultation_groups g where g.id = p_a), ''Consultation group''),
+              array(select m.profile_id from consultation_group_members m where m.group_id = p_a and m.status = ''joined'' and m.profile_id is not null), me);
+    delete from conversation_participants cp
+     where cp.conversation_id = conv
+       and not exists (select 1 from consultation_group_members m where m.group_id = p_a and m.profile_id = cp.profile_id and m.status = ''joined'');
+    return jsonb_build_object(''key'', ckey);
+  elsif p_kind = ''referral'' then');
+    execute d;
+  end if;
+end $$;
+
+-- 10. The group card carries the group's facts: who founded it, the meeting link and the next meeting
+-- (organizers set them), and whether the viewer organizes it (to write the charter).
+alter table public.consultation_groups add column if not exists meeting_link text;
+alter table public.consultation_groups add column if not exists next_meeting_at timestamptz;
+do $$ begin
+  if not exists (select 1 from pg_constraint where conname = 'consultation_groups_meeting_link_check') then
+    alter table public.consultation_groups add constraint consultation_groups_meeting_link_check
+      check (meeting_link is null or (meeting_link ~* '^https://' and char_length(meeting_link) <= 500));
+  end if;
+end $$;
+
+create or replace function public.group_set_meeting(p_group bigint, p_link text, p_next timestamptz)
+ returns jsonb
+ language plpgsql
+ security definer
+ set search_path to 'public'
+as $function$
+declare l text := nullif(btrim(coalesce(p_link, '')), '');
+begin
+  if not private.group_is_organiser(p_group, auth.uid()) then
+    raise exception 'Only the group''s organizers can change the meeting details.' using errcode = '42501';
+  end if;
+  if l is not null and (l !~* '^https://' or char_length(l) > 500) then
+    raise exception 'Use a meeting link that starts with https://' using errcode = 'P0001';
+  end if;
+  update consultation_groups set meeting_link = l, next_meeting_at = p_next where id = p_group;
+  return jsonb_build_object('ok', true);
+end;
+$function$;
+revoke all on function public.group_set_meeting(bigint, text, timestamptz) from public, anon;
+grant execute on function public.group_set_meeting(bigint, text, timestamptz) to authenticated;
+
+create or replace function public.workspace_groups()
+ returns jsonb
+ language sql
+ stable security definer
+ set search_path to 'public'
+as $function$
+  select coalesce(jsonb_agg(jsonb_build_object(
+           'id', g.id,
+           'name', g.name,
+           'purpose', coalesce(g.purpose, ''),
+           'cadence', coalesce(g.cadence, ''),
+           'minutes', g.meeting_length_minutes,
+           'format', g.meeting_format,
+           'charter', coalesce(g.charter_body, ''),
+           'founder', case when g.created_by = auth.uid() then 'me' else g.created_by::text end,
+           'organiser', private.group_is_organiser(g.id, auth.uid()),
+           'link', coalesce(g.meeting_link, ''),
+           'next', g.next_meeting_at,
+           'count', (select count(*) from consultation_group_members m where m.group_id = g.id and m.status = 'joined'),
+           'members', coalesce((select jsonb_agg(m.profile_id order by m.invited_at, m.id)
+                                  from consultation_group_members m
+                                 where m.group_id = g.id and m.status = 'joined' and m.profile_id <> auth.uid()
+                                   and m.profile_id in (select v.id from private.visible_members(auth.uid()) v)), '[]'::jsonb)
+         ) order by g.created_at, g.id), '[]'::jsonb)
+    from consultation_groups g
+   where auth.uid() is not null
+     and exists (select 1 from consultation_group_members m where m.group_id = g.id and m.profile_id = auth.uid() and m.status = 'joined');
+$function$;
+
+-- 11. A colleague's card shows when they joined ("Member since").
+do $$
+declare d text;
+begin
+  select pg_get_functiondef(to_regproc('public.workspace_people')) into d;
+  if d is not null and strpos(d, 'memberSince') = 0 then
+    d := replace(d, '    ''bio'', coalesce(p.bio, ''''),', '    ''memberSince'', p.created_at,
+    ''bio'', coalesce(p.bio, ''''),');
+    if strpos(d, 'memberSince') = 0 then raise exception 'workspace_people: bio line not found'; end if;
+    execute d;
+  end if;
+end $$;

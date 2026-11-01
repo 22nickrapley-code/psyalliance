@@ -141,6 +141,24 @@ export const handlers: Record<string, Handler> = {
     return { ok: true, data, patch: await slices(ctx, ["plans", "tiers", "known"]) };
   },
 
+  // Consultation groups (Nick, 1 Nov): organizers write the charter and set the meeting link and next meeting.
+  "group.charter": async (ctx, a) => {
+    const body = text(a.body, 5000);
+    const err = identifierError(body);
+    if (err) return bad(err);
+    const { error } = await ctx.supabase.rpc("group_edit_charter", { p_group: num(a.group), p_body: body });
+    if (error) return fail(error, "The charter didn't save. Please try again.");
+    return { ok: true, patch: await slices(ctx, ["consult"]) };
+  },
+
+  "group.meeting": async (ctx, a) => {
+    const link = text(a.link, 500);
+    const next = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(String(a.next || "")) ? new Date(String(a.next)).toISOString() : null;
+    const { error } = await ctx.supabase.rpc("group_set_meeting", { p_group: num(a.group), p_link: link || null, p_next: next });
+    if (error) return fail(error, "The meeting details didn't save. Please try again.");
+    return { ok: true, patch: await slices(ctx, ["consult"]) };
+  },
+
   "cover.handover": async (ctx, a) => {
     const { data, error } = await ctx.supabase.rpc("cover_confirm_handover", {
       p_plan: num(a.plan), p_case: num(a.case), p_contact: a.contact === true, p_summary: a.summary === true, p_client: a.client === true,
@@ -235,7 +253,7 @@ export const handlers: Record<string, Handler> = {
   // runs as the member; the database decides whether they are in it.
   "conversation.open": async (ctx, a) => {
     const kind = String(a.kind || "");
-    if (!["direct", "cover", "referral"].includes(kind)) return bad("That conversation can't be opened.");
+    if (!["direct", "cover", "referral", "group"].includes(kind)) return bad("That conversation can't be opened.");
     const { data, error } = await ctx.supabase.rpc("conversation_open", {
       p_kind: kind,
       p_a: a.a == null ? null : num(a.a),

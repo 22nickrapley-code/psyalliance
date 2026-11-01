@@ -170,7 +170,7 @@ html.in-card .overlay .modal-header .icon-button[data-action="close-modal"]{disp
 @media (max-width:760px){.page-card{width:100vw;height:100dvh;max-width:none;max-height:none;border-radius:0}}
 /* Your profile, LinkedIn style (1.1): the profile as colleagues see it, a pencil per section, cards to edit. */
 .pf-layout{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:24px;align-items:start;margin-top:18px}
-.pf-main{display:grid;gap:18px;min-width:0}
+form.pf-main{display:grid;gap:18px;min-width:0}
 .pf-aside{display:grid;gap:18px;position:sticky;top:18px}
 .pf-head{padding:28px!important}
 .pf-head-row{display:flex;gap:22px;align-items:flex-start}
@@ -179,7 +179,7 @@ html.in-card .overlay .modal-header .icon-button[data-action="close-modal"]{disp
 .pf-photo-edit svg{width:15px;height:15px}
 .pf-head-text{flex:1;min-width:0}
 .pf-name{margin:0;font:600 30px/1.12 var(--font-display);letter-spacing:-.028em;color:var(--ink)}
-.pf-role{margin:4px 0 10px;font-size:15.5px;color:var(--muted)}
+.pf-head .pf-role{margin:4px 0 10px;font-size:15.5px;color:var(--muted)}
 .pf-meta{margin:12px 0 0;font-size:14px;color:var(--muted)}
 .pf-meta b{color:var(--ink);font-weight:600}
 .pf-edit{flex:none;width:40px;height:40px;border-radius:10px;border:1px solid #D9D1C0;background:#fff;color:var(--forest);display:grid;place-items:center;cursor:pointer}
@@ -209,19 +209,19 @@ html.in-card .overlay .modal-header .icon-button[data-action="close-modal"]{disp
 .pf-todo li{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--line);font-size:14px}
 .pf-todo li small{margin-left:8px;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#7A5C25}
 .pf-todo .text-link{font-weight:600;color:var(--forest);background:none;border:0;cursor:pointer;font-size:14px;padding:4px 0;text-decoration:underline;text-underline-offset:3px}
-.pf-card{border:0;padding:0;border-radius:18px;width:min(720px,calc(100vw - 32px));max-height:calc(100dvh - 32px);background:var(--paper);color:var(--ink);box-shadow:0 30px 80px -30px rgba(24,35,30,.55)}
-.pf-card[open]{display:flex;flex-direction:column}
-.pf-card::backdrop{background:rgba(20,34,28,.45)}
-.pf-card-head{display:flex;justify-content:space-between;gap:16px;padding:22px 24px 16px;background:#EEF2EC;border-bottom:1px solid var(--line)}
-.pf-card-head h2{margin:6px 0 0;font:600 24px/1.15 var(--font-display);letter-spacing:-.02em}
-.pf-card-help{margin:6px 0 0;font-size:14px;color:var(--muted)}
-.pf-card-x{flex:none;width:40px;height:40px;border:0;border-radius:10px;background:none;font-size:26px;line-height:1;cursor:pointer;color:#4A534D}
-.pf-card-x:hover{background:rgba(0,0,0,.05)}
-.pf-card-body{padding:20px 24px;overflow:auto;flex:1}
-.pf-card-foot{display:flex;justify-content:flex-end;gap:10px;padding:14px 24px;border-top:1px solid var(--line);background:#FBF9F4}
+dialog.pf-card{border:0;padding:0;border-radius:18px;width:min(720px,calc(100vw - 32px));max-height:calc(100dvh - 32px);background:var(--paper);color:var(--ink);box-shadow:0 30px 80px -30px rgba(24,35,30,.55)}
+dialog.pf-card[open]{display:flex;flex-direction:column}
+dialog.pf-card::backdrop{background:rgba(20,34,28,.45)}
+dialog.pf-card .pf-card-head{display:flex;justify-content:space-between;gap:16px;padding:22px 24px 16px;background:#EEF2EC;border-bottom:1px solid var(--line)}
+dialog.pf-card .pf-card-head h2{margin:6px 0 0;font:600 24px/1.15 var(--font-display);letter-spacing:-.02em}
+dialog.pf-card .pf-card-help{margin:6px 0 0;font-size:14px;color:var(--muted)}
+dialog.pf-card .pf-card-x{flex:none;width:40px;height:40px;border:0;border-radius:10px;background:none;font-size:26px;line-height:1;cursor:pointer;color:#4A534D}
+dialog.pf-card .pf-card-x:hover{background:rgba(0,0,0,.05)}
+dialog.pf-card .pf-card-body{padding:20px 24px;overflow:auto;flex:1}
+dialog.pf-card .pf-card-foot{display:flex;justify-content:flex-end;gap:10px;padding:14px 24px;border-top:1px solid var(--line);background:#FBF9F4}
 .import-bar{position:sticky;top:0;z-index:20;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin:14px 0 0;padding:12px 16px;border-radius:12px;background:#FBF1DC;border:1px solid #EAD9B6;color:#4B3B1C}
 @media (max-width:1100px){.pf-layout{grid-template-columns:minmax(0,1fr)}.pf-aside{position:static}}
-@media (max-width:640px){.pf-head-row{flex-wrap:wrap}.pf-head-row>.pf-edit{position:absolute;right:16px;top:16px}.pf-head{position:relative;padding:20px!important}.pf-name{font-size:24px}.pf-card{width:100vw;max-height:100dvh;border-radius:0;margin:0}.pf-card-body{padding:16px}}
+@media (max-width:640px){.pf-head-row{flex-wrap:wrap}.pf-head-row>.pf-edit{position:absolute;right:16px;top:16px}.pf-head{position:relative;padding:20px!important}.pf-name{font-size:24px}dialog.pf-card{width:100vw;max-height:100dvh;border-radius:0;margin:0}dialog.pf-card .pf-card-body{padding:16px}}
 /* "Need a demo?" (1.1): one quiet line at the top of each section, and a way to turn the prompts off. */
 .demo-line{display:flex;flex-wrap:wrap;align-items:center;gap:6px 18px;margin:0 0 14px}
 .demo-line button{background:none;border:0;padding:6px 0;font:inherit;cursor:pointer;color:var(--forest)}
@@ -375,3 +375,95 @@ html.in-card .overlay .modal-header .icon-button[data-action="close-modal"]{disp
 .review-who[open]>summary svg{transform:rotate(180deg)}
 .review-who>.view-tabs{margin:0 16px 10px}
 .review-who>.review-section{margin:0;padding:0 16px 16px;border:0}
+/* Consult (Nick, 1 Nov): the question in the header, the reply box next, replies a few at a time, Useful quiet. */
+.useful-button{margin-top:4px!important;padding:2px 8px!important;font-size:12px!important;border-color:transparent!important;background:transparent!important;color:#6b7a71!important;gap:4px!important}
+.useful-button svg{width:13px!important;height:13px!important}
+.useful-button.active{color:#8A3F63!important;background:transparent!important}.useful-button.active svg{fill:#8A3F63!important}
+.useful-button:hover{background:#F4F1EA!important}
+.discussion-question{display:grid;gap:8px;padding-bottom:14px;border-bottom:1px solid var(--line);margin-bottom:14px}
+.discussion-question p{margin:0;line-height:1.55}
+.discussion-question .discussion-author span{display:grid;font-weight:600}
+.discussion-question .discussion-author small{font-weight:400;color:#5b6b61}
+.posted-banner{display:flex;gap:12px;align-items:flex-start;background:#EEF6F1;border:1px solid #CFE5D8;border-radius:12px;padding:12px 14px;margin-bottom:14px}
+.posted-banner svg{width:20px;height:20px;color:#1E6B47;flex:none;margin-top:2px}
+.posted-banner span{display:grid;gap:2px}.posted-banner small{color:#3F5247}
+.replies-more{display:flex;justify-content:center;margin:10px 0}
+.consult-pills{margin:10px 0 6px}
+.peer-tags .form-grid{align-items:start}
+.peer-tags .form-grid .field{display:grid;grid-template-rows:auto auto;align-content:start;gap:6px;margin:0}
+.peer-tags .form-grid .field label{margin:0}
+/* Consultation group card */
+.group-purpose{margin:0 0 12px;color:#3F5247}
+.group-meet{border:1px solid var(--line);border-radius:14px;background:#FBFAF6;padding:12px 16px;display:grid;gap:10px;margin-bottom:12px}
+.group-meet .detail-grid{margin:0}
+.meet-link{display:inline-flex;align-items:center;gap:10px;flex-wrap:wrap;min-width:0}
+.meet-link a{color:var(--forest);word-break:break-all}
+.group-meet-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.group-meet-form{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:10px;align-items:end}
+.group-meet-form .field{margin:0}
+.group-meet-save{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px}
+.group-members{border:1px solid var(--line);border-radius:14px;background:#fff;margin-bottom:12px}
+.group-members>summary{display:flex;align-items:center;gap:12px;padding:10px 14px;cursor:pointer;list-style:none}
+.group-members>summary::-webkit-details-marker{display:none}
+.group-members>summary>span:nth-child(2){display:grid;flex:1}.group-members>summary small{color:#5b6b61}
+.group-members[open]>summary svg{transform:rotate(180deg)}
+.group-members .colleague-row{padding:8px 14px;border-top:1px solid var(--line)}
+.group-chat .quick-thread{border:1px solid var(--line);border-radius:14px;background:#fff;padding:12px;margin-top:6px}
+.charter-text{line-height:1.6;background:#FBFAF6;border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+@media (max-width:640px){.group-meet-form{grid-template-columns:1fr}}
+/* A colleague's card: the header holds the person. */
+.modal-header.has-lead{display:flex;align-items:flex-start;gap:16px}
+.modal-header.has-lead>div{flex:1;min-width:0}
+.modal-lead .pf-avatar{position:relative;display:inline-block}
+.modal-lead .avatar{width:64px;height:64px;font-size:20px}
+.modal-header .pf-head-line{display:block}
+.modal-header .head-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.modal-header .pf-chip{font-size:12px}
+.pf-chip.is-trusted{background:#E3ECF6;color:#2F5277;display:inline-flex;align-items:center;gap:4px}.pf-chip.is-trusted svg{width:13px;height:13px}
+.pf-chip.is-worked{background:#EEE6F4;color:#5B3D78}
+@media (max-width:640px){.modal-lead .avatar{width:48px;height:48px;font-size:15px}.modal-header.has-lead{gap:12px}}
+/* Network columns: equal headers in a pale tint of each colour (Nick, 1 Nov). */
+.relationship-group>header{min-height:118px;align-items:flex-start;border-radius:14px 14px 0 0}
+.net-trusted>header{background:#EAF1F8}
+.net-worked>header{background:#F1EBF6}
+.net-suggested>header{background:#E5F3F1}
+.circle-person{z-index:1}.circle-person:hover,.circle-person:focus-visible{z-index:3}
+@media (max-width:900px){.relationship-group>header{min-height:0}}
+/* Messages (Nick, 1 Nov): colleagues, each opening a card with General, Referrals, Cover and All. */
+.messages-heading>div{display:grid;gap:4px}
+.messages-heading .chat-origin{display:inline-flex;align-items:center;gap:6px;justify-self:start;color:var(--forest);font-weight:600}
+.your-groups{padding:12px 14px 4px;display:grid;gap:8px}
+.your-groups-list{display:flex;gap:8px;flex-wrap:wrap}
+.group-chip{display:inline-flex;align-items:center;gap:6px;border:1px solid #D9D1C0;background:#FBFAF6;border-radius:999px;padding:6px 12px;font:inherit;font-size:13px;font-weight:600;color:var(--ink);cursor:pointer;max-width:100%}
+.group-chip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.group-chip svg{width:15px;height:15px;color:#6E4E86;flex:none}
+.group-chip:hover{background:#F3EFE6}
+.inbox-sort{display:flex;gap:6px}
+.colleague-row-btn{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;width:100%;text-align:left;border:0;border-bottom:1px solid var(--line);background:transparent;padding:12px 14px;font:inherit;color:inherit;cursor:pointer}
+.colleague-row-btn:hover{background:#F7F4EC}
+.colleague-row-btn.active{background:#EEF4EF;box-shadow:inset 3px 0 0 var(--forest)}
+.colleague-row-btn .inbox-person-content{display:grid;gap:2px;min-width:0}
+.colleague-row-btn .inbox-latest-preview{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#3F5247;font-size:13.5px}
+.colleague-row-btn small{color:#6b7a71;font-size:12px}
+.colleague-row-btn .inbox-person-meta{display:grid;justify-items:end;gap:4px}
+.colleague-tabs{display:flex;gap:4px;padding:8px 16px 0;border-bottom:1px solid var(--line);overflow-x:auto}
+.colleague-tabs button{position:relative;border:0;background:transparent;font:inherit;font-size:14px;font-weight:600;color:#5b6b61;padding:10px 12px;border-bottom:2px solid transparent;cursor:pointer;white-space:nowrap}
+.colleague-tabs button.active{color:var(--forest);border-bottom-color:var(--forest)}
+.colleague-tabs .tab-n{font-size:12px;color:#7a877f;font-weight:500}
+.colleague-tabs .unread-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#C0503E;margin-left:4px;vertical-align:middle}
+.context-list{display:grid;gap:8px;padding:16px;align-content:start;overflow:auto}
+.context-row{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;border:1px solid var(--line);border-radius:12px;background:#fff;padding:12px 14px;text-align:left;font:inherit;color:inherit;cursor:pointer}
+.context-row:hover{border-color:#C9BFA9}
+.context-row>svg{width:18px;height:18px;color:var(--forest)}
+.context-row span:nth-child(2){display:grid;gap:2px;min-width:0}
+.context-row small{color:#5b6b61;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.context-row.is-unread strong{color:var(--forest)}
+.empty-state.small{padding:40px 20px}
+/* X2 everywhere: labels bold, values regular. */
+.pf-glance li span{font-weight:650;color:var(--ink)}
+.pf-glance li strong{font-weight:400;color:#3E4540}
+.peer-tags .form-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;gap:12px!important}
+.peer-tags .form-grid .field>label{display:block;line-height:20px;min-height:20px;margin:0!important;padding:0!important}
+.peer-tags .form-grid .field select,.peer-tags .form-grid .field input{height:46px!important;margin:0!important;box-sizing:border-box;width:100%}
+.peer-tags .form-grid .select-wrap{margin:0!important}
+.peer-tags .form-grid>.field{margin:0!important;align-self:start}
