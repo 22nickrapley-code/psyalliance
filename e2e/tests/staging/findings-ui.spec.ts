@@ -93,7 +93,7 @@ test.describe("N16-03 notification deliveries", () => {
     const bp = await bc.newPage();
     await signInAs(bc, "bram", baseURL!);
     await bp.goto("/dashboard/messages");
-    await bp.locator(".inbox-colleague", { hasText: "Avery" }).locator(".inbox-latest").first().click();
+    await bp.locator(".colleague-row-btn", { hasText: "Avery" }).first().click();
     await expect(bp.getByText(read).first()).toBeVisible();
     // Opening the conversation records the read in the background; wait for it before the browser is closed.
     await expect.poll(async () => (await q(`select count(*)::int n from conversation_messages m join conversation_participants cp on cp.conversation_id = m.conversation_id
@@ -165,17 +165,16 @@ test.describe("N01 Mark useful in the browser", () => {
 });
 
 test.describe("N03 and DEMO entry points", () => {
-  test("N03-A a pending member's Home sends them to the in-product demos", async ({ page, context, baseURL }, info) => {
+  // 1 Nov (Nick, P2-D): every section, the Hub included, has a "Need a demo?" line; the demos also live in Settings.
+  test("N03-A a pending member's Hub offers its demo, and every demo is in Settings", async ({ page, context, baseURL }, info) => {
     const ev = watch(page);
     await signInAs(context, "pell", baseURL!);
     await page.goto("/dashboard");
     await shot(page, info, "pending-home");
-    // The "while we check your license" panel, not the menu.
-    const hrefs = await page.locator("#explore a").evaluateAll((as) => as.map((a) => [a.textContent?.trim(), a.getAttribute("href")]));
-    const demo = hrefs.find(([t]) => /demo/i.test(String(t)));
-    await info.attach("demo-link.json", { body: JSON.stringify(demo), contentType: "application/json" });
+    await expect(page.locator(".demo-line")).toContainText("Need a demo?");
+    await page.goto("/dashboard?demos=1");
+    await expect(page.locator(".modal .demo-list li").first()).toBeVisible();
     await attachEvidence(info, ev);
-    expect(demo?.[1]).toBe("/dashboard/demos");
   });
 });
 

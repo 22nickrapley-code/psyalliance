@@ -97,11 +97,10 @@ test("RF-03 each selected colleague is checked against the client's needs at the
   // Nobody eligible in a hand-picked list: nothing is made.
   await expect(create(avery, payload({ selected: [dara] }))).rejects.toThrow(/Select at least one eligible colleague/);
   expect((await q(`select 1 from referral_requests where requesting_profile_id = $1 and client_request_id is not null`, [avery])).length).toBe(1);
-  // The second focus counts here as in the screens: Bram lists OCD, Cass does not.
+  // 1 Nov (Nick, F4): a second focus the colleague doesn't list is a warning on the screens, not a hard stop, so both are asked.
   const r2 = await create(avery, payload({ secondary: "Obsessive/Compulsive Disorder", selected: [bram, cass] }));
-  expect(r2.asked).toBe(1);
-  expect(r2.dropped[0]).toMatchObject({ person: cass });
-  expect(r2.dropped[0].reasons).toEqual(["Obsessive/Compulsive Disorder not listed"]);
+  expect(r2.asked).toBe(2);
+  expect(r2.dropped).toEqual([]);
 });
 
 test("RF-04 a trusted circle or the whole network is asked only where the need matches", async () => {

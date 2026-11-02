@@ -24,14 +24,14 @@ test("SET-01 Settings lists the account pages, and every link goes to a page tha
   for (const [label, href] of [
     ["Your profile and licenses", "/dashboard/profile"],
     ["Verification", "/dashboard/credentials"],
-    ["My documents", "/dashboard/documents?tab=mine"],
+    ["My files", "/dashboard/documents?tab=mine"],
     ["Continuity plan", "/dashboard/continuity"],
     ["All notifications", "/dashboard/notifications"],
-    ["Privacy and account", "/dashboard/settings"],
-    ["Demos and sandbox", "/dashboard/demos"],
+    ["Account and privacy", "/dashboard/settings"],
   ]) {
     const row = modal.locator("a.global-result", { hasText: label });
-    await expect(row, label).toHaveAttribute("href", href);
+    // 1.1: each row carries ?back= so closing the page returns to Settings.
+    await expect(row, label).toHaveAttribute("href", new RegExp("^" + href.replace(/[?]/g, "\\?") + "([?&]back=.*)?$"));
     const res = await page.request.get(href);
     expect(res.status(), `${label} → ${href}`).toBeLessThan(400);
   }

@@ -148,14 +148,13 @@ test("MSU-04 a question from a referral opens its own conversation, apart from t
   await expect(b.page.locator(".message-group").first()).toContainText("Evenings if possible.");
   await expect(b.page.locator(".message-group.outgoing")).toContainText("Do you need weekday evenings?");
 
-  // Avery has two conversations with Bram and can tell them apart.
+  // Avery has two conversations with Bram and can tell them apart (1 Nov: tabs on Bram's card).
   await a.page.reload();
-  await a.page.locator(".inbox-context-toggle").click();
-  await expect(a.page.locator(".colleague-contexts .inbox-item")).toHaveCount(2);
-  const options = await a.page.locator("#conversation-context option").allTextContents();
-  expect(options.some((o) => o.startsWith("Referral"))).toBe(true);
-  expect(options.some((o) => o.startsWith("Direct conversation"))).toBe(true);
-  await a.page.locator(".colleague-contexts .inbox-item", { hasText: "Referral" }).click();
+  await a.page.locator(".colleague-row-btn", { hasText: "Bram" }).first().click();
+  await a.page.locator('[data-action="person-tab:all"]').click();
+  await expect(a.page.locator(".context-list .context-row")).toHaveCount(2);
+  await a.page.locator('[data-action="person-tab:referrals"]').click();
+  await a.page.locator(".context-list .context-row").first().click();
   await expect(a.page.locator(".message-group", { hasText: "Do you need weekday evenings?" })).toBeVisible();
   await expect(a.page.locator(".message-group", { hasText: "Separate chat" })).toHaveCount(0);
   // "View referral" goes to the referral.

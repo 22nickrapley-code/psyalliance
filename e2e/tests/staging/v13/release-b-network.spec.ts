@@ -29,7 +29,7 @@ async function openAs(browser: Browser, who: string, baseURL: string, path: stri
 }
 
 for (const width of [1365, 390, 320]) {
-  test(`NB-01 N02 network at ${width}px: circle targets never overlap or hide one another, and every trusted colleague can be reached and opened`, async ({ browser, baseURL }) => {
+  test(`NB-01 N02 network at ${width}px: the circle shows one disc per trusted colleague, and every trusted colleague can be reached and opened`, async ({ browser, baseURL }) => {
     // Seven trusted colleagues: more than the circle can show, so the list has to carry the rest.
     const visible = (await asMember(avery, `select public.workspace_people() as p`)).rows[0].p as { id: string; name: string }[];
     const chosen = visible.filter((p) => p.id !== avery).sort((a, b) => a.name.localeCompare(b.name)).slice(0, 7);
@@ -41,12 +41,9 @@ for (const width of [1365, 390, 320]) {
     const n = await nodes.count();
     expect(n).toBeGreaterThan(3);
     const boxes = await nodes.evaluateAll((els) => els.map((e) => { const r = e.getBoundingClientRect(); return { x: r.x, y: r.y, w: r.width, h: r.height, cx: r.x + r.width / 2, cy: r.y + r.height / 2, label: e.getAttribute("aria-label"), top: (document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2)?.closest(".circle-person") === e) }; }));
-    for (const b of boxes) { expect(b.w, `${b.label} width`).toBeGreaterThanOrEqual(30); expect(b.top, `${b.label} is the thing under its own centre`).toBe(true); }
-    for (let i = 0; i < boxes.length; i++) for (let j = i + 1; j < boxes.length; j++) {
-      const a = boxes[i], b = boxes[j];
-      const overlap = Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x) > 1 && Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y) > 1;
-      expect(overlap, `${a.label} overlaps ${b.label}`).toBe(false);
-    }
+    // 1 Nov (Nick, I5): one disc per person, overlapping where it must, so the circle matches the counts.
+    for (const b of boxes) expect(b.w, `${b.label} width`).toBeGreaterThanOrEqual(30);
+    expect(boxes.filter((b) => /Trusted colleague/.test(String(b.label))).length).toBe(7);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
     // The trusted list holds all seven, five to a page, and each opens the right profile.
     const group = page.locator("#net-trusted");

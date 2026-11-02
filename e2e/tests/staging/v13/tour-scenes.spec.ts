@@ -85,50 +85,30 @@ test("TOUR-02 a demo frame saves and sends nothing, and starts from the same sam
 
 // TOUR-03/04/05 (the old video player) are replaced by DEMO-V14-03/04/05 in demo-player.spec.ts: the scripted demos.
 
+// 1 Nov (Nick, decision 8): the public demos play on their own page; the step-by-step practice pages are gone and land
+// on the demo, which ends with Create your account.
 for (const [label, size] of [["desktop", DESKTOP], ["phone", PHONE]] as const) {
-  test(`TOUR-06 ${label}: click through a step on the real screen, with the step's control marked`, async ({ browser }) => {
+  test(`TOUR-06 ${label}: a demo plays the real screens on its own page, with no sideways scroll`, async ({ browser }) => {
     test.setTimeout(120_000);
     const context = await browser.newContext({ viewport: size });
     const page = await context.newPage();
     const errs: string[] = [];
-    page.on("pageerror", (e) => errs.push(`${e.message} @ ${page.url()} :: ${(e.stack || "").split("\n").slice(0, 4).join(" / ")}`));
+    page.on("pageerror", (e) => errs.push(`${e.message} @ ${page.url()}`));
     await page.goto("/tour/cover/clients");
-    const iframe = page.frameLocator("iframe");
-    await expect(iframe.locator("#app")).toBeVisible({ timeout: 30000 });
-    // The marked control is the one the step is about.
-    const marked = iframe.locator(".pa-focus");
-    await expect(marked).toHaveCount(1, { timeout: 30000 });
-    await expect(marked).toContainText("Continue to colleagues");
-    // It is the real control: pressing it moves the screen on.
-    await marked.click();
-    await expect(iframe.locator(".modal")).toContainText(/Review invitations/i, { timeout: 15000 });
-    // Reset scenario puts the sample back.
-    await page.getByRole("button", { name: "Reset scenario" }).click();
-    await expect(iframe.locator(".pa-focus")).toContainText("Continue to colleagues", { timeout: 30000 });
-    // Back and Next walk the demo; the last step finishes to the completion page.
-    const next = size === PHONE ? page.locator(".tp-mobile a", { hasText: "Next" }) : page.locator(".tp-nav a", { hasText: "Next" });
-    await next.click();
-    await expect(page).toHaveURL(/\/tour\/cover\/busy$/);
-    const back = size === PHONE ? page.locator(".tp-mobile a", { hasText: "Back" }) : page.locator(".tp-nav a", { hasText: "Back" });
-    await back.click();
-    await expect(page).toHaveURL(/\/tour\/cover\/clients$/);
-    if (size === PHONE) await expect(page.locator(".tp-nav")).toBeHidden();
-    // Nothing on the page scrolls sideways.
+    await expect(page).toHaveURL(/\/tour\/cover$/);
+    const frame = page.frameLocator("iframe.dp-frame-el.on");
+    await expect(frame.locator("#app")).toBeVisible({ timeout: 30000 });
+    await expect(page.getByRole("link", { name: /Return to homepage/ }).first()).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
     expect(errs).toEqual([]);
     await context.close();
   });
 }
 
-test("TOUR-07 the last step finishes to a completion page that says what the demo showed and what to do next", async ({ page }) => {
-  const j = findJourney("cover")!;
-  const last = j.steps[j.steps.length - 1];
-  await page.goto(`/tour/cover/${last.slug}`);
-  await page.locator(".tp-nav a", { hasText: "Finish" }).click();
-  await expect(page).toHaveURL(/\/tour\/cover\/done$/);
-  await expect(page.locator("h1")).toContainText(j.outcome);
-  for (const line of j.learned) await expect(page.locator(".learned")).toContainText(line);
-  await expect(page.getByRole("link", { name: "Create your account" }).first()).toBeVisible();
+test("TOUR-07 the old completion page lands on the demo, which offers Create your account", async ({ page }) => {
+  await page.goto("/tour/cover/done");
+  await expect(page).toHaveURL(/\/tour\/cover$/);
+  await expect(page.getByRole("link", { name: /Create your account/ }).first()).toBeVisible();
   await expect(page.locator("body")).not.toContainText(/\bPulse\b/);
 });
 
@@ -139,8 +119,8 @@ test("TOUR-08 links to the earlier demos still land somewhere right", async ({ p
     ["/tour/home", /\/tour\/circle$/],
     ["/tour/referral-replies", /\/tour\/refer$/],
     ["/tour/not-a-demo", /\/tour$/],
-    ["/tour/cover/not-a-step", /\/tour\/cover\/plan$/],
-    ...Object.entries(LEGACY_STEPS).map(([k, v]) => [`/tour/${k}`, new RegExp(`/tour/${k.split("/")[0]}/${v}$`)] as [string, RegExp]),
+    ["/tour/cover/not-a-step", /\/tour\/cover$/],
+    ...Object.entries(LEGACY_STEPS).map(([k]) => [`/tour/${k}`, new RegExp(`/tour/${k.split("/")[0]}$`)] as [string, RegExp]),
     ...Object.entries(LEGACY_SLUGS).map(([k, v]) => [`/tour/${k}`, new RegExp(`/tour/${v}$`)] as [string, RegExp]).filter(([u]) => !JOURNEYS.some((j) => u === `/tour/${j.key}`) && !D.findScript(u.replace("/tour/", ""))),
   ];
   for (const [from, to] of hits) {

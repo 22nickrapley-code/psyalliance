@@ -33,11 +33,11 @@ test("J-AVAIL-01 confirming availability saves it with today's date", async ({ p
 
 test("J-PROFILE-01 editing the bio saves and shows on the colleague view", async ({ page, context, baseURL, browser }, info) => {
   await signInAs(context, "fenn", baseURL!);
-  await page.goto("/dashboard/profile?edit=1");
-  await page.evaluate(() => document.querySelectorAll("details").forEach((d) => ((d as HTMLDetailsElement).open = true)));
+  // 1 Nov (Nick, LinkedIn style): the About pencil opens its card; Save keeps it.
+  await page.goto("/dashboard/profile#about");
   const bio = `QA bio ${Date.now()}: adults with anxiety and OCD, evenings and telehealth.`;
   await page.locator("textarea#bio").fill(bio);
-  await page.getByRole("button", { name: "Save profile" }).first().click();
+  await page.locator("#dlg-about").getByRole("button", { name: /^Save/ }).first().click();
   await page.waitForLoadState("networkidle");
   await shot(page, info, "1-saved");
   const saved = await one(`select bio from profiles where id = $1`, [account("fenn").id]);
@@ -118,21 +118,21 @@ test("J-PENDING-01 a member whose license is being checked can't see colleagues'
   expect(visible, "no colleague names on the page").toEqual([]);
 });
 
-// 18 Oct (Nick): visitors see every title but no review wording, and a
-// title asks them to join. Nothing claims a review that hasn't happened.
+// 1 Nov (Nick, B5/P2 7): /library redirects to the homepage Library section. Visitors see the 20 titles and their
+// one-line descriptions, are asked to join, and nothing claims a review.
 test("J-LIB-01 the public Library lists titles, asks visitors to join, and never claims a review", async ({ page }, info) => {
   await page.goto("/library");
+  await expect(page).toHaveURL(/\/#library$/);
+  const lib = page.locator("#library");
   await shot(page, info, "1-library");
-  const text = await page.locator("main, body").first().innerText();
+  const text = (await lib.textContent()) || "";
   expect(text).toMatch(/Reciprocal Coverage Agreement/);
+  expect(text).toMatch(/Professional Will/);
+  expect(text, "asks visitors to join").toMatch(/once their license is verified/);
+  expect(text, "no review wording").not.toMatch(/not yet (independently )?reviewed|after independent review|provisional/i);
+  expect(text, "never claims a review").not.toMatch(/Reviewed by|Clinically reviewed/i);
   await page.goto("/library/reciprocal-coverage-agreement");
-  await shot(page, info, "2-template");
-  const t = await page.locator("main, body").first().innerText();
-  await info.attach("text.txt", { body: t.slice(0, 3000), contentType: "text/plain" });
-  expect(t, "asks visitors to join").toMatch(/Members get it now|Coming soon/);
-  await expect(page.getByRole("link", { name: /Create your account/ }).first()).toBeVisible();
-  expect(t, "no review wording").not.toMatch(/not yet (independently )?reviewed|after independent review|provisional/i);
-  expect(t, "never claims a review").not.toMatch(/Reviewed by|Clinically reviewed/i);
+  await expect(page).toHaveURL(/\/#library$/);
 });
 
 test("J-PROVIDER-01 the physician portal is paused: it says so, and the database refuses a referral sent anyway", async ({ page, context, baseURL }, info) => {

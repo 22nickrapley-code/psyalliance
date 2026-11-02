@@ -26,6 +26,12 @@ const create = async (who: string, p: Record<string, unknown>) => (await asMembe
 const plansOf = async (who: string) => (await asMember(who, `select public.workspace_plans() as r`)).rows[0].r as any[];
 const answer = async (who: string, req: number | string, r: string, question?: string, cid?: string) =>
   (await asMember(who, `select public.cover_answer($1::bigint, $2, $3, $4::uuid) as r`, [req, r, question ?? null, cid ?? null])).rows[0].r;
+// 1 Nov (Nick, G6): no instant agreements. A colleague offers ("accepted" or "interested" records interest); the member who
+// asked then chooses one colleague per client with cover_confirm. agree() is both steps.
+const agree = async (who: string, req: number | string, owner = avery) => {
+  await answer(who, req, "accepted");
+  return (await asMember(owner, `select public.cover_confirm($1::bigint) as r`, [req])).rows[0].r;
+};
 const requestOf = async (planId: number, who: string) =>
   one(`select r.* from coverage_requests r join coverage_plan_cases c on c.id = r.coverage_plan_case_id where c.coverage_plan_id = $1 and r.requested_profile_id = $2 order by r.id desc limit 1`, [planId, who]);
 const caseOf = async (planId: number, n = 0) => (await q(`select * from coverage_plan_cases where coverage_plan_id = $1 order by id`, [planId]))[n];
@@ -95,15 +101,17 @@ test("CV-03 each recipient is checked against each client at the moment of sendi
     ],
   }));
   const why = (label: string, who: string) => r.dropped.find((d: any) => d.client === label && d.person === who)?.reasons;
-  expect(why("Client 1", dara)).toEqual(["No reviewed NY license", "Anxiety/Panic Disorders not listed"]);
+  // 1 Nov (Nick, decision 1): only the hard stops drop a colleague (no license in the client's state, a paused or closed
+  // service, a blocked or non-member account). A focus, insurance or prescribing mismatch is a warning on the screens.
+  expect(why("Client 1", dara)).toEqual(["No reviewed NY license"]);
   expect(why("Client 1", pending)).toEqual(["Not a colleague you can ask"]);
-  expect(why("Client 2", cass)).toEqual(["Insurance does not match"]);
-  expect(why("Client 3", bram)).toEqual(["Prescribing required"]);
+  expect(why("Client 2", cass)).toBeUndefined();
+  expect(why("Client 3", bram)).toBeUndefined();
   const asked = await q(`select c.case_reference, r.requested_profile_id from coverage_requests r join coverage_plan_cases c on c.id = r.coverage_plan_case_id where c.coverage_plan_id = $1 order by 1, 2`, [r.planId]);
   expect(asked.map((x) => `${x.case_reference}:${x.requested_profile_id}`).sort()).toEqual(
-    [`Client 1:${bram}`, `Client 1:${gale}`, `Client 2:${bram}`, `Client 3:${gale}`].sort());
+    [`Client 1:${bram}`, `Client 1:${gale}`, `Client 2:${bram}`, `Client 2:${cass}`, `Client 3:${gale}`, `Client 3:${bram}`].sort());
   // Dropped people are told nothing and kept off the plan.
-  expect(await q(`select 1 from notification_deliveries d join notification_events e on e.id = d.notification_event_id where e.event_type like 'coverage%' and d.recipient_profile_id = any($1::uuid[])`, [[dara, pending, cass]])).toHaveLength(0);
+  expect(await q(`select 1 from notification_deliveries d join notification_events e on e.id = d.notification_event_id where e.event_type like 'coverage%' and d.recipient_profile_id = any($1::uuid[])`, [[dara, pending]])).toHaveLength(0);
 });
 
 test("CV-04 the server's eligibility rules give the same answers as the screens' own", async () => {
@@ -143,8 +151,12 @@ test("CV-04 the server's eligibility rules give the same answers as the screens'
       // The screens read city from the profile; the server also accepts the licence's own in-person city.
       const lic = p.licenses[n.state];
       const jsOut = js(n, { ...p, city: [p.city, lic?.city].filter(Boolean).join(" | ") });
-      const sql = (await q(`select private.cover_exclusions($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) as r`, [p.id, n.state, n.setting, n.prescribing, n.focus, n.secondary, n.age, n.insurance, n.language, n.city]))[0].r as string[];
-      expect(sql, `${p.name} / ${JSON.stringify(n)}`).toEqual(jsOut);
+      // 1 Nov (Nick): the screens show every reason (hard stops greyed, the rest as warnings); the server refuses only the hard stops.
+      const args = [p.id, n.state, n.setting, n.prescribing, n.focus, n.secondary, n.age, n.insurance, n.language, n.city];
+      const all = (await q(`select private.cover_all_exclusions($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) as r`, args))[0].r as string[];
+      expect(all, `${p.name} / ${JSON.stringify(n)}`).toEqual(jsOut);
+      const hard = (await q(`select private.cover_exclusions($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) as r`, args))[0].r as string[];
+      expect(hard, `hard: ${p.name} / ${JSON.stringify(n)}`).toEqual(jsOut.filter((x) => /^(Not a colleague|No reviewed |Paused |Not open to cover|Not taking )/.test(x)));
       checked++;
     }
   }
@@ -222,19 +234,28 @@ test("CV-07 a colleague who is discussing pauses the sequence until they answer"
   expect((await requestOf(r.planId, cass)).status).toBe("sent");
 });
 
-test("CV-08 accepting takes the client for good; the others close as taken; only one can win", async () => {
+test("CV-08 offers are interest; the member's choice takes the client for good; the others close and are told; only one can win", async () => {
   const r = await create(avery, payload({ mode: "parallel" }));
   const [rb, rc] = [await requestOf(r.planId, bram), await requestOf(r.planId, cass)];
-  const results = await Promise.allSettled([answer(bram, rb.id, "accepted"), answer(cass, rc.id, "accepted")]);
-  expect(results.filter((x) => x.status === "fulfilled")).toHaveLength(1);
-  const failed = results.find((x) => x.status === "rejected") as PromiseRejectedResult;
-  expect(String(failed.reason)).toMatch(/already taken on this client|closed/);
+  // Both offer at the same moment: both are recorded as interested, nobody is assigned.
+  const results = await Promise.allSettled([answer(bram, rb.id, "accepted"), answer(cass, rc.id, "interested")]);
+  expect(results.filter((x) => x.status === "fulfilled")).toHaveLength(2);
+  expect((await caseOf(r.planId)).assigned_clinician_id).toBeNull();
+  const view = (await plansOf(avery))[0].clients[0];
+  expect(view.status).toBe("interested");
+  expect(view.requests.filter((x: any) => x.status === "interested")).toHaveLength(2);
+  // Offering again is harmless.
+  expect((await answer(bram, rb.id, "interested")).unchanged).toBe(true);
+  // Only the member who asked can choose; two choices at once leave one winner.
+  await expect(asMember(bram, `select public.cover_confirm($1::bigint)`, [rb.id])).rejects.toThrow();
+  const picks = await Promise.allSettled([asMember(avery, `select public.cover_confirm($1::bigint)`, [rb.id]), asMember(avery, `select public.cover_confirm($1::bigint)`, [rc.id])]);
+  expect(picks.filter((x) => x.status === "fulfilled").length).toBeGreaterThanOrEqual(1);
   const c = await caseOf(r.planId);
   expect(c.status).toBe("confirmed");
   const winner = c.assigned_clinician_id as string;
   expect([bram, cass]).toContain(winner);
   const loser = winner === bram ? cass : bram;
-  expect(await requestOf(r.planId, loser)).toMatchObject({ status: "expired", closed_reason: "competing" });
+  expect((await requestOf(r.planId, loser)).status).not.toBe("sent");
   const owner = (await plansOf(avery))[0].clients[0];
   expect(owner.status).toBe("agreed");
   expect(owner.assignee).toBe(winner);
@@ -244,11 +265,7 @@ test("CV-08 accepting takes the client for good; the others close as taken; only
   expect(lv.coveredElsewhere).toBe(true);
   expect(lv.assignee).toBeNull();
   expect(JSON.stringify(await plansOf(loser))).not.toContain(winner);
-  // The winner sees themself.
   expect((await plansOf(winner))[0].clients[0].assignee).toBe("me");
-  // Answering the same way twice is harmless.
-  const wr = await requestOf(r.planId, winner);
-  expect((await answer(winner, wr.id, "accepted")).unchanged).toBe(true);
   // Worked-with now includes them, for both.
   const tiers = (await asMember(avery, `select public.workspace_tiers() as r`)).rows[0].r;
   expect([...tiers.trust, ...tiers.worked]).toContain(winner);
@@ -259,7 +276,7 @@ test("CV-09 handover is the organiser's, needs an agreed colleague and all three
   const c = await caseOf(r.planId);
   const handover = (who: string, a = true, b = true, cc = true) => asMember(who, `select public.cover_confirm_handover($1, $2, $3, $4, $5) as r`, [r.planId, c.id, a, b, cc]);
   await expect(handover(avery)).rejects.toThrow(/colleague needs to agree/);
-  await answer(bram, (await requestOf(r.planId, bram)).id, "accepted");
+  await agree(bram, (await requestOf(r.planId, bram)).id);
   await expect(handover(bram)).rejects.toThrow(/Plan not found/);
   await expect(handover(avery, true, true, false)).rejects.toThrow(/all three/);
   expect((await plansOf(avery))[0].clients[0].status).toBe("agreed");
@@ -277,10 +294,10 @@ test("CV-10 a plan completes only when every client has an agreed colleague and 
   const [c1, c2] = await q(`select * from coverage_plan_cases where coverage_plan_id = $1 order by id`, [r.planId]);
   const complete = (who = avery) => asMember(who, `select public.cover_complete_plan($1) as r`, [r.planId]);
   await expect(complete()).rejects.toThrow(/Confirm every handover/);
-  await answer(bram, (await requestOf(r.planId, bram)).id, "accepted");
+  await agree(bram, (await requestOf(r.planId, bram)).id);
   await asMember(avery, `select public.cover_confirm_handover($1, $2, true, true, true)`, [r.planId, c1.id]);
   await expect(complete()).rejects.toThrow(/Confirm every handover/);
-  await answer(cass, (await requestOf(r.planId, cass)).id, "accepted");
+  await agree(cass, (await requestOf(r.planId, cass)).id);
   await expect(complete()).rejects.toThrow(/Confirm every handover/);
   await asMember(avery, `select public.cover_confirm_handover($1, $2, true, true, true)`, [r.planId, c2.id]);
   await expect(complete(bram)).rejects.toThrow(/Plan not found/);
@@ -351,7 +368,7 @@ test("CV-13 the organiser can ask another colleague; repeats and ineligible choi
   await expect(ask(bram, gale)).rejects.toThrow(/Plan not found/);
   const h = (await plansOf(avery))[0].history[0].text;
   expect(h).toMatch(/^Client 1: a new request was sent to /);
-  await answer(gale, (await requestOf(r.planId, gale)).id, "accepted");
+  await agree(gale, (await requestOf(r.planId, gale)).id);
   await expect(ask(avery, cass)).rejects.toThrow(/already has cover/);
 });
 
@@ -417,5 +434,7 @@ test("CV-17 a plan from before the workspace still shows, and keeps its own rule
   expect(v.clients[0]).toMatchObject({ focus: "Depression", secondary: "", status: "awaiting" });
   expect(v.history.map((h: any) => h.text)).toEqual(["Plan created."]);
   await answer(bram, rq.id, "accepted");
+  expect((await plansOf(avery))[0].clients[0].status).toBe("interested");
+  await asMember(avery, `select public.cover_confirm($1::bigint)`, [rq.id]);
   expect((await plansOf(avery))[0].clients[0].status).toBe("agreed");
 });

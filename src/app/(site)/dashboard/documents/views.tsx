@@ -53,7 +53,7 @@ function LibraryTabs({ tab, mineCount }: { tab: "curated" | "mine"; mineCount: n
     <nav className="tabs" aria-label="Library">
       <a className={`tab${tab === "curated" ? " active" : ""}`} href="/dashboard/documents">Library</a>
       <a className={`tab${tab === "mine" ? " active" : ""}`} href="/dashboard/documents?tab=mine">
-        My documents <span className="micro-note">({mineCount})</span>
+        My files <span className="micro-note">({mineCount})</span>
       </a>
     </nav>
   );
@@ -83,7 +83,7 @@ export function LibraryView({
         actions={
           <>
             {isReviewer && <a className="btn ghost" href="/dashboard/documents/review">Review desk</a>}
-            <a className="btn secondary" href="/dashboard/documents?tab=mine">My documents</a>
+            <a className="btn secondary" href="/dashboard/documents?tab=mine">My files</a>
           </>
         }
       />
@@ -127,7 +127,7 @@ export function LibraryView({
             <div className="eyebrow">How to use them</div>
             <h3>A library with context.</h3>
             <p className="small">
-              Each resource links to the part of PsyAlliance where it helps. Save a PDF to My documents to keep a private copy, and fill it in outside PsyAlliance.
+              Each resource links to the part of PsyAlliance where it helps. Save a PDF to My files to keep a private copy, and fill it in outside PsyAlliance.
             </p>
             <p className="small" style={{ marginBottom: 0 }}>
               These are templates and guidance, not legal advice. Check your state&rsquo;s rules before you use one with clients.
@@ -179,7 +179,7 @@ export function ResourceDetailView({
             {r.available && (
               <form action={saveWorkingCopyAction} className="inline">
                 <input type="hidden" name="document_id" value={r.id} />
-                <button type="submit" className="btn secondary">Save PDF to My documents</button>
+                <button type="submit" className="btn secondary">Save PDF to My files</button>
               </form>
             )}
           </>
@@ -217,7 +217,7 @@ export function ResourceDetailView({
             </div>
           )}
           <p className="small" style={{ marginTop: 16, marginBottom: 0 }}>
-            {r.available ? "" : "When it's ready: "}Save PDF to My documents keeps a private copy that only you can see. Print it or fill it in outside PsyAlliance, especially if it will hold client details. Never upload a completed form that identifies a client.
+            {r.available ? "" : "When it's ready: "}Save PDF to My files keeps a private copy that only you can see. Print it or fill it in outside PsyAlliance, especially if it will hold client details. Never upload a completed form that identifies a client.
           </p>
         </section>
         <aside className="stack">
@@ -270,7 +270,7 @@ export function MyLibraryView({
     <>
       <PageHead
         eyebrow="Private to you"
-        title="My documents"
+        title="My files"
         lead="Your working copies and uploads. Nobody else can see these."
       />
       <Banner error={error} ok={notice} />

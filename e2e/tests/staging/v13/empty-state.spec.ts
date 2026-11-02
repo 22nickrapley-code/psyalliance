@@ -84,7 +84,14 @@ test("EMP-02 a brand-new member's Hub and lists say what to do first", async ({ 
   await page.waitForLoadState("networkidle");
   // The Hub: no actions waiting, an availability card that asks to be set, and the three ways in.
   await expect(page.locator("main, #main").first()).toContainText(/The Hub/i);
-  await expect(page.getByText(/^Set your availability$/).first()).toBeVisible();
+  // 1 Nov (Nick, E): profile setup is in the Hub's Actions.
+  const t = page.locator(".hub-attn-toggle");
+  await t.waitFor();
+  await expect(async () => {
+    if ((await t.getAttribute("aria-expanded")) !== "true") await t.click();
+    await expect(t).toHaveAttribute("aria-expanded", "true", { timeout: 2000 });
+  }).toPass({ timeout: 20000 });
+  await expect(page.locator(".hub-attention").getByText(/^Set your availability$/).first()).toBeVisible();
   for (const section of ["Cover", "Referrals", "Consult"]) await expect(page.locator(".sidebar .nav-item", { hasText: section })).toBeVisible();
   // Each list opens and offers its way in, with no rows to show.
   await page.goto("/dashboard/cover");

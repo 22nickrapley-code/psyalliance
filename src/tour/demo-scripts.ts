@@ -75,11 +75,11 @@ const COVER: DemoScript = {
       steps: [
         {
           title: "One picture of every client",
-          text: "Open a plan and the journey bar shows where you are: asked, agreed, handover, ready. Each client has a row saying who covers them.",
+          text: "Open a plan and the journey bar shows where you are: asked, interested, chosen, handover. Each client is a disc showing where they stand.",
           beats: [
             ["click", ".arrangement-row"],
             ["look", ".journey-bar"],
-            ["look", ".client-table-head"],
+            ["look", ".cdisc-row"],
           ],
         },
         {
@@ -106,9 +106,9 @@ const COVER: DemoScript = {
           beats: [["click", ".arrangement-row.row-reply"], ["look", ".needs-box"]],
         },
         {
-          title: "Say yes, or ask first",
-          text: "Answer yes, ask a question first, or say you are not available. Nobody is chased, and nothing is sent until you choose.",
-          beats: [["click", "text=I can help"]],
+          title: "Offer, or ask first",
+          text: "Say you are interested, ask a question first, or say you are not available. The colleague who asked chooses who covers.",
+          beats: [["click", '[data-action^="cover-answer:4:1:interested"]']],
         },
       ],
     },
@@ -147,7 +147,7 @@ const REFER: DemoScript = {
           text: "Only colleagues who fit are offered, each with the reasons: licensed in the state, works with this need, accepting referrals now. Up to three are chosen to start, and you can change them.",
           beats: [
             ["look", '[data-action="match-profile:rena"]'],
-            ["look", '[data-action="workflow-resource:107"]'],
+            ["look", ".match-list"],
             ["click", '[data-action="referral-review"]'],
           ],
         },
@@ -172,7 +172,7 @@ const REFER: DemoScript = {
         {
           title: "Where the referral stands",
           text: "Asked, interested, placed. Replies arrive here, and you are told as soon as a colleague answers. Nothing is placed until you choose.",
-          beats: [["look", ".modal [class*=progress], .modal [class*=track], .modal h1, .modal h2"], ["look", '[data-action="referral-thread:1:maya"]']],
+          beats: [["look", ".modal [class*=progress], .modal [class*=track], .modal h1, .modal h2"], ["look", '[data-action="referral-quick:1:maya"]']],
         },
         {
           title: "Interest is not a placement",
@@ -426,18 +426,18 @@ const MESSAGES: DemoScript = {
       steps: [
         {
           title: "One inbox",
-          text: "Every colleague appears once. Filter by Cover, Referral or Group, or search by name or a word you remember.",
+          text: "Every colleague appears once, by most recent or by most conversations. Search by name or a word you remember.",
           beats: [
             ["look", "#inbox-list"],
-            ["click", '[data-action="inbox-filter:Cover"]'],
-            ["click", '[data-action="inbox-filter:All"]'],
+            ["click", '[data-action="inbox-sort:most"]'],
+            ["click", '[data-action="inbox-sort:recent"]'],
           ],
         },
         {
           title: "Reply in one place",
           text: "Open a conversation, write your message and send it. You see whether it is sending, sent, or failed.",
           beats: [
-            ["click", '[data-action="thread:rena-cover"]'],
+            ["click", '[data-action="colleague:rena"]'],
             ["type", "#message-input", "Thursday still works for me. I will bring the handover summary."],
             ["click", ".send-button"],
           ],
@@ -452,12 +452,12 @@ const MESSAGES: DemoScript = {
         {
           title: "Cover and Referral, kept apart",
           text: "Maya appears once in your inbox. Her Cover and Referral conversations each have their own history, draft and unread count.",
-          beats: [["look", '[data-action="inbox-person:maya"]'], ["look", "#conversation-context"]],
+          beats: [["click", '[data-action="colleague:maya"]'], ["look", ".colleague-tabs"]],
         },
         {
-          title: "Switch from the menu",
-          text: "Move between a colleague’s conversations from the menu above the messages, and jump to the plan or referral it is about.",
-          beats: [["choose", "#conversation-context", "Referral"], ["look", '[data-action="referral:1"]']],
+          title: "Switch with the tabs",
+          text: "Move between a colleague’s conversations with the tabs on their card: General, Referrals, Cover and All.",
+          beats: [["click", '[data-action="person-tab:referrals"]'], ["look", ".context-row"]],
         },
       ],
     },
@@ -500,13 +500,13 @@ const LIBRARY: DemoScript = {
         },
         {
           title: "What is inside",
-          text: "Before you open it: what is inside, its review status, and what to do before you use it. Templates are adapted to your state and practice.",
+          text: "Before you open it: what is inside, and what to check before you use it. Templates are adapted to your state and practice.",
           beats: [["click", '[data-action="resource:102"]'], ["look", ".modal h2"]],
         },
         {
           title: "Saved, and easy to find",
-          text: "Save it and it joins your saved list, private to you. A template that is still being reviewed is listed as Coming soon and opens only when it is ready. Saving a copy puts a private file in My documents; it is separate from the bookmark.",
-          beats: [["click", '[data-action="resource-save:102"]'], ["do", "close-modal"], ["click", '[data-action="resource-filter:Saved"]']],
+          text: "Save it with the bookmark and it joins your Saved list, private to you. Every resource has a PDF to download.",
+          beats: [["do", "close-modal"], ["click", '[data-action="resource-save:102"]'], ["click", '[data-action="resource-filter:Saved"]']],
         },
       ],
     },

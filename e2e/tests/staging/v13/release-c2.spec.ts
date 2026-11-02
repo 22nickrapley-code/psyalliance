@@ -19,29 +19,21 @@ const NEEDS = [
 ];
 const avery = account("avery").id;
 
-test("P-01 the six need walkthroughs exist, each with a practice scenario, one hands-on step and an ending that carries the need on", async ({ page, baseURL }) => {
+// 1 Nov (Nick, decision 8): "Try it yourself" lives only in the sandbox. Each need has a demo page that plays the demo
+// and ends with Create your account; the old practice step and ending pages land on that demo.
+test("P-01 the six need demos exist, each on its own page that ends with Create your account", async ({ page, baseURL }) => {
   for (const { need, journey } of NEEDS) {
     const j = J.findJourney(journey)!;
     expect(j, journey).toBeTruthy();
     expect(j.scenario).toBe(need);
-    expect(j.steps.filter((s: any) => s.handsOn).length, `${journey} hands-on steps`).toBe(1);
-    expect(j.cta!.href).toBe(`/start?need=${need}`);
-    expect(j.steps.length).toBeLessThanOrEqual(4);
-    // The starting page's demo link for this need opens this walkthrough.
-    const guide = fs.readFileSync(path.join(process.cwd(), "..", "src/lib/start-guide.ts"), "utf8");
-    expect(guide).toContain(`demo: "/tour/${journey}"`);
-    // Overview page, a step, and the ending.
     await page.goto(`${baseURL}/tour/${journey}`);
     await expect(page.getByRole("heading", { level: 1 })).toContainText(j.title);
+    await expect(page.getByRole("link", { name: /Return to homepage/ }).first()).toBeVisible();
+    await expect(page.locator("[data-practice-label]")).toHaveCount(0);
     await page.goto(`${baseURL}/tour/${journey}/${j.steps[0].slug}`);
-    await expect(page.locator("[data-practice-label]")).toContainText("Fictional practice environment");
-    await expect(page.getByRole("button", { name: "Reset scenario" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Change scenario" })).toHaveAttribute("href", "/start");
-    await expect(page.getByRole("link", { name: /Create your account/ })).toBeVisible();
+    await expect(page).toHaveURL(new RegExp(`/tour/${journey}$`));
     await page.goto(`${baseURL}/tour/${journey}/done`);
-    const end = page.locator("[data-scenario-end]");
-    await expect(end).toContainText(j.summary!);
-    await expect(end.getByRole("link", { name: j.cta!.label })).toHaveAttribute("href", `/start?need=${need}`);
+    await expect(page).toHaveURL(new RegExp(`/tour/${journey}$`));
   }
 });
 
@@ -65,48 +57,11 @@ test("P-02 each scenario opens with only its own differences: caseload has no pl
   expect(offered).toBeLessThanOrEqual(9);
 });
 
-test("P-03 'What will they receive?' shows the generic alert line only, and Back to my view returns", async ({ page, baseURL }) => {
-  for (const { journey } of NEEDS) {
-    const j = J.findJourney(journey)!;
-    for (const s of j.steps.filter((x: any) => x.recipient)) {
-      expect(s.recipient.alert, `${journey}/${s.slug}`).toMatch(/^[A-Z][a-z]+ has an? (referral|cover|consultation) request\. Review request\.$/);
-      expect(s.recipient.alert).not.toMatch(/client|diagnos|trauma|OCD|depress/i);
-      await page.goto(`${baseURL}/tour/${journey}/${s.slug}`);
-      const toggle = page.getByRole("button", { name: "What will they receive?" });
-      await toggle.click();
-      await expect(page.locator("[data-recipient]")).toContainText(s.recipient.alert);
-      await page.getByRole("button", { name: "Back to my view" }).click();
-      await expect(page.locator("[data-recipient]")).not.toContainText(s.recipient.alert);
-    }
-  }
-});
-
-test("P-04 Reset scenario restores the start, Change scenario goes to the choice, and practice writes nothing to the account", async ({ page, baseURL }) => {
+test("P-03 the public demos write nothing to any account", async ({ page, baseURL }) => {
   const before = await q(`select count(*)::int n from coverage_plans`);
-  await page.goto(`${baseURL}/tour/time-away/dates`);
-  const frame = page.frameLocator("iframe");
-  await frame.locator("#cover-name").waitFor();
-  await frame.locator("#cover-name").fill("Changed in practice");
-  await page.getByRole("button", { name: "Reset scenario" }).click();
-  await frame.locator("#cover-name").waitFor();
-  await expect(frame.locator("#cover-name")).not.toHaveValue("Changed in practice");
-  await page.getByRole("link", { name: "Change scenario" }).click();
-  await expect(page).toHaveURL(/\/start$/);
+  for (const { journey } of NEEDS) await page.goto(`${baseURL}/tour/${journey}`);
   const after = await q(`select count(*)::int n from coverage_plans`);
   expect(after[0].n).toBe(before[0].n);
-});
-
-test("P-05 practice events go to the practice namespace, with a name and a need and nothing else", async ({ page, baseURL }) => {
-  await q(`delete from lifecycle_events where namespace = 'practice'`);
-  await page.goto(`${baseURL}/tour/perspective/question`);
-  await page.waitForTimeout(800);
-  await page.goto(`${baseURL}/tour/perspective/done`);
-  await page.getByRole("link", { name: "Ask a colleague" }).click({ noWaitAfter: true });
-  await page.waitForTimeout(800);
-  const rows = await q(`select event, need from lifecycle_events where namespace = 'practice' order by id`);
-  expect(rows.map((r: any) => r.event)).toEqual(expect.arrayContaining(["task_start", "interaction_complete", "summary_continue"]));
-  expect(new Set(rows.map((r: any) => r.need))).toEqual(new Set(["perspective"]));
-  expect((await q(`select count(*)::int n from lifecycle_events where namespace = 'real' and need = 'perspective' and at > now() - interval '1 minute'`))[0].n).toBe(0);
   // A visitor cannot write to the real namespace through the public route.
   await fetch(`${baseURL}/api/start-event`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ event: "pause", need: "reducing", namespace: "real" }) });
   expect((await q(`select count(*)::int n from lifecycle_events where namespace = 'real' and event = 'pause' and need = 'reducing' and at > now() - interval '1 minute'`))[0].n).toBe(0);

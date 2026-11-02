@@ -151,8 +151,9 @@ test("FOL-04 Availability (G4, D8): three referral choices saved as the member's
   for (const label of ["Accepting", "Selected referrals only", "Not accepting"]) await expect(form.locator(".av-seg label", { hasText: label }).first()).toBeVisible();
   await expect(page.locator(".modal")).toContainText("Last confirmed");
   await expect(page.locator(".modal")).toContainText("At a glance");
-  await expect(page.locator(".modal")).toContainText("30");
-  await expect(page.locator(".modal")).toContainText("90");
+  // 1 Nov (Nick): 60 and 120 days.
+  await expect(page.locator(".modal")).toContainText("60");
+  await expect(page.locator(".modal")).toContainText("120");
   await form.locator(".av-seg label", { hasText: "Selected referrals only" }).first().click();
   await page.getByRole("button", { name: /Save & confirm availability/ }).click();
   await expect(page.locator("#toast, .toast").first()).toBeVisible();
@@ -236,19 +237,17 @@ test("FOL-06 Exclude (G7, D6): private and silent, saved as the member's own, an
   await back.context.close();
 });
 
-test("FOL-07 Messages (G1, G2): a conversation of three is listed under Group, shows who wrote, replies once, and a message can be reported", async ({ browser, baseURL }) => {
+test("FOL-07 Messages (G1, G2): a conversation of three is listed under Your groups, shows who wrote, replies once, and a message can be reported", async ({ browser, baseURL }) => {
   const c = await one(`insert into conversations (created_by, title) values ($1, 'FOL group of three') returning id`, [bram.id]);
   for (const p of [avery.id, bram.id, cass.id]) await q(`insert into conversation_participants (conversation_id, profile_id) values ($1, $2)`, [c.id, p]);
   await q(`insert into conversation_messages (conversation_id, author_id, body) values ($1, $2, 'FOL hello from Bram'), ($1, $3, 'FOL and hello from Cass')`, [c.id, bram.id, cass.id]);
 
   const { page, context } = await openAs(browser, "avery", baseURL!, "/dashboard/messages");
   await expect(page.locator("#inbox-list")).toBeVisible();
-  const chip = page.locator('[data-action^="inbox-filter:"]', { hasText: /^Group$/ });
-  await expect(chip).toBeVisible();
-  await chip.click();
-  const row = page.locator(".inbox-group").first();
+  // 1 Nov (Nick, P2-M): Messages lists colleagues; group conversations sit in the "Your groups" row.
+  const row = page.locator(".your-groups .group-chip", { hasText: "FOL group of three" }).first();
   await expect(row).toBeVisible();
-  await row.locator('[data-action^="thread:"]').first().click();
+  await row.click();
   const authors = await page.locator(".bubble-author").allInnerTexts();
   expect(authors.join(" ")).toContain(bram.name.split(" ")[0]);
   expect(authors.join(" ")).toContain(cass.name.split(" ")[0]);

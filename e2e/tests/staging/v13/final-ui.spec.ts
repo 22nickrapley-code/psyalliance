@@ -78,7 +78,8 @@ test("FU-02 referral numbers are the sender's own, and the private title is priv
   await expect(a.page.locator(".arrangement-row", { hasText: `Referral ${r1.number}` }).first()).toBeVisible();
   await expect(a.page.locator(".arrangement-row", { hasText: `Referral ${r2.number}` }).first()).toBeVisible();
   await a.page.locator(`[data-action="referral:${r2.referralId}"]`).first().click();
-  await expect(a.page.locator(".referral-title-line")).toContainText("None yet");
+  // 1 Nov (Nick, X1): the card header carries the record; the pencil beside it adds the private title.
+  await expect(a.page.locator("#modal-title")).toContainText("Client referral");
   await a.page.getByRole("button", { name: "Add a title" }).click();
   // Initials and contact details are refused, in words, before anything is saved.
   await a.page.locator("#referral-title-input").fill("J.S. evenings");
@@ -91,13 +92,14 @@ test("FU-02 referral numbers are the sender's own, and the private title is priv
   await a.page.locator("#referral-title-input").fill("Evening anxiety");
   await a.page.getByRole("button", { name: "Save title" }).click();
   await expect(a.page.locator("#toast")).toContainText("Private title saved");
-  await expect(a.page.locator(".referral-title-line")).toContainText("Evening anxiety");
+  await expect(a.page.locator("#modal-title")).toContainText("Evening anxiety");
   expect((await one(`select title from referral_titles where profile_id = $1`, [avery])).title).toBe("Evening anxiety");
   await a.page.keyboard.press("Escape");
   await expect(a.page.locator(".arrangement-row", { hasText: "Evening anxiety" })).toBeVisible();
-  // The colleague sees the number and the need, never the title.
+  // The colleague sees who it is from and the need, never the title or the sender's number (1 Nov: no duplicate numbers).
   const b = await openAs(browser, "bram", baseURL!, "/dashboard/referrals");
-  await expect(b.page.locator(".arrangement-row", { hasText: `Referral ${r2.number}` }).first()).toBeVisible();
+  await expect(b.page.locator(".arrangement-row", { hasText: "From " }).first()).toBeVisible();
+  expect(await b.page.locator("#app").innerText()).not.toContain(`Referral ${r2.number} ·`);
   expect(await b.page.locator("#app").innerText()).not.toContain("Evening anxiety");
   clean(a.page); clean(b.page);
   await a.context.close(); await b.context.close();
@@ -134,7 +136,7 @@ test("FU-04 consult: the asker marks a question resolved; others see why replies
     clientRequestId: uuid(), title: "How do you handle late cancellations?", body: "", topic: "Professional life", audience: "network", confirmed: "true", tags: [] })]);
   await call(cass, `select public.consult_reply($1::bigint, $2, $3::uuid) as r`, [post.id, "A written policy helps.", uuid()]);
   const a = await openAs(browser, "avery", baseURL!, `/dashboard/consult?discussion=${post.id}`);
-  await expect(a.page.locator(".modal")).toContainText("Your question");
+  await expect(a.page.locator(".modal")).toContainText("You asked");
   await expect(a.page.locator("#reply-form")).toBeVisible();
   await expect(a.page.getByRole("button", { name: "Flag this discussion" })).toHaveCount(0);
   await a.page.getByRole("button", { name: "Mark as resolved" }).click();

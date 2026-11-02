@@ -26,20 +26,15 @@ test("PUB-02 sign-in, sign-up and reset forms are there", async ({ page }, info)
   }
 });
 
-test("PUB-03 the Library lists templates and never calls a provisional one reviewed", async ({ page }, info) => {
+// 1 Nov (Nick): the Library is a homepage section; /library redirects there. Titles only, nothing claims a review.
+test("PUB-03 the Library lists templates on the homepage and never calls one reviewed", async ({ page }, info) => {
   test.skip(isSandbox(), "the Library lives on the main site");
   await page.goto("/library");
+  await expect(page).toHaveURL(/\/#library$/);
   await shot(page, info, "library");
-  const links = page.locator('a[href^="/library/"]');
-  expect(await links.count()).toBeGreaterThan(0);
-  const href = await links.first().getAttribute("href");
-  await page.goto(href!);
-  await shot(page, info, "template");
-  const text = await page.locator("body").innerText();
-  const reviewed = /Reviewed by/i.test(text);
-  const provisional = /not yet reviewed|provisional|in review|being reviewed|awaiting review/i.test(text);
-  await info.attach("labels.json", { body: JSON.stringify({ href, reviewed, provisional }), contentType: "application/json" });
-  expect(reviewed && provisional, "a page can't say both").toBe(false);
+  const text = (await page.locator("#library").textContent()) || "";
+  expect(text).toMatch(/Reciprocal Coverage Agreement/);
+  expect(/Reviewed by|not yet reviewed|provisional|in review|being reviewed|awaiting review/i.test(text)).toBe(false);
 });
 
 test("PUB-04 the demos open and the player starts", async ({ page }, info) => {

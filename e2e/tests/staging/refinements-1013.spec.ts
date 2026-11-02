@@ -168,21 +168,23 @@ test.describe("R13-08 notifications and menu", () => {
     expect(after).toBe(0);
   });
 
-  test("R13-08-B Demos can be hidden from the menu in Settings and shown again", async ({ page, context, baseURL }, info) => {
+  // 1 Nov (Nick, P2-D): "Remove demos" turns off the demo line everywhere; Demos in Settings turns it back on.
+  test("R13-08-B Demos can be removed from every section and shown again from Settings", async ({ page, context, baseURL }, info) => {
     await signInAs(context, "dara", baseURL!);
-    await page.goto("/dashboard/settings#menu");
-    const menu = page.locator("aside");
-    await expect(menu.getByRole("link", { name: /^Demos/ })).toBeVisible();
-    await page.locator("details#menu > summary").click();
-    await page.getByRole("button", { name: "Hide Demos" }).click();
-    await expect(menu.getByRole("link", { name: /^Demos/ })).toHaveCount(0);
-    await shot(page, info, "hidden");
+    await page.goto("/dashboard/referrals");
+    await expect(page.locator(".demo-line")).toBeVisible();
+    await page.locator(".demo-line").getByRole("button", { name: /Remove demos/ }).click();
+    const toggle = page.locator(".modal input[data-demos-toggle]");
+    await expect(toggle).toBeChecked();
+    await toggle.uncheck();
+    await page.locator(".modal").getByRole("button", { name: "Done" }).click();
     await page.reload();
-    await expect(menu.getByRole("link", { name: /^Demos/ })).toHaveCount(0);
-    // The page itself still opens from Settings.
-    await page.locator("details#menu > summary").click();
-    await page.getByRole("button", { name: "Show Demos" }).click();
-    await expect(menu.getByRole("link", { name: /^Demos/ })).toBeVisible();
+    await expect(page.locator(".demo-line")).toHaveCount(0);
+    await shot(page, info, "hidden");
+    await page.goto("/dashboard?demos=1");
+    await page.locator(".modal input[data-demos-toggle]").check();
+    await page.goto("/dashboard/referrals");
+    await expect(page.locator(".demo-line")).toBeVisible();
   });
 });
 

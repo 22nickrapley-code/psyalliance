@@ -1,6 +1,8 @@
 import { test, expect, type Page, type Browser } from "@playwright/test";
 import { signInAs, account } from "../../../lib/auth";
 import { assertLocal, q, one, asMember } from "../../../lib/staging";
+// 1 Nov (Nick, H4): drafts sit in one "Drafts (n)" control, opened to continue or delete each.
+const openDrafts = async (page: import("@playwright/test").Page) => { const d = page.locator("details.drafts-drop").first(); if ((await d.count()) && !(await d.evaluate((e) => (e as HTMLDetailsElement).open))) await d.locator("summary").click(); };
 
 // Release B (brief sections 6 to 10, scenarios C01-C06, R01, R03, Q01, Q02, N01, A01, M01-M03). Real local database,
 // fictional members only. Server rules (outreach races, placement, permissions, retries, files) are proved by the
@@ -32,6 +34,10 @@ async function openAs(browser: Browser, who: string, baseURL: string, path = "/d
   return { context, page };
 }
 const clickAction = (page: Page, selector: string) => page.evaluate((s) => (document.querySelector(s) as HTMLElement).click(), selector);
+// 1 Nov (Nick, G3): clients are discs; Duplicate and Remove are on the client you open.
+const DISC = ".client-discs .cdisc";
+const DISC_ID = ".client-discs .cdisc .cdisc-ring b";
+async function dup(page: Page, id = 1) { await clickAction(page, `[data-action="client-edit:${id}"]`); await clickAction(page, '[data-action^="client-duplicate:"]'); }
 
 async function startCover(page: Page, name: string) {
   await page.locator('[data-action="cover-start"]').first().click();
@@ -49,17 +55,19 @@ test("B-01 C01 twenty clients: copies get new ids, the limit holds, a removed id
   const { page, context } = await openAs(browser, "avery", baseURL!, "/dashboard/cover");
   await startCover(page, "B Twenty");
   await saveClient(page);
-  for (let i = 0; i < 19; i++) { await clickAction(page, '[data-action^="client-duplicate:"]'); await page.waitForTimeout(40); }
-  await expect(page.locator(".saved-client")).toHaveCount(20);
-  const ids = await page.locator(".saved-client .client-index").allInnerTexts();
+  for (let i = 0; i < 19; i++) { await dup(page); await page.waitForTimeout(40); }
+  await expect(page.locator(DISC)).toHaveCount(20);
+  const ids = await page.locator(DISC_ID).allInnerTexts();
   expect(ids.map((t) => t.trim())).toEqual(Array.from({ length: 20 }, (_, i) => String(i + 1)));
+  await clickAction(page, '[data-action="client-edit:1"]');
   expect(await page.locator('[data-action^="client-duplicate:"]').count()).toBe(0); // no copy offered past twenty
   expect(await page.locator('[data-action="client-add"]').count()).toBe(0);
+  await clickAction(page, '[data-action="client-edit:20"]');
   await clickAction(page, '[data-action="client-remove:20"]');
-  await expect(page.locator(".saved-client")).toHaveCount(19);
-  await clickAction(page, '[data-action^="client-duplicate:"]');
-  await expect(page.locator(".saved-client")).toHaveCount(20);
-  const after = (await page.locator(".saved-client .client-index").allInnerTexts()).map((t) => t.trim());
+  await expect(page.locator(DISC)).toHaveCount(19);
+  await dup(page);
+  await expect(page.locator(DISC)).toHaveCount(20);
+  const after = (await page.locator(DISC_ID).allInnerTexts()).map((t) => t.trim());
   expect(after.at(-1)).toBe("21"); // 20 was removed; its number is not handed out again
   expect(new Set(after).size).toBe(20);
   await context.close();
@@ -73,8 +81,8 @@ test("B-01b C01 a copy is independent: it carries no colleague choice, and editi
   await page.getByRole("button", { name: "Continue to colleagues" }).click();
   await box(1).check();
   await page.getByRole("button", { name: "Back" }).click();
-  await clickAction(page, '[data-action^="client-duplicate:"]');
-  await expect(page.locator(".saved-client")).toHaveCount(2);
+  await dup(page);
+  await expect(page.locator(DISC)).toHaveCount(2);
   await page.getByRole("button", { name: "Continue to colleagues" }).click();
   await page.locator('[data-action="match-client:2"]').click();
   await expect(box(2)).toBeEnabled();
@@ -90,7 +98,8 @@ test("B-01b C01 a copy is independent: it carries no colleague choice, and editi
   await page.locator('[data-action="match-client:1"]').click();
   await expect(box(1)).toBeChecked();
   await page.locator('[data-action="match-client:2"]').click();
-  await expect(box(2)).toHaveCount(0); // client 2 now needs prescribing, which Bram does not do
+  // 1.1: a gap is a warning, not a block; client 2 now needs prescribing, which Bram does not do, so he is not ticked
+  await expect(box(2)).not.toBeChecked();
   await context.close();
 });
 
@@ -164,6 +173,8 @@ test("B-03 C03 workload before review: totals per colleague, first and queued, g
   await page.locator('[data-action="match-client:1"]').click();
   await page.locator(`input[data-match="cover"][data-client="1"][value="${cass}"]`).check();
   await page.getByRole("button", { name: "Review invitations" }).click();
+  await page.locator(".review-who > summary").click();
+  await page.locator('[data-action="review-view:colleague"]').click();
   const work = page.locator(".workload-list");
   await expect(work).toBeVisible();
   const bramLine = work.locator("li", { hasText: "Bram Tellinghast" });
@@ -174,7 +185,8 @@ test("B-03 C03 workload before review: totals per colleague, first and queued, g
   const cassLine = work.locator("li", { hasText: "Cass Morrowgate" });
   await expect(cassLine).toContainText("1 request");
   await expect(cassLine).toContainText("1 queued");
-  await expect(page.locator(".outreach-summary")).toContainText("3 invitations go out first, one per client with a colleague selected.");
+  await expect(page.locator(".outreach-summary")).toContainText("3 invitations go out first, one per client; 1 more waits in your order.");
+  await page.locator('[data-action="review-view:client"]').click();
   // Reordering: only where there is someone to reorder with, and not past either end.
   const clientOne = page.locator("details.review-client").nth(0), clientTwo = page.locator("details.review-client").nth(1);
   await expect(clientTwo.locator(".order-controls")).toHaveCount(0);
@@ -195,8 +207,8 @@ test("B-03b C03 twenty requests to one colleague are visible, counted and asked 
   const { page, context } = await openAs(browser, "avery", baseURL!, "/dashboard/cover");
   await startCover(page, "B Twenty requests");
   await saveClient(page);
-  for (let i = 0; i < 19; i++) { await clickAction(page, '[data-action^="client-duplicate:"]'); await page.waitForTimeout(40); }
-  await expect(page.locator(".saved-client")).toHaveCount(20);
+  for (let i = 0; i < 19; i++) { await dup(page); await page.waitForTimeout(40); }
+  await expect(page.locator(DISC)).toHaveCount(20);
   await page.getByRole("button", { name: "Continue to colleagues" }).click();
   await page.locator('[data-action="match-view:colleague"]').click();
   const row = page.locator("details.bulk-colleague", { hasText: "Bram Tellinghast" });
@@ -205,6 +217,9 @@ test("B-03b C03 twenty requests to one colleague are visible, counted and asked 
   await row.getByRole("button", { name: "Apply to selected clients" }).click();
   await expect(page.locator(".inline-note[role=status]").first()).toContainText("Client 20");
   await page.getByRole("button", { name: "Review invitations" }).click();
+  // 1 Nov (Nick, G5): one collapsible "Who will be asked", By client or By colleague.
+  await page.locator(".review-who > summary").click();
+  await page.locator('[data-action="review-view:colleague"]').click();
   const line = page.locator(".workload-list li", { hasText: "Bram Tellinghast" });
   await expect(line).toContainText("20 requests");
   await expect(line).toContainText("20 asked first");
@@ -247,6 +262,7 @@ test("B-04 C06 calendar: both directions and Today are named, today and the sele
   await page.locator("#cover-name").fill("B Throwaway draft");
   await page.waitForTimeout(900);
   await page.keyboard.press("Escape");
+  await openDrafts(page);
   const banner = page.locator(".draft-banner", { hasText: "B Throwaway draft" });
   await expect(banner).toBeVisible();
   await banner.getByRole("button", { name: "Delete draft" }).click();
@@ -542,7 +558,7 @@ test("B-13 D09 D12 workflow headings name the task, and one client has no client
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
   // Two clients: both switches come back.
   await page.getByRole("button", { name: "Back" }).click();
-  await clickAction(page, '[data-action^="client-duplicate:"]');
+  await dup(page);
   await page.getByRole("button", { name: "Continue to colleagues" }).click();
   await expect(page.locator(".client-match-tabs")).toBeVisible();
   await expect(page.locator('[data-action="match-view:colleague"]')).toBeVisible();

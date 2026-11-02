@@ -64,7 +64,7 @@ test("C-01 L01 homepage lifecycle band: placement, copy, routes, phone widths, n
     // After the short service explanation (How it works), before the founder story and secondary resources.
     const order = await page.evaluate(() => ["how", "stages", "library", "why"].map((id) => document.getElementById(id)!.getBoundingClientRect().top + scrollY));
     expect(order).toEqual([...order].sort((a, b) => a - b));
-    await expect(band.getByRole("link", { name: /See how PsyAlliance works/ })).toHaveAttribute("href", "/tour");
+    // 1 Nov (Nick, B): one link from the stages, to the trial.
     await expect(band.getByRole("link", { name: /Show me how PsyAlliance could help/ })).toHaveAttribute("href", "/start");
     await expect(band).toContainText("doctoral-level psychologists and psychiatrists with an active US license");
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
@@ -275,42 +275,26 @@ test("C-08 L07 push subscription belongs to the signed-in member only; the alert
   await context.close();
 });
 
-test("C-09 L11/L13 guide: every need, headline and benefit exactly, optional follow-up and Skip, change my choice, no email field, demos reachable", async ({ browser, baseURL }) => {
-  const cases: [string, string, string, string][] = [
-    ["Arrange time away", "Time away, with a clearer plan", "See how you can find suitable colleagues, review their responses and track the handovers that still need arranging.", "/tour/time-away"],
-    ["Find a colleague for a client", "A clearer route to an appropriate colleague", "See how requirements, match explanations and recipient review help you approach suitable colleagues.", "/tour/client-referral"],
-    ["Establish or rebuild my caseload", "Help appropriate colleagues discover your practice", "See how your experience, settings and current capacity help others consider you for referrals.", "/tour/caseload"],
-    ["Get another professional perspective", "Another professional perspective", "See how to choose who you ask and keep the discussion together.", "/tour/perspective"],
-    ["Reduce or close my practice", "Support for your next chapter", "See how to consider onward referrals and the arrangements involved in changing your practice.", "/tour/reducing"],
+test("C-09 L11/L13 guide (1.1): every need goes straight to its demo after the optional question, no email field, no sideways scroll", async ({ browser, baseURL }) => {
+  const cases: [string, RegExp][] = [
+    ["time_away", /\/tour\/time-away/], ["client_referral", /\/tour\/client-referral/], ["caseload", /\/tour\/caseload/],
+    ["perspective", /\/tour\/perspective/], ["reducing", /\/tour\/reducing/],
   ];
   for (const width of [1365, 390, 320]) {
     const context = await browser.newContext({ viewport: { width, height: 900 } });
     const page = await context.newPage();
-    for (const [label, headline, benefit, demo] of cases) {
+    for (const [need, demo] of cases) {
       await page.goto(baseURL! + "/start");
       await expect(page.locator("input[type=email], input[name=email]")).toHaveCount(0);
-      await page.getByLabel(label).click();
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+      await page.locator(`[data-need="${need}"]`).click();
       await expect(page.getByRole("heading", { name: /Which describes you best/ })).toBeVisible();
       await page.locator("[data-skip]").click();
-      await expect(page.locator("[data-headline]")).toHaveText(headline);
-      await expect(page.locator("[data-benefit]")).toHaveText(benefit);
-      await expect(page.locator("[data-demo]")).toHaveAttribute("href", demo);
-      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+      await expect(page).toHaveURL(demo);
     }
     await context.close();
   }
-  const context = await browser.newContext();
-  const page = await context.newPage();
-  await page.goto(baseURL! + "/start");
-  await page.getByLabel("Just explore").click();
-  await expect(page.locator("[data-headline]")).toContainText("Cover, Referrals and Consult");
-  await page.getByRole("button", { name: "Change my choice" }).click();
-  await expect(page.getByRole("heading", { name: "What would be useful to you at the moment?" })).toBeVisible();
-  const evt = await q(`select event, need from lifecycle_events where namespace = 'demo' order by id desc limit 5`);
-  expect(evt.length).toBeGreaterThan(0);
-  await context.close();
 });
-
 test("C-10 L14 hands-on interaction and recipient preview: consequence shown at once, Back returns to the same stage, nothing is sent", async ({ browser, baseURL }) => {
   const context = await browser.newContext();
   const page = await context.newPage();
@@ -397,7 +381,7 @@ test("C-14 L06 Use as a starting point: a new independent draft with the require
   await expect(page.locator(".modal-header")).toBeVisible();
   await expect(page.locator("#cover-name")).toHaveValue(/^Copy of /);
   await page.getByRole("button", { name: "Continue to needs" }).click();
-  await expect(page.locator(".saved-client")).toHaveCount(2);
+  await expect(page.locator(".client-discs .cdisc")).toHaveCount(2);
   // Nothing was sent or changed on the original plan.
   expect((await one(`select count(*)::int n from coverage_plans where profile_id = $1`, [avery])).n).toBe(1);
   expect((await one(`select count(*)::int n from coverage_requests`)).n).toBe(2);

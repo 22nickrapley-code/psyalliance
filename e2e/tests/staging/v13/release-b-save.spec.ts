@@ -1,6 +1,8 @@
 import { test, expect, type Page } from "@playwright/test";
 import { signInAs, account } from "../../../lib/auth";
 import { assertLocal, q } from "../../../lib/staging";
+// 1 Nov (Nick, H4): drafts sit in one "Drafts (n)" control, opened to continue or delete each.
+const openDrafts = async (page: import("@playwright/test").Page) => { const d = page.locator("details.drafts-drop").first(); if ((await d.count()) && !(await d.evaluate((e) => (e as HTMLDetailsElement).open))) await d.locator("summary").click(); };
 
 // Release B, P01 (brief 5 and 12): a save that fails is never called saved, the newest text is kept on this device,
 // it is put back and saved when the workspace opens again, and a version saved from another device in the meantime wins.
@@ -48,6 +50,7 @@ test("PB-01 P01 a failed save keeps the newest text on this device, and a reload
   await expect.poll(() => drafts("PB newest title")).toBe(1);
   expect(await drafts("PB first title")).toBe(0); // the older text did not come back on top
   await expect.poll(() => kept(page)).toBeNull(); // and the copy on this device is gone once it is saved
+  await openDrafts(page);
   await expect(page.locator(".draft-banner", { hasText: "PB newest title" })).toBeVisible();
   await context.close();
 });

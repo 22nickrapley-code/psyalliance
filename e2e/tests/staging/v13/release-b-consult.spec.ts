@@ -1,6 +1,8 @@
 import { test, expect, type Page } from "@playwright/test";
 import { signInAs, account } from "../../../lib/auth";
 import { assertLocal, q } from "../../../lib/staging";
+// 1 Nov (Nick, H4): drafts sit in one "Drafts (n)" control, opened to continue or delete each.
+const openDrafts = async (page: import("@playwright/test").Page) => { const d = page.locator("details.drafts-drop").first(); if ((await d.count()) && !(await d.evaluate((e) => (e as HTMLDetailsElement).open))) await d.locator("summary").click(); };
 
 // Release B, Consult (brief Q01): audiences, choosing people across searches, the review, and getting the draft back.
 // Real local database, fictional members only. Reach (who is actually told) is proved by NC-03, NCU-04 and NCU-05.
@@ -72,10 +74,13 @@ test("QB-02 Q01 a Consult draft comes back with its audience and chosen people, 
   for (const id of ids) await page.locator(`input[name="recipients"][value="${id}"]`).check({ force: true });
   await page.waitForTimeout(1000); // the draft is saved as you type
   await page.keyboard.press("Escape");
+  await openDrafts(page);
   const banner = page.locator(".draft-banner", { hasText: "B Draft with people" });
   await expect(banner).toBeVisible();
   await page.reload();
+  await openDrafts(page);
   await expect(page.locator(".draft-banner", { hasText: "B Draft with people" })).toBeVisible();
+  await openDrafts(page);
   await page.locator(".draft-banner", { hasText: "B Draft with people" }).getByRole("button", { name: "Continue draft" }).click();
   await expect(page.locator("#peer-title")).toHaveValue("B Draft with people");
   await expect(page.locator('.audience-tile input[value="few"]')).toBeChecked();

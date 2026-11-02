@@ -25,25 +25,26 @@ test("V1-01 homepage tells the story in order: problem, every stage, Library, wh
     await expect(page.getByRole("link", { name: "Show me how it could help" })).toHaveAttribute("href", "/start");
     const order = await page.evaluate(() => ["how", "stages", "library", "why", "verification", "faq"].map((id) => document.getElementById(id)!.getBoundingClientRect().top));
     expect(order).toEqual([...order].sort((a, b) => a - b));
-    await expect(page.locator("#how")).toContainText("On your own today");
+    // 1 Nov (Nick, B): the moments as Without / With PsyAlliance.
+    await expect(page.locator("#how")).toContainText("Without PsyAlliance");
+    await expect(page.locator("#how")).toContainText("With PsyAlliance");
     await expect(page.locator("#why")).toContainText("Rena Pazienza, PhD");
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await context.close();
   }
 });
 
-test("V1-02 the trial: choose a need on the left, see it handled on the right; on a phone the result comes first", async ({ browser, baseURL }) => {
+// 1 Nov (Nick, A): one calm page. Choosing a need asks "Which describes you best?" (optional) and goes to that need's demo.
+test("V1-02 the trial: choose a need, answer or skip the optional question, and land on that need's demo", async ({ browser, baseURL }) => {
   for (const width of [1365, 390]) {
     const context = await browser.newContext({ viewport: { width, height: 900 } });
     const page = await context.newPage();
     await page.goto(baseURL! + "/start");
-    await expect(page.locator(".guide-intro")).toBeVisible();
-    await page.getByLabel("Arrange time away").check({ force: true });
-    await expect(page.locator(".guide-panel h2")).toContainText("Which describes you best?");
-    await expect(page.getByLabel("Arrange time away")).toBeChecked();
-    const pick = (await page.locator(".guide-pick").boundingBox())!, panel = (await page.locator(".guide-panel").boundingBox())!;
-    if (width < 700) expect(panel.y).toBeLessThan(pick.y);
-    else expect(panel.x).toBeGreaterThan(pick.x);
+    await page.locator('[data-need="time_away"]').click();
+    const dlg = page.locator("dialog.guide-dialog[open]");
+    await expect(dlg).toContainText("Which describes you best?");
+    await dlg.getByRole("button", { name: /Skip/ }).click();
+    await expect(page).toHaveURL(/\/tour\/time-away/);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await context.close();
   }
@@ -62,20 +63,19 @@ test("V1-03 sign-up shows the goal chosen on the trial, with a way to change it"
   await context.close();
 });
 
-test("V1-04 edit profile: a section menu shows one section at a time, a link to a section opens it, and every field stays in the one form", async ({ browser, baseURL }) => {
+// 1 Nov (Nick, D, LinkedIn style): the profile as colleagues see it; each section's pencil opens a card; a link to a
+// section opens its card; every field stays in the one form, so one Save keeps them all.
+test("V1-04 edit profile: a pencil opens a section's card, a link to a section opens it, and every field stays in the one form", async ({ browser, baseURL }) => {
   const { context, page } = await as(browser, "avery", baseURL!);
-  await page.goto(`${baseURL}/dashboard/profile?edit=1`);
-  const nav = page.locator(".profile-secnav");
-  await expect(nav.getByRole("link", { name: /Basics/ })).toHaveAttribute("aria-current", "true");
-  await expect(page.locator("#basics")).toBeVisible();
-  await expect(page.locator("#insurance")).toBeHidden();
-  await nav.getByRole("link", { name: /Insurance/ }).click();
-  await expect(page.locator("#insurance")).toBeVisible();
-  await expect(page.locator("#basics")).toBeHidden();
-  // Hidden sections are still in the form, so one Save keeps them.
+  await page.goto(`${baseURL}/dashboard/profile`);
+  await expect(page.locator("#dlg-insurance")).toBeHidden();
+  await page.locator('[data-edit="insurance"]').first().click();
+  await expect(page.locator("#dlg-insurance")).toBeVisible();
+  await page.locator("#dlg-insurance [data-cancel]").first().click();
+  await expect(page.locator("#dlg-insurance")).toBeHidden();
   expect(await page.locator("#profile-form #full_name").count()).toBe(1);
-  await page.goto(`${baseURL}/dashboard/profile?edit=1#languages`);
-  await expect(page.locator("#languages")).toBeVisible();
+  await page.goto(`${baseURL}/dashboard/profile#languages`);
+  await expect(page.locator("#dlg-languages")).toBeVisible();
   await context.close();
 });
 

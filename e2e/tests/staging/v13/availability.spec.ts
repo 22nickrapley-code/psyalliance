@@ -89,20 +89,31 @@ test("AV-06 an unsaved availability edit survives Confirm unchanged, a reload an
   expect(p.approx_spaces).toBe(3);
 });
 
-test("AV-07 the 90-day rule: confirmed through day 90, stale from day 91", async ({ page, context, baseURL }) => {
+async function openActions(page: import("@playwright/test").Page) {
+  const t = page.locator(".hub-attn-toggle");
+  await t.waitFor();
+  await expect(async () => {
+    if ((await t.getAttribute("aria-expanded")) !== "true") await t.click();
+    await expect(t).toHaveAttribute("aria-expanded", "true", { timeout: 2000 });
+  }).toPass({ timeout: 20000 });
+  return page.locator(".hub-attention");
+}
+
+// 1 Nov (Nick): 60/120 days. A reminder from day 60; out of suggestions from day 121.
+test("AV-07 the 120-day rule: confirmed through day 120, stale from day 121", async ({ page, context, baseURL }) => {
   await reset();
   await signInAs(context, "avery", baseURL!);
   const day = (d: number) => q(`update profiles set availability_confirmed_at = now() - ($2 || ' days')::interval - interval '1 hour' where id = $1`, [avery(), String(d - 1)]);
   // The age shown and the search rule agree on every boundary day.
-  for (const [days, fresh] of [[89, true], [90, true], [91, false]] as const) {
+  for (const [days, fresh] of [[119, true], [120, true], [121, false]] as const) {
     await q(`update profiles set availability_confirmed_at = now() - ($2 || ' days')::interval - interval '1 hour' where id = $1`, [avery(), String(days)]);
     const viewer = account("bram").id;
     const { rows } = await asMember(viewer, `select (public.network_directory('{"available": true}'::jsonb) -> 'people') as people`);
     const ids = (rows[0].people as any[]).map((p) => p.id);
     expect(ids.includes(avery()), `day ${days} in confirmed-available-now`).toBe(fresh);
     await page.goto("/dashboard");
-    // The Hub's practice-setup line: a gentle reminder from day 30, and "needs reconfirming" once the 90 days have passed.
-    const line = page.locator(".hub-setup");
+    // The Hub's Actions (1 Nov): a gentle reminder from day 60, and "needs reconfirming" once the 120 days have passed.
+    const line = await openActions(page);
     await expect(line).toContainText(fresh ? "Reconfirm your availability" : "needs reconfirming");
     if (fresh) await expect(line).not.toContainText("needs reconfirming");
   }
@@ -126,7 +137,8 @@ test("AV-09 a member whose verification is still in progress gets the Hub with a
   await signInAs(context, "pell", baseURL!);
   await page.goto("/dashboard");
   await expect(page).toHaveURL(/\/dashboard$/);
-  await expect(page.locator(".waiting-note")).toContainText("Nothing reaches a colleague until you are verified");
+  // 1 Nov (Nick, E): the waiting note is an action in the Hub's Actions.
+  await expect(await openActions(page)).toContainText("Nothing reaches a colleague until you are verified");
   await expect(page.locator(".hub-card")).toHaveCount(3);
   await page.goto("/dashboard/overview");
   await expect(page).toHaveURL(/\/dashboard$/);

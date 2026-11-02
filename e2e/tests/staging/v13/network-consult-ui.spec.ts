@@ -127,7 +127,9 @@ test("NCU-04 ask a question: posted once, the audience is told, a double click d
   await ask(a.page, { title: "How do you pace a first session?", body: "Looking for a fresh view on structure.", audience: "trusted" });
   await expect(a.page.locator(".modal")).toContainText("Review your question");
   await a.page.getByRole("button", { name: "Post question" }).dblclick();
-  await expect(a.page.locator("#toast")).toContainText("shared");
+  // 1 Nov (Nick, H3): a clear success message, in the toast and in the question.
+  await expect(a.page.locator("#toast")).toContainText("posted");
+  await expect(a.page.locator(".posted-banner")).toContainText("Your question is posted");
   await expect(a.page.locator(".modal")).toContainText("How do you pace a first session?");
   const rows = await q(`select * from consultations where author_profile_id = $1`, [avery]);
   expect(rows.length).toBe(1);
@@ -147,7 +149,9 @@ test("NCU-05 audiences: one colleague and a few colleagues reach only those chos
   const a = await openAs(browser, "avery", baseURL!, "/dashboard/consult");
   await ask(a.page, { title: "Private view on a boundary", body: "A quiet question.", audience: "one", who: [cass] });
   await a.page.getByRole("button", { name: "Post question" }).click();
-  await expect(a.page.locator("#toast")).toContainText("shared");
+  // 1 Nov (Nick, H3): a clear success message, in the toast and in the question.
+  await expect(a.page.locator("#toast")).toContainText("posted");
+  await expect(a.page.locator(".posted-banner")).toContainText("Your question is posted");
   const row = await one(`select * from consultations where author_profile_id = $1`, [avery]);
   expect(row.audience_profile_ids).toEqual([cass]);
   const c = await openAs(browser, "cass", baseURL!, "/dashboard/consult");
@@ -172,7 +176,9 @@ test("NCU-06 replies: posted once even when retried, ordered newest first; follo
   const a = await openAs(browser, "avery", baseURL!, "/dashboard/consult");
   await ask(a.page, { title: "Ending work with a long-term client", body: "How do you plan the last sessions?", audience: "network" });
   await a.page.getByRole("button", { name: "Post question" }).click();
-  await expect(a.page.locator("#toast")).toContainText("shared");
+  // 1 Nov (Nick, H3): a clear success message, in the toast and in the question.
+  await expect(a.page.locator("#toast")).toContainText("posted");
+  await expect(a.page.locator(".posted-banner")).toContainText("Your question is posted");
   const id = (await one(`select id from consultations where author_profile_id = $1`, [avery])).id;
   // Bram opens it from an old-style link and replies; a double submit adds one reply.
   const b = await openAs(browser, "bram", baseURL!, `/dashboard/consult/${id}`);
@@ -189,7 +195,7 @@ test("NCU-06 replies: posted once even when retried, ordered newest first; follo
   await catchUp(a.page);
   await a.page.reload();
   await a.page.locator(`[data-action="discussion:${id}"]`).first().click();
-  await expect(a.page.locator(".modal")).toContainText("2 replies");
+  await expect(a.page.locator(".modal .discussion-thread-heading")).toContainText("2");
   expect((await q(`select 1 from consultation_follows where consultation_id = $1`, [id])).length).toBe(2);
   const first = a.page.locator(".reply", { hasText: "I plan a review session first." });
   await first.locator(".useful-button").click();
@@ -288,7 +294,9 @@ test("NCU-10 a consultation group: the old Ask-this-group address opens the form
   await a.page.locator('#peer-form input[name="reviewed"]').check();
   await a.page.getByRole("button", { name: "Review before posting" }).click();
   await a.page.getByRole("button", { name: "Post question" }).click();
-  await expect(a.page.locator("#toast")).toContainText("shared");
+  // 1 Nov (Nick, H3): a clear success message, in the toast and in the question.
+  await expect(a.page.locator("#toast")).toContainText("posted");
+  await expect(a.page.locator(".posted-banner")).toContainText("Your question is posted");
   expect(await one(`select group_id from consultations where author_profile_id = $1`, [avery])).toMatchObject({ group_id: g.id });
   const b = await openAs(browser, "bram", baseURL!, "/dashboard/consult");
   await expect(b.page.locator("#consult-results")).toContainText("A question for the group");
@@ -310,7 +318,9 @@ test("NCU-11 a dropped connection: nothing is half-posted, and trying again post
   expect((await q(`select 1 from consultations where author_profile_id = $1`, [avery])).length).toBe(0);
   await a.context.setOffline(false);
   await a.page.getByRole("button", { name: "Post question" }).click();
-  await expect(a.page.locator("#toast")).toContainText("shared");
+  // 1 Nov (Nick, H3): a clear success message, in the toast and in the question.
+  await expect(a.page.locator("#toast")).toContainText("posted");
+  await expect(a.page.locator(".posted-banner")).toContainText("Your question is posted");
   expect((await q(`select 1 from consultations where author_profile_id = $1`, [avery])).length).toBe(1);
   const id = (await one(`select id from consultations where author_profile_id = $1`, [avery])).id;
   const b = await openAs(browser, "bram", baseURL!, `/dashboard/consult?discussion=${id}`);

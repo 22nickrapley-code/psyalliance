@@ -53,7 +53,9 @@ test("ACC-02 Supervision is hidden but what members saved is kept, even after sa
   const a = await open(browser, "avery", baseURL!, "/dashboard/profile");
   await expect(a.page.locator('input[name="open_to_give_supervision"], input[name="open_to_receive_supervision"]')).toHaveCount(0);
   await expect(a.page.getByText(/supervis/i)).toHaveCount(0);
-  await a.page.getByRole("button", { name: /^Save profile/ }).first().click();
+  // 1 Nov (LinkedIn style): every field is in one form; saving any card saves the profile.
+  await a.page.goto("/dashboard/profile#about");
+  await a.page.locator("#dlg-about").getByRole("button", { name: /^Save/ }).first().click();
   await a.page.waitForLoadState("networkidle");
   await expect(a.page).toHaveURL(/saved=1|\/dashboard\/profile/);
   const row = await one(`select open_to_give_supervision as g, open_to_receive_supervision as r, bio from profiles where id = $1`, [avery]);
@@ -86,8 +88,10 @@ test("ACC-04 the account top bar's Search opens the workspace search; its bell o
 });
 
 test("ACC-05 Sign out from an account page ends the session", async ({ browser, baseURL }) => {
+  // 1 Nov (Nick): one Settings; Sign out lives there.
   const a = await open(browser, "avery", baseURL!, "/dashboard/profile");
-  await a.page.getByRole("button", { name: "Sign out" }).click();
+  await a.page.locator(".settings-link").first().click();
+  await a.page.getByRole("button", { name: /Sign out/ }).first().click();
   await a.page.waitForLoadState("networkidle");
   await a.page.goto("/dashboard/profile");
   await expect(a.page).toHaveURL(/\/auth\/sign-in/);
@@ -109,11 +113,21 @@ test("ACC-06 phone: the menu button opens the menu, Escape closes it and focus r
   await a.context.close();
 });
 
+async function openActions(page: import("@playwright/test").Page) {
+  const t = page.locator(".hub-attn-toggle");
+  await t.waitFor();
+  await expect(async () => {
+    if ((await t.getAttribute("aria-expanded")) !== "true") await t.click();
+    await expect(t).toHaveAttribute("aria-expanded", "true", { timeout: 2000 });
+  }).toPass({ timeout: 20000 });
+  return page.locator(".hub-attention");
+}
+
 test("ACC-07 the waiting member's home marks The Hub; a colleague's page marks Network", async ({ browser, baseURL }) => {
   const p = await open(browser, "pell", baseURL!, "/dashboard");
   // 1.0: a waiting member gets the real Hub, with a note on getting verified.
   await expect(p.page).toHaveURL(/\/dashboard$/);
-  await expect(p.page.locator(".waiting-note")).toBeVisible();
+  await expect(await openActions(p.page)).toContainText("Nothing reaches a colleague until you are verified");
   await expect(p.page.locator(".sidebar .nav-item.active")).toContainText("The Hub");
   await p.context.close();
   const a = await open(browser, "avery", baseURL!, `/dashboard/people/${bram}`);

@@ -189,18 +189,18 @@ test("R18-09 Cover: the menu opens the Cover home, which shows the waiting reque
   await expect(page.getByRole("button", { name: "Accept Client W" })).toBeVisible();
 });
 
-test("R18-10 Profile's four tabs are coloured by how complete they are", async ({ page, context, baseURL }) => {
+test("R18-10 Profile's practice setup rows are coloured by how complete they are", async ({ page, context, baseURL }) => {
   const before = await q(`select * from continuity_plans where profile_id = $1`, [id("gale")]);
   await q(`delete from continuity_plans where profile_id = $1`, [id("gale")]);
   try {
     await signInAs(context, "gale", baseURL!);
-    // The Availability page is now the Hub's window (D-05); the four tabs live on the profile page and its sisters.
+    // 1 Nov (Nick, LinkedIn style): no tabs; Availability, Credentials and Continuity are rows on the profile, each coloured.
     await page.goto("/dashboard/profile");
-    const tabs = page.locator(".profile-tabs .section-tab");
-    await expect(tabs).toHaveCount(4);
-    await expect(tabs.nth(3)).toHaveClass(/hub-red/);
-    await expect(tabs.nth(3)).toContainText("Not set");
-    for (let n = 0; n < 3; n++) await expect(tabs.nth(n)).toHaveClass(/hub-(green|amber|red)/);
+    const rows = page.locator(".pf-setup .pf-row");
+    await expect(rows).toHaveCount(3);
+    await expect(rows.nth(2)).toHaveClass(/tone-red/);
+    await expect(rows.nth(2)).toContainText("Not set");
+    for (let n = 0; n < 2; n++) await expect(rows.nth(n)).toHaveClass(/tone-(green|amber|red)/);
   } finally {
     for (const p of before) await q(`insert into continuity_plans (profile_id, answers, backup_profile_id) values ($1, $2::jsonb, $3) on conflict do nothing`, [p.profile_id, JSON.stringify(p.answers || {}), p.backup_profile_id]);
   }
@@ -225,13 +225,13 @@ test("R18-11 the Library never shows review status; templates not ready say Comi
 });
 
 test("R18-12 the public Library lists titles and asks visitors to join", async ({ page }) => {
+  // 1 Nov (Nick): the Library is a homepage section; /library and every template page redirect to it.
   await page.goto("/library");
-  const text = await page.locator("main").innerText();
+  await expect(page).toHaveURL(/\/#library$/);
+  const text = (await page.locator("#library").textContent()) || "";
   expect(text).not.toMatch(/review|Free download|free to download/i);
-  await page.locator(".lib-card h3 a").first().click();
-  await expect(page.getByRole("heading", { name: /Members get it now\.|Coming soon\./ })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Create your account" }).first()).toBeVisible();
-  expect(await page.locator("main").innerText()).not.toMatch(/review|Free download/i);
+  expect(text).toMatch(/once their license is verified/);
+  await expect(page.getByRole("link", { name: /Create your account|Join/ }).first()).toBeVisible();
 });
 
 test("R18-13 founding places are 40 everywhere; the privacy policy and join steps are in place", async ({ page }) => {

@@ -81,7 +81,8 @@ test("RFU-02 a colleague opens the link, is interested with capacity confirmed; 
   // Bram opens the link from the earlier product (as from an old email).
   const b = await openAs(browser, "bram", baseURL!, `/dashboard/refer/${refId}`);
   await expect(b.page).toHaveURL(/\/dashboard\/referrals$/);
-  await expect(b.page.locator(".referral-sender")).toContainText("Avery Quillfeather");
+  // 1 Nov (Nick, X1): the card header carries who it is from.
+  await expect(b.page.locator(".modal-header")).toContainText("From Avery Quillfeather");
   await expect(b.page.locator(".modal")).not.toContainText("Cass");
   await b.page.getByRole("button", { name: "I’m interested" }).click();
   await b.page.locator('#referral-capacity-form input[name="capacity"]').check();
@@ -96,7 +97,7 @@ test("RFU-02 a colleague opens the link, is interested with capacity confirmed; 
   await a.page.goto("/dashboard/referrals");
   await expect(a.page.locator(".arrangement-row", { hasText: "1 interested" }).first()).toBeVisible();
   await a.page.locator(`[data-action="referral:${refId}"]`).first().click();
-  await expect(a.page.locator(".referral-journey")).toContainText("Client placement is not yet confirmed");
+  await expect(a.page.locator(".modal")).toContainText("A placement is only confirmed when you choose a colleague");
   await a.page.getByRole("button", { name: "Choose colleague" }).click();
   await a.page.getByRole("button", { name: "Confirm placement" }).click();
   await expect(a.page.locator("#toast")).toContainText("Referral placed");

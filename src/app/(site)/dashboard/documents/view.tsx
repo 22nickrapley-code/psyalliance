@@ -63,14 +63,14 @@ export default async function DocumentsPage(props: {
     // One message for the last thing done; each action sets its own.
     const DONE: Record<string, string> = {
       folder: "Folder created.",
-      "folder-removed": "Folder removed. Its documents are still in My documents, under Unfiled.",
+      "folder-removed": "Folder removed. Its documents are still in My files, under Unfiled.",
       moved: "Moved.",
-      removed: "Removed from My documents.",
+      removed: "Removed from My files.",
     };
     const notice = sp.done && DONE[sp.done]
       ? DONE[sp.done]
       : sp.copied
-        ? `${/^PA-\d+$/.test(sp.copied) ? `The ${docName(sp.copied)}` : "The PDF"} is saved to My documents. Only you can see it.`
+        ? `${/^PA-\d+$/.test(sp.copied) ? `The ${docName(sp.copied)}` : "The PDF"} is saved to My files. Only you can see it.`
         : sp.uploaded
           ? "Uploaded. Only you can see it."
           : null;

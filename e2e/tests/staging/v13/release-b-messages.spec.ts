@@ -34,7 +34,7 @@ async function openAs(browser: any, who: string, baseURL: string, path = "/dashb
 }
 const startDirect = async (page: Page, id: string) => {
   await page.getByRole("button", { name: "New message" }).click();
-  await page.locator(`[data-action="person-message:${id}"]`).click();
+  await page.locator(`.global-result[data-action="person-message:${id}"]`).click();
   await expect(page.locator(".overlay")).toHaveCount(0);
   await expect(page.locator("#message-input")).toBeVisible();
 };

@@ -169,7 +169,7 @@ test("DEMO-V14-06 a phone plays the demo at its own width, a little slower than 
 
 // ------------------------------------------------------------- in the product
 for (const [label, size, mobile] of [["desktop", { width: 1365, height: 900 }, false], ["phone", { width: 390, height: 844 }, true]] as const) {
-  test(`DEMO-V14-07 ${label}: every main screen offers its example; the note can be closed and a link stays`, async ({ browser, baseURL }) => {
+  test(`DEMO-V14-07 ${label}: every main screen offers its demo line, which opens the demo and offers Remove demos`, async ({ browser, baseURL }) => {
     test.setTimeout(240_000);
     const context = await browser.newContext({ viewport: size, ...(mobile ? { isMobile: true, hasTouch: true } : {}) });
     await signInAs(context, "avery", baseURL!);
@@ -178,21 +178,15 @@ for (const [label, size, mobile] of [["desktop", { width: 1365, height: 900 }, f
     page.on("pageerror", (e) => errs.push(`${e.message} @ ${page.url()}`));
     for (const [view, key, name] of WORKSPACE_VIEWS) {
       await page.goto(view === "home" ? "/dashboard" : `/dashboard/${view}`);
-      const note = page.locator(".first-visit");
-      await expect(note, `${view} offers an example`).toBeVisible({ timeout: 60_000 });
-      await expect(note).toContainText(`New to ${name}?`);
-      await expect(note).toContainText(/Watch a .* example, then try it yourself/);
-      // Close it: it stays closed, and a quiet link keeps the example one click away.
-      await note.getByRole("button", { name: "Close this note" }).click();
-      await expect(note).toHaveCount(0);
-      const link = page.locator(".example-link [data-action^='watch-example']");
-      await expect(link).toBeVisible();
-      await page.reload();
-      await expect(page.locator(".first-visit")).toHaveCount(0);
-      await expect(page.locator(".example-link")).toBeVisible();
+      // 1 Nov (Nick, P2-D): one quiet demo line at the top of each section, and a way to remove demos.
+      const note = page.locator(".demo-line");
+      await expect(note, `${view} offers a demo`).toBeVisible({ timeout: 60_000 });
+      await expect(note).toContainText("Need a demo?");
+      await expect(note).toContainText(new RegExp(`Watch a .* demo of how ${name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")} works`, "i"));
+      await expect(note.getByRole("button", { name: /Remove demos/ })).toBeVisible();
       if (view === "referrals") {
         // The example opens over the page, plays, and Escape puts the member back on the page.
-        await page.locator(".example-link [data-action='watch-example:refer']").click();
+        await page.locator(".demo-line [data-action='watch-example:refer']").click();
         const dialog = page.locator("dialog.example-dialog[open]");
         await expect(dialog).toHaveCount(1);
         await expect(dialog.locator("iframe")).toHaveAttribute("src", `/tour/example/refer`);
@@ -225,5 +219,5 @@ test("DEMO-V14-08 the Availability window carries its own example", async ({ bro
 test("DEMO-V14-09 the demo screens inside the video never show the example note", async ({ page }) => {
   await page.goto("/tour/stage/referrals");
   await page.waitForFunction(() => document.documentElement.dataset.scene === "ready", null, { timeout: 60_000 });
-  await expect(page.locator(".first-visit, .example-link")).toHaveCount(0);
+  await expect(page.locator(".first-visit, .example-link, .demo-line")).toHaveCount(0);
 });

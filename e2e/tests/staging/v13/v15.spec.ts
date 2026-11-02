@@ -1,6 +1,8 @@
 import { test, expect, type Page, type Browser } from "@playwright/test";
 import { signInAs, account } from "../../../lib/auth";
 import { assertLocal, q } from "../../../lib/staging";
+// 1 Nov (Nick, H4): drafts sit in one "Drafts (n)" control, opened to continue or delete each.
+const openDrafts = async (page: import("@playwright/test").Page) => { const d = page.locator("details.drafts-drop").first(); if ((await d.count()) && !(await d.evaluate((e) => (e as HTMLDetailsElement).open))) await d.locator("summary").click(); };
 
 // Version 15: the changes made after Nick's 28 October testing, on the real
 // local database, as signed-in fictional staging members.
@@ -69,7 +71,8 @@ test("V15-01 Cover and Referrals use the same filters, clearer panel titles, no 
   await page.keyboard.press("Escape");
   // Calendar chips carry the plan's own name, not "Yours 1" or "Peers 1".
   await page.locator('[data-action="cover-layout:calendar"]').click();
-  await expect(page.locator(".calendar-key")).toContainText("Your cover plans");
+  // 1 Nov (Nick, G12): the legend is the filter.
+  await expect(page.locator(".legend-filter")).toContainText("Your cover plans");
   await expect(page.locator(".month-day-counts", { hasText: /Yours \d|Peers \d/ })).toHaveCount(0);
   for (let n = 0; n < 4 && (await page.locator(".cal-chip").count()) === 0; n++) await page.locator('[data-action="calendar-month:1"]').click();
   if (await page.locator(".cal-chip").count()) await expect(page.locator(".cal-chip").first()).toContainText("V15 Autumn leave");
@@ -115,17 +118,22 @@ test("V15-03 Make a referral starts a new one even with a draft; several drafts 
     await expect(page.locator(".modal")).toHaveCount(0);
   };
   await begin("Anxiety/Panic Disorders");
+  await openDrafts(page);
   await expect(page.locator(".draft-banner")).toHaveCount(1);
   await begin("Depression");
+  await openDrafts(page);
   await expect(page.locator(".draft-banner")).toHaveCount(2);
   // Each draft resumes with its own answers.
+  await openDrafts(page);
   await page.locator(".draft-banner", { hasText: "Anxiety/Panic Disorders" }).getByRole("button", { name: "Continue draft" }).click();
   await expect(page.locator("#referral-need-form")).toBeVisible();
   expect(await page.locator("#referral-need-form select").first().inputValue()).toMatch(/anxiety/i);
   await page.keyboard.press("Escape");
   // Deleting one leaves the other.
+  await openDrafts(page);
   await page.locator(".draft-banner", { hasText: "Depression" }).getByRole("button", { name: "Delete draft" }).click();
   await page.locator(".modal").getByRole("button", { name: /Delete/ }).last().click();
+  await openDrafts(page);
   await expect(page.locator(".draft-banner")).toHaveCount(1);
   await clean(page);
   await context.close();
@@ -164,18 +172,16 @@ test("V15-05 Consult replies: Useful stays, Flag lives in a menu, and nothing sa
   await context.close();
 });
 
-test("V15-06 Library: PDF templates come first, are tagged, and can be filtered", async ({ browser, baseURL }) => {
+test("V15-06 Library (1.1): no PDF templates pill since every resource has a PDF; Saved is its own pill; each tile has overview, PDF and save", async ({ browser, baseURL }) => {
   const { page, context } = await openAs(browser, "avery", baseURL!, "/dashboard/library");
-  await expect(page.locator('[data-action="resource-filter:PDF templates"]')).toBeVisible();
-  await expect(page.locator(".resource-card").first().locator(".pdf-tag")).toBeVisible();
-  await page.locator('[data-action="resource-filter:PDF templates"]').click();
-  const cards = page.locator(".resource-card");
-  expect(await cards.count()).toBeGreaterThanOrEqual(2);
-  for (const c of await cards.all()) await expect(c.locator(".pdf-tag")).toBeVisible();
+  await expect(page.locator('[data-action="resource-filter:PDF templates"]')).toHaveCount(0);
+  await expect(page.locator('[data-action="resource-filter:Saved"].saved-pill')).toBeVisible();
+  const tile = page.locator(".resource-card").first();
+  await expect(tile.getByRole("button", { name: /Resource overview/ })).toBeVisible();
+  await expect(tile.getByRole("link", { name: /Download PDF/ }).or(tile.getByRole("button", { name: /Download PDF/ }))).toBeVisible();
   await clean(page);
   await context.close();
 });
-
 test("V15-07 your own profile uses the same layout as a colleague's", async ({ browser, baseURL }) => {
   const { page, context } = await openAs(browser, "avery", baseURL!, "/dashboard");
   await page.locator('[data-action="profile:me"]').first().click();

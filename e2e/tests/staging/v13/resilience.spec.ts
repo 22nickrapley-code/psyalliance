@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { signInAs, account } from "../../../lib/auth";
+import { signInAs, account, memberClient } from "../../../lib/auth";
 import { assertLocal, q, one, gatewayFault } from "../../../lib/staging";
 import { coverPlan } from "../../../lib/scenarios";
 
@@ -60,30 +60,38 @@ test("RV-02 each section has its own page title, in the tab, the history and for
   await expect.poll(() => page.title()).toBe("PsyAlliance · Messages");
 });
 
-test("RV-03 two colleagues answer the same client's Cover request at the same moment: one is covering, the other is told", async ({ browser, baseURL }) => {
+// 1 Nov (Nick, G6): no first-to-accept. Two colleagues offering at the same moment are both recorded as interested;
+// nobody covers until the member chooses, and the other is then told, kindly.
+test("RV-03 two colleagues offer cover for the same client at the same moment: both are interested, and the member's choice decides", async ({ browser, baseURL }) => {
   const plan = await coverPlan("avery", ["bram", "cass"], ["Client C"]);
   const keys = ["bram", "cass"];
   const pages: Page[] = [];
+  const sel = `[data-action="cover-answer:${plan.planId}:${plan.cases[0].id}:interested"]`;
   for (const k of keys) {
     const c = await browser.newContext({ viewport: { width: 1365, height: 900 } });
     await signInAs(c, k, baseURL!);
     const p = await c.newPage();
     await p.goto(`/dashboard/cover?plan=${plan.planId}`);
-    await expect(p.locator(`[data-action="cover-answer:${plan.planId}:${plan.cases[0].id}:accepted"]`)).toBeVisible({ timeout: 30000 });
+    await expect(p.locator(sel).first()).toBeVisible({ timeout: 30000 });
     await listenToasts(p);
     pages.push(p);
   }
-  await Promise.all(pages.map((p) => p.locator(`[data-action="cover-answer:${plan.planId}:${plan.cases[0].id}:accepted"]`).click()));
+  await Promise.all(pages.map((p) => p.locator(sel).first().click()));
   await Promise.all(pages.map((p) => p.waitForTimeout(2500)));
-  const rows = await q(`select status::text s, requested_profile_id::text p from coverage_requests where coverage_plan_case_id = $1`, [plan.cases[0].id]);
   const texts = await Promise.all(pages.map(async (p) => `${await toastsOf(p)} ${await p.locator("#app").innerText()}`));
   for (const p of pages) await p.context().close();
-  expect(rows.filter((r: any) => r.s === "accepted")).toHaveLength(1);
-  // The one who did not win is told, in words, not by a failure.
-  const loser = rows.find((r: any) => r.s !== "accepted")!;
-  const loserText = texts[keys.findIndex((k) => account(k).id === loser.p)];
-  expect(loserText).toMatch(/already|taken|closed|no longer/i);
-  expect(loserText).not.toMatch(/PGRST|violates|Injected failure|permission denied/i);
+  const rows = await q(`select status::text s, interested_at is not null i, id from coverage_requests where coverage_plan_case_id = $1 order by id`, [plan.cases[0].id]);
+  expect(rows.every((r: any) => r.i && r.s === "sent")).toBe(true);
+  expect((await one(`select assigned_clinician_id from coverage_plan_cases where id = $1`, [plan.cases[0].id])).assigned_clinician_id).toBeNull();
+  for (const t of texts) expect(t).not.toMatch(/PGRST|violates|Injected failure|permission denied/i);
+  // The member chooses Bram: Bram covers, Cass's request closes.
+  const avery = await memberClient("avery");
+  const bramReq = plan.cases[0].requests.bram;
+  const { error } = await avery.rpc("cover_confirm", { p_request: bramReq });
+  expect(error).toBeNull();
+  const after = await q(`select requested_profile_id::text p, status::text s from coverage_requests where coverage_plan_case_id = $1`, [plan.cases[0].id]);
+  expect(after.filter((r: any) => r.s === "accepted").map((r: any) => r.p)).toEqual([account("bram").id]);
+  expect(after.find((r: any) => r.p === account("cass").id)!.s).not.toBe("sent");
 });
 
 test("RV-04 a double click on Send message posts the message once", async ({ page, context, baseURL }) => {
@@ -127,7 +135,7 @@ test("RV-06 an answer that fails to reach the database shows a message and can b
   await signInAs(c, "fenn", baseURL!);
   const page = await c.newPage();
   await page.goto(`/dashboard/cover?plan=${plan.planId}`);
-  const accept = page.locator(`[data-action="cover-answer:${plan.planId}:${plan.cases[0].id}:accepted"]`);
+  const accept = page.locator(`[data-action="cover-answer:${plan.planId}:${plan.cases[0].id}:interested"]`).first();
   await expect(accept).toBeVisible({ timeout: 30000 });
   await gatewayFault({ path: "/rest/v1/rpc/cover_answer", method: "POST", status: 503, times: 1 });
   await accept.click();
@@ -135,7 +143,8 @@ test("RV-06 an answer that fails to reach the database shows a message and can b
   expect((await one(`select status::text s from coverage_requests where id = $1`, [id])).s).toBe("sent");
   await expect(accept).toBeVisible();
   await accept.click();
-  await expect.poll(async () => (await one(`select status::text s from coverage_requests where id = $1`, [id])).s, { timeout: 20000 }).toBe("accepted");
+  // 1 Nov (Nick, G6): the answer is an offer; the member then chooses.
+  await expect.poll(async () => (await one(`select interested_at is not null as i from coverage_requests where id = $1`, [id])).i, { timeout: 20000 }).toBe(true);
   await c.close();
 });
 

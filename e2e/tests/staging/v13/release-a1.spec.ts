@@ -1,6 +1,8 @@
 import { test, expect, type Page, type Browser } from "@playwright/test";
 import { signInAs, account } from "../../../lib/auth";
 import { assertLocal, q } from "../../../lib/staging";
+// 1 Nov (Nick, H4): drafts sit in one "Drafts (n)" control, opened to continue or delete each.
+const openDrafts = async (page: import("@playwright/test").Page) => { const d = page.locator("details.drafts-drop").first(); if ((await d.count()) && !(await d.evaluate((e) => (e as HTMLDetailsElement).open))) await d.locator("summary").click(); };
 
 // Release A.1 (Nick's sandbox review, 30 Oct 2026): the referral form lines up, Consult starts a new question, colleagues in
 // Search carry their relationship colour, the Hub has a search field and calmer bars, Cover and Network lists are consistent,
@@ -62,6 +64,7 @@ test("A1-02 Consult always starts a new question; a saved draft is offered on th
   await page.keyboard.press("Escape");
   // The earlier question is waiting as a draft on the Consult page.
   await page.locator('.sidebar .nav-item[data-action="nav:consult"]').click();
+  await openDrafts(page);
   const banner = page.locator(".draft-banner", { hasText: "A1 A question I started earlier" });
   await expect(banner).toBeVisible();
   await banner.getByRole("button", { name: "Continue draft" }).click();
@@ -78,6 +81,7 @@ test("A1-03 an old single Consult draft becomes one entry of the list and is not
            on conflict (profile_id, kind, key) do update set data = excluded.data`,
     [avery.id, JSON.stringify({ type: "peer", step: 0, title: "A1 Older saved question", body: "From an earlier version.", tag: "Clinical practice", tags: "", audience: "trusted", recipients: [], group: "thursday", reviewed: false, error: "" })]);
   const { page, context } = await openAs(browser, "avery", baseURL!, "/dashboard/consult");
+  await openDrafts(page);
   const banner = page.locator(".draft-banner", { hasText: "A1 Older saved question" });
   await expect(banner).toBeVisible();
   await banner.getByRole("button", { name: "Continue draft" }).click();
@@ -124,6 +128,15 @@ test("A1-05 Search is one prominent field in the top bar (1.0: not repeated on t
 
 test("A1-06 'You are up to date' is a status bar of its own, and the invite is a card with one button", async ({ browser, baseURL }) => {
   const { page, context } = await openAs(browser, "dara", baseURL!);
+  // 1.1: unfinished profile setup shows as actions; set them aside to reach the clear state.
+  for (let i = 0; i < 10 && (await page.locator(".hub-clear-bar").count()) === 0; i++) {
+    const toggle = page.locator(".hub-attn-toggle[aria-expanded=false]");
+    if (await toggle.count()) await toggle.click();
+    const later = page.locator(".hub-row").getByRole("button", { name: /^Later/ }).first();
+    if (!(await later.count())) break;
+    await later.click();
+    await page.waitForTimeout(400);
+  }
   const bar = page.locator(".hub-clear-bar");
   await expect(bar).toBeVisible();
   await expect(bar.locator(".hub-attn-clear")).toHaveText("You’re up to date");

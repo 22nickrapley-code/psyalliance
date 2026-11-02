@@ -66,7 +66,11 @@ const headline = (page: Page) => page.locator(".hub-attn-main, .hub-attn-clear")
 const counted = (page: Page) => page.locator(".hub-group:not(.hub-group-help):not(.hub-group-aside) .hub-row");
 const ensureOpen = async (page: Page) => {
   const t = page.locator(".hub-attn-toggle");
-  if ((await t.getAttribute("aria-expanded")) !== "true") await t.click();
+  await t.waitFor();
+  await expect(async () => {
+    if ((await t.getAttribute("aria-expanded")) !== "true") await t.click();
+    await expect(t).toHaveAttribute("aria-expanded", "true", { timeout: 2000 });
+  }).toPass({ timeout: 20000 });
   await expect(t).toHaveAttribute("aria-expanded", "true");
 };
 const PATHS: Record<string, string> = { home: "/dashboard", referrals: "/dashboard/referrals", cover: "/dashboard/cover", consult: "/dashboard/consult" };
@@ -124,17 +128,19 @@ test("RA-02 a creation card opens its overlay; it does not navigate, and navigat
 test("RA-03 the actions list counts every actionable row, groups reconcile, Collapse works and the state survives navigation", async ({ browser, baseURL }) => {
   await seedForBram();
   const { page, context } = await openAs(browser, "fenn", baseURL!);
-  await expect(headline(page)).toHaveText(plural(4));
   await expect(page.locator(".hub-row")).toHaveCount(0); // collapsed
   await page.locator(".hub-attn-toggle").click();
   await expect(page.locator(".hub-attn-toggle")).toHaveAttribute("aria-expanded", "true");
+  // 1 Nov (Nick, E2): profile setup is part of Actions, and counted with the rest.
+  const setup = await page.locator(".hub-group").filter({ has: page.locator("h2", { hasText: /^Profile setup/ }) }).locator(".hub-row").count();
+  await expect(headline(page)).toHaveText(plural(4 + setup));
   // Two cover rows (one per client), the referral and the direct question. A reply deadline is shown where there is one.
-  await expect(counted(page)).toHaveCount(4);
-  await expect(page.locator(".hub-group", { hasText: "Cover" }).locator(".hub-row")).toHaveCount(2);
-  await expect(page.locator(".hub-group", { hasText: "Referrals" }).locator(".hub-row")).toHaveCount(1);
-  await expect(page.locator(".hub-group", { hasText: "Consult" }).locator(".hub-row")).toHaveCount(1);
+  await expect(counted(page)).toHaveCount(4 + setup);
+  await expect(page.locator(".hub-group").filter({ has: page.locator("h2", { hasText: /^Cover/ }) }).locator(".hub-row")).toHaveCount(2);
+  await expect(page.locator(".hub-group").filter({ has: page.locator("h2", { hasText: /^Referrals/ }) }).locator(".hub-row")).toHaveCount(1);
+  await expect(page.locator(".hub-group").filter({ has: page.locator("h2", { hasText: /^Consult/ }) }).locator(".hub-row")).toHaveCount(1);
   const subtotals = (await page.locator(".hub-group:not(.hub-group-help):not(.hub-group-aside) h2 span").allInnerTexts()).map(Number);
-  expect(subtotals.reduce((a, b) => a + b, 0)).toBe(4);
+  expect(subtotals.reduce((a, b) => a + b, 0)).toBe(4 + setup);
   await expect(page.locator(".hub-row", { hasText: "Client 2" })).toContainText("Reply to");
   // Anonymous context only: no client identity beyond the label and need.
   await expect(page.locator(".hub-row", { hasText: "Client 1" })).not.toContainText("@");
@@ -157,9 +163,12 @@ test("RA-03 the actions list counts every actionable row, groups reconcile, Coll
 test("RA-04 Later sets a task aside on the account, Restore brings it back, and nothing is accepted by setting it aside", async ({ browser, baseURL }) => {
   const seeded = await seedForBram();
   const { page, context } = await openAs(browser, "fenn", baseURL!);
+  // Profile setup items (1.1) also count, so compare with the count before.
+  await expect(headline(page)).toHaveText(/\d+ things? needs? your attention/);
+  const before = Number(((await headline(page).textContent()) || "").match(/\d+/)![0]);
   await page.locator(".hub-attn-toggle").click();
   await page.locator(".hub-row", { hasText: "Client 1" }).getByRole("button", { name: /^Later/ }).click();
-  await expect(headline(page)).toHaveText(plural(3));
+  await expect(headline(page)).toHaveText(plural(before - 1));
   await expect(page.locator(".hub-group-aside .hub-row")).toHaveCount(1);
   // It is on the server, not only in this browser.
   await expect.poll(async () => (await q(`select data from workspace_drafts where profile_id = $1 and kind = 'hub-state'`, [bram.id]))[0]?.data?.setAside ? Object.keys((await q(`select data from workspace_drafts where profile_id = $1 and kind = 'hub-state'`, [bram.id]))[0].data.setAside).length : 0).toBe(1);
@@ -254,20 +263,29 @@ test("RA-07 the Consult help group can be switched off and stays off on another 
   await context.close();
 });
 
-test("RA-08 availability reminder is separate from client work, with a one-tap confirmation", async ({ browser, baseURL }) => {
-  await q(`update profiles set availability_confirmed_at = now() - interval '35 days' where id = $1`, [bram.id]);
+// 1 Nov (Nick, E2 and 60/120): the availability reminder is a Profile setup action from day 60, and confirming clears it.
+test("RA-08 availability reminder is a Profile setup action, separate from client work, cleared by confirming", async ({ browser, baseURL }) => {
+  await q(`update profiles set availability_confirmed_at = now() - interval '65 days' where id = $1`, [bram.id]);
   const { page, context } = await openAs(browser, "fenn", baseURL!);
-  await expect(headline(page)).toHaveText("You’re up to date");
-  const setup = page.locator(".hub-setup");
-  await expect(setup).toContainText("Practice setup");
-  await expect(setup).toContainText("35 days ago");
-  await setup.getByRole("button", { name: "Confirm unchanged" }).click();
-  await expect(page.locator(".hub-setup")).toHaveCount(0);
-  const row = await one(`select availability_confirmed_at > now() - interval '1 hour' as fresh from profiles where id = $1`, [bram.id]);
-  expect(row.fresh).toBe(true);
+  const t = page.locator(".hub-attn-toggle");
+  await t.waitFor();
+  await expect(async () => {
+    if ((await t.getAttribute("aria-expanded")) !== "true") await t.click();
+    await expect(t).toHaveAttribute("aria-expanded", "true", { timeout: 2000 });
+  }).toPass({ timeout: 20000 });
+  const setup = page.locator(".hub-group").filter({ has: page.locator("h2", { hasText: /^Profile setup/ }) });
+  const row = setup.locator(".hub-row", { hasText: "Reconfirm your availability" });
+  await expect(row).toContainText("65 days ago");
+  await expect(page.locator(".hub-group").filter({ has: page.locator("h2", { hasText: /^Cover/ }) }).locator(".hub-row", { hasText: "availability" })).toHaveCount(0);
+  await row.getByRole("button", { name: /Do now/ }).click();
+  await page.locator(".modal").getByRole("button", { name: "Confirm unchanged" }).last().click();
+  await expect.poll(async () => (await one(`select availability_confirmed_at > now() - interval '1 hour' as fresh from profiles where id = $1`, [bram.id])).fresh).toBe(true);
+  await page.keyboard.press("Escape");
+  await expect(page.locator(".hub-row", { hasText: "Reconfirm your availability" })).toHaveCount(0);
   await clean(page);
   await context.close();
 });
+
 
 test("RA-09 phone: five bottom items in order, a named Search in the top bar, stacked cards, no sideways scroll at 390 and 320", async ({ browser, baseURL }) => {
   for (const width of [390, 320]) {

@@ -54,13 +54,14 @@ test("CVU-01 arrange cover, send once, and see exactly what was saved", async ({
   await page.goto("/dashboard/cover");
   await expect(page.locator(".arrangement-row", { hasText: "Autumn leave" })).toBeVisible();
   await page.locator('[data-action^="plan:"]', { hasText: "Autumn leave" }).first().click();
-  await page.locator(".request-details summary").first().click();
-  await expect(page.locator(".request-line")).toHaveCount(2);
-  await expect(page.locator(".request-line", { hasText: "Queue position 2" })).toBeVisible();
+  // 1 Nov (Nick, G11): the client is a disc; its card shows who was asked and who waits in the queue.
+  await expect(page.locator(".cdisc")).toHaveCount(1);
+  await expect(page.locator(".cover-client-card .response-row")).toHaveCount(1);
+  await expect(page.locator(".cover-client-card")).toContainText("1 more colleague queued");
   await context.close();
 });
 
-test("CVU-02 the colleague answers; the organiser sees it; agreed is not handover ready", async ({ browser, baseURL }) => {
+test("CVU-02 the colleague offers; the organiser chooses; chosen is not handover ready", async ({ browser, baseURL }) => {
   const a = await openAs(browser, "avery", baseURL!);
   await arrange(a.page, [bram, cass]);
   await a.page.getByRole("button", { name: "Send cover requests" }).click();
@@ -70,19 +71,24 @@ test("CVU-02 the colleague answers; the organiser sees it; agreed is not handove
   // Bram opens the plan from a link, as from an email.
   const b = await openAs(browser, "bram", baseURL!, `/dashboard/cover/requests/${planId}`);
   await expect(b.page).toHaveURL(/\/dashboard\/cover$/);
-  await expect(b.page.locator(".tracking-summary")).toContainText("Supporting");
-  await b.page.getByRole("button", { name: "I can help" }).click();
-  await expect(b.page.locator("#toast")).toContainText("Cover agreed");
-  expect((await one(`select status from coverage_plan_cases where coverage_plan_id = $1`, [planId])).status).toBe("confirmed");
-  await expect(b.page.locator(".tracking-client header .label").first()).toContainText(/Cover agreed/i);
-  await expect(b.page.locator(".tracking-client")).not.toContainText("Cass");
+  await expect(b.page.locator(".modal-header")).toContainText("From ");
+  // 1 Nov (Nick, G6): no instant agreement. Bram offers; Avery chooses; then the handover.
+  await b.page.locator(".cover-client-card").getByRole("button", { name: "I’m interested" }).click();
+  await expect(b.page.locator("#toast")).toContainText("Interest recorded");
+  expect((await one(`select c.assigned_clinician_id from coverage_plan_cases c where c.coverage_plan_id = $1`, [planId])).assigned_clinician_id).toBeNull();
+  await expect(b.page.locator(".cover-client-card")).toContainText("You offered to cover");
+  await expect(b.page.locator(".cover-client-card")).not.toContainText("Cass");
 
-  // Avery reloads: agreed, with the handover still to confirm.
   await a.page.goto("/dashboard/cover");
   await a.page.locator('[data-action^="plan:"]', { hasText: "Autumn leave" }).first().click();
-  await expect(a.page.locator(".tracking-next")).toContainText("1 handover needs confirming");
+  await expect(a.page.locator(".needs-box")).toContainText("interested in covering");
+  await a.page.locator(".cover-client-card").getByRole("button", { name: "Choose colleague" }).click();
+  await expect(a.page.locator(".handover-visual")).toBeVisible();
+  await a.page.getByRole("button", { name: "Confirm cover" }).click();
+  await expect(a.page.locator("#toast")).toContainText("is covering");
+  expect((await one(`select status from coverage_plan_cases where coverage_plan_id = $1`, [planId])).status).toBe("confirmed");
   await expect(a.page.getByRole("button", { name: /Complete arrangement/ })).toBeDisabled();
-  await a.page.getByRole("button", { name: "Confirm handover" }).click();
+  await a.page.locator(".cover-client-card").getByRole("button", { name: "Confirm handover" }).click();
   for (const k of ["contact", "summary", "client"]) await a.page.locator(`#handover-form input[name="${k}"]`).check();
   await a.page.getByRole("button", { name: "Mark handover ready" }).click();
   await expect(a.page.locator("#toast")).toContainText("handover ready");
@@ -104,9 +110,8 @@ test("CVU-03 a missed deadline moves the sequence on; the screen shows what the 
   await runJobs(["pa_cover_deadlines"]);
   await a.page.goto("/dashboard/cover");
   await a.page.locator('[data-action^="plan:"]', { hasText: "Autumn leave" }).first().click();
-  await a.page.locator(".request-details summary").first().click();
-  await expect(a.page.locator(".request-line", { hasText: "Deadline passed" })).toBeVisible();
-  await expect(a.page.locator(".request-line", { hasText: "Reply by" })).toBeVisible();
+  await expect(a.page.locator(".cover-client-card .response-row", { hasText: "Deadline passed" })).toBeVisible();
+  await expect(a.page.locator(".cover-client-card .response-row", { hasText: "Awaiting reply" })).toBeVisible();
   // The tab that was already open catches up without a reload when it asks.
   expect(planId).toBeTruthy();
   await a.context.close();

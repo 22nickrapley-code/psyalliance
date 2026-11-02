@@ -269,7 +269,7 @@ export const MACROS: Record<string, Macro> = {
   "library-resource": async (ui) => {
     await ui.act("nav:library");
     await ui.act("resource:102");
-    await ui.wait(`${M} [data-action="resource-save:102"]`);
+    await ui.wait(`${M} .before-use`);
   },
   "library-saved": async (ui) => {
     await ui.act("nav:library");
