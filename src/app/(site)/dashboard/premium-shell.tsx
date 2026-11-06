@@ -187,7 +187,7 @@ export default function PremiumShell({
             <span className="top-spacer" />
             <div className="top-actions">
               <Link
-                href="/dashboard/messages?tab=notifications"
+                href="/dashboard?notifications=1"
                 className="icon-button"
                 data-bell=""
                 aria-label={unreadNotifications ? `Notifications, ${unreadNotifications} unread` : "Notifications"}

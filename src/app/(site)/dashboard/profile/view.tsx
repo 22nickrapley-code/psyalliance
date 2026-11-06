@@ -154,7 +154,9 @@ export function ProfileView({
 
   const name = profile?.full_name || "Your name";
   const display = clinicianName(name, profile?.qualification_level, profile?.credential_prefix);
-  const where = [profile?.primary_practice_city, profile?.primary_state].filter(Boolean).join(", ");
+  // "Austin, TX" with state TX shows once, not as "Austin, TX, TX" (Nick, 4 Nov).
+  const cityOnly = String(profile?.primary_practice_city || "").replace(new RegExp(`,\\s*${profile?.primary_state || "@@"}$`, "i"), "").trim();
+  const where = [cityOnly, profile?.primary_state].filter(Boolean).join(", ");
   const stateName = (c: string) => US_STATES.find((x) => x.code === c)?.name || c;
   const reviewed = licenses.filter((l) => l.reviewed);
   const joinSome = (xs: string[], n: number) => (xs.length > n ? `${xs.slice(0, n).join(", ")} +${xs.length - n}` : xs.join(", "));
@@ -183,7 +185,7 @@ export function ProfileView({
         error={sp.error || sp.avatar_error}
         ok={sp.availability_saved ? "Availability saved and confirmed as of today." : sp.saved ? (sp.photo === "imported" ? "Profile saved, with the photo from your imported profile." : "Profile saved.") : sp.avatar_saved ? "Photo updated." : null}
       />
-      <BioImportBox prominent={pct < 70 || !!importDemo} demo={importDemo} />
+      <BioImportBox prominent={pct < 70 || !!importDemo} mode={pct < 70 ? "setup" : "update"} demo={importDemo} />
       <ProfileCards />
 
       <div className="pf-layout">
@@ -201,7 +203,7 @@ export function ProfileView({
               </span>
               <div className="pf-head-text">
                 <h2 className="pf-name" data-self-name="">{display}</h2>
-                <p className="pf-role">{roleLabel(profile?.qualification_level)}{where ? ` · ${where}` : ""}</p>
+                <p className="pf-role">{roleLabel(profile?.qualification_level)}<span data-preview="where" data-from="basics">{where ? ` · ${where}` : ""}</span></p>
                 <div className="profile-chips">
                   {reviewed.length > 0 ? <Status>Professional evidence reviewed</Status> : licenses.length ? <Status tone="warn">License awaiting review</Status> : <Status tone="warn">Add your license</Status>}
                   {founding && <span className="founding-badge">Founding member &middot; {foundingLabel(founding)}</span>}
@@ -222,7 +224,7 @@ export function ProfileView({
                 <h3>About</h3>
                 <Edit sec="about" label="your bio" />
               </div>
-              {profile?.bio ? <p>{profile.bio}</p> : <p className="pf-empty">Add two or three sentences about who you work with and how.</p>}
+              <div data-preview="about">{profile?.bio ? <p>{profile.bio}</p> : <p className="pf-empty">Add two or three sentences about who you work with and how.</p>}</div>
             </div>
             {ledger && ledger.length > 0 && (
               <div className="home-ledger profile-ledger">
@@ -239,7 +241,7 @@ export function ProfileView({
                 <li key={r.sec} className={`pf-row${r.todo || !r.value ? " is-empty" : ""}`} data-block={r.sec}>
                   <div className="pf-row-text">
                     <b>{r.label}</b>
-                    <span>{r.value || (r.note && r.sec !== "insurance" ? r.note : r.sec === "insurance" ? "Self-pay only" : "Not added yet")}</span>
+                    <span data-preview={r.sec}>{r.value || (r.note && r.sec !== "insurance" ? r.note : r.sec === "insurance" ? "Self-pay only" : "Not added yet")}</span>
                     {r.value && r.note && r.sec !== "insurance" && <small>{r.note}</small>}
                   </div>
                   <Edit sec={r.sec} label={r.label} />

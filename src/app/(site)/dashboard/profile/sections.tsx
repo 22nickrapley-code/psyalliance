@@ -16,6 +16,70 @@ function restore(dlg: HTMLElement) {
   });
 }
 
+// What a section will show once saved, read from its card (Nick, 4 Nov): imported or edited values appear in the
+// profile straight away, marked "Not saved yet", instead of looking empty until a reload.
+function changedIn(d: Element) {
+  return Array.from(d.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>("input, select, textarea")).some((el) => {
+    if (el instanceof HTMLInputElement && (el.type === "checkbox" || el.type === "radio")) return el.checked !== el.defaultChecked;
+    if (el instanceof HTMLSelectElement) return Array.from(el.options).some((o) => o.selected !== o.defaultSelected);
+    if (el.type === "hidden" || el.type === "file") return false;
+    return el.value !== (el as HTMLInputElement).defaultValue;
+  });
+}
+const labelText = (i: Element) => (i.closest("label")?.textContent || "").trim();
+function previewFor(sec: string, d: Element): string | null {
+  const checked = (root: Element) => Array.from(root.querySelectorAll<HTMLInputElement>('input[type="checkbox"]:checked')).map(labelText).filter(Boolean);
+  if (sec === "about") return (d.querySelector<HTMLTextAreaElement>("#bio")?.value || "").trim();
+  if (sec === "where") {
+    const city = (d.querySelector<HTMLInputElement>("#primary_practice_city")?.value || "").trim();
+    const st = d.querySelector<HTMLSelectElement>("#primary_state")?.value || "";
+    const c = city.replace(new RegExp(`,\\s*${st || "@@"}$`, "i"), "");
+    return [c, st].filter(Boolean).join(", ");
+  }
+  if (sec === "specialties") {
+    return [1, 2, 3, 4, 5]
+      .map((n) => d.querySelector<HTMLSelectElement>(`select[name="spec_rank_${n}"]`))
+      .map((s) => (s && s.value ? s.selectedOptions[0]?.textContent?.trim() || "" : ""))
+      .filter(Boolean)
+      .join(" · ");
+  }
+  if (sec === "populations") {
+    const g = d.querySelectorAll(".check-grid");
+    return [g[0] ? checked(g[0]).join(", ") : "", g[1] ? checked(g[1]).join(", ") : ""].filter(Boolean).join(" · ");
+  }
+  if (sec === "modalities" || sec === "insurance" || sec === "languages") {
+    const xs = checked(d);
+    return xs.length > 4 && sec !== "languages" ? `${xs.slice(0, 4).join(", ")} +${xs.length - 4}` : xs.join(", ");
+  }
+  return null;
+}
+export function refreshPreviews() {
+  document.querySelectorAll<HTMLElement>("[data-preview]").forEach((slot) => {
+    const sec = slot.dataset.preview!;
+    const d = document.getElementById(`dlg-${slot.dataset.from || sec}`);
+    if (slot.dataset.saved === undefined) slot.dataset.saved = slot.innerHTML;
+    const block = slot.closest<HTMLElement>("[data-block]");
+    if (!d || !changedIn(d)) {
+      if (slot.innerHTML !== slot.dataset.saved) slot.innerHTML = slot.dataset.saved;
+      if (sec !== "where") block?.classList.remove("is-proposed");
+      return;
+    }
+    const v = previewFor(sec, d);
+    if (v === null) return;
+    slot.innerHTML = "";
+    if (sec === "about") {
+      const p = document.createElement("p");
+      p.textContent = v || "No bio yet.";
+      slot.appendChild(p);
+    } else slot.textContent = sec === "where" ? (v ? ` · ${v}` : "") : v || "Nothing chosen";
+    const tag = document.createElement("em");
+    tag.className = "pf-proposed-tag";
+    tag.textContent = "Not saved yet";
+    slot.append(" ", tag);
+    if (sec !== "where") block?.classList.add("is-proposed");
+  });
+}
+
 export function ProfileCards() {
   const [imported, setImported] = useState(0);
   useEffect(() => {
@@ -31,6 +95,9 @@ export function ProfileCards() {
     window.addEventListener("hashchange", fromHash);
 
     let dirty = false;
+    // Once Save is pressed nothing may mark the page unsaved again, or the browser asks "Leave site?" as the saved
+    // page loads (the bug Nick hit after importing).
+    let submitting = false;
     const onClick = (e: MouseEvent) => {
       const t = e.target as HTMLElement;
       const edit = t.closest<HTMLElement>("[data-edit]");
@@ -44,6 +111,7 @@ export function ProfileCards() {
         const d = cancel.closest("dialog");
         if (d) {
           restore(d);
+          refreshPreviews();
           d.close();
           if (location.hash) history.replaceState(null, "", location.pathname + location.search);
         }
@@ -58,13 +126,17 @@ export function ProfileCards() {
       }
     };
     const onInput = (e: Event) => {
-      if ((e.target as HTMLElement).closest("#profile-form")) dirty = true;
+      if ((e.target as HTMLElement).closest("#profile-form")) {
+        if (!submitting) dirty = true;
+        refreshPreviews();
+      }
     };
     const onSubmit = () => {
       dirty = false;
+      submitting = true;
     };
     const onBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (dirty) {
+      if (dirty && !submitting) {
         e.preventDefault();
         e.returnValue = "";
       }
@@ -72,7 +144,10 @@ export function ProfileCards() {
     // A card closed with Escape forgets what was typed in it.
     const onCancel = (e: Event) => {
       const d = e.target as HTMLElement;
-      if (d instanceof HTMLDialogElement && d.closest("#profile-form")) restore(d);
+      if (d instanceof HTMLDialogElement && d.closest("#profile-form")) {
+        restore(d);
+        refreshPreviews();
+      }
     };
     // Imported values: count the sections that now hold highlighted, unsaved changes.
     const form = document.getElementById("profile-form");
@@ -84,7 +159,8 @@ export function ProfileCards() {
       });
       document.querySelectorAll<HTMLElement>("[data-block]").forEach((b) => b.classList.toggle("is-filled", secs.has(b.dataset.block!)));
       setImported(secs.size);
-      if (secs.size) dirty = true;
+      if (secs.size && !submitting) dirty = true;
+      refreshPreviews();
     });
     if (form) watch.observe(form, { subtree: true, attributes: true, attributeFilter: ["class"] });
     document.addEventListener("click", onClick, true);
@@ -109,7 +185,7 @@ export function ProfileCards() {
   return (
     <div className="import-bar" role="status">
       <span>
-        <b>Filled in from your profile:</b> {imported} section{imported === 1 ? "" : "s"}, marked below. Open any to check it, then save.
+        <b>Filled in from your profile:</b> {imported} section{imported === 1 ? "" : "s"}, shown below as &ldquo;Not saved yet&rdquo;. Open any to check it, then save. Profile strength counts saved information, so it updates when you save.
       </span>
       <button type="submit" form="profile-form" className="btn">
         Save profile

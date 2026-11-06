@@ -22,6 +22,8 @@ export function openOf(sp: URLSearchParams | Params, view: WorkspaceView = "home
   // From the account pages' top bar and the retired availability page.
   if (get("search") === "1") return { type: "search" };
   if (get("settings") === "1") return { type: "settings" };
+  // The one notifications window (Nick, 4 Nov): the bell, Settings and the old notifications pages all open it.
+  if (get("notifications") === "1") return { type: "notifications" };
   if (get("demos") === "1") return { type: "demos" };
   if (get("availability") === "1" && view === "home") return { type: "availability" };
   const referral = num(get("referral"));
@@ -54,7 +56,7 @@ export function legacyDestination(section: string[], sp: Params): string | null 
     if (b === "requests" && num(c || "")) return `/dashboard/cover?plan=${c}`;
     if (b && num(b)) return `/dashboard/cover?plan=${b}`;
   }
-  if (a === "messages" && !b && one(sp.tab) === "notifications") return "/dashboard/notifications";
+  if (a === "messages" && !b && one(sp.tab) === "notifications") return "/dashboard?notifications=1";
   if (a === "messages" && b && num(b)) return `/dashboard/messages?thread=c-${b}`;
   if (a === "consult" && b !== "groups") {
     if (!b) return null;

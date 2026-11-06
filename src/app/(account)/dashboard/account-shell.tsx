@@ -219,7 +219,7 @@ export default function AccountShell({
               <span>Search</span>
             </Link>
             <Link
-              href="/dashboard/notifications"
+              href="/dashboard?notifications=1"
               className="icon-button"
               data-bell=""
               aria-label={unreadNotifications ? `Notifications, ${unreadNotifications} unread` : "Notifications"}

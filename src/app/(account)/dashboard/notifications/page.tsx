@@ -1,3 +1,7 @@
-// The page itself lives beside its code in (site)/dashboard; this puts it in the account frame (see (account)/dashboard/layout.tsx).
-export { default, metadata } from "@/app/(site)/dashboard/notifications/view";
+import { redirect } from "next/navigation";
+
+// Notifications now open in the workspace's search window, on Notifications (Nick, 4 Nov). Old links land there.
 export const dynamic = "force-dynamic";
+export default function NotificationsPage() {
+  redirect("/dashboard?notifications=1");
+}

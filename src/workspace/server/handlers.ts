@@ -202,6 +202,54 @@ export const handlers: Record<string, Handler> = {
     return { ok: true, data, patch: await slices(ctx, ["plans", "known"]) };
   },
 
+  // ---- Notifications (Nick, 4 Nov): one list, read in the same search window as everything else ----------
+  "notifications.list": async (ctx) => {
+    const [{ data: deliveries, error }, { data: notices }] = await Promise.all([
+      ctx.supabase
+        .from("notification_deliveries")
+        .select("id, read_at, created_at, notification_events(summary, deep_link, event_type, actor:actor_profile_id(full_name, credential_prefix, qualification_level))")
+        .eq("recipient_profile_id", ctx.userId)
+        .eq("channel", "in_app")
+        .eq("status", "sent")
+        .order("created_at", { ascending: false })
+        .limit(80),
+      ctx.supabase.from("system_notifications").select("id, title, body, created_at, read_at").eq("profile_id", ctx.userId).order("created_at", { ascending: false }).limit(30),
+    ]);
+    if (error) return fail(error, "Your notifications didn't load. Please try again.");
+    const cat = (t: string, link: string) =>
+      /^coverage_/.test(t) ? "cover" : /^referral_/.test(t) ? "referrals" : /^consultation_|^mention$/.test(t) ? "consult"
+      : t === "message_received" ? "messages" : /^trusted_/.test(t) ? "network"
+      : t === "credential_reminder" || t === "availability_reminder" || /\/dashboard\/(credentials|profile|availability|continuity)/.test(link) ? "profile"
+      : /\/dashboard\/cover/.test(link) ? "cover" : /\/dashboard\/referrals/.test(link) ? "referrals" : /\/dashboard\/consult/.test(link) ? "consult" : "psyalliance";
+    const items = [
+      ...((deliveries as any[]) || []).filter((d) => d.notification_events).map((d) => {
+        const e = d.notification_events;
+        const name = e.actor?.full_name ? String(e.actor.full_name) : "";
+        const link = typeof e.deep_link === "string" && e.deep_link.startsWith("/") && !e.deep_link.startsWith("//") ? e.deep_link : "";
+        return { key: `d${d.id}`, kind: "delivery", id: d.id, at: d.created_at, unread: !d.read_at, cat: cat(String(e.event_type || ""), link), title: name && e.event_type !== "system_notice" ? `${name} ${e.summary}` : String(e.summary || ""), body: "", link };
+      }),
+      ...((notices as any[]) || []).map((n) => ({ key: `n${n.id}`, kind: "notice", id: n.id, at: n.created_at, unread: !n.read_at, cat: /licen[cs]e|verif|credential/i.test(`${n.title} ${n.body}`) ? "profile" : "psyalliance", title: String(n.title || ""), body: String(n.body || ""), link: "" })),
+    ].sort((a, b) => (a.at < b.at ? 1 : -1));
+    return { ok: true, data: { items } };
+  },
+
+  "notifications.read": async (ctx, a) => {
+    const now = new Date().toISOString();
+    if (a.all === true) {
+      await ctx.supabase.from("notification_deliveries").update({ read_at: now }).eq("recipient_profile_id", ctx.userId).is("read_at", null);
+      await ctx.supabase.from("system_notifications").update({ read_at: now }).eq("profile_id", ctx.userId).is("read_at", null);
+      return { ok: true };
+    }
+    const id = num(a.id);
+    if (!Number.isFinite(id)) return bad("That notification couldn't be found.");
+    const q = a.kind === "notice"
+      ? ctx.supabase.from("system_notifications").update({ read_at: now }).eq("id", id).eq("profile_id", ctx.userId).is("read_at", null)
+      : ctx.supabase.from("notification_deliveries").update({ read_at: now }).eq("id", id).eq("recipient_profile_id", ctx.userId).is("read_at", null);
+    const { error } = await q;
+    if (error) return fail(error);
+    return { ok: true };
+  },
+
   // ---- Referrals ---------------------------------------------------------
   "referral.create": async (ctx, a) => {
     const payload = {

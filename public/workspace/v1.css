@@ -620,3 +620,40 @@ body.dialog-open .guide-bar,body.dialog-open .sandbox-arrival{display:none!impor
 .guide-more h3{font-size:15px;margin:0 0 10px}
 .modal-sandbox{display:inline-flex;margin-right:8px;vertical-align:middle}
 .modal-header .modal-sandbox+.eyebrow{display:inline-block}
+/* One window for search and notifications; it keeps its size while results change (Nick, 4 Nov). */
+.modal:has(#global-search){height:min(760px,calc(100dvh - 48px));display:flex;flex-direction:column}
+.modal:has(#global-search) .modal-body{flex:1;min-height:0;overflow-y:auto}
+.note-cats{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 10px}
+.note-cats button{border:1px solid var(--line);background:#fff;border-radius:999px;padding:5px 11px;font-size:12.5px;cursor:pointer;color:#4A534D}
+.note-cats button span{font-weight:700;color:#7A5C25}
+.note-cats button[aria-pressed="true"]{background:#1E4A3A;color:#fff;border-color:#1E4A3A}
+.note-cats button[aria-pressed="true"] span{color:#F3E3BE}
+.note-summary{display:flex;justify-content:space-between;align-items:center;font-size:12.5px;color:#5b6b61;margin-bottom:8px}
+.note-list{display:grid;gap:6px}
+.note-row{display:flex;gap:12px;align-items:flex-start;text-align:left;width:100%;border:1px solid var(--line);border-left-width:4px;border-radius:12px;background:#fff;padding:10px 12px;cursor:pointer}
+.note-row.is-unread{background:#FFFDF7;border-color:#E9DFC9}
+.note-row.is-read{background:#FBFAF6;color:#5b6b61}
+.note-row.is-read .note-title{font-weight:400}
+.note-row.is-unread .note-title{font-weight:650;color:var(--ink)}
+.note-dot{width:9px;height:9px;border-radius:50%;margin-top:6px;flex:0 0 auto;background:transparent;border:2px solid #C9BFA9}
+.note-row.is-unread .note-dot{background:#8C6A2F;border-color:#8C6A2F}
+.note-main{display:grid;gap:2px;min-width:0}
+.note-meta{display:flex;gap:8px;align-items:center;font-size:11.5px}
+.note-cat{letter-spacing:.04em;text-transform:uppercase}
+.note-new{background:#8C6A2F;color:#fff;border-radius:999px;padding:1px 7px;font-weight:700}
+.note-seen{color:#8a958e}
+.note-meta small{color:#6b7a70}
+.note-title{font-size:14px;overflow-wrap:anywhere}
+.note-body{font-size:12.5px;color:#5b6b61}
+.note-row.cat-referrals{border-left-color:#A0703F}.note-row.cat-cover{border-left-color:#2F6B4F}.note-row.cat-consult{border-left-color:#5E4A8C}.note-row.cat-messages{border-left-color:#3B6E8F}.note-row.cat-network{border-left-color:#2E7D7A}.note-row.cat-profile{border-left-color:#8C6A2F}.note-row.cat-psyalliance{border-left-color:#4A534D}
+/* Profile: imported or edited values show at once, marked, with room for the accent line (Nick, 4 Nov). */
+.pf-layout .is-proposed,.pf-layout .is-filled{position:relative}
+.pf-layout .pf-row.is-filled,.pf-layout .pf-row.is-proposed,.pf-layout .pf-about.is-filled,.pf-layout .pf-about.is-proposed{border-left:0!important;box-shadow:inset 3px 0 0 #B78A53;padding-left:16px!important}
+.pf-proposed-tag{display:inline-block;font-style:normal;font-size:11.5px;font-weight:700;color:#7A5C25;background:#FBF1DC;border-radius:999px;padding:1px 8px;margin-left:6px;vertical-align:middle}
+.import-conflicts{margin-top:12px;display:grid;gap:8px}
+.import-conflict{display:grid;grid-template-columns:140px 1fr 1fr auto;gap:10px;align-items:start;border:1px solid #E7E1D4;border-radius:10px;padding:10px 12px;background:#fff;font-size:13px}
+.import-conflict small{display:block;font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:#6b7a70}
+.import-conflict.is-done{background:#FBFAF6}
+.ic-buttons{display:flex;gap:6px}
+.ic-choice{font-size:12.5px;color:#1E5A3F;font-weight:600}
+@media (max-width:760px){.import-conflict{grid-template-columns:1fr}}

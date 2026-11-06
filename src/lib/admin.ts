@@ -62,6 +62,21 @@ export async function setVerificationStatus(
       deepLink: "/dashboard",
     });
   }
+  // Anything the member has to act on is actionable work in their notifications (Nick, 4 Nov).
+  if ((status === "flagged" || status === "rejected") && before?.verification_status !== status) {
+    const { raiseNotification } = await import("@/lib/notifications-v2");
+    await raiseNotification(supabase, {
+      eventType: "system_notice",
+      recipientProfileIds: [profileId],
+      actorProfileId: adminId,
+      actorType: "system",
+      summary:
+        status === "flagged"
+          ? "We need a little more information to verify your account. Please check Verification for what to add."
+          : "We couldn't verify your account. Please check Verification for the reason and what you can do.",
+      deepLink: "/dashboard/credentials",
+    });
+  }
   return { error: null };
 }
 

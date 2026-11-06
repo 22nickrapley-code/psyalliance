@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import { parseProfileBio } from "./actions";
+import { refreshPreviews } from "./sections";
 
 // Quick start: paste or drop an existing profile (Psychology Today, a
 // practice website, LinkedIn, a CV) and the form below fills itself in.
@@ -68,7 +69,12 @@ export function AutofillMarks({ ids, ranks = 0 }: { ids: string[]; ranks?: numbe
   return <span ref={ref} hidden />;
 }
 
-export default function BioImportBox({ prominent = true, demo }: { prominent?: boolean; demo?: ImportDemo }) {
+// A value the new text would change (Nick, 4 Nov): the member keeps what they saved or takes the new one.
+type Conflict = { key: string; label: string; current: string; proposed: string; apply: () => void; done?: "kept" | "used" };
+
+export default function BioImportBox({ prominent = true, demo, mode = "setup" }: { prominent?: boolean; demo?: ImportDemo; mode?: "setup" | "update" }) {
+  const [conflicts, setConflicts] = useState<Conflict[]>([]);
+  const [notes, setNotes] = useState<string[]>([]);
   const [bioText, setBioText] = useState(demo?.text || "");
   const [isPending, startTransition] = useTransition();
   const [applied, setApplied] = useState<string[] | null>(demo?.applied || null);
@@ -76,7 +82,8 @@ export default function BioImportBox({ prominent = true, demo }: { prominent?: b
   const [isError, setIsError] = useState(false);
   const [photo, setPhoto] = useState<{ src: string; file?: File; url?: string } | null>(null);
   const [lowRes, setLowRes] = useState(false);
-  const [open, setOpen] = useState(prominent);
+  const open = true;
+  void prominent;
   const fileField = useRef<HTMLInputElement>(null);
   const urlField = useRef<HTMLInputElement>(null);
 
@@ -139,13 +146,24 @@ export default function BioImportBox({ prominent = true, demo }: { prominent?: b
     probe.src = p.src;
   }
 
-  function applyFields(fields: Fields, list: string[]) {
+  function applyFields(fields: Fields, list: string[], found: Conflict[]) {
+    // New information is filled in; a value already saved that the text would change becomes a choice, never a
+    // silent overwrite. Anything saved that the new text doesn't mention is left as it is.
     const setValue = (id: string, value: string | null | undefined, label: string) => {
       if (!value) return;
       const el = document.getElementById(id) as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | null;
       if (!el || el.value === value) return;
-      el.value = value;
-      mark(el);
+      const put = () => {
+        el.value = value;
+        mark(el);
+        el.dispatchEvent(new Event("input", { bubbles: true }));
+      };
+      if (mode === "update" && el.value.trim() && el.value.trim().toLowerCase() !== value.trim().toLowerCase()) {
+        const shown = (v: string) => (el instanceof HTMLSelectElement ? Array.from(el.options).find((o) => o.value === v)?.textContent || v : v);
+        found.push({ key: id, label, current: shown(el.value), proposed: shown(value), apply: put });
+        return;
+      }
+      put();
       list.push(label);
     };
     setValue("full_name", fields.full_name, "Name");
@@ -166,7 +184,7 @@ export default function BioImportBox({ prominent = true, demo }: { prominent?: b
     }
   }
 
-  function applyLookups(ids: number[], ranked: number[], list: string[]) {
+  function applyLookups(ids: number[], ranked: number[], list: string[], found: Conflict[]) {
     let ticked = 0;
     for (const id of ids) {
       const box = document.getElementById(`lv_${id}`) as HTMLInputElement | null;
@@ -178,16 +196,28 @@ export default function BioImportBox({ prominent = true, demo }: { prominent?: b
     }
     if (ticked) list.push(`${ticked} specialt${ticked === 1 ? "y" : "ies"}, approaches and other details ticked`);
     if (ranked.length) {
-      ranked.forEach((id, i) => {
-        const sel = document.querySelector<HTMLSelectElement>(`select[name="spec_rank_${i + 1}"]`);
-        if (sel) {
-          sel.value = String(id);
-          mark(sel);
-        }
-      });
-      const ask = document.getElementById("rank-confirm");
-      if (ask) ask.hidden = false;
-      list.push(`Your top ${ranked.length} specialties ranked: check the order`);
+      const sels = [1, 2, 3, 4, 5].map((n) => document.querySelector<HTMLSelectElement>(`select[name="spec_rank_${n}"]`));
+      const name = (s: HTMLSelectElement | null, v: string) => (s ? Array.from(s.options).find((o) => o.value === v)?.textContent || "" : "");
+      const current = sels.map((s) => (s?.value ? name(s, s.value) : "")).filter(Boolean);
+      const proposed = ranked.map((id, i) => name(sels[i], String(id))).filter(Boolean);
+      const put = () => {
+        ranked.forEach((id, i) => {
+          const sel = sels[i];
+          if (sel) {
+            sel.value = String(id);
+            mark(sel);
+          }
+        });
+        const ask = document.getElementById("rank-confirm");
+        if (ask) ask.hidden = false;
+        sels[0]?.dispatchEvent(new Event("change", { bubbles: true }));
+      };
+      if (mode === "update" && current.length && current.join("|") !== proposed.join("|")) {
+        found.push({ key: "ranks", label: "Top specialties", current: current.join(" · "), proposed: proposed.join(" · "), apply: put });
+      } else if (!current.length || mode === "setup") {
+        put();
+        list.push(`Your top ${ranked.length} specialties ranked: check the order`);
+      }
     }
   }
 
@@ -203,18 +233,28 @@ export default function BioImportBox({ prominent = true, demo }: { prominent?: b
         return;
       }
       const list: string[] = [];
+      const found: Conflict[] = [];
       document.querySelectorAll(".autofilled").forEach((el) => el.classList.remove("autofilled"));
-      if (result.fields) applyFields(result.fields, list);
-      applyLookups(result.matchedLookupIds || [], result.rankedSpecialtyIds || [], list);
+      if (result.fields) {
+        // A city that already carries the state ("Austin, TX") is stored as the city alone.
+        if (result.fields.primary_practice_city) result.fields.primary_practice_city = result.fields.primary_practice_city.replace(/,\s*[A-Z]{2}$/, "").trim();
+        applyFields(result.fields, list, found);
+      }
+      applyLookups(result.matchedLookupIds || [], result.rankedSpecialtyIds || [], list, found);
+      setConflicts(found);
+      setNotes(result.conflicts || []);
+      refreshPreviews();
       if (photo) {
         applyPhoto(photo);
         list.push("Photo");
       }
       setApplied(list);
       setMessage(
-        list.length > 0
-          ? "Filled in and highlighted below. Check each part, then press Save profile."
-          : "We couldn't find anything to fill in from that text. You can still complete the form below."
+        list.length > 0 || found.length > 0
+          ? `${list.length ? "New details are filled in below and marked Not saved yet." : "Nothing new to add."}${found.length ? ` ${found.length} saved value${found.length === 1 ? "" : "s"} would change: choose below.` : ""} Check each part, then press Save profile.`
+          : mode === "update"
+            ? "Everything in that text is already on your profile. Nothing was changed."
+            : "We couldn't find anything to fill in from that text. You can still complete the form below."
       );
     });
   }
@@ -223,16 +263,15 @@ export default function BioImportBox({ prominent = true, demo }: { prominent?: b
     <section className={`card quick-start${open ? " open" : ""}`} id="quick-start">
       <div className="quick-start-head">
         <div>
-          <div className="eyebrow">Quick start</div>
-          <h3>Start from a profile you already have</h3>
+          <div className="eyebrow">{mode === "update" ? "Update from your profile" : "Quick start"}</div>
+          <h3>{mode === "update" ? "Paste an updated profile" : "Start from a profile you already have"}</h3>
           <p className="small" style={{ margin: 0 }}>
-            Paste a link to your Psychology Today profile, or the text of your profile, practice website or CV. We fill in the fields, your photo and your top
-            specialties for you to check. Nothing is saved until you press Save.
+            {mode === "update"
+              ? "Paste your updated Psychology Today link or text, your website or CV. We add anything new, show anything that has changed so you can choose, and keep everything you've saved that the new text doesn't mention. Nothing is saved until you press Save."
+              : "Paste a link to your Psychology Today profile, or the text of your profile, practice website or CV. We fill in the fields, your photo and your top specialties for you to check. Nothing is saved until you press Save."}
           </p>
         </div>
-        {!open && (
-          <button type="button" className="btn secondary small-btn" onClick={() => setOpen(true)}>Import</button>
-        )}
+
       </div>
       {open && (
         <>
@@ -267,6 +306,31 @@ export default function BioImportBox({ prominent = true, demo }: { prominent?: b
             <ul className="quick-start-applied" aria-label="What was filled in">
               {applied.map((a) => <li key={a}>{a}</li>)}
             </ul>
+          )}
+          {conflicts.length > 0 && (
+            <div className="import-conflicts" role="group" aria-label="Changes to choose">
+              <p className="label-line">These are already on your profile. Keep them, or use the new text:</p>
+              {conflicts.map((c) => (
+                <div key={c.key} className={`import-conflict${c.done ? " is-done" : ""}`}>
+                  <b>{c.label}</b>
+                  <span className="ic-now"><small>On your profile</small>{c.current}</span>
+                  <span className="ic-new"><small>In the new text</small>{c.proposed}</span>
+                  {c.done ? (
+                    <span className="ic-choice">{c.done === "used" ? "Using the new text (not saved yet)" : "Keeping what you saved"}</span>
+                  ) : (
+                    <span className="ic-buttons">
+                      <button type="button" className="btn secondary small-btn" onClick={() => setConflicts((xs) => xs.map((x) => (x.key === c.key ? { ...x, done: "kept" } : x)))}>Keep</button>
+                      <button type="button" className="btn small-btn" onClick={() => { c.apply(); refreshPreviews(); setConflicts((xs) => xs.map((x) => (x.key === c.key ? { ...x, done: "used" } : x))); }}>Use new</button>
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+          {notes.length > 0 && (
+            <div className="notice-line warn" role="note">
+              <b>Worth checking:</b> {notes.join(" ")} Nothing was decided for you; open the section to choose.
+            </div>
           )}
           {lowRes && (
             <p className="notice-line warn">
