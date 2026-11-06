@@ -7,7 +7,11 @@
 --      themselves the day after the absence ends.
 --   3. Referrals: one at a time in your order (selected or trusted colleagues), the same deadlines as Cover, agreeing after
 --      a discussion, declining a colleague and moving on, adding recipients.
---   4. What the screens read: the plan and referral records carry the new facts.
+--   4. What the screens read: the plan and referral records carry the new facts, and notifications use the same
+--      words as the screens (can cover, can accept, not available, agreed).
+--   5. Consultation groups list who was invited and has not joined yet (organisers only); the Network knows when you
+--      last worked with each colleague, for the recency filter.
+--   6. Who can call the new functions.
 -- Every function is written out in full (no find-and-replace on live text), so the result is the same on every project.
 
 -- 1. Columns ------------------------------------------------------------------------------------------------------
@@ -1777,7 +1781,7 @@ AS $function$
   where auth.uid() is not null;
 $function$;
 
--- 5. Who can call what ----------------------------------------------------------------------------------------------
+-- 6. Who can call what ----------------------------------------------------------------------------------------------
 revoke all on function public.cover_decline(bigint) from public, anon;
 grant execute on function public.cover_decline(bigint) to authenticated;
 revoke all on function public.cover_set_recipients(bigint, bigint, uuid[], text) from public, anon;
