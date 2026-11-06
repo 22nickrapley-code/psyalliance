@@ -222,12 +222,20 @@ export const handlers: Record<string, Handler> = {
       : t === "message_received" ? "messages" : /^trusted_/.test(t) ? "network"
       : t === "credential_reminder" || t === "availability_reminder" || /\/dashboard\/(credentials|profile|availability|continuity)/.test(link) ? "profile"
       : /\/dashboard\/cover/.test(link) ? "cover" : /\/dashboard\/referrals/.test(link) ? "referrals" : /\/dashboard\/consult/.test(link) ? "consult" : "psyalliance";
+    // Older notifications were written in the earlier wording; show them in the words the screens use now.
+    const WORDS: [RegExp, string][] = [
+      [/responded "declined" to your coverage request/, "is not available for your cover request"],
+      [/is interested in covering your client/, "can cover your client"],
+      [/confirmed they can cover your client/, "agreed to cover your client"],
+      [/is interested in your referral request/, "can accept your referral request"],
+    ];
+    const reword = (t: string) => WORDS.reduce((x, [re, to]) => x.replace(re, to), t);
     const items = [
       ...((deliveries as any[]) || []).filter((d) => d.notification_events).map((d) => {
         const e = d.notification_events;
         const name = e.actor?.full_name ? String(e.actor.full_name) : "";
         const link = typeof e.deep_link === "string" && e.deep_link.startsWith("/") && !e.deep_link.startsWith("//") ? e.deep_link : "";
-        return { key: `d${d.id}`, kind: "delivery", id: d.id, at: d.created_at, unread: !d.read_at, cat: cat(String(e.event_type || ""), link), title: name && e.event_type !== "system_notice" ? `${name} ${e.summary}` : String(e.summary || ""), body: "", link };
+        return { key: `d${d.id}`, kind: "delivery", id: d.id, at: d.created_at, unread: !d.read_at, cat: cat(String(e.event_type || ""), link), title: name && e.event_type !== "system_notice" ? reword(`${name} ${e.summary}`) : reword(String(e.summary || "")), body: "", link };
       }),
       ...((notices as any[]) || []).map((n) => ({ key: `n${n.id}`, kind: "notice", id: n.id, at: n.created_at, unread: !n.read_at, cat: /licen[cs]e|verif|credential/i.test(`${n.title} ${n.body}`) ? "profile" : "psyalliance", title: String(n.title || ""), body: String(n.body || ""), link: "" })),
     ].sort((a, b) => (a.at < b.at ? 1 : -1));

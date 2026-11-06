@@ -673,3 +673,5 @@ body.dialog-open .guide-bar,body.dialog-open .sandbox-arrival{display:none!impor
 /* v3: one sandbox control in the sidebar (Leave, Restart); no page banner */
 .sandbox-controls{display:flex;gap:14px;margin-top:6px}
 .sandbox-controls .text-link{font-size:13px;font-weight:600;padding:0;background:none;border:0;cursor:pointer;color:inherit;text-decoration:underline;text-underline-offset:2px}
+.net-recency{flex-wrap:nowrap;gap:4px;overflow-x:auto}
+.net-recency button{padding:3px 9px;font-size:12px;min-height:0}

@@ -1396,11 +1396,124 @@ begin
     perform private.professional_event('referral_response', me, r.requesting_profile_id, 'responded "' || p_response || '" to a referral request',
                                        jsonb_build_object('referralRequestId', p_referral, 'response', p_response), secs);
     perform private.notify_member('referral_response', r.requesting_profile_id, me,
-                                  case p_response when 'interested' then 'is interested in your referral request'
+                                  case p_response when 'interested' then 'can accept your referral request'
                                                   when 'discussing' then 'asked a question about your referral request'
                                                   else 'is not available for your referral request' end,
                                   '/dashboard/referrals?referral=' || p_referral, 'referral_response:' || p_referral || ':' || me || ':' || p_response,
                                   jsonb_build_object('referralRequestId', p_referral, 'response', p_response));
+  end if;
+  return jsonb_build_object('status', p_response, 'unchanged', not changed, 'conversationKey', ckey, 'messageId', msg);
+end;
+$function$;
+
+-- Cover replies: notification wording matches the screens
+CREATE OR REPLACE FUNCTION public.cover_answer(p_request bigint, p_response text, p_question text DEFAULT NULL::text, p_client_message_id uuid DEFAULT NULL::uuid)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+declare
+  me uuid := auth.uid();
+  rq coverage_requests%rowtype;
+  cs coverage_plan_cases%rowtype;
+  pl coverage_plans%rowtype;
+  changed boolean := false;
+  q text := btrim(coalesce(p_question, ''));
+  conv bigint;
+  msg bigint;
+  ckey text;
+  excl text[];
+begin
+  if me is null then
+    raise exception 'Please sign in again.' using errcode = 'P0001';
+  end if;
+  if p_response not in ('accepted', 'interested', 'declined', 'discussing') then
+    raise exception 'Choose a response.' using errcode = 'P0001';
+  end if;
+  select * into rq from coverage_requests where id = p_request;
+  if not found or rq.requested_profile_id <> me then
+    raise exception 'Request not found.' using errcode = 'P0001';
+  end if;
+  -- One answer at a time per client: two colleagues answering together queue here.
+  select * into cs from coverage_plan_cases where id = rq.coverage_plan_case_id for update;
+  select * into pl from coverage_plans where id = cs.coverage_plan_id;
+  select * into rq from coverage_requests where id = p_request;
+  if public.is_blocked_between(me, pl.profile_id) then
+    raise exception 'Request not found.' using errcode = 'P0001';
+  end if;
+  -- A lapsed licence can still say "not available"; nothing else. A closed or
+  -- suspended account can do nothing.
+  if not private.is_active_clinician(me) then
+    raise exception 'Your account isn''t active in the network right now.' using errcode = 'P0001';
+  end if;
+  if p_response <> 'declined' and not private.is_network_member(me) then
+    raise exception 'Your license isn''t current, so you can only decline this request.' using errcode = 'P0001';
+  end if;
+  -- Interest, not agreement (Nick, 1 Nov): the member who asked confirms one colleague per client.
+  if p_response in ('accepted', 'interested') then
+    if pl.status::text <> 'active' or rq.status::text not in ('sent', 'discussing') then
+      raise exception 'This request is closed. The colleague may have found cover elsewhere.' using errcode = 'P0001';
+    end if;
+    if cs.assigned_clinician_id is not null then
+      raise exception 'Another colleague has already taken on this client, so it''s covered. Thank you for offering.' using errcode = 'P0001';
+    end if;
+    excl := private.cover_case_exclusions(cs.id, me);
+    if excl[1] like 'No reviewed %' then
+      raise exception 'Your license for % isn''t current, so you can''t take on this client.', coalesce(cs.jurisdiction_state, pl.jurisdiction_state) using errcode = 'P0001';
+    end if;
+    if rq.interested_at is null then
+      update coverage_requests set interested_at = now(), expires_at = null, responded_at = coalesce(responded_at, now()) where id = p_request;
+      perform private.professional_event('coverage_response', me, pl.profile_id, 'responded "interested" to a coverage request',
+                                         jsonb_build_object('coverageRequestId', p_request, 'response', 'interested'));
+      perform private.notify_member('coverage_response', pl.profile_id, me, 'can cover your client',
+                                    '/dashboard/cover?plan=' || pl.id, 'coverage_response:' || p_request || ':interested',
+                                    jsonb_build_object('coverageRequestId', p_request, 'response', 'interested'));
+    end if;
+    return jsonb_build_object('status', 'interested', 'unchanged', rq.interested_at is not null);
+  end if;
+  if p_response = 'discussing' then
+    if q = '' then
+      raise exception 'Write your question first.' using errcode = 'P0001';
+    end if;
+    if length(q) > 2000 then
+      raise exception 'Keep the question under 2,000 characters.' using errcode = 'P0001';
+    end if;
+  end if;
+
+  if rq.status::text <> p_response then
+    if p_response = 'accepted' then
+      excl := private.cover_case_exclusions(cs.id, me);
+      if excl[1] like 'No reviewed %' then
+        raise exception 'Your license for % isn''t current, so you can''t take on this client.', coalesce(cs.jurisdiction_state, pl.jurisdiction_state) using errcode = 'P0001';
+      end if;
+    end if;
+    update coverage_requests set status = p_response::coverage_request_status, responded_at = now() where id = p_request;
+    changed := true;
+  end if;
+
+  if p_response = 'discussing' then
+    ckey := 'cover-' || pl.id || '-' || cs.id || '-' || me;
+    conv := private.context_conversation(ckey, pl.title || ' · ' || cs.case_reference, array[pl.profile_id, me], me,
+                                         pl.profile_id, private.cover_request_text(pl.id, cs.id), rq.sent_at);
+    msg := private.post_message(conv, me, q, p_client_message_id, '/dashboard/messages?thread=' || ckey);
+  end if;
+
+  if changed then
+    perform private.professional_event('coverage_response', me, pl.profile_id, 'responded "' || p_response || '" to a coverage request',
+                                       jsonb_build_object('coverageRequestId', p_request, 'response', p_response),
+                                       greatest(0, extract(epoch from now() - rq.sent_at)::integer));
+    if p_response = 'accepted' then
+      perform private.professional_event('coverage_confirmed', me, pl.profile_id, null,
+                                         jsonb_build_object('coverageRequestId', p_request, 'coveragePlanCaseId', cs.id));
+    end if;
+    perform private.notify_member(case when p_response = 'accepted' then 'coverage_confirmed' else 'coverage_response' end,
+                                  pl.profile_id, me,
+                                  case p_response when 'accepted' then 'agreed to cover your client'
+                                                  when 'discussing' then 'asked a question about your coverage request'
+                                                  else 'is not available for your cover request' end,
+                                  '/dashboard/cover?plan=' || pl.id, 'coverage_response:' || p_request || ':' || p_response,
+                                  jsonb_build_object('coverageRequestId', p_request, 'response', p_response));
   end if;
   return jsonb_build_object('status', p_response, 'unchanged', not changed, 'conversationKey', ckey, 'messageId', msg);
 end;
