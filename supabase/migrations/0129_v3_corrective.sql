@@ -1580,6 +1580,90 @@ begin
 end;
 $function$;
 
+-- 5. Consultation groups: who has been invited and not joined yet (Nick, 4 Nov) -------------------------------------
+-- Organisers see everyone they invited, including people invited by email who have not joined PsyAlliance yet.
+create or replace function public.workspace_groups()
+returns jsonb language sql stable security definer set search_path = public as $$
+  select coalesce(jsonb_agg(jsonb_build_object(
+           'id', g.id,
+           'name', g.name,
+           'purpose', coalesce(g.purpose, ''),
+           'cadence', coalesce(g.cadence, ''),
+           'minutes', g.meeting_length_minutes,
+           'format', g.meeting_format,
+           'charter', coalesce(g.charter_body, ''),
+           'founder', case when g.created_by = auth.uid() then 'me' else g.created_by::text end,
+           'organiser', private.group_is_organiser(g.id, auth.uid()),
+           'link', coalesce(g.meeting_link, ''),
+           'next', g.next_meeting_at,
+           'count', (select count(*) from consultation_group_members m where m.group_id = g.id and m.status = 'joined'),
+           'members', coalesce((select jsonb_agg(m.profile_id order by m.invited_at, m.id)
+                                  from consultation_group_members m
+                                 where m.group_id = g.id and m.status = 'joined' and m.profile_id <> auth.uid()
+                                   and m.profile_id in (select v.id from private.visible_members(auth.uid()) v)), '[]'::jsonb),
+           'pending', case when private.group_is_organiser(g.id, auth.uid()) then coalesce((
+                        select jsonb_agg(jsonb_build_object(
+                                 'person', case when m.profile_id is not null and m.profile_id in (select v.id from private.visible_members(auth.uid()) v) then m.profile_id::text end,
+                                 'email', case when m.profile_id is null then m.external_email end,
+                                 'invitedAt', m.invited_at) order by m.invited_at, m.id)
+                          from consultation_group_members m
+                         where m.group_id = g.id and m.status = 'invited'), '[]'::jsonb) else '[]'::jsonb end
+         ) order by g.created_at, g.id), '[]'::jsonb)
+    from consultation_groups g
+   where auth.uid() is not null
+     and exists (select 1 from consultation_group_members m where m.group_id = g.id and m.profile_id = auth.uid() and m.status = 'joined');
+$$;
+
+-- Network: when you last worked with each colleague
+CREATE OR REPLACE FUNCTION public.workspace_tiers()
+ RETURNS jsonb
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+  with vm as (select id from private.visible_members(auth.uid())),
+  excl as (select d.blocked_profile_id as colleague_id from do_not_work_with d where d.profile_id = auth.uid() and d.block_type = 'exclude'),
+  trusted as (select t.colleague_id from trusted_colleagues t where t.profile_id = auth.uid() and t.colleague_id in (select id from vm)),
+  worked as (select w.colleague_id, w.reason, w.at from private.workspace_worked(auth.uid()) w where w.colleague_id in (select id from vm) and w.colleague_id not in (select colleague_id from trusted)),
+  liked as (
+    select h.colleague_id, max(h.at) as at from (
+      select m.author_id as colleague_id, r.created_at as at
+        from message_reactions r join conversation_messages m on m.id = r.message_id
+       where r.profile_id = auth.uid() and r.reaction = 'heart' and m.author_id <> auth.uid() and m.deleted_at is null
+      union all
+      select x.responder_profile_id, u.created_at
+        from consultation_response_useful u join consultation_responses x on x.id = u.response_id
+       where u.profile_id = auth.uid() and x.responder_profile_id <> auth.uid()
+    ) h group by h.colleague_id
+  ),
+  suggested as (
+    select s.colleague_id, 0 as grp, s.position::numeric as ord from suggested_colleagues s
+     where s.profile_id = auth.uid() and s.colleague_id in (select id from vm) and s.colleague_id not in (select colleague_id from excl)
+       and s.colleague_id not in (select colleague_id from trusted) and s.colleague_id not in (select colleague_id from worked)
+    union all
+    select l.colleague_id, 1, -extract(epoch from l.at)
+      from liked l
+     where l.colleague_id in (select id from vm) and l.colleague_id not in (select colleague_id from excl)
+       and l.colleague_id not in (select colleague_id from trusted) and l.colleague_id not in (select colleague_id from worked)
+       and l.colleague_id not in (select s2.colleague_id from suggested_colleagues s2 where s2.profile_id = auth.uid())
+  )
+  select jsonb_build_object(
+    'trust', coalesce((select jsonb_agg(colleague_id order by created_at) from (select t2.colleague_id, t2.created_at from trusted_colleagues t2 where t2.profile_id = auth.uid() and t2.colleague_id in (select id from vm)) q), '[]'::jsonb),
+    'worked', coalesce((select jsonb_agg(colleague_id order by at desc) from worked), '[]'::jsonb),
+    'suggested', coalesce((select jsonb_agg(colleague_id order by grp, ord) from suggested), '[]'::jsonb),
+    'excluded', coalesce((select jsonb_agg(colleague_id) from excl where colleague_id in (select id from vm)), '[]'::jsonb),
+    'trustSince', coalesce((select jsonb_object_agg(t3.colleague_id, t3.created_at) from trusted_colleagues t3 where t3.profile_id = auth.uid() and t3.colleague_id in (select id from vm)), '{}'::jsonb),
+    'trustedBy', coalesce((select jsonb_agg(t4.profile_id) from trusted_colleagues t4 where t4.colleague_id = auth.uid() and t4.profile_id in (select id from vm)), '[]'::jsonb),
+    'collab', coalesce((select jsonb_object_agg(w2.colleague_id, w2.interaction_count) from worked_with_before w2 where w2.profile_id = auth.uid() and w2.colleague_id in (select id from vm) and w2.interaction_count > 0), '{}'::jsonb),
+    'workedReasons', coalesce((select jsonb_object_agg(colleague_id, reason) from worked), '{}'::jsonb),
+    -- When this member last worked with each colleague, for the Worked with before recency filter (Nick, 4 Nov).
+    'workedAt', coalesce((select jsonb_object_agg(colleague_id, at) from worked), '{}'::jsonb),
+    -- Colleagues who invited this member (D-12): the screens say so on their Suggested card.
+    'invitedBy', coalesce((select jsonb_agg(u.inviter) from member_invite_uses u where u.invitee = auth.uid() and u.connected_at is not null and u.inviter in (select id from vm)), '[]'::jsonb)
+  )
+  where auth.uid() is not null;
+$function$;
+
 -- 5. Who can call what ----------------------------------------------------------------------------------------------
 revoke all on function public.cover_decline(bigint) from public, anon;
 grant execute on function public.cover_decline(bigint) to authenticated;

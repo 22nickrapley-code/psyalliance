@@ -13,7 +13,7 @@ const TYPES: Record<string, string> = {
   doc: "application/msword",
 };
 
-export async function GET(_req: Request, { params }: { params: Promise<{ code: string }> }) {
+export async function GET(req: Request, { params }: { params: Promise<{ code: string }> }) {
   const { code } = await params;
   if (!/^PA-\d{2}$/.test(code)) return new NextResponse("Not found", { status: 404 });
   const supabase = await createClient();
@@ -36,7 +36,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ code: s
     status: 200,
     headers: {
       "Content-Type": TYPES[ext] || "application/octet-stream",
-      "Content-Disposition": `inline; filename*=UTF-8''${encodeURIComponent(name)}`,
+      "Content-Disposition": `${new URL(req.url).searchParams.get("download") ? "attachment" : "inline"}; filename*=UTF-8''${encodeURIComponent(name)}`,
       "Content-Length": String(blob.size),
       "Cache-Control": "private, max-age=300",
       "X-Content-Type-Options": "nosniff",

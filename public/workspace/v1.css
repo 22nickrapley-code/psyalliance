@@ -657,3 +657,16 @@ body.dialog-open .guide-bar,body.dialog-open .sandbox-arrival{display:none!impor
 .ic-buttons{display:flex;gap:6px}
 .ic-choice{font-size:12.5px;color:#1E5A3F;font-weight:600}
 @media (max-width:760px){.import-conflict{grid-template-columns:1fr}}
+/* v3: Consult tabs wrap rather than overflow, with counts */
+.consult-pills{display:flex;flex-wrap:wrap;gap:8px;min-width:0}
+.consult-pills button{white-space:nowrap}
+.consult-pills .pill-count{display:inline-block;min-width:1.4em;margin-left:4px;padding:0 6px;border-radius:999px;background:color-mix(in srgb,currentColor 12%,transparent);font-size:.78em;font-weight:600;text-align:center}
+/* v3: group invitees waiting to join */
+.group-pending{display:grid;gap:8px;margin:12px 0;padding:12px 14px;border:1px dashed var(--line,#d8dde3);border-radius:12px}
+.group-pending .button{justify-self:start}
+/* v3: Network. Suggested is turquoise everywhere; the three relationship cards share one height; recency filter */
+:root{--relation-suggested:#138a80}
+.net-suggested>header{background:#E3F4F2}
+@media(min-width:761px){.relationship-groups{align-items:stretch}.relationship-group{display:flex;flex-direction:column}.relationship-group .net-list{flex:1}.relationship-group .net-pager{margin-top:auto}}
+.net-recency{display:flex;flex-wrap:wrap;gap:6px;padding:10px 18px 0}
+.net-recency button{font-size:12.5px;padding:4px 10px}

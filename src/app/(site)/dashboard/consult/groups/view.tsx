@@ -100,7 +100,13 @@ export default async function ConsultationGroupsPage(props: { searchParams: Prom
                 </label>
                 <label className="field">
                   How often you meet
-                  <input name="cadence" placeholder="e.g. Monthly" />
+                  <select name="cadence" defaultValue="">
+                    <option value="">Not decided</option>
+                    <option value="Weekly">Weekly</option>
+                    <option value="Every two weeks">Every two weeks</option>
+                    <option value="Monthly">Monthly</option>
+                    <option value="As needed">As needed</option>
+                  </select>
                 </label>
                 <label className="field">
                   Format

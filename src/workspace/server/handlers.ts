@@ -3,6 +3,7 @@ import { friendly } from "@/lib/friendly-error";
 import { identifierError } from "@/lib/deidentify";
 import { loadInvite } from "@/lib/invite";
 import { shapeLibrary, resourceKey } from "./library";
+import { LIBRARY_SELECT, isAvailable, isMemberVisible } from "@/lib/library";
 
 // Every change the workspace makes goes through one of these. Each runs as
 // the signed-in member (their own session, so row-level security and the
@@ -629,6 +630,35 @@ export const handlers: Record<string, Handler> = {
     if (error) return fail(error);
     const lib = await slices(ctx, ["resources"]);
     return { ok: true, patch: { savedResources: lib.savedResources } };
+  },
+
+  // "Save to My Files" (Nick, 4 Nov): a private copy of a Library template, kept in a "PsyAlliance documents" folder.
+  "resource.copy": async (ctx, a) => {
+    const key = resourceKey(Number(a.id));
+    if (!key || !/^PA-\d{2}$/.test(key)) return bad("Only Library templates can be saved to My Files.");
+    const { data: doc } = await ctx.supabase.from("documents").select(LIBRARY_SELECT).eq("owner_scope", "world").eq("library_code", key).maybeSingle();
+    if (!doc || !isMemberVisible(doc as any) || !isAvailable(doc as any) || !(doc as any).storage_path) return bad("That resource isn't available yet.");
+    const d: any = doc;
+    const tail = String(d.storage_path).split("/").pop() || `${key}.pdf`;
+    const target = `personal/${ctx.userId}/${Date.now()}-copy-${tail.replace(/^\d+-/, "")}`;
+    const { error: copyError } = await ctx.supabase.storage.from("documents").copy(d.storage_path, target);
+    if (copyError) return bad("The copy didn't save. Nothing was kept; please try again.");
+    const FOLDER = "PsyAlliance documents";
+    let { data: folder } = await ctx.supabase.from("document_folders").select("id").eq("profile_id", ctx.userId).eq("name", FOLDER).maybeSingle();
+    if (!folder) {
+      const made = await ctx.supabase.from("document_folders").insert({ profile_id: ctx.userId, name: FOLDER }).select("id").maybeSingle();
+      folder = made.data;
+    }
+    const title = `${String(d.title).replace(/^PA-\d+:\s*/, "")} (your copy)`;
+    const { error } = await ctx.supabase.from("documents").insert({
+      profile_id: ctx.userId, owner_scope: "personal", title, storage_path: target, uploaded_by: ctx.userId, is_general: true,
+      folder_id: folder?.id ?? null, sources: `Your copy of ${key}, version ${d.version || 1}`,
+    });
+    if (error) {
+      await ctx.supabase.storage.from("documents").remove([target]);
+      return bad("The copy didn't save. Nothing was kept; please try again.");
+    }
+    return { ok: true, data: { title, folder: FOLDER } };
   },
 
   // The member's own invitation link and name, for the message they copy.
