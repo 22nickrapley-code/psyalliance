@@ -197,7 +197,7 @@ test("A1-08 Network groups sit in three columns on a computer (1.0, Nick 31 Oct)
   await expect(card.locator(".avatar")).toHaveClass(/relation-worked/);
   const bg = await card.locator(".avatar").evaluate((e) => getComputedStyle(e).backgroundColor);
   expect(bg).not.toBe("rgba(0, 0, 0, 0)");
-  await expect(group.locator(".net-head p")).toContainText("Builds itself after a referral, cover or consult together");
+  await expect(group.locator(".net-head p")).toContainText("Added for you after a referral, cover or consult together");
   await context.close();
 });
 

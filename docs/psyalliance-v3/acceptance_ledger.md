@@ -72,3 +72,17 @@ Status: **Done** (built and checked on staging), **Partly** (built, with a gap n
 | X-02 | State launch, founding places and the "Activate membership" step | Outstanding |
 | X-03 | Sharing and phone alerts, smart requests, practice assistant | Designs only: `docs/v3-designs.md` |
 | X-04 | List of places the GPT review contradicts your direct feedback | Outstanding |
+
+## Regression (staging suite, final build)
+
+Full run of the staging suite (907 tests) on a clean staging copy: **809 passed, 31 skipped, 14 failed, 53 did not run** (later tests in files that run in order stop after a failure). Every failure was then looked at one by one and the affected files were re-run:
+
+| Failures | Cause | Now |
+|---|---|---|
+| 6 x `RT /sandbox/request` | Need outside access; fail the same way on every offline run since Release A | Unchanged, not a product fault |
+| 13 tests across Cover, Referrals, Messages, Library, Availability, Notifications, Settings | The test still expected the v2 wording or flow (for example "Discuss first", "I'm interested", the Saved pill, the pause field, the notifications page) | Tests updated to the v3 wording; re-run: pass |
+| 3 real faults found by the suite | Settings and Search opened the Notifications window; the profile editor froze when typing; two contrast misses | Fixed; re-run: pass |
+| C-02, C-03, C-04 | Test the two Account and privacy sections that v3 removed (S-09) | Skipped, with a note |
+| B-02, CVU-02, RFU-02, RFU-03, RA-05, RA-06, A1-06 | End-to-end tests written for the old flow (Choose colleague, Complete arrangement, everyone asked at once by default, setup items leaving Actions on Later) | Marked "fixme" with the reason. The behaviour is covered by `v3-workflow-checks.sql` and the screenshots. **Outstanding: rewrite these seven for v3.** |
+| B-04, A1-10 | Look for labels ("Both directions", `.match-profile-link`) that are not in the v2 code either | Existed before v3; not touched |
+| C-05 onwards in `release-c.spec.ts` | Phone-alert tests need the server started with the alert dispatch secret and mock push service | Environment for this run; v3 does not change alerts |

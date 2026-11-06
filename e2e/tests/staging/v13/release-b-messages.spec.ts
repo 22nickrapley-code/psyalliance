@@ -296,7 +296,7 @@ test("MB-09 M01 a notification opens the exact conversation it is about, not the
   await send(a.page, "A direct note that is not the one in the notification.");
   await expect(a.page.locator(".delivery-state.sent").last()).toBeVisible();
   const b = await openAs(browser, "bram", baseURL!, `/dashboard/referrals?referral=${ref.referralId}`);
-  await b.page.getByRole("button", { name: "Discuss first" }).click();
+  await b.page.getByRole("button", { name: "Ask a question" }).click();
   await b.page.locator("#question-text").fill("Which evenings suit you?");
   await b.page.getByRole("button", { name: "Send question" }).click();
   await expect(b.page.locator("#toast")).toContainText("Your question is in");
@@ -321,7 +321,7 @@ test("MB-10 M01 one colleague, two contexts: the outer row shows the latest mess
   })])).rows[0].r;
   // Bram asks a question in the referral conversation; then Avery writes in the direct one, which is now the latest message.
   const b = await openAs(browser, "bram", baseURL!, `/dashboard/referrals?referral=${ref.referralId}`);
-  await b.page.getByRole("button", { name: "Discuss first" }).click();
+  await b.page.getByRole("button", { name: "Ask a question" }).click();
   await b.page.locator("#question-text").fill("Which evenings suit you?");
   await b.page.getByRole("button", { name: "Send question" }).click();
   await expect(b.page.locator("#toast")).toContainText("Your question is in");

@@ -139,7 +139,7 @@ test("MSU-04 a question from a referral opens its own conversation, apart from t
   await expect(a.page.locator(".delivery-state.sent").last()).toBeVisible();
 
   const b = await openAs(browser, "bram", baseURL!, `/dashboard/referrals?referral=${ref.referralId}`);
-  await b.page.getByRole("button", { name: "Discuss first" }).click();
+  await b.page.getByRole("button", { name: "Ask a question" }).click();
   await b.page.locator("#question-text").fill("Do you need weekday evenings?");
   await b.page.getByRole("button", { name: "Send question" }).click();
   await expect(b.page.locator("#toast")).toContainText("Your question is in");
@@ -273,7 +273,9 @@ test("MSU-09 links from earlier versions still open the right place", async ({ b
   await expect(a.page.locator(".message-group", { hasText: "Hello." })).toBeVisible();
   await a.page.goto(`/dashboard/messages?to=${bram}`);
   await expect(a.page.locator(".chat-header")).toContainText("Bram");
+  // v3 (Nick, 4 Nov): the old notifications tab opens the one notifications window.
   await a.page.goto("/dashboard/messages?tab=notifications");
-  await expect(a.page).toHaveURL(/\/dashboard\/notifications$/);
+  await expect(a.page).toHaveURL(/\/dashboard(\?notifications=1)?$/);
+  await expect(a.page.locator(".modal")).toContainText("Notifications.");
   await a.context.close();
 });

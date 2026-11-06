@@ -175,7 +175,8 @@ test("V15-05 Consult replies: Useful stays, Flag lives in a menu, and nothing sa
 test("V15-06 Library (1.1): no PDF templates pill since every resource has a PDF; Saved is its own pill; each tile has overview, PDF and save", async ({ browser, baseURL }) => {
   const { page, context } = await openAs(browser, "avery", baseURL!, "/dashboard/library");
   await expect(page.locator('[data-action="resource-filter:PDF templates"]')).toHaveCount(0);
-  await expect(page.locator('[data-action="resource-filter:Saved"].saved-pill')).toBeVisible();
+  // v3 (Nick, 4 Nov): no Saved pill; templates are saved to My Files instead.
+  await expect(page.locator('[data-action="resource-filter:Saved"]')).toHaveCount(0);
   const tile = page.locator(".resource-card").first();
   await expect(tile.getByRole("button", { name: /Resource overview/ })).toBeVisible();
   await expect(tile.getByRole("link", { name: /Download PDF/ }).or(tile.getByRole("button", { name: /Download PDF/ }))).toBeVisible();

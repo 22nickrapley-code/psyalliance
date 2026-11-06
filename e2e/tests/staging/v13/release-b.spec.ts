@@ -226,7 +226,7 @@ test("B-03b C03 twenty requests to one colleague are visible, counted and asked 
   const line = page.locator(".workload-list li", { hasText: "Bram Tellinghast" });
   await expect(line).toContainText("20 requests");
   await expect(line).toContainText("20 asked first");
-  await expect(page.locator(".outreach-summary")).toContainText("20 invitations go out first, one per client with a colleague selected.");
+  await expect(page.locator(".outreach-summary")).toContainText("20 invitations go out first, one per client.");
   expect((await q(`select 1 from coverage_plans where profile_id = $1 and title = 'B Twenty requests'`, [avery])).length).toBe(0); // nothing was sent
   await context.close();
 });

@@ -78,7 +78,8 @@ test("C-01 L01 homepage lifecycle band: placement, copy, routes, phone widths, n
   await context.close();
 });
 
-test("C-02 L02 optional situations: several choices, skip, edit later, private to the member", async ({ browser, baseURL }) => {
+// v3 (Nick, 4 Nov): "What would be useful to you at the moment?" was removed from Account and privacy.
+test.skip("C-02 L02 optional situations: several choices, skip, edit later, private to the member", async ({ browser, baseURL }) => {
   const { page, context } = await openAs(browser, "avery", baseURL!);
   await page.locator("#situations summary").click();
   await page.getByLabel("Planning time away").check();
@@ -101,7 +102,8 @@ test("C-02 L02 optional situations: several choices, skip, edit later, private t
   await context.close();
 });
 
-test("C-03 L03/L05 separate pauses: only new requests stop, other services stay open, a finished pause asks for review and never refreshes availability", async ({ browser, baseURL }) => {
+// v3 (Nick, 4 Nov): "How would you like colleagues to approach you?" was removed from Account and privacy (it repeated Availability).
+test.skip("C-03 L03/L05 separate pauses: only new requests stop, other services stay open, a finished pause asks for review and never refreshes availability", async ({ browser, baseURL }) => {
   const before = (await one(`select availability_confirmed_at from profiles where id = $1`, [bram])).availability_confirmed_at;
   const { page, context } = await openAs(browser, "bram", baseURL!);
   await page.locator("#approach summary").click();
@@ -129,7 +131,8 @@ test("C-03 L03/L05 separate pauses: only new requests stop, other services stay 
   await context.close();
 });
 
-test("C-04 L03 no referral places with Cover and Consult still open; closing one service leaves the others", async ({ browser, baseURL }) => {
+// v3 (Nick, 4 Nov): the per-service approach section was removed from Account and privacy (Availability has these controls).
+test.skip("C-04 L03 no referral places with Cover and Consult still open; closing one service leaves the others", async ({ browser, baseURL }) => {
   const { page, context } = await openAs(browser, "cass", baseURL!);
   await page.locator("#approach summary").click();
   await page.locator('[data-service="referrals"]').getByRole("button", { name: /Stop taking referral requests/i }).click();
