@@ -12,6 +12,9 @@ on conflict (key) do update set value = excluded.value;
 
 insert into public.open_states (state, open) values ('NY', true), ('MA', true)
 on conflict (state) do update set open = excluded.open;
+-- v4: the live sites start NY and MA as "building the founding circle". Staging tests run with the circles complete,
+-- so referrals to the whole network work; e2e/tests/staging/v13/v4.spec.ts V4-12 checks the building state.
+update public.open_states set founding_circle = false where state in ('NY', 'MA');
 
 select vault.create_secret('re_staging_test_key', 'email_api_key', 'staging provider mock key')
 where not exists (select 1 from vault.secrets where name = 'email_api_key');

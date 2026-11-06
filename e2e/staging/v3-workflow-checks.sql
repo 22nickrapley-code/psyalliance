@@ -47,6 +47,12 @@ begin
   perform pg_temp.act('Avery Quillfeather');
   res := public.cover_confirm(r.id);
   perform pg_temp.me();
+  -- v4 (Nick, 6 Nov): after a discussion alone, Bram confirms with one tap before it counts.
+  if not coalesce((res ->> 'pending')::boolean, false) then raise exception 'V4-CONFIRM-01: agreement after discussion did not wait for the colleague (%)', res; end if;
+  if (select assigned_clinician_id from coverage_plan_cases where id = c1) is not null then raise exception 'V4-CONFIRM-02: client assigned before the colleague confirmed'; end if;
+  perform pg_temp.act('Bram Tellinghast');
+  res := public.cover_agreement_reply(r.id, true);
+  perform pg_temp.me();
   select assigned_clinician_id = pg_temp.pid('Bram Tellinghast') into ok from coverage_plan_cases where id = c1;
   if not coalesce(ok, false) then raise exception 'V3-AGREE-01: agreement after discussion did not assign the client'; end if;
   if (select array_length(outreach_queue, 1) from coverage_plan_cases where id = c1) is not null then raise exception 'V3-AGREE-02: queue not cleared after agreement'; end if;
@@ -134,7 +140,13 @@ begin
   perform public.referral_answer(ref, 'discussing', false, 'Is the client OK with mornings?', null);
   perform pg_temp.me();
   perform pg_temp.act('Avery Quillfeather');
-  perform public.referral_place(ref, pg_temp.pid('Cass Morrowgate'));
+  res := public.referral_place(ref, pg_temp.pid('Cass Morrowgate'));
+  perform pg_temp.me();
+  -- v4 (Nick, 6 Nov): Cass confirms before the referral is placed.
+  if not coalesce((res ->> 'pending')::boolean, false) then raise exception 'V4-RCONFIRM-01: referral agreed after discussion did not wait for the colleague (%)', res; end if;
+  if exists (select 1 from referral_responses where referral_request_id = ref and status = 'accepted') then raise exception 'V4-RCONFIRM-02: placed before the colleague confirmed'; end if;
+  perform pg_temp.act('Cass Morrowgate');
+  res := public.referral_agreement_reply(ref, true);
   perform pg_temp.me();
   if not exists (select 1 from referral_responses where referral_request_id = ref and responding_profile_id = pg_temp.pid('Cass Morrowgate') and status = 'accepted') then
     raise exception 'V3-RAGREE-01: referral agreement after a discussion failed';
