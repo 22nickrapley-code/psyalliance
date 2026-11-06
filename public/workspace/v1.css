@@ -670,3 +670,6 @@ body.dialog-open .guide-bar,body.dialog-open .sandbox-arrival{display:none!impor
 @media(min-width:761px){.relationship-groups{align-items:stretch}.relationship-group{display:flex;flex-direction:column}.relationship-group .net-list{flex:1}.relationship-group .net-pager{margin-top:auto}}
 .net-recency{display:flex;flex-wrap:wrap;gap:6px;padding:10px 18px 0}
 .net-recency button{font-size:12.5px;padding:4px 10px}
+/* v3: one sandbox control in the sidebar (Leave, Restart); no page banner */
+.sandbox-controls{display:flex;gap:14px;margin-top:6px}
+.sandbox-controls .text-link{font-size:13px;font-weight:600;padding:0;background:none;border:0;cursor:pointer;color:inherit;text-decoration:underline;text-underline-offset:2px}

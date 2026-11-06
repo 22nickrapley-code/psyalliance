@@ -661,6 +661,13 @@ export const handlers: Record<string, Handler> = {
     return { ok: true, data: { title, folder: FOLDER } };
   },
 
+  // Sandbox: start the story again (the same reset the account pages use). The database refuses outside the demo site.
+  "sandbox.restart": async (ctx) => {
+    const { error } = await ctx.supabase.rpc("reset_my_sandbox");
+    if (error) return fail(error);
+    return { ok: true };
+  },
+
   // The member's own invitation link and name, for the message they copy.
   // Nothing is sent from here.
   "invite.link": async (ctx) => {

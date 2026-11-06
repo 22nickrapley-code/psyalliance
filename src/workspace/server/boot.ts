@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
-import { IS_DEMO_SITE } from "@/lib/env";
+import { IS_DEMO_SITE, REAL_SITE_URL } from "@/lib/env";
 import type { LiveBoot, WorkspaceView } from "../adapters/live";
 import { shapeLibrary } from "./library";
 import { computeHubStates } from "@/lib/hub-states";
@@ -34,7 +34,7 @@ export async function loadWorkspaceBoot(path: string): Promise<LiveBoot> {
   let sandbox: any = null;
   if (IS_DEMO_SITE) {
     const { data: info } = await supabase.rpc("sandbox_info");
-    sandbox = info || null;
+    sandbox = info ? { ...(info as any), leaveUrl: (info as any).label ? `${REAL_SITE_URL}/dashboard/profile` : "" } : null;
   }
   // Profile setup (Nick, 1 Nov): what a member still has to do, shown in the Hub's Actions as "Profile setup"
   // and, until the essentials are done, as "Finish setup" in the sidebar. Same rules as the Profile page.

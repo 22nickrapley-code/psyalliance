@@ -157,6 +157,15 @@ export default function AccountShell({
               <div>
                 <h3>Sandbox</h3>
                 <p>Everyone here is fictional. Nothing is sent to real people.</p>
+                {/* One sandbox control, the same as the workspace's (Nick, 4 Nov): no banner across the page. */}
+                <div className="sandbox-controls">
+                  {demoSite.label && (
+                    <a className="text-link" href={`${REAL_SITE_URL}/dashboard/profile`} title="Back to your own account. Your sandbox stays open.">Leave</a>
+                  )}
+                  {resetSandboxAction && (
+                    <a className="text-link" href="/dashboard?sandbox-restart=1">Restart</a>
+                  )}
+                </div>
               </div>
             </div>
           )}
@@ -236,38 +245,6 @@ export default function AccountShell({
           </div>
         </header>
 
-        {demoSite && (
-          <div className="account-strip" role="region" aria-label="About this sandbox">
-            <p>
-              <b>Sandbox</b>
-              {demoSite.who ? ` · You're ${demoSite.who}` : " · PsyAlliance demo"}
-              {demoSite.role ? `. ${demoSite.role}.` : ""}
-            </p>
-            {demoSite.label && (
-              <a href={`${REAL_SITE_URL}/dashboard/profile`} title="Back to your own account on PsyAlliance. Your sandbox stays open, so you can come back to it.">
-                Leave
-              </a>
-            )}
-            <details className="strip-menu">
-              <summary aria-label="Sandbox options">
-                <span aria-hidden="true">&middot;&middot;&middot;</span>
-              </summary>
-              <div className="strip-pop">
-                <a href="/dashboard/demos">Demos</a>
-                {resetSandboxAction && demoSite.label && (
-                  <form action={resetSandboxAction}>
-                    <button type="submit" title="Clears everything you have done here and restores Rachel's practice">Start the story again</button>
-                  </form>
-                )}
-                <p>
-                  Everyone here is fictional and nothing is emailed. Colleagues reply to what you send within a minute or two.
-                  {demoSite.label ? " Start the story again clears everything you've done and restores Rachel's practice. Leave takes you back to your own account; open the sandbox again from your Home page." : ""}
-                </p>
-                {demoSite.expires && <p>Sandbox for {demoSite.label}, open until {demoSite.expires}.</p>}
-              </div>
-            </details>
-          </div>
-        )}
         {demoView && (
           <div className="demo-bar" role="status">
             Demo network: everyone you see here is fake. <Link href="/dashboard/settings#demo">Switch back to the real network</Link>

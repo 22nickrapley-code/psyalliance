@@ -142,3 +142,5 @@ body.account-body{margin:0;background:var(--cream);color:var(--ink);font-family:
   .account-page .profile-secnav .st{display:none}
   .account-page .profile-section{padding:20px 18px}
 }
+.sandbox-controls{display:flex;gap:14px;margin-top:6px}
+.sandbox-controls .text-link{font-size:13px;font-weight:600;color:inherit;text-decoration:underline;text-underline-offset:2px}
