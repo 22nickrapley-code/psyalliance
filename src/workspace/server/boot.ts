@@ -42,7 +42,7 @@ export async function loadWorkspaceBoot(path: string): Promise<LiveBoot> {
     supabase.rpc("my_profile").select("full_name, qualification_level, avatar_path, bio, primary_practice_city, primary_state, availability_confirmed_at").maybeSingle<any>(),
     supabase.from("licenses").select("status, expiration_date, reviewed_at").eq("profile_id", user.id),
     supabase.from("profile_lookup_values").select("lookup_values!inner(category)").eq("profile_id", user.id).in("lookup_values.category", ["treatment_specialism", "insurance"]),
-    supabase.from("continuity_plans").select("answers, backup_profile_id").eq("profile_id", user.id).maybeSingle(),
+    supabase.from("continuity_plans").select("answers, backup_profile_id, reviewed_at, updated_at").eq("profile_id", user.id).maybeSingle(),
   ]);
   const hub = computeHubStates({
     profile: prof || null,
@@ -57,6 +57,8 @@ export async function loadWorkspaceBoot(path: string): Promise<LiveBoot> {
     bio: !!String(prof?.bio || "").trim(),
     specialties: ((looks as any[]) || []).filter((r) => r.lookup_values?.category === "treatment_specialism").length,
     licence: ((lic as any[]) || []).length > 0,
+    // The last time the member reviewed their continuity plan, for the yearly reminder (Nick, 4 Nov).
+    continuityReviewedAt: (plan as any)?.reviewed_at || (plan as any)?.updated_at || null,
     reviewed: ((lic as any[]) || []).some((l) => !!l.reviewed_at),
     availability: !!prof?.availability_confirmed_at,
   };

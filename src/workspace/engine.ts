@@ -369,12 +369,14 @@ export function startWorkspace(env: any) {
   if(su){
    if(!su.licence)setupItem('licence','badge-check','Add your license','A person checks it before colleagues can find you',`go:/dashboard/credentials?back=${back}`,'none',1);
   }
-  if(av&&age>=STALE_DAYS)setupItem('availability','calendar-clock',age===Infinity?'Set your availability':age>OUT_DAYS?'Your availability needs reconfirming':'Reconfirm your availability',age===Infinity?'Not confirmed yet, so you do not show as available':`${confirmedLabel(av.confirmedAt)}${age>OUT_DAYS?' · You no longer show as available':''}`,'availability',age===Infinity?'never':String(Math.floor(age/30)),3);
+  if(av&&age>=STALE_DAYS)setupItem('availability','calendar-clock',age===Infinity?'Set your availability':age>OUT_DAYS?'Your availability needs reconfirming':age>=90?'Your quarterly availability check':'Reconfirm your availability',age===Infinity?'Not confirmed yet, so you do not show as available':`${confirmedLabel(av.confirmedAt)}${age>OUT_DAYS?' · You no longer show as available':''}`,'availability',age===Infinity?'never':String(Math.floor(age/30)),3);
   if(su){
    if(!su.photo)setupItem('photo','image','Add a profile photo','Colleagues are more likely to reach out to a face they recognise',`go:/dashboard/profile?back=${back}#photo`,'none',4);
    if(su.specialties<3)setupItem('specialties','list-checks','Add your top specialties','At least three, so the right referrals and cover reach you',`go:/dashboard/profile?back=${back}#specialties`,String(su.specialties),5);
    if(!su.bio)setupItem('bio','pen-line','Write a short bio','Two or three sentences about how you work',`go:/dashboard/profile?back=${back}#about`,'none',6);
    if(su.states?.continuity?.tone==='red')setupItem('continuity','life-buoy','Start your continuity plan','Who steps in if you are suddenly unable to work',`go:/dashboard/continuity?back=${back}`,'none',7);
+   // Once a year, counted from the last time the plan was reviewed (Nick, 4 Nov). Optional: Later keeps it until next time it changes.
+   else if(su.continuityReviewedAt&&ageDays(su.continuityReviewedAt)>=365)setupItem('continuity-review','life-buoy','Review your continuity plan','Your yearly check. Last reviewed '+new Date(su.continuityReviewedAt).toLocaleDateString('en-US',{month:'long',year:'numeric'}),`go:/dashboard/continuity?back=${back}`,String(new Date().getFullYear()),8);
   }
   /* Consult. A question sent directly to this member is an incoming request, so it is counted like one. Other recent questions that are likely to be relevant (a group they belong to, a trusted colleague, or a topic that matches their specialisms) go in a separate "could help with" group that is not counted and can be switched off. */
   const asked=d=>d.person!=='me'&&d.status!=='resolved'&&['one','few'].includes(d.audience)&&!(d.history||[]).some(r=>r.person==='me');
