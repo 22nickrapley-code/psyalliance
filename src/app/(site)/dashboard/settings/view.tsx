@@ -144,7 +144,7 @@ export function SettingsView({ sp, email, me, prefs, profile, emergency, exclude
               <strong>Excluded from your suggestions</strong>
               <p>People you&rsquo;d rather not be suggested. They aren&rsquo;t told. Add someone from their profile.</p>
               {(excluded || []).length === 0 ? (
-                <p className="micro-note">Nobody excluded.</p>
+                <p className="micro-note">You haven&apos;t excluded anyone. To leave someone out of your suggestions, open their profile and choose Exclude from suggestions.</p>
               ) : (
                 (excluded || []).map((b: any) => (
                   <div key={b.blocked_profile_id} className="row between" style={{ marginTop: 6 }}>
@@ -162,7 +162,7 @@ export function SettingsView({ sp, email, me, prefs, profile, emergency, exclude
               <strong>Blocked</strong>
               <p>They can&rsquo;t message or invite you, and you&rsquo;re hidden from each other. They aren&rsquo;t told. Block someone from their profile.</p>
               {(blocked || []).length === 0 ? (
-                <p className="micro-note">Nobody blocked.</p>
+                <p className="micro-note">You haven&apos;t blocked anyone. Blocking hides you from each other everywhere on PsyAlliance; you can do it from a member&apos;s profile.</p>
               ) : (
                 (blocked || []).map((b) => (
                   <div key={b.blocked_profile_id} className="row between" style={{ marginTop: 6 }}>

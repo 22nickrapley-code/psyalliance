@@ -1,4 +1,4 @@
-import { saveSituationsAction, saveApproachAction, saveAlertsAction } from "./participation-actions";
+import { saveAlertsAction } from "./participation-actions";
 import { PushControl } from "./push-control";
 
 export const SITUATION_OPTIONS: [string, string][] = [
@@ -12,63 +12,10 @@ export const SITUATION_OPTIONS: [string, string][] = [
   ["prefer_not_to_say", "Prefer not to say"],
 ];
 
-const SERVICES = [
-  { k: "referrals", key: "Referrals", label: "Referral requests", what: "Colleagues can send you a request to take on a client. Pausing stops new requests; ones already sent stay open." },
-  { k: "cover", key: "Cover", label: "Cover requests", what: "Colleagues can ask you to cover their practice. Pausing stops new requests; plans already agreed carry on." },
-  { k: "consult", key: "Consult", label: "Consult invitations", what: "Colleagues can invite you into a consultation. Pausing stops new invitations; discussions you are in carry on." },
-];
 
 export function ParticipationSections({ part, vapid = "", smsOn = false, alertsOn = false }: { part: any; vapid?: string; smsOn?: boolean; alertsOn?: boolean }) {
-  const sit: string[] = part?.situations || [];
   return (
     <>
-      <details className="card settings-group" id="situations">
-        <summary><span><h3>What would be useful to you at the moment?</h3><small>Optional. Only you can see this</small></span></summary>
-        <form action={saveSituationsAction}>
-          <p className="small">Choose any that apply, or skip. This only shapes what we suggest first; it never limits what you can do and nobody else sees it.</p>
-          {SITUATION_OPTIONS.map(([v, l]) => (
-            <label key={v} className="item row" style={{ gap: 10, cursor: "pointer" }}>
-              <input type="checkbox" name="situation" value={v} defaultChecked={sit.includes(v)} style={{ accentColor: "var(--forest)", width: 18, height: 18 }} />
-              <span>{l}</span>
-            </label>
-          ))}
-          <div className="row" style={{ marginTop: 12, gap: 8 }}>
-            <button type="submit" className="btn small-btn">Save</button>
-            <button type="submit" name="intent" value="skip" className="btn secondary small-btn">Skip for now</button>
-          </div>
-        </form>
-      </details>
-
-      <details className="card settings-group" id="approach">
-        <summary><span><h3>How would you like colleagues to approach you?</h3><small>Each one is separate. Pausing never cancels work already under way</small></span></summary>
-        <form action={saveApproachAction}>
-          <p className="small">You choose each one on its own. You do not need to give a reason. Pausing or closing one does not change the others or your availability confirmation.</p>
-          {SERVICES.map((s) => {
-            const open = part?.[`open${s.key}`] !== false;
-            const paused = !!part?.[`paused${s.key}`];
-            const until: string | null = part?.[`pause${s.key}Until`] || null;
-            const review = !!part?.[`review${s.key}`];
-            const state = !open ? "Not taking new requests" : paused ? (review ? "Pause has ended: please review" : `Paused${until ? ` until ${until}` : ""}`) : "Taking new requests";
-            return (
-              <div key={s.k} className="item" data-service={s.k}>
-                <strong>{s.label}</strong>
-                <p>{s.what}</p>
-                <p className="micro-note" data-state={s.k} role="status">{state}</p>
-                {review ? <p className="small" data-review={s.k}>Your pause on {s.label.toLowerCase()} has ended. Choose whether to take new requests again or pause again.</p> : null}
-                <div className="row wrap" style={{ gap: 8, alignItems: "end" }}>
-                  <label className="field" style={{ maxWidth: 190 }}>Pause until (optional)
-                    <input type="date" name={`${s.k}_until`} defaultValue={until || ""} />
-                  </label>
-                  {open && !paused ? <button type="submit" name={`${s.k}_action`} value="pause" className="btn secondary small-btn">Pause new {s.label.toLowerCase()}</button> : null}
-                  {open && paused ? <button type="submit" name={`${s.k}_action`} value="resume" className="btn small-btn">Resume {s.label.toLowerCase()}</button> : null}
-                  {open ? <button type="submit" name={`${s.k}_action`} value="close" className="btn secondary small-btn">Stop taking {s.label.toLowerCase()}</button> : <button type="submit" name={`${s.k}_action`} value="open" className="btn small-btn">Take {s.label.toLowerCase()} again</button>}
-                </div>
-              </div>
-            );
-          })}
-        </form>
-      </details>
-
       {alertsOn && (
       <details className="card settings-group" id="alerts">
         <summary><span><h3>Alerts on your phone</h3><small>Optional. They only tell you something is waiting</small></span></summary>
