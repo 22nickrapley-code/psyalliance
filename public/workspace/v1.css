@@ -512,3 +512,111 @@ dialog.pf-card .pf-card-foot{display:flex;justify-content:flex-end;gap:10px;padd
 #main.page>.demo-line{padding:0;margin:0 0 6px;max-width:none}
 a.demo-line-watch{text-decoration:none;color:var(--ink)}
 a.demo-line-watch:hover b,a.demo-line-watch:hover span:last-child{text-decoration:underline}
+
+/* ---- v3 (Nick, 4 Nov) ---------------------------------------------------------------------------------- */
+/* Needs from you: the client first. */
+.need-client{font-weight:700;color:var(--ink)}
+.need-sep{margin:0 .45em;color:#8C6A2F}
+/* Discs: "Colleague chosen" and "Handover ready" differ by badge and fill, not colour alone. */
+.cdisc-ring{position:relative}
+.cdisc-badge{position:absolute;right:-5px;bottom:-5px;width:20px;height:20px;border-radius:50%;display:grid;place-items:center;border:2px solid #fff}
+.cdisc-badge svg{width:12px;height:12px}
+.cdisc-badge.is-chosen{background:#FBF1DC;color:#7A5C25}
+.cdisc-badge.is-ready{background:#1E6B47;color:#fff}
+.cdisc.tone-chosen .cdisc-ring{border-style:solid;border-width:3px;background:#fff}
+.cdisc.tone-ready .cdisc-ring{background:#1E6B47;border-color:#1E6B47;box-shadow:0 0 0 3px #CFE5D8}
+.cdisc.tone-discussing .cdisc-ring{border-color:#D9A441;background:#FDF6E7;color:#7A5C25}
+.cdisc.tone-waiting .cdisc-ring{border-color:#C9BFA9;background:#fff;color:#4A534D;border-style:dotted}
+/* Responses grouped by state, with the order of the not-yet-asked. */
+.recipient-tally{font-size:12.5px;color:#5b6b61;margin:0}
+.resp-group{font-size:11.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#6b7a70;margin:10px 0 2px;display:flex;gap:6px;align-items:center}
+.resp-group span{font-weight:600;color:#8a958e}
+.resp-pill.tone-wait{background:#F4F1EA;color:#4A534D;border:1px dashed #C9BFA9}
+.resp-pill.tone-queue{background:#fff;color:#6b7a70;border:1px solid #E7E1D4}
+.resp-due{display:block;font-size:11.5px;color:#7A5C25}
+.response-row .order-index{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;background:#F1EEE6;color:#4A534D;font-size:11px;font-weight:700;margin-right:2px}
+.response-row.st-queued{background:#FBFAF6;border-style:dashed}
+.quick-decide{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
+.no-recipients{background:#FBEDEA!important;color:#8F2F22!important}
+.incoming-response.is-ack{display:flex;gap:12px;align-items:flex-start}
+.incoming-response.is-ack>svg{color:#1E6B47;flex-shrink:0;width:20px;height:20px;margin-top:2px}
+.closed-banner.is-arranged{background:#EEF6F1;border-color:#CFE5D8}
+.closed-banner.is-arranged svg{color:#1E6B47}
+/* Messages wrap inside a plan; no sideways scrolling. */
+.quick-thread,.quick-thread *{min-width:0}
+.quick-thread .messages,.quick-thread .message-list,.quick-thread [class*="messages"]{overflow-x:hidden!important}
+.quick-thread .bubble,.quick-thread .message-bubble{overflow-wrap:anywhere;word-break:break-word;max-width:100%;white-space:normal}
+/* The "record cover agreed" picture keeps you, the client and the colleague on one row on a desktop. */
+@media (min-width:761px){.handover-visual{flex-wrap:nowrap}.hv-card{min-width:0;flex:0 1 260px}}
+.confirm-gaps{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 0 8px}
+.confirm-fresh{font-size:12.5px;color:#5b6b61;margin:0 0 10px}
+/* By client: the client list and the colleagues scroll on their own on a desktop (Nick, 4 Nov). */
+@media (min-width:761px){
+ .client-match-layout:not(.single){height:calc(100dvh - 360px);min-height:380px;align-items:stretch}
+ .client-match-layout:not(.single) .client-match-tabs{position:static;max-height:100%;overflow-y:auto;overscroll-behavior:contain;padding-right:4px}
+ .client-match-layout:not(.single) .client-matches{max-height:100%;overflow-y:auto;overscroll-behavior:contain;padding-right:4px}
+}
+/* Add recipients: matching cards, then the outgoing order. */
+.addrec-review{margin-top:18px;border:1px solid var(--line);border-radius:14px;background:#fff;padding:16px;display:grid;gap:12px}
+.addrec-review h3{font-size:15px;margin:0}
+.addrec-mode{border:0;padding:0;margin:0;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.addrec-mode label{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line);border-radius:10px;padding:12px;cursor:pointer;background:#fff}
+.addrec-mode label.selected{border-color:var(--feature);box-shadow:0 0 0 1px var(--feature);background:color-mix(in srgb,var(--feature-pale) 60%,white)}
+.addrec-mode label.is-off{opacity:.55;cursor:not-allowed}
+.addrec-mode strong{display:block;font-size:13.5px}
+.addrec-mode small{display:block;font-size:12px;color:#5b6b61;margin-top:2px}
+.addrec-order{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.addrec-row{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:#FBFAF6;cursor:grab}
+.addrec-row.is-dragging{opacity:.5}
+.addrec-row.is-over{border-color:var(--feature);box-shadow:0 0 0 1px var(--feature)}
+.addrec-row .drag-handle{color:#8a958e;display:inline-flex}
+.addrec-row .order-index{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;background:#fff;border:1px solid var(--line);font-size:11px;font-weight:700;color:#4A534D}
+.addrec-who{display:grid;min-width:0;flex:1}
+.addrec-who strong{font-size:13.5px}
+.addrec-who small{font-size:12px;color:#5b6b61}
+.addrec-row .order-controls{flex-direction:row;gap:2px}
+@media (max-width:760px){.addrec-mode{grid-template-columns:1fr}}
+/* Guidance inside the open workflow instead of a bar that covers its buttons (R06). */
+body.dialog-open .guide-bar,body.dialog-open .sandbox-arrival{display:none!important}
+.guide-inline{display:flex;gap:10px;align-items:flex-start;background:#FBF1DC;border:1px solid #EAD9B3;color:#5a4418;border-radius:10px;padding:10px 12px;margin:0 0 14px;font-size:13px}
+.guide-inline svg{flex-shrink:0;width:18px;height:18px;margin-top:1px}
+.guide-inline strong{display:block}
+.addrec-mode input,.radio-card input{accent-color:var(--feature)}
+/* Referral progress with the people at each end (Nick, 4 Nov). */
+.journey-people{display:flex;align-items:flex-start;gap:6px;margin-top:8px}
+.journey-people>.avatar,.journey-people>.jp-open{flex:0 0 auto;width:36px;height:36px;margin-top:0}
+.jp-open{border:2px dashed #C9BFA9;border-radius:50%;background:#fff}
+.journey-people .journey-bar{flex:1;min-width:0;margin:0}
+.jp-link{flex:0 0 22px;height:0;border-top:2px dashed #C9BFA9;margin-top:17px}
+.referral-journey.is-incoming .eyebrow{color:#7A5C25}
+/* Availability on the Hub, one card under each service (Nick, 4 Nov). */
+.hub-availability{display:grid;gap:10px}
+.hub-av-head{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.hub-av-head h2{font-size:16px;margin:0}
+.hub-av-head>span{font-size:13px;color:#5b6b61}
+.hub-av-head .text-link,.hub-av-head .button{margin-left:auto}
+.hub-av-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.hub-av-card{border:1px solid var(--line);border-radius:14px;background:#fff;padding:12px 14px;display:grid;gap:10px}
+.hub-av-now{display:flex;gap:10px;align-items:center}
+.hub-av-now small{display:block;font-size:11.5px;letter-spacing:.04em;text-transform:uppercase;color:#6b7a70;font-weight:700}
+.hub-av-now strong{display:block;font-size:14px}
+.av-dot{width:12px;height:12px;border-radius:50%;flex:0 0 auto;border:2px solid transparent}
+.av-dot.tone-go{background:#1E6B47}
+.av-dot.tone-some{background:#fff;border-color:#C98F2B;box-shadow:inset 0 0 0 2px #fff,inset 0 0 0 6px #C98F2B}
+.av-dot.tone-stop{background:#fff;border-color:#8F2F22}
+.hub-av-seg{display:flex;flex-wrap:wrap;gap:6px}
+.hub-av-seg button{border:1px solid var(--line);background:#FBFAF6;border-radius:999px;padding:5px 10px;font-size:12.5px;color:#4A534D;cursor:pointer}
+.hub-av-seg button[aria-pressed="true"]{background:#1E4A3A;border-color:#1E4A3A;color:#fff;font-weight:600}
+.hub-av-seg button[aria-pressed="true"].tone-some{background:#7A5C25;border-color:#7A5C25}
+.hub-av-seg button[aria-pressed="true"].tone-stop{background:#6b2a20;border-color:#6b2a20}
+@media (max-width:760px){.hub-av-grid{grid-template-columns:1fr}}
+.av-paused{display:flex;gap:10px;align-items:flex-start;border:1px solid #EAD9B3;background:#FBF1DC;border-radius:10px;padding:10px 12px;font-size:13px;color:#5a4418;grid-column:1/-1}
+.av-paused strong{display:block}
+.av-paused small{display:block;color:#6b5a33}
+.support-foot{font-size:12.5px;color:#5b6b61;text-decoration:underline;margin:0 auto 0 12px}
+.guide-done-row{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.guide-done-row>div:nth-child(2){flex:1;min-width:240px}
+.guide-more{margin-top:14px;border-top:1px solid var(--line);padding-top:14px}
+.guide-more h3{font-size:15px;margin:0 0 10px}
+.modal-sandbox{display:inline-flex;margin-right:8px;vertical-align:middle}
+.modal-header .modal-sandbox+.eyebrow{display:inline-block}

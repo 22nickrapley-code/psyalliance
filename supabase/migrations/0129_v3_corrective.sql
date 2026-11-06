@@ -1232,8 +1232,13 @@ begin
       raise exception 'Ask up to 100 colleagues at once.' using errcode = 'P0001';
     end if;
   elsif aud = 'trusted' then
-    select coalesce(array_agg(t.colleague_id order by t.created_at, t.colleague_id), '{}') into cand
-      from trusted_colleagues t where t.profile_id = me and t.colleague_id <> me;
+    -- In the order the member set on the review screen, then anyone else they trust.
+    select coalesce(array_agg(t.colleague_id order by coalesce(o.ord, 100000), t.created_at, t.colleague_id), '{}') into cand
+      from trusted_colleagues t
+      left join (select (e.value)::uuid as id, min(e.ordinality) as ord
+                   from jsonb_array_elements_text(case when jsonb_typeof(p_payload -> 'order') = 'array' then p_payload -> 'order' else '[]'::jsonb end) with ordinality e(value, ordinality)
+                  group by (e.value)::uuid) o on o.id = t.colleague_id
+     where t.profile_id = me and t.colleague_id <> me;
   else
     select coalesce(array_agg(vm.id order by private.member_name(vm.id), vm.id), '{}') into cand
       from private.visible_members(me) vm where vm.id <> me;

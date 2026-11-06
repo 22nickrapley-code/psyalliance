@@ -141,6 +141,29 @@ export const handlers: Record<string, Handler> = {
     return { ok: true, data, patch: await slices(ctx, ["plans", "tiers", "known"]) };
   },
 
+  // "Decline and continue search" (Nick, 4 Nov): closes one colleague's invitation; the next queued colleague is asked.
+  "cover.decline": async (ctx, a) => {
+    const { data, error } = await ctx.supabase.rpc("cover_decline", { p_request: num(a.request) });
+    if (error) return fail(error, "That didn't save, so nothing changed. Please try again.");
+    return { ok: true, data, patch: await slices(ctx, ["plans", "known"]) };
+  },
+
+  // "Add recipients": the client's whole unsent list, in order, one at a time or everyone at once.
+  "cover.recipients": async (ctx, a) => {
+    const { data, error } = await ctx.supabase.rpc("cover_set_recipients", {
+      p_plan: num(a.plan), p_case: num(a.case), p_people: idList(a.people).slice(0, 20), p_mode: a.mode === "parallel" ? "parallel" : "sequential",
+    });
+    if (error) return fail(error, "That didn't send, so nobody new was asked. Please try again.");
+    return { ok: true, data, patch: await slices(ctx, ["plans", "known"]) };
+  },
+
+  // "Confirm cover arranged": every client agreed and handed over; the plan moves to history after the absence.
+  "cover.arranged": async (ctx, a) => {
+    const { data, error } = await ctx.supabase.rpc("cover_mark_arranged", { p_plan: num(a.plan) });
+    if (error) return fail(error);
+    return { ok: true, data, patch: await slices(ctx, ["plans", "tiers", "known"]) };
+  },
+
   // Consultation groups (Nick, 1 Nov): organizers write the charter and set the meeting link and next meeting.
   "group.charter": async (ctx, a) => {
     const body = text(a.body, 5000);
@@ -186,7 +209,7 @@ export const handlers: Record<string, Handler> = {
       focus: text(a.focus, 120), secondary: text(a.secondary, 120), state: text(a.state, 2), city: text(a.city, 80), age: text(a.age, 120),
       setting: text(a.setting, 12), insurance: text(a.insurance, 120), language: text(a.language, 120), prescribing: a.prescribing === true,
       audience: text(a.audience, 12), selected: idList(a.selected).slice(0, 101), timeframe: text(a.timeframe, 40), message: text(a.message, 700),
-      title: text(a.title, 60),
+      title: text(a.title, 60), mode: a.mode === "sequential" ? "sequential" : "parallel", deadline: num(a.deadline) || 48, order: idList(a.order).slice(0, 500),
     };
     // The note, the title and the city never carry client identifiers.
     const err = [payload.message, payload.city, payload.title].map(identifierError).find(Boolean);
@@ -239,6 +262,20 @@ export const handlers: Record<string, Handler> = {
   "referral.add": async (ctx, a) => {
     const { data, error } = await ctx.supabase.rpc("referral_add", { p_referral: num(a.referral), p_person: String(a.person || "") });
     if (error) return fail(error);
+    return { ok: true, data, patch: await slices(ctx, ["referrals", "known"]) };
+  },
+
+  "referral.decline": async (ctx, a) => {
+    const { data, error } = await ctx.supabase.rpc("referral_decline", { p_referral: num(a.referral), p_person: String(a.person || "") });
+    if (error) return fail(error, "That didn't save, so nothing changed. Please try again.");
+    return { ok: true, data, patch: await slices(ctx, ["referrals", "known"]) };
+  },
+
+  "referral.recipients": async (ctx, a) => {
+    const { data, error } = await ctx.supabase.rpc("referral_set_recipients", {
+      p_referral: num(a.referral), p_people: idList(a.people).slice(0, 100), p_mode: a.mode === "parallel" ? "parallel" : "sequential",
+    });
+    if (error) return fail(error, "That didn't send, so nobody new was asked. Please try again.");
     return { ok: true, data, patch: await slices(ctx, ["referrals", "known"]) };
   },
 
