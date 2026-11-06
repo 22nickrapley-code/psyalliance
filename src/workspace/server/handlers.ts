@@ -142,6 +142,36 @@ export const handlers: Record<string, Handler> = {
     return { ok: true, data, patch: await slices(ctx, ["plans", "tiers", "known"]) };
   },
 
+  // v4 (Nick, 6 Nov): the colleague confirms an agreement the member who asked recorded after a discussion, or says it isn't right.
+  "cover.agreeReply": async (ctx, a) => {
+    const { data, error } = await ctx.supabase.rpc("cover_agreement_reply", { p_request: num(a.request), p_confirm: a.confirm === true });
+    if (error) return fail(error, "That didn't save. Nothing was changed; please try again.");
+    return { ok: true, data, patch: await slices(ctx, ["plans", "tiers", "known"]) };
+  },
+
+  // "End this cover" for an open-ended plan (closing or reducing practice, reciprocal).
+  "cover.end": async (ctx, a) => {
+    const { data, error } = await ctx.supabase.rpc("cover_end_plan", { p_plan: num(a.plan) });
+    if (error) return fail(error);
+    return { ok: true, data, patch: await slices(ctx, ["plans"]) };
+  },
+
+  // Change details on a sent plan (v4, X-01): dates, name, message and each client's needs other than main need and state.
+  "cover.change": async (ctx, a) => {
+    const message = text(a.message, 1000);
+    const idErr = identifierError(`${text(a.name, 80)} ${message}`);
+    if (idErr) return bad(idErr);
+    const clients = Array.isArray(a.clients) ? a.clients.slice(0, 20).map((c: any) => ({
+      id: num(c.id), age: text(c.age, 40), setting: text(c.setting, 20), insurance: text(c.insurance, 120), frequency: text(c.frequency, 40),
+      prescribing: c.prescribing === true, language: text(c.language, 60), city: text(c.city, 60), secondary: text(c.secondary, 120),
+    })) : [];
+    const payload: any = { name: text(a.name, 80), message, start: text(a.start, 10), clients };
+    if (a.end !== undefined) payload.end = text(a.end, 10);
+    const { data, error } = await ctx.supabase.rpc("cover_change_details", { p_plan: num(a.plan), p_payload: payload });
+    if (error) return fail(error, "The changes didn't save. Nothing was changed; please try again.");
+    return { ok: true, data, patch: await slices(ctx, ["plans"]) };
+  },
+
   // "Decline and continue search" (Nick, 4 Nov): closes one colleague's invitation; the next queued colleague is asked.
   "cover.decline": async (ctx, a) => {
     const { data, error } = await ctx.supabase.rpc("cover_decline", { p_request: num(a.request) });
@@ -308,6 +338,48 @@ export const handlers: Record<string, Handler> = {
     const { data, error } = await ctx.supabase.rpc("referral_place", { p_referral: num(a.referral), p_colleague: String(a.person || "") });
     if (error) return fail(error, "The placement didn't save. Nothing was changed; please try again.");
     return { ok: true, data, patch: await slices(ctx, ["referrals", "tiers", "known"]) };
+  },
+
+  // v4: the colleague confirms a referral agreement the referring member recorded, or says it isn't right.
+  "referral.agreeReply": async (ctx, a) => {
+    const { data, error } = await ctx.supabase.rpc("referral_agreement_reply", { p_referral: num(a.referral), p_confirm: a.confirm === true });
+    if (error) return fail(error, "That didn't save. Nothing was changed; please try again.");
+    return { ok: true, data, patch: await slices(ctx, ["referrals", "tiers", "known"]) };
+  },
+
+  // "Close" (B7): a placed or withdrawn referral moves to Completed.
+  "referral.close": async (ctx, a) => {
+    const { data, error } = await ctx.supabase.rpc("referral_close", { p_referral: num(a.referral) });
+    if (error) return fail(error);
+    return { ok: true, data, patch: await slices(ctx, ["referrals"]) };
+  },
+
+  // Change details on a sent referral (v4, X-01). Main need and state stay as sent.
+  "referral.change": async (ctx, a) => {
+    const message = text(a.message, 1000);
+    const idErr = identifierError(`${message} ${text(a.city, 60)}`);
+    if (idErr) return bad(idErr);
+    const payload: any = {};
+    for (const k of ["timeframe", "age", "setting", "insurance", "city", "secondary", "language"]) if (a[k] !== undefined) payload[k] = text(a[k], 120);
+    if (a.prescribing !== undefined) payload.prescribing = a.prescribing === true;
+    payload.message = message;
+    const { data, error } = await ctx.supabase.rpc("referral_change_details", { p_referral: num(a.referral), p_payload: payload });
+    if (error) return fail(error, "The changes didn't save. Nothing was changed; please try again.");
+    return { ok: true, data, patch: await slices(ctx, ["referrals"]) };
+  },
+
+  // Membership (v4): activate, nothing charged. Founding places while the state has them.
+  "membership.activate": async (ctx, a) => {
+    const { data, error } = await ctx.supabase.rpc("activate_membership", { p_state: text(a.state, 2) });
+    if (error) return fail(error);
+    return { ok: true, data };
+  },
+
+  // Continuity "Still correct" (B2).
+  "continuity.stillCorrect": async (ctx) => {
+    const { data, error } = await ctx.supabase.rpc("continuity_still_correct");
+    if (error) return fail(error);
+    return { ok: true, data };
   },
 
   "referral.withdraw": async (ctx, a) => {

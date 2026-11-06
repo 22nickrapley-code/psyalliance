@@ -54,7 +54,7 @@ export function Guide() {
     const v = encodeURIComponent(JSON.stringify({ need, ctx: withCtx || undefined, exp: Date.now() + HANDOFF_HOURS * 3600 * 1000 }));
     document.cookie = `${HANDOFF_COOKIE}=${v}; Max-Age=${HANDOFF_HOURS * 3600}; Path=/; SameSite=Lax`;
     track("demo_started", need);
-    window.location.href = `${NEED_DEMO(need)}${withCtx ? `?ctx=${encodeURIComponent(withCtx)}` : ""}`;
+    window.location.href = `${NEED_DEMO(need)}?pick=1${withCtx ? `&ctx=${encodeURIComponent(withCtx)}` : ""}`;
   }
 
   return (

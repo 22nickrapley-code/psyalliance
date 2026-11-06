@@ -35,10 +35,10 @@ export function DegreeField() {
         <div className="eligibility-note" role="status">
           <b>Membership is for doctoral clinicians.</b>
           <p>
-            The network is for psychologists with a PhD, PsyD or EdD and psychiatrists with an MD or DO. The Library is open to everyone, and every
-            template can be used by master&rsquo;s-level clinicians.
+            The network is for psychologists with a PhD, PsyD or EdD and psychiatrists with an MD or DO. The Library&rsquo;s templates are for
+            verified members, so they aren&rsquo;t available without membership. You can still read what each one covers.
           </p>
-          <a className="btn" href="/#library">See the Library</a>
+          <a className="btn secondary" href="/#library">See what the Library covers</a>
         </div>
       )}
     </>

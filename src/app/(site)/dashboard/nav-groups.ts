@@ -46,6 +46,8 @@ export function buildNavGroups(opts: {
     { href: "/dashboard/admin/channel-requests", label: "Channel requests", glyph: "flag" },
     { href: "/dashboard/admin/network-health", label: "Network health", glyph: "pulse" },
     { href: "/dashboard/admin/activation", label: "Activation", glyph: "check" },
+    { href: "/dashboard/admin/ai", label: "AI", glyph: "pulse" },
+    { href: "/dashboard/admin/membership", label: "Membership", glyph: "members" },
   ];
 
   // An operator (admin-only) login has no practice, so it sees the admin

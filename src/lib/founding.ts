@@ -7,8 +7,9 @@ export const FOUNDING_PLACES = 40;
 export const FOUNDING_LINE = "The first 40 members in each state are founding members, free for life.";
 export const FOUNDING_SHORT = "The first 40 in each state join free for life.";
 export const FOUNDING_HOW =
-  "A place counts once your license is approved, in your main practice state, and is yours for as long as you remain a member.";
-export const FOUNDING_AFTER = "After a state's founding places are taken, membership there will be paid. We'll publish the price before then.";
+  "A place counts when you activate membership after your license is approved, in your main practice state, and is yours for as long as you remain a member.";
+// v4 (Nick, 6 Nov): $30 a month after the founding places. Nothing is charged until payments are set up.
+export const FOUNDING_AFTER = "After a state's founding places are taken, membership there is $30 a month. Nothing is charged until payments open, and we'll tell you before anything is.";
 
 export type FoundingPlace = { state: string; place: number };
 export type FoundingCount = { state: string; taken: number; left: number };

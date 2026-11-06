@@ -1,3 +1,4 @@
+import { IS_DEMO_SITE } from "@/lib/env";
 import { createClient } from "@/lib/supabase/server";
 import { clinicianName } from "@/lib/profession";
 import { loadColleagueSuggestions } from "@/lib/colleague-suggestions";
@@ -46,6 +47,8 @@ export default async function ContinuityPage(props: { searchParams: Promise<{ sa
       dutiesTotal={((duties as any[]) || []).length}
       known={known}
       back={safeBack(sp.back)}
+      owner={me}
+      site={IS_DEMO_SITE ? "demo" : "live"}
     />
   );
 }

@@ -2,6 +2,8 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { handlers, type Result } from "./handlers";
+// AI (v4): self-contained; switched on and off from the admin portal. Remove this line and ai.ts to take AI out.
+import { aiHandlers } from "./ai";
 
 // The single door the workspace's browser code uses to change anything.
 export async function workspaceCall(name: string, args: unknown): Promise<Result> {
@@ -10,7 +12,7 @@ export async function workspaceCall(name: string, args: unknown): Promise<Result
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Please sign in again.", signedOut: true };
-  const handler = handlers[name];
+  const handler = handlers[name] || aiHandlers[name];
   if (!handler) return { ok: false, error: "That isn't available." };
   try {
     return await handler({ supabase, userId: user.id }, (args ?? {}) as any);

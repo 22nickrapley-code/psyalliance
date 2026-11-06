@@ -20,7 +20,7 @@ const FAQ: [string, string][] = [
   ],
   [
     "What does it cost?",
-    "The first 40 members in each state are founding members and never pay: membership stays free for as long as you remain a member. A place counts once your license is approved, in your main practice state. After a state's founding places are taken, membership there will be paid; we'll publish the price before then.",
+    "The first 40 members in each state are founding members and never pay: membership stays free for as long as you remain a member. A place counts when you activate membership after your license is approved, in your main practice state. After a state's founding places are taken, membership there is $30 a month; nothing is charged until payments open.",
   ],
   [
     "What's in the Library?",
@@ -60,7 +60,7 @@ const MOMENTS: { key: string; svc: string; title: string; without: string; with:
   {
     key: "Cover", svc: "cover", title: "You’re away.",
     without: "You call around, hoping someone licensed in the right state is free and suited to each client.",
-    with: "Each client is matched to a colleague who is licensed, suited and actually available, and every handover is tracked through the platform.",
+    with: "Each client is matched to licensed colleagues whose specialties fit and who say they have room, and every handover is tracked through the platform.",
     demo: "/tour/time-away", label: "Watch how Cover works",
   },
   {
@@ -85,7 +85,7 @@ const STAGES: [string, string, string][] = [
 ];
 
 // The Library on the homepage (Nick, 1 Nov): titles and one line each. Members open the full
-// templates inside PsyAlliance once their license is verified; there is no public Library page.
+// templates inside their account (members only, Nick 6 Nov, A7); there is no public Library page.
 const LIBRARY: { code: string; cat: string; title: string; line: string }[] = [
   { code: "PA-03", cat: "Coverage & continuity", title: "Professional Will and Practice Succession Plan", line: "Who looks after your clients and records if you can’t. Many clinicians are expected to have one; few do." },
   { code: "PA-02", cat: "Coverage & continuity", title: "Extended Leave Pack", line: "Step away for parental leave, illness or a sabbatical without stranding clients." },
@@ -223,7 +223,7 @@ export default async function HomePage() {
               <p>
                 In a group practice, the leave plan, the referral letter and the professional will already exist. On your own, you write them yourself, usually when time is shortest. Start from a PsyAlliance Library template instead, each found in the relevant section of the platform.
               </p>
-              <p className="v1-libnote">All templates are available to members once their license is verified.</p>
+              <p className="v1-libnote">Templates are for PsyAlliance members. They open inside your account as soon as you create it.</p>
             </div>
             <div className="v1-libgrid">
               {FEATURED.map((d) => (

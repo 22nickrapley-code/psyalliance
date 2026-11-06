@@ -21,10 +21,10 @@ export function generateStaticParams() {
 // One job, as a short video on the real screens, then the same screens to
 // click through yourself. Links to the old single tour (/tour/plan,
 // /tour/quick, /tour/done) land somewhere useful.
-export default async function DemoWatch({ params, searchParams }: { params: Promise<{ demo: string }>; searchParams: Promise<{ ctx?: string }> }) {
+export default async function DemoWatch({ params, searchParams }: { params: Promise<{ demo: string }>; searchParams: Promise<{ ctx?: string; pick?: string }> }) {
   if (!TOUR_ENABLED) notFound();
   const { demo } = await params;
-  const { ctx } = await searchParams;
+  const { ctx, pick } = await searchParams;
   if (IS_DEMO_SITE && process.env.NODE_ENV === "production") redirect(`${REAL_SITE_URL}/tour/${encodeURIComponent(demo)}`);
   if (demo === "overview") redirect("/tour");
   const j = findJourney(demo);
@@ -52,7 +52,11 @@ export default async function DemoWatch({ params, searchParams }: { params: Prom
             {(() => {
               // Public demos are to watch. Trying things yourself is for members, in the sandbox (Nick, 1 Nov).
               const end = { title: sc?.outcome || j?.outcome || d.title, text: "Create your account to use it for real. A person checks every license before anyone is listed.", tryLabel: "Create your account" };
-              return sc ? <Director script={sc} tryHref={JOIN_HREF} end={end} /> : <SectionReel demo={j!} tryHref={JOIN_HREF} end={end} />;
+              // A demo chosen deliberately ("Watch another" or the choice page) carries its goal to sign-up; a demo opened
+              // directly leaves any goal already chosen alone (R08).
+              const goalNeed = pick === "1" ? DEMO_NEED(d.key) : null;
+              const tryHref = goalNeed ? `${JOIN_HREF}${JOIN_HREF.includes("?") ? "&" : "?"}goal=${goalNeed}${ctx ? `&ctx=${encodeURIComponent(ctx)}` : ""}` : JOIN_HREF;
+              return sc ? <Director script={sc} tryHref={tryHref} end={end} /> : <SectionReel demo={j!} tryHref={tryHref} end={end} />;
             })()}
             <h2 className="serif-title demo-next-title">Watch another</h2>
             <OtherNeeds current={DEMO_NEED(d.key)} ctx={ctx} />

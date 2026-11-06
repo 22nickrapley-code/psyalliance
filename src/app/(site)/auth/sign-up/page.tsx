@@ -12,7 +12,8 @@ import { clinicianName } from "@/lib/profession";
 import { FOUNDING_AFTER, FOUNDING_HOW, FOUNDING_LINE } from "@/lib/founding";
 import { FoundingCount } from "../../_public/founding-count";
 import { cookies } from "next/headers";
-import { GUIDE, HANDOFF_COOKIE, parseHandoff } from "@/lib/start-guide";
+import { GUIDE, HANDOFF_COOKIE, NEED_IDS, CONTEXTS, parseHandoff, type Need } from "@/lib/start-guide";
+import { GoalCookie } from "./goal-cookie";
 
 export const metadata = {
   title: "Create your account",
@@ -24,7 +25,7 @@ const NORTHEAST = ["NY", "MA", "NJ", "CT", "RI", "VT", "NH", "ME", "PA"];
 // The one way in. Anyone with a doctoral degree can create an account; a
 // person checks the license; the network opens state by state.
 export default async function SignUpPage(props: {
-  searchParams: Promise<{ error?: string; invite?: string; from?: string; ineligible?: string; connect?: string }>;
+  searchParams: Promise<{ error?: string; invite?: string; from?: string; ineligible?: string; connect?: string; goal?: string; ctx?: string }>;
 }) {
   if (IS_DEMO_SITE) redirect(JOIN_URL);
   const sp = await props.searchParams;
@@ -42,7 +43,11 @@ export default async function SignUpPage(props: {
   const first = [...open, ...NORTHEAST.filter((c) => !open.includes(c))];
   // A goal chosen on the public trial (structured choice only) is shown so the member knows where they will land.
   const handoff = parseHandoff((await cookies()).get(HANDOFF_COOKIE)?.value);
-  const goal = handoff?.need ? GUIDE[handoff.need] : null;
+  // A goal picked on the demo just watched wins over an earlier one (R08).
+  const picked = NEED_IDS.includes(sp.goal as Need) ? (sp.goal as Need) : null;
+  const pickedCtx = (CONTEXTS as readonly string[]).includes(String(sp.ctx || "")) ? String(sp.ctx) : handoff?.ctx;
+  const goalNeed = picked || handoff?.need || null;
+  const goal = goalNeed ? GUIDE[goalNeed] : null;
 
   return (
     <div className="pa">
@@ -91,11 +96,11 @@ export default async function SignUpPage(props: {
                 <div className="eyebrow">Membership</div>
                 <h2 className="serif-title" style={{ fontSize: 28, margin: "6px 0 10px" }}>PsyAlliance membership is for doctoral clinicians.</h2>
                 <p>
-                  The network is for psychologists with a PhD, PsyD or EdD and psychiatrists with an MD or DO, licensed in the US. The Library is open to
-                  everyone, and every template can be used by master&rsquo;s-level clinicians.
+                  The network is for psychologists with a PhD, PsyD or EdD and psychiatrists with an MD or DO, licensed in the US. The Library&rsquo;s
+                  templates are for verified members, so they aren&rsquo;t available without membership. You can still read what each one covers.
                 </p>
                 <div className="row wrap" style={{ gap: 10 }}>
-                  <a className="btn" href="/#library">See the Library</a>
+                  <a className="btn" href="/#library">See what the Library covers</a>
                   <a className="btn secondary" href={`/auth/sign-up${source ? `?from=${source}` : ""}`}>Back</a>
                 </div>
               </div>
@@ -104,6 +109,7 @@ export default async function SignUpPage(props: {
                 {invite && <input type="hidden" name="invite" value={invite} />}
                 {inviterName && <input type="hidden" name="connect" value={connect} />}
                 {source && <input type="hidden" name="source" value={source} />}
+                {picked && <GoalCookie need={picked} ctx={pickedCtx} />}
                 {goal && (
                   <div className="join-goal" data-join-goal>
                     <span><b>Your goal: {goal.choice}.</b> After sign-up we open the right place for it, empty and unsent.</span>

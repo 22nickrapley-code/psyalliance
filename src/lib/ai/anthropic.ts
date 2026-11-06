@@ -13,7 +13,8 @@
 // than a crashed page, since this is always optional, user-triggered
 // convenience, never on the required path to using the product.
 
-const ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages";
+// ANTHROPIC_API_URL can point local staging at a stand-in (e2e/staging/ai-mock.mjs); unset everywhere else.
+const ANTHROPIC_API_URL = process.env.ANTHROPIC_API_URL || "https://api.anthropic.com/v1/messages";
 const DEFAULT_MODEL = "claude-haiku-4-5-20251001"; // cheap/fast - plenty for structured extraction
 
 export class AiNotConfiguredError extends Error {

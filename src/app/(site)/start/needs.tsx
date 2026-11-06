@@ -38,7 +38,8 @@ export const DEMO_NEED = (demoKey: string): Need | null => (PRIMARY.find((n) => 
 
 // The other demos, as the same tiles as the choice page, shown under the demo being watched.
 export function OtherNeeds({ current, ctx }: { current: Need | null; ctx?: string }) {
-  const q = ctx ? `?ctx=${encodeURIComponent(ctx)}` : "";
+  // Choosing another demo here is a deliberate change of goal (R08): "pick" carries it to that demo's Create account.
+  const q = `?pick=1${ctx ? `&ctx=${encodeURIComponent(ctx)}` : ""}`;
   return (
     <nav className="guide-needs other-needs" aria-label="Watch another demo">
       {PRIMARY.filter((n) => n !== current).map((n) => (

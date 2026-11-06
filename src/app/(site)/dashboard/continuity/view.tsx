@@ -25,7 +25,11 @@ export function ContinuityView({
   dutiesTotal,
   known,
   back,
+  owner = "",
+  site = "live",
 }: {
+  owner?: string;
+  site?: string;
   back?: string | null;
   sp: { saved?: string; error?: string; reviewed?: string };
   answers: ContinuityAnswers;
@@ -70,7 +74,7 @@ export function ContinuityView({
         error={sp.error}
         ok={sp.reviewed ? "Marked as reviewed today." : savedTitle ? `${savedTitle} saved.` : null}
       />
-      <ContinuityDrafts savedSection={sp.saved || null} />
+      <ContinuityDrafts savedSection={sp.saved || null} owner={owner} site={site} base={updatedAt} />
 
       <div className="split continuity-layout">
         <div className="stack">
@@ -110,7 +114,7 @@ export function ContinuityView({
               </span>
               {updatedAt && (
                 <form action={markContinuityReviewed} className="inline">
-                  <button type="submit" className="plain-button small">I&rsquo;ve reviewed it today</button>
+                  <button type="submit" className="plain-button small">Still correct</button>
                 </form>
               )}
             </div>
