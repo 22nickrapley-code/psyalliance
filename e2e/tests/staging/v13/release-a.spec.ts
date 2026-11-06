@@ -187,59 +187,60 @@ test("RA-04 Later sets a task aside on the account, Restore brings it back, and 
   await context.close();
 });
 
-// v3: "Later" on Profile setup items now keeps them recoverable under Set aside, so the fixed counts here no longer hold for Dara. Needs rewriting for the v3 flow; the behaviour is covered by e2e/staging/v3-workflow-checks.sql and the v3 screenshots.
-test.fixme("RA-05 a materially new event brings a set-aside task back", async ({ browser, baseURL }) => {
-  // Dara owns the referral; Fenn and Bram are asked. Neither has anything else waiting for Dara.
+// v4: Profile setup and membership items also sit in Actions, so counts are compared with the count before.
+test("RA-05 a materially new event brings a set-aside task back", async ({ browser, baseURL }) => {
+  // Dara owns the referral; Fenn and Bram are asked together.
   const realBram = account("bram");
   const made = await rpc(cass.id, `select public.referral_create($1::jsonb) as r`, [JSON.stringify({
     requestId: uuid(), focus: "Anxiety/Panic Disorders", secondary: "", state: "NY", city: "", age: "", setting: "virtual", insurance: "", language: "",
-    prescribing: false, audience: "selected", selected: [bram.id, realBram.id], timeframe: "Within two weeks", message: "Weekly sessions, no identifying details.",
+    prescribing: false, audience: "selected", selected: [bram.id, realBram.id], timeframe: "Within two weeks", message: "Weekly sessions, no identifying details.", mode: "parallel",
   })]);
   await rpc(bram.id, `select public.referral_answer($1::bigint, 'interested', true, null, $2::uuid) as r`, [made.referralId, uuid()]);
   const { page, context } = await openAs(browser, "dara", baseURL!);
-  await expect(headline(page)).toHaveText(plural(1));
+  await expect(headline(page)).toHaveText(/\d+ things? needs? your attention/);
+  const before = Number(((await headline(page).textContent()) || "").match(/\d+/)![0]);
   await page.locator(".hub-attn-toggle").click();
-  await page.locator(".hub-row").getByRole("button", { name: /^Later/ }).click();
-  await expect(headline(page)).toHaveText("You’re up to date");
-  // The control stays usable so the set-aside list is reachable.
+  const row = page.locator(".hub-row", { hasText: "can accept" });
+  await row.getByRole("button", { name: /^Later/ }).click();
+  await expect(headline(page)).toHaveText(before - 1 ? plural(before - 1) : "You’re up to date");
   await ensureOpen(page);
-  await expect(page.locator(".hub-group-aside .hub-row")).toHaveCount(1);
+  await expect(page.locator(".hub-group-aside .hub-row", { hasText: "can accept" })).toHaveCount(1);
   // Bram now answers as well: that is new, so the task is active again.
   await rpc(realBram.id, `select public.referral_answer($1::bigint, 'interested', true, null, $2::uuid) as r`, [made.referralId, uuid()]);
   await page.reload();
-  await expect(headline(page)).toHaveText(plural(1));
+  await expect(headline(page)).toHaveText(plural(before));
   await ensureOpen(page);
-  await expect(page.locator(".hub-row")).toContainText(["2 colleagues are interested"]);
-  await expect(page.locator(".hub-group-aside")).toHaveCount(0);
+  await expect(page.locator(".hub-row", { hasText: "2 colleagues can accept" })).toHaveCount(1);
+  await expect(page.locator(".hub-group-aside .hub-row", { hasText: "can accept" })).toHaveCount(0);
   await clean(page);
   await context.close();
 });
 
-// v3: Dara's Profile setup items stay in Actions until set aside, so the fixed "up to date" count no longer holds. Needs rewriting for the v3 flow.
-test.fixme("RA-06 relevant questions are a separate, uncounted group with a quiet dot on Consult, not a feed", async ({ browser, baseURL }) => {
+test("RA-06 relevant questions are a separate, uncounted group with a quiet dot on Consult, not a feed", async ({ browser, baseURL }) => {
   const spec = await q<{ value: string }>(`select lv.value from profile_lookup_values v join lookup_values lv on lv.id = v.lookup_value_id where v.profile_id = $1 and lv.category = 'treatment_specialism' order by v.rank nulls last, lv.value limit 1`, [bram.id]);
   const word = (spec[0]?.value || "Anxiety").split(/[^A-Za-z]+/).filter((w) => w.length >= 5 && !/disorder/i.test(w))[0] || "Anxiety";
+  const { page, context } = await openAs(browser, "fenn", baseURL!);
+  const countNow = async () => { const t = (await headline(page).textContent()) || ""; return /up to date/.test(t) ? 0 : Number(t.match(/\d+/)![0]); };
+  const before = await countNow();
   await rpc(avery.id, `select public.consult_post($1::jsonb) as r`, [JSON.stringify({
     title: `RA Thoughts on ${word.toLowerCase()} work?`, body: "No identifying details.", topic: "Clinical practice", tags: [word], confirmed: "true", clientRequestId: uuid(), audience: "network",
   })]);
-  const { page, context } = await openAs(browser, "fenn", baseURL!);
-  // Nothing needs a decision, so the headline is quiet; the help is mentioned beside it, never counted.
-  await expect(headline(page)).toHaveText("You’re up to date");
+  await page.reload();
   await expect(page.locator(".hub-attn-note")).toContainText(/question[s]? you could help with/);
+  // The help is mentioned beside the headline, never counted in it.
+  expect(await countNow()).toBe(before);
   await expect(page.locator('.sidebar [data-action="nav:consult"] .nav-dot')).toHaveCount(1);
   await expect(page.locator('.sidebar [data-action="nav:consult"] .nav-count')).toHaveCount(0);
   await expect(page.locator(".hub-card .label, .hub-card .nav-count")).toHaveCount(0);
   await page.locator(".hub-attn-toggle").click();
   const group = page.locator(".hub-group-help");
-  const mineRow = group.locator(".hub-row", { hasText: "RA Thoughts on" });
-  await expect(mineRow).toHaveCount(1);
+  await expect(group.locator(".hub-row", { hasText: "RA Thoughts on" })).toHaveCount(1);
   await expect(group).toContainText("Not required, and not counted above");
   // Visiting Consult clears the dot; it does not return for the same question.
   await go(page, "consult");
   await go(page, "home");
   await expect(page.locator('.sidebar [data-action="nav:consult"] .nav-dot')).toHaveCount(0);
   await ensureOpen(page);
-  // Not for me hides that question.
   await page.locator(".hub-group-help .hub-row", { hasText: "RA Thoughts on" }).getByRole("button", { name: /Not for me/ }).click();
   await expect(page.locator(".hub-group-help .hub-row", { hasText: "RA Thoughts on" })).toHaveCount(0);
   await expect.poll(async () => JSON.stringify((await q(`select data from workspace_drafts where profile_id = $1 and kind = 'hub-state'`, [bram.id]))[0]?.data?.notForMe || [])).not.toBe("[]");
@@ -320,7 +321,8 @@ test("RA-10 search in the top bar has named scopes and filters to them", async (
   await page.getByRole("button", { name: "Search", exact: true }).first().click();
   const dialog = page.locator(".modal");
   await expect(dialog.getByRole("group", { name: "Search in" })).toBeVisible();
-  expect((await dialog.locator(".search-scopes button").allInnerTexts())).toEqual(["All", "Colleagues", "Referrals", "Cover", "Consult", "Messages", "Library"]);
+  // v3 (Nick, 4 Nov): Notifications sits between Messages and Library.
+  expect((await dialog.locator(".search-scopes button").allInnerTexts())).toEqual(["All", "Colleagues", "Referrals", "Cover", "Consult", "Messages", "Notifications", "Library"]);
   await dialog.getByRole("searchbox", { name: "Search PsyAlliance" }).fill("a");
   await dialog.getByRole("button", { name: "Colleagues", exact: true }).click();
   await expect(dialog.getByRole("button", { name: "Colleagues", exact: true })).toHaveAttribute("aria-pressed", "true");

@@ -230,7 +230,7 @@ test("R18-12 the public Library lists titles and asks visitors to join", async (
   await expect(page).toHaveURL(/\/#library$/);
   const text = (await page.locator("#library").textContent()) || "";
   expect(text).not.toMatch(/review|Free download|free to download/i);
-  expect(text).toMatch(/once their license is verified/);
+  expect(text).toMatch(/Templates are for PsyAlliance members/);
   await expect(page.getByRole("link", { name: /Create your account|Join/ }).first()).toBeVisible();
 });
 

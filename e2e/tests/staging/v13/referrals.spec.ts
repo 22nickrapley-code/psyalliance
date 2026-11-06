@@ -257,7 +257,7 @@ test("RF-09 withdrawing closes the open requests and keeps every reply and conve
   expect(await deliveries(fenn, "system_notice", `referral_withdrawn:${r.referralId}:%`)).toHaveLength(0);
   // Nothing can happen to it now.
   await expect(answer(bram, r.referralId, "interested", true)).rejects.toThrow(/no longer taking replies/);
-  await expect(place(avery, r.referralId, bram)).rejects.toThrow(/closed/);
+  await expect(place(avery, r.referralId, bram)).rejects.toThrow(/closed|no longer open/);
   await expect(add(avery, r.referralId, gale)).rejects.toThrow(/no longer open/);
   expect((await mine(bram, r.referralId)).status).toBe("withdrawn");
 });

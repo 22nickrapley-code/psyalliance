@@ -72,10 +72,13 @@ test("RFU-04 untick the rest, review, go back: the same two colleagues stay tick
   await a.context.close();
 });
 
-// v3: the referrer records "Referral agreed" and the list reads "can accept" instead of "interested". Needs rewriting for the v3 flow; the behaviour is covered by e2e/staging/v3-workflow-checks.sql and the v3 screenshots.
-test.fixme("RFU-02 a colleague opens the link, is interested with capacity confirmed; the referrer places; interest is not placement", async ({ browser, baseURL }) => {
+// v4: Bram says "I can accept" with capacity confirmed; the referrer's "Referral agreed" then counts at once.
+// Both colleagues are asked together (Everyone at once), so Cass sees it was agreed elsewhere.
+test("RFU-02 a colleague opens the link and can accept with capacity confirmed; the referrer agrees; an offer is not agreement", async ({ browser, baseURL }) => {
   const a = await openAs(browser, "avery", baseURL!);
   await makeReferral(a.page);
+  await a.page.locator('#referral-send-form input[name="mode"][value="parallel"]').check({ force: true });
+  await a.page.locator('#referral-send-form input[name="reviewed"]').check();
   await a.page.getByRole("button", { name: "Send referral" }).click();
   await expect(a.page.locator("#toast")).toContainText("Referral shared");
   const refId = Number((await one(`select id from referral_requests where requesting_profile_id = $1 and client_request_id is not null`, [avery])).id);
@@ -83,7 +86,6 @@ test.fixme("RFU-02 a colleague opens the link, is interested with capacity confi
   // Bram opens the link from the earlier product (as from an old email).
   const b = await openAs(browser, "bram", baseURL!, `/dashboard/refer/${refId}`);
   await expect(b.page).toHaveURL(/\/dashboard\/referrals$/);
-  // 1 Nov (Nick, X1): the card header carries who it is from.
   await expect(b.page.locator(".modal-header")).toContainText("From Avery Quillfeather");
   await expect(b.page.locator(".modal")).not.toContainText("Cass");
   await b.page.getByRole("button", { name: "I can accept this referral" }).click();
@@ -95,31 +97,32 @@ test.fixme("RFU-02 a colleague opens the link, is interested with capacity confi
   expect(resp.capacity_confirmed_at).not.toBeNull();
   expect((await one(`select status from referral_requests where id = $1`, [refId])).status).toBe("sent");
 
-  // Avery reloads: one colleague interested, nothing placed yet.
   await a.page.goto("/dashboard/referrals");
-  await expect(a.page.locator(".arrangement-row", { hasText: "1 interested" }).first()).toBeVisible();
   await a.page.locator(`[data-action="referral:${refId}"]`).first().click();
-  await expect(a.page.locator(".modal")).toContainText("A placement is only confirmed when you choose a colleague");
-  await a.page.getByRole("button", { name: "Choose colleague" }).click();
-  await a.page.getByRole("button", { name: "Referral agreed" }).click();
-  await expect(a.page.locator("#toast")).toContainText("Referral placed");
+  await expect(a.page.locator(".modal")).toContainText("Nothing is agreed until you choose Referral agreed");
+  await a.page.locator(".response-row", { hasText: "Bram Tellinghast" }).getByRole("button", { name: "Referral agreed" }).click();
+  await expect(a.page.locator(".modal")).toContainText("said they can accept this referral, so this agrees it now");
+  await a.page.getByRole("button", { name: "Referral agreed", exact: true }).click();
+  await expect(a.page.locator("#toast")).toContainText("Referral agreed");
   expect((await one(`select status from referral_requests where id = $1`, [refId])).status).toBe("connected");
   expect((await one(`select status from referral_responses where referral_request_id = $1 and responding_profile_id = $2`, [refId, bram])).status).toBe("accepted");
-  await expect(a.page.locator(".closed-banner")).toContainText("Placed with Bram Tellinghast");
+  await expect(a.page.locator(".closed-banner")).toContainText("Referral agreed with Bram Tellinghast");
 
-  // Cass, who was also asked, sees only that it has been placed elsewhere.
+  // Cass, who was also asked, sees only that it was agreed elsewhere.
   const c = await openAs(browser, "cass", baseURL!, `/dashboard/refer/${refId}`);
-  await expect(c.page.locator(".closed-banner")).toContainText("Placed with another colleague");
+  await expect(c.page.locator(".closed-banner")).toContainText("Agreed with another colleague");
   await expect(c.page.locator(".modal")).not.toContainText("Bram");
   await a.context.close();
   await b.context.close();
   await c.context.close();
 });
 
-// v3: a referral to selected colleagues now goes one at a time by default, so Cass is queued, not asked, when this test expects to answer. Needs rewriting to choose Everyone at once.
-test.fixme("RFU-03 ask first, then the referrer withdraws; replies and the conversation are kept", async ({ browser, baseURL }) => {
+// v4: sent to both at once, so Cass is asked straight away and can ask a question.
+test("RFU-03 ask first, then the referrer withdraws; replies and the conversation are kept", async ({ browser, baseURL }) => {
   const a = await openAs(browser, "avery", baseURL!);
   await makeReferral(a.page);
+  await a.page.locator('#referral-send-form input[name="mode"][value="parallel"]').check({ force: true });
+  await a.page.locator('#referral-send-form input[name="reviewed"]').check();
   await a.page.getByRole("button", { name: "Send referral" }).click();
   await expect(a.page.locator("#toast")).toContainText("Referral shared");
   const refId = Number((await one(`select id from referral_requests where requesting_profile_id = $1 and client_request_id is not null`, [avery])).id);
@@ -144,6 +147,8 @@ test.fixme("RFU-03 ask first, then the referrer withdraws; replies and the conve
   expect((await q(`select 1 from referral_responses where referral_request_id = $1`, [refId])).length).toBe(1);
   expect((await q(`select 1 from conversation_messages m join conversations c on c.id = m.conversation_id where c.context_key = $1`, [`referral-${refId}-${cass}`])).length).toBe(2);
   await c.page.goto("/dashboard/referrals");
+  // Referrals open on Active (v3, L-06); a withdrawn referral is under Completed.
+  await c.page.locator('[data-action="referral-filter:placed"]').click();
   await expect(c.page.locator(".arrangement-row", { hasText: "Withdrawn" }).first()).toBeVisible();
   await a.context.close();
   await c.context.close();

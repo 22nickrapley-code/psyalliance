@@ -62,8 +62,9 @@ test("CVU-01 arrange cover, send once, and see exactly what was saved", async ({
   await context.close();
 });
 
-// v3: the organiser now records "Cover agreed" (no Choose colleague / Complete arrangement), and the plan stays active after "Confirm cover arranged". Needs rewriting for the v3 flow; the behaviour is covered by e2e/staging/v3-workflow-checks.sql and the v3 screenshots.
-test.fixme("CVU-02 the colleague offers; the organiser chooses; chosen is not handover ready", async ({ browser, baseURL }) => {
+// v4 (Nick, 6 Nov): Bram offers ("I can cover"), so Avery's "Cover agreed" counts at once; the handover is still
+// separate, and "Confirm cover arranged" keeps the plan active until the absence ends.
+test("CVU-02 the colleague offers; the organiser agrees; agreed is not handover ready", async ({ browser, baseURL }) => {
   const a = await openAs(browser, "avery", baseURL!);
   await arrange(a.page, [bram, cass]);
   await a.page.getByRole("button", { name: "Send cover requests" }).click();
@@ -74,30 +75,28 @@ test.fixme("CVU-02 the colleague offers; the organiser chooses; chosen is not ha
   const b = await openAs(browser, "bram", baseURL!, `/dashboard/cover/requests/${planId}`);
   await expect(b.page).toHaveURL(/\/dashboard\/cover$/);
   await expect(b.page.locator(".modal-header")).toContainText("From ");
-  // 1 Nov (Nick, G6): no instant agreement. Bram offers; Avery chooses; then the handover.
   await b.page.locator(".cover-client-card").getByRole("button", { name: "I can cover" }).click();
   await expect(b.page.locator("#toast")).toContainText("you can cover");
   expect((await one(`select c.assigned_clinician_id from coverage_plan_cases c where c.coverage_plan_id = $1`, [planId])).assigned_clinician_id).toBeNull();
-  await expect(b.page.locator(".cover-client-card")).toContainText(/You said you can cover|You offered to cover/);
+  await expect(b.page.locator(".cover-client-card")).toContainText(/You said you can cover/);
   await expect(b.page.locator(".cover-client-card")).not.toContainText("Cass");
 
   await a.page.goto("/dashboard/cover");
   await a.page.locator('[data-action^="plan:"]', { hasText: "Autumn leave" }).first().click();
-  await expect(a.page.locator(".needs-box")).toContainText("interested in covering");
-  await a.page.locator(".cover-client-card").getByRole("button", { name: "Choose colleague" }).click();
+  await a.page.locator(".cover-client-card").getByRole("button", { name: "Cover agreed" }).first().click();
   await expect(a.page.locator(".handover-visual")).toBeVisible();
-  await a.page.getByRole("button", { name: "Confirm cover" }).click();
-  await expect(a.page.locator("#toast")).toContainText("is covering");
-  expect((await one(`select status from coverage_plan_cases where coverage_plan_id = $1`, [planId])).status).toBe("confirmed");
-  await expect(a.page.getByRole("button", { name: /Complete arrangement/ })).toBeDisabled();
+  await expect(a.page.locator(".modal")).toContainText("said they can cover, so this agrees it now");
+  await a.page.getByRole("button", { name: "Cover agreed", exact: true }).click();
+  await expect(a.page.locator("#toast")).toContainText("Cover agreed with Bram Tellinghast");
+  expect((await one(`select assigned_clinician_id from coverage_plan_cases where coverage_plan_id = $1`, [planId])).assigned_clinician_id).toBe(bram);
+  await expect(a.page.getByRole("button", { name: /Confirm cover arranged/ })).toBeDisabled();
   await a.page.locator(".cover-client-card").getByRole("button", { name: "Confirm handover" }).click();
   for (const k of ["contact", "summary", "client"]) await a.page.locator(`#handover-form input[name="${k}"]`).check();
-  await a.page.getByRole("button", { name: "Mark handover ready" }).click();
-  await expect(a.page.locator("#toast")).toContainText("handover ready");
-  await expect(a.page.getByRole("button", { name: /Complete arrangement/ })).toBeEnabled();
-  await a.page.getByRole("button", { name: /Complete arrangement/ }).click();
-  await expect(a.page.locator("#toast")).toContainText("Cover arrangement completed");
-  expect((await one(`select status from coverage_plans where id = $1`, [planId])).status).toBe("completed");
+  await a.page.locator("#handover-form").evaluate((f: HTMLFormElement) => f.requestSubmit());
+  await expect(a.page.getByRole("button", { name: /Confirm cover arranged/ })).toBeEnabled();
+  await a.page.getByRole("button", { name: /Confirm cover arranged/ }).click();
+  await expect.poll(async () => (await one(`select arranged_at from coverage_plans where id = $1`, [planId])).arranged_at).not.toBeNull();
+  expect((await one(`select status from coverage_plans where id = $1`, [planId])).status).toBe("active");
   await a.context.close();
   await b.context.close();
 });

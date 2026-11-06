@@ -128,7 +128,7 @@ test("J-LIB-01 the public Library lists titles, asks visitors to join, and never
   const text = (await lib.textContent()) || "";
   expect(text).toMatch(/Reciprocal Coverage Agreement/);
   expect(text).toMatch(/Professional Will/);
-  expect(text, "asks visitors to join").toMatch(/once their license is verified/);
+  expect(text, "asks visitors to join").toMatch(/Templates are for PsyAlliance members/);
   expect(text, "no review wording").not.toMatch(/not yet (independently )?reviewed|after independent review|provisional/i);
   expect(text, "never claims a review").not.toMatch(/Reviewed by|Clinically reviewed/i);
   await page.goto("/library/reciprocal-coverage-agreement");

@@ -1,6 +1,6 @@
 import { test, expect, type Page, type Browser } from "@playwright/test";
 import { signInAs, account } from "../../../lib/auth";
-import { assertLocal, q } from "../../../lib/staging";
+import { assertLocal, q, one } from "../../../lib/staging";
 // 1 Nov (Nick, H4): drafts sit in one "Drafts (n)" control, opened to continue or delete each.
 const openDrafts = async (page: import("@playwright/test").Page) => { const d = page.locator("details.drafts-drop").first(); if ((await d.count()) && !(await d.evaluate((e) => (e as HTMLDetailsElement).open))) await d.locator("summary").click(); };
 
@@ -126,29 +126,35 @@ test("A1-05 Search is one prominent field in the top bar (1.0: not repeated on t
   await context.close();
 });
 
-// v3: setting Profile setup items aside keeps them under Set aside, so the separate "up to date" bar only shows when nothing is set aside. Needs rewriting for the v3 flow; the behaviour is covered by e2e/staging/v3-workflow-checks.sql and the v3 screenshots.
-test.fixme("A1-06 'You are up to date' is a status bar of its own, and the invite is a card with one button", async ({ browser, baseURL }) => {
-  const { page, context } = await openAs(browser, "dara", baseURL!);
-  // 1.1: unfinished profile setup shows as actions; set them aside to reach the clear state.
-  for (let i = 0; i < 25 && (await page.locator(".hub-clear-bar").count()) === 0; i++) {
-    const toggle = page.locator(".hub-attn-toggle[aria-expanded=false]");
-    if (await toggle.count()) await toggle.click();
-    const later = page.locator(".hub-row").getByRole("button", { name: /^Later/ }).first();
-    if (!(await later.count())) break;
-    await later.click();
-    await page.waitForTimeout(400);
+// v4: the clear bar shows only when nothing is waiting and nothing is set aside, so this test first gives Dara a
+// finished setup (photo, three specialties, a continuity plan, membership activated) and puts everything back after.
+test("A1-06 'You are up to date' is a status bar of its own, and the invite is a card with one button", async ({ browser, baseURL }) => {
+  const dara = (await one(`select id, avatar_path from profiles where full_name = 'Dara Vennholt'`));
+  const extra = await q(`select lv.id from lookup_values lv where lv.category = 'treatment_specialism'
+                           and lv.id not in (select lookup_value_id from profile_lookup_values where profile_id = $1) order by lv.value limit 1`, [dara.id]);
+  await q(`update profiles set avatar_path = 'fixtures/dara.png' where id = $1`, [dara.id]);
+  await q(`insert into profile_lookup_values (profile_id, lookup_value_id) values ($1, $2) on conflict do nothing`, [dara.id, extra[0].id]);
+  await q(`insert into continuity_plans (profile_id, answers, reviewed_at) values ($1, '{"practice_name":"A1 test practice"}'::jsonb, now()) on conflict (profile_id) do nothing`, [dara.id]);
+  await q(`insert into membership_activations (profile_id, state, plan, price_cents) values ($1, 'MA', 'standard', 3000) on conflict do nothing`, [dara.id]);
+  await q(`delete from workspace_drafts where profile_id = $1 and kind = 'hub-state'`, [dara.id]);
+  try {
+    const { page, context } = await openAs(browser, "dara", baseURL!);
+    const bar = page.locator(".hub-clear-bar");
+    await expect(bar).toBeVisible();
+    await expect(bar.locator(".hub-attn-clear")).toHaveText("You’re up to date");
+    const card = page.locator(".hub-invite-card");
+    await expect(card).toBeVisible();
+    await expect(card.getByRole("button", { name: "Invite a colleague" })).toHaveCount(1);
+    const cardBox = (await card.boundingBox())!, btnBox = (await card.getByRole("button", { name: "Invite a colleague" }).boundingBox())!;
+    expect(btnBox.width).toBeLessThan(cardBox.width / 2);
+    expect(btnBox.height).toBeLessThan(60);
+    await context.close();
+  } finally {
+    await q(`update profiles set avatar_path = $2 where id = $1`, [dara.id, dara.avatar_path]);
+    await q(`delete from profile_lookup_values where profile_id = $1 and lookup_value_id = $2`, [dara.id, extra[0].id]);
+    await q(`delete from continuity_plans where profile_id = $1 and answers->>'practice_name' = 'A1 test practice'`, [dara.id]);
+    await q(`delete from membership_activations where profile_id = $1`, [dara.id]);
   }
-  const bar = page.locator(".hub-clear-bar");
-  await expect(bar).toBeVisible();
-  await expect(bar.locator(".hub-attn-clear")).toHaveText("You’re up to date");
-  await expect(bar.locator(".hub-clear-mark svg")).toBeVisible();
-  const card = page.locator(".hub-invite-card");
-  await expect(card).toBeVisible();
-  await expect(card.getByRole("button", { name: "Invite a colleague" })).toHaveCount(1);
-  const cardBox = (await card.boundingBox())!, btnBox = (await card.getByRole("button", { name: "Invite a colleague" }).boundingBox())!;
-  expect(btnBox.width).toBeLessThan(cardBox.width / 2);
-  expect(btnBox.height).toBeLessThan(60);
-  await context.close();
 });
 
 test("A1-07 Cover lists line up: same header height, same row look whatever the status", async ({ browser, baseURL }) => {

@@ -103,60 +103,58 @@ test("B-01b C01 a copy is independent: it carries no colleague choice, and editi
   await context.close();
 });
 
-// v3 (R01): matching, bulk select and saving a client now use the same hard stops only (license, away, not open),
-// so "Prescribing required" is a gap shown with the match, not an exclusion. This test still expects the old exclusion
-// and needs rewriting for the new rule.
-test.fixme("B-02 C02 mixed eligibility: both views agree, bulk apply says what was added, kept and excluded, an edit removes only who no longer fits", async ({ browser, baseURL }) => {
+// v4 (R01): one rule everywhere. A missing reviewed license is a hard stop in both views and in bulk apply; a
+// prescribing mismatch is a warning that stays selectable in both views and survives an unrelated edit.
+test("B-02 C02 mixed eligibility: both views agree, bulk apply says what was added, kept and excluded, an edit keeps warning-only choices", async ({ browser, baseURL }) => {
   const { page, context } = await openAs(browser, "avery", baseURL!, "/dashboard/cover");
-  await startCover(page, "B Mixed");
+  await page.locator('[data-action="cover-start"]').first().click();
+  await page.locator("#cover-name").fill("B Mixed");
+  await page.locator(".state-picker summary").click();
+  await page.locator('.state-picker input[name="states"][value="MA"]').check();
+  await page.getByRole("button", { name: "Continue to needs" }).click();
+  await page.locator("#cover-state").selectOption("NY");
   await saveClient(page);
   await page.getByRole("button", { name: "Add another client" }).click();
+  await page.locator("#cover-state").selectOption("NY");
   await saveClient(page, { prescribing: true });
   await page.getByRole("button", { name: "Add another client" }).click();
+  await page.locator("#cover-state").selectOption("MA");
   await saveClient(page);
   await page.getByRole("button", { name: "Continue to colleagues" }).click();
-  // Nobody is chosen for you: the plan starts with no colleague selected anywhere.
   await expect(page.locator('input[data-match="cover"]:checked')).toHaveCount(0);
-  // By client: Bram can take clients 1 and 3, not client 2 (prescribing).
+  // By client: Bram can be asked for clients 1 and 2 (2 with a warning), not client 3 (no reviewed MA license).
   for (const id of [1, 2, 3]) {
     await page.locator(`[data-action="match-client:${id}"]`).click();
     const box = page.locator(`input[data-match="cover"][data-client="${id}"][value="${bram}"]`);
-    if (id === 2) expect((await box.count()) === 0 || (await box.isDisabled())).toBe(true);
+    if (id === 3) expect((await box.count()) === 0 || (await box.isDisabled())).toBe(true);
     else await expect(box).toBeEnabled();
+    if (id === 2) await expect(page.locator(".match-card", { hasText: "Bram Tellinghast" })).toContainText("Does not prescribe");
   }
-  // By colleague: same answer, with the reason.
+  // By colleague: the same answer.
   await page.locator('[data-action="match-view:colleague"]').click();
   const bramRow = page.locator("details.bulk-colleague", { hasText: "Bram Tellinghast" });
   await bramRow.locator("summary").click();
-  await expect(bramRow.locator(".bulk-client.excluded")).toContainText("Prescribing required");
-  await expect(bramRow.locator(".bulk-client:not(.excluded)")).toHaveCount(2);
-  for (const id of [1, 2, 3]) await bramRow.locator(`input[data-bulk-person="${bram}"][value="${id}"]`).check();
+  await expect(bramRow.locator(".bulk-client.excluded")).toHaveCount(1);
+  await expect(bramRow.locator(".bulk-client.excluded")).toContainText(/license/i);
+  await expect(bramRow.locator(".bulk-client:not(.excluded)", { hasText: "Client 2" })).toContainText("Does not prescribe");
+  for (const id of [1, 2]) await bramRow.locator(`input[data-bulk-person="${bram}"][value="${id}"]`).check();
   await bramRow.getByRole("button", { name: "Apply to selected clients" }).click();
   const note = page.locator(".inline-note[role=status]").first();
-  await expect(note).toContainText("Added to: Client 1, Client 3");
-  await expect(note).toContainText("Client 2 excluded: Prescribing required");
+  await expect(note).toContainText("Added to: Client 1, Client 2");
   await page.locator("details.bulk-colleague", { hasText: "Bram Tellinghast" }).locator("summary").click();
   await page.locator("details.bulk-colleague", { hasText: "Bram Tellinghast" }).getByRole("button", { name: "Apply to selected clients" }).click();
-  await expect(page.locator(".inline-note[role=status]").first()).toContainText("Already selected for: Client 1, Client 3");
-  // Nothing was sent by preparing the plan.
+  await expect(page.locator(".inline-note[role=status]").first()).toContainText("Already selected for: Client 1, Client 2");
   expect((await q(`select 1 from coverage_plans where profile_id = $1 and title = 'B Mixed'`, [avery])).length).toBe(0);
-  // Changing client 1 to need prescribing: Bram no longer fits it, stays on client 3, and nobody is put in his place.
+  // Client 1 now needs prescribing too: a warning, so Bram stays chosen and nobody is put in his place.
   await page.getByRole("button", { name: "Back" }).click();
   await clickAction(page, '[data-action="client-edit:1"]');
   await page.locator('#client-form input[name="prescribing"]').check();
   await page.getByRole("button", { name: "Save client", exact: true }).click();
-  const change = page.locator(".change-note");
-  await expect(change).toContainText("Client 1");
-  await expect(change).toContainText("Bram Tellinghast");
-  await expect(change).toContainText("Prescribing required");
-  await expect(change).toContainText("Nobody was chosen in their place");
+  await expect(page.locator(".change-note")).toHaveCount(0);
   await page.getByRole("button", { name: "Continue to colleagues" }).click();
-  await expect(page.locator(".change-note")).toBeVisible();
   await page.locator('[data-action="match-view:client"]').click();
-  await page.locator('[data-action="match-client:3"]').click();
-  await expect(page.locator(`input[data-match="cover"][data-client="3"][value="${bram}"]`)).toBeChecked();
   await page.locator('[data-action="match-client:1"]').click();
-  await expect(page.locator(`input[data-match="cover"][data-client="1"][value="${bram}"]`)).toHaveCount(0);
+  await expect(page.locator(`input[data-match="cover"][data-client="1"][value="${bram}"]`)).toBeChecked();
   await context.close();
 });
 

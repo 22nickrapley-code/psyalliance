@@ -179,14 +179,17 @@ test("V15-06 Library (1.1): no PDF templates pill since every resource has a PDF
   await expect(page.locator('[data-action="resource-filter:Saved"]')).toHaveCount(0);
   const tile = page.locator(".resource-card").first();
   await expect(tile.getByRole("button", { name: /Resource overview/ })).toBeVisible();
-  await expect(tile.getByRole("link", { name: /Download PDF/ }).or(tile.getByRole("button", { name: /Download PDF/ }))).toBeVisible();
+  // A template whose file isn't on this copy yet reads "Coming soon" instead (a freshly rebuilt staging copy has no files).
+  if (!/Coming soon/i.test((await tile.textContent()) || "")) await expect(tile.getByRole("link", { name: /Download PDF/ }).or(tile.getByRole("button", { name: /Download PDF/ }))).toBeVisible();
   await clean(page);
   await context.close();
 });
 test("V15-07 your own profile uses the same layout as a colleague's", async ({ browser, baseURL }) => {
   const { page, context } = await openAs(browser, "avery", baseURL!, "/dashboard");
   await page.locator('[data-action="profile:me"]').first().click();
-  await expect(page.locator(".modal .pf-hero.is-own")).toBeVisible();
+  // v3 (Nick, 4 Nov, S-08): your own profile has the same header as a colleague's: photo, name and role in the header.
+  await expect(page.locator(".modal .pf-avatar")).toBeVisible();
+  await expect(page.locator(".modal-header")).toContainText("Avery Quillfeather");
   await expect(page.locator(".modal .pf-cols")).toBeVisible();
   await expect(page.locator(".modal")).toContainText("Practice at a glance");
   await expect(page.locator(".modal")).toContainText("Current availability");
