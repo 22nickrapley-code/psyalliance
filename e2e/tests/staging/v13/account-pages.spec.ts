@@ -83,7 +83,8 @@ test("ACC-04 the account top bar's Search opens the workspace search; its bell o
   await expect(a.page.locator("#global-search")).toBeVisible();
   await a.page.goto("/dashboard/settings");
   await a.page.locator('.topbar a[data-bell]').click();
-  await expect(a.page).toHaveURL(/\/dashboard\/notifications/);
+  // v3 (Nick, 4 Nov): the bell opens the one notifications window over the workspace.
+  await expect(a.page).toHaveURL(/\/dashboard(\?notifications=1|\/notifications)/);
   await a.context.close();
 });
 
@@ -127,7 +128,8 @@ test("ACC-07 the waiting member's home marks The Hub; a colleague's page marks N
   const p = await open(browser, "pell", baseURL!, "/dashboard");
   // 1.0: a waiting member gets the real Hub, with a note on getting verified.
   await expect(p.page).toHaveURL(/\/dashboard$/);
-  await expect(await openActions(p.page)).toContainText("Nothing reaches a colleague until you are verified");
+  // v3 (Nick, 4 Nov): a submitted license leaves Actions; the waiting member sees Profile setup instead.
+  await expect(await openActions(p.page)).toContainText("Profile setup");
   await expect(p.page.locator(".sidebar .nav-item.active")).toContainText("The Hub");
   await p.context.close();
   const a = await open(browser, "avery", baseURL!, `/dashboard/people/${bram}`);

@@ -916,8 +916,9 @@ export function startWorkspace(env: any) {
  case'invite':if(state.modal==='invite-ready'){state.modal='invite';renderModal();}else openModal('invite');break;
  case'group-chat-retry':{const g=anyGroup(value);if(!g)break;await ensureGroupThread(g,true);if(state.modal==='group'){state.preserveModalScroll=true;renderModal();}break;}
  case'group':{const g=anyGroup(value);if(!g)break;openModal('group',LIVE?Number(value)||g.id:g.id);await ensureGroupThread(g);break;}
- case'search':case'settings':case'preferences':case'notifications':state.searchScope='notifications';state.noteCat='all';loadNotes(true);openModal('search');break;
- case'new-message':case'all-actions':case'other-actions':case'review-controls':openModal(kind,kind==='group'&&value?Number(value):null);break;
+ case'notifications':state.searchScope='notifications';state.noteCat='all';loadNotes(true);openModal('search');break;
+ case'search':if(state.searchScope==='notifications')state.searchScope='all';openModal(kind);break;
+ case'settings':case'preferences':case'new-message':case'all-actions':case'other-actions':case'review-controls':openModal(kind,kind==='group'&&value?Number(value):null);break;
  case'profile':captureWorkflow();openModal(kind,value,null,!!state.modal);break;
  case'plan':case'referral':case'discussion':case'resource':if(kind==='discussion')state.justPosted=null;openModal(kind,value,null,!!state.modal&&state.modal!=='workflow');if(LIVE&&kind==='discussion')loadDiscussion(Number(value));break;
  case'match-profile':openModal('profile',value,null,true);break;
@@ -1033,7 +1034,7 @@ export function startWorkspace(env: any) {
  case'group-meet-edit':state.groupMeetEdit=value||null;state.preserveModalScroll=true;renderModal();break;
  case'copy-text':{try{await navigator.clipboard.writeText(value);toast('Copied.');}catch{toast('Select the link to copy it.');}break;}
  case'cover-thread':{const [pid,cid,personId]=parts,p=planById(pid),c=caseById(p,cid);if(LIVE){openContextThread('cover',p,c,personId);break;}openThread(coverConversation(p,c,personId).id);break;}
- case'cover-answer':{const [pid,cid,response]=parts,p=planById(pid),c=caseById(p,cid);if(LIVE){const mine=c.requests.find(r=>r.person==='me'&&['awaiting','discussing','interested'].includes(r.status));if(!mine||p.status!=='active')break;const res=await commit('cover.answer',{request:mine.id,response},false,['plans','tiers']);render();state.coverClient=`${pid}:${cid}`;if(planById(pid))openModal('plan',Number(pid));if(res.ok)toast(response==='interested'?'Interest recorded. The organizer will confirm.':'Your response is recorded.');break;}if(answerCover(p,c,'me',response)){render();state.coverClient=`${pid}:${cid}`;openModal('plan',p.id);toast(response==='interested'?'Interest recorded. The organizer will confirm.':'Your response is recorded.');}break;}
+ case'cover-answer':{const [pid,cid,response]=parts,p=planById(pid),c=caseById(p,cid);if(LIVE){const mine=c.requests.find(r=>r.person==='me'&&['awaiting','discussing','interested'].includes(r.status));if(!mine||p.status!=='active')break;const res=await commit('cover.answer',{request:mine.id,response},false,['plans','tiers']);render();state.coverClient=`${pid}:${cid}`;if(planById(pid))openModal('plan',Number(pid));if(res.ok)toast(response==='interested'?'Sent: you can cover this client. The organizer decides.':'Your response is recorded.');break;}if(answerCover(p,c,'me',response)){render();state.coverClient=`${pid}:${cid}`;openModal('plan',p.id);toast(response==='interested'?'Sent: you can cover this client. The organizer decides.':'Your response is recorded.');}break;}
  case'ask-cover':{const [pid,cid]=parts;openModal('ask-cover',pid,cid,true);break;}
  case'ask-referral':openModal('ask-referral',value,null,true);break;
  case'plan-copy':copyPlan(value);break;
@@ -1055,7 +1056,7 @@ export function startWorkspace(env: any) {
  case'referral-quick':{const [rid,pid]=parts,r=referralById(rid);if(r)await toggleQuick('referral',r,null,pid);break;}
  case'thread-open':{state.quick=null;openThread(value);break;}
  case'referral-thread':{const [rid,pid]=parts,r=referralById(rid);if(LIVE){openContextThread('referral',r,null,pid||r.owner);break;}openThread(referralConversation(r,pid||r.owner).id);break;}
- case'referral-answer':{const [rid,response]=parts,r=referralById(rid);if(response==='interested'){openModal('referral-capacity',rid,null,true);break;}if(LIVE){if(!r||r.status!=='discussion')break;const res=await commit('referral.answer',{referral:r.id,response},false,['referrals']);render();if(referralById(rid))openModal('referral',Number(rid));if(res.ok)toast('Your response is recorded.');break;}if(answerReferral(r,'me',response)){render();openModal('referral',r.id);toast(response==='interested'?'Your interest is recorded. The sender confirms the placement.':'Your response is recorded.');}break;}
+ case'referral-answer':{const [rid,response]=parts,r=referralById(rid);if(response==='interested'){openModal('referral-capacity',rid,null,true);break;}if(LIVE){if(!r||r.status!=='discussion')break;const res=await commit('referral.answer',{referral:r.id,response},false,['referrals']);render();if(referralById(rid))openModal('referral',Number(rid));if(res.ok)toast('Your response is recorded.');break;}if(answerReferral(r,'me',response)){render();openModal('referral',r.id);toast(response==='interested'?'Sent: you can accept this referral. The sender decides.':'Your response is recorded.');}break;}
  case'referral-add':openAddRecipients('referral',value,null);break;
  case'referral-withdraw':case'referral-title':openModal(kind,value,null,true);break;
  case'report-start':openModal('report',value,null,true);break;

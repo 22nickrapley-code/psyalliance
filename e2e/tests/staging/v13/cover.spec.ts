@@ -293,20 +293,22 @@ test("CV-10 a plan completes only when every client has an agreed colleague and 
   const r = await create(avery, payload({ clients: [client({ label: "Client 1", selected: [bram] }), client({ label: "Client 2", selected: [cass], focus: "Trauma/PTSD" })] }));
   const [c1, c2] = await q(`select * from coverage_plan_cases where coverage_plan_id = $1 order by id`, [r.planId]);
   const complete = (who = avery) => asMember(who, `select public.cover_complete_plan($1) as r`, [r.planId]);
-  await expect(complete()).rejects.toThrow(/Confirm every handover/);
+  await expect(complete()).rejects.toThrow(/Confirm every handover|ready handover first/);
   await agree(bram, (await requestOf(r.planId, bram)).id);
   await asMember(avery, `select public.cover_confirm_handover($1, $2, true, true, true)`, [r.planId, c1.id]);
-  await expect(complete()).rejects.toThrow(/Confirm every handover/);
+  await expect(complete()).rejects.toThrow(/Confirm every handover|ready handover first/);
   await agree(cass, (await requestOf(r.planId, cass)).id);
-  await expect(complete()).rejects.toThrow(/Confirm every handover/);
+  await expect(complete()).rejects.toThrow(/Confirm every handover|ready handover first/);
   await asMember(avery, `select public.cover_confirm_handover($1, $2, true, true, true)`, [r.planId, c2.id]);
   await expect(complete(bram)).rejects.toThrow(/Plan not found/);
   expect((await complete()).rows[0].r.unchanged).toBe(false);
-  expect((await plansOf(avery))[0].status).toBe("completed");
+  // v3 (Nick, 4 Nov): "Confirm cover arranged" records the arrangement; the plan stays active until the absence ends.
+  expect((await plansOf(avery))[0].status).toBe("active");
+  expect((await plansOf(avery))[0].arrangedAt).toBeTruthy();
   expect((await complete()).rows[0].r.unchanged).toBe(true);
   const ev = await q(`select related_profile_id from professional_events where event_type = 'coverage_completed' and actor_profile_id = $1`, [avery]);
   expect(ev.map((x) => x.related_profile_id).sort()).toEqual([bram, cass].sort());
-  expect((await plansOf(avery))[0].history[0].text).toBe("Arrangement completed. All handovers were confirmed.");
+  expect((await plansOf(avery))[0].history[0].text).toBe("Cover arranged. Every client has an agreed colleague and a ready handover.");
 });
 
 test("CV-11 cancelling closes open requests, keeps the record, and nothing is asked afterwards", async () => {
@@ -423,7 +425,7 @@ test("CV-16 the server refuses what the form should never send", async () => {
 });
 
 test("CV-17 a plan from before the workspace still shows, and keeps its own rules", async () => {
-  const p = await one(`insert into coverage_plans (profile_id, plan_type, title, status, absence_type, jurisdiction_state, outreach_mode, starts_on, ends_on) values ($1, 'ad_hoc', 'Older plan', 'active', 'short_planned', 'NY', 'parallel', '2026-10-01', '2026-10-05') returning id`, [avery]);
+  const p = await one(`insert into coverage_plans (profile_id, plan_type, title, status, absence_type, jurisdiction_state, outreach_mode, starts_on, ends_on) values ($1, 'ad_hoc', 'Older plan', 'active', 'short_planned', 'NY', 'parallel', '2026-10-01', current_date + 30) returning id`, [avery]);
   const c = await one(`insert into coverage_plan_cases (coverage_plan_id, case_reference, specialism_lookup_ids, modality, status, jurisdiction_state) values ($1, 'Client 1', array[(select id from lookup_values where category = 'treatment_specialism' and value = 'Depression'), (select id from lookup_values where category = 'treatment_specialism' and value = 'Trauma/PTSD')], 'virtual', 'awaiting_response', 'NY') returning id`, [p.id]);
   const rq = await one(`insert into coverage_requests (coverage_plan_case_id, requested_profile_id, sequence_order) values ($1, $2, 1) returning id, expires_at`, [c.id, bram]);
   expect(rq.expires_at).toBeNull();

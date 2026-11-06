@@ -294,6 +294,7 @@ as $$
 declare
   me uuid := auth.uid();
   pl coverage_plans%rowtype;
+  a uuid;
 begin
   if me is null then
     raise exception 'Please sign in again.' using errcode = 'P0001';
@@ -314,6 +315,12 @@ begin
   end if;
   update coverage_plans set arranged_at = now(), updated_at = now() where id = pl.id;
   perform private.cover_event(pl.id, null, null, 'arranged');
+  -- The same record of working together as "Complete arrangement" made before, and the colleagues are told.
+  for a in select distinct assigned_clinician_id from coverage_plan_cases where coverage_plan_id = pl.id loop
+    perform private.professional_event('coverage_completed', me, a, 'completed a cover arrangement', jsonb_build_object('coveragePlanId', pl.id));
+    perform private.notify_member('coverage_confirmed', a, me, 'confirmed the cover arrangement',
+                                  '/dashboard/cover?plan=' || pl.id, 'cover_complete:' || pl.id, jsonb_build_object('coveragePlanId', pl.id));
+  end loop;
   return jsonb_build_object('unchanged', false);
 end;
 $$;
@@ -499,7 +506,7 @@ begin
     return jsonb_build_object('unchanged', true);
   end if;
   if r.status::text not in ('open', 'sent', 'matched') then
-    raise exception 'This referral is closed.' using errcode = 'P0001';
+    raise exception 'This referral is no longer open.' using errcode = 'P0001';
   end if;
   select status::text into st from referral_responses where referral_request_id = p_referral and responding_profile_id = p_person;
   if st = 'accepted' then
@@ -544,7 +551,7 @@ begin
     raise exception 'Referral not found.' using errcode = 'P0001';
   end if;
   if r.status::text not in ('open', 'sent', 'matched') then
-    raise exception 'This referral is closed.' using errcode = 'P0001';
+    raise exception 'This referral is no longer open.' using errcode = 'P0001';
   end if;
   foreach pid in array coalesce(p_people, '{}') loop
     continue when pid is null or pid = me or pid = any (list);
@@ -552,10 +559,14 @@ begin
     excl := case when exists (select 1 from private.visible_members(me) vm where vm.id = pid)
                  then private.referral_exclusions(r.id, pid) else array['Not a colleague you can ask'] end;
     if array_length(excl, 1) is not null then
-      raise exception '% can''t be asked about this referral: %. Nothing was sent.', private.member_name(pid), excl[1] using errcode = 'P0001';
+      raise exception '% no longer matches this referral: %. Nothing was sent.', private.member_name(pid), excl[1] using errcode = 'P0001';
     end if;
     list := list || pid;
   end loop;
+  -- Nobody new (everyone named was already asked): nothing changes, the queue included.
+  if array_length(list, 1) is null and coalesce(array_length(r.outreach_queue, 1), 0) = 0 then
+    return jsonb_build_object('unchanged', true, 'sent', 0, 'queued', 0);
+  end if;
   select count(*) into asked from referral_recipients where referral_request_id = r.id;
   if asked + coalesce(array_length(list, 1), 0) > 100 then
     raise exception 'Ask up to 100 colleagues about one referral.' using errcode = 'P0001';

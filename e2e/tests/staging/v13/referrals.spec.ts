@@ -193,7 +193,7 @@ test("RF-07 only the referrer can place, only with someone interested, once; the
   expect(await worked(avery)).toEqual(workedBefore);
   // Not the referrer, not a colleague who has not replied interested.
   await expect(place(bram, r.referralId, bram)).rejects.toThrow(/Referral not found/);
-  await expect(place(avery, r.referralId, fenn)).rejects.toThrow(/replied Interested/);
+  await expect(place(avery, r.referralId, fenn)).rejects.toThrow(/isn't part of this referral|replied Interested/);
   await expect(place(avery, r.referralId, gale)).rejects.toThrow(/only choose a colleague you sent/);
   const p = await place(avery, r.referralId, bram);
   expect(p.unchanged).toBe(false);

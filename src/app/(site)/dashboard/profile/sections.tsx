@@ -61,11 +61,14 @@ export function refreshPreviews() {
     const block = slot.closest<HTMLElement>("[data-block]");
     if (!d || !changedIn(d)) {
       if (slot.innerHTML !== slot.dataset.saved) slot.innerHTML = slot.dataset.saved;
-      if (sec !== "where") block?.classList.remove("is-proposed");
+      if (sec !== "where" && block?.classList.contains("is-proposed")) block.classList.remove("is-proposed");
       return;
     }
     const v = previewFor(sec, d);
     if (v === null) return;
+    // Only rewrite the slot when the text changes: rewriting it would wake the observer below again.
+    const want = (sec === "about" ? v || "No bio yet." : sec === "where" ? (v ? ` · ${v}` : "") : v || "Nothing chosen") + " Not saved yet";
+    if (slot.textContent?.replace(/\s+/g, " ").trim() === want.replace(/\s+/g, " ").trim()) return;
     slot.innerHTML = "";
     if (sec === "about") {
       const p = document.createElement("p");
@@ -76,7 +79,7 @@ export function refreshPreviews() {
     tag.className = "pf-proposed-tag";
     tag.textContent = "Not saved yet";
     slot.append(" ", tag);
-    if (sec !== "where") block?.classList.add("is-proposed");
+    if (sec !== "where" && block && !block.classList.contains("is-proposed")) block.classList.add("is-proposed");
   });
 }
 
@@ -157,7 +160,11 @@ export function ProfileCards() {
         const s = el.closest<HTMLElement>("[data-sec]")?.dataset.sec;
         if (s) secs.add(s);
       });
-      document.querySelectorAll<HTMLElement>("[data-block]").forEach((b) => b.classList.toggle("is-filled", secs.has(b.dataset.block!)));
+      // Change a class only when it differs, or this observer would keep waking itself.
+      document.querySelectorAll<HTMLElement>("[data-block]").forEach((b) => {
+        const on = secs.has(b.dataset.block!);
+        if (b.classList.contains("is-filled") !== on) b.classList.toggle("is-filled", on);
+      });
       setImported(secs.size);
       if (secs.size && !submitting) dirty = true;
       refreshPreviews();

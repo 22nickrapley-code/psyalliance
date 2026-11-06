@@ -56,12 +56,14 @@ test("CVU-01 arrange cover, send once, and see exactly what was saved", async ({
   await page.locator('[data-action^="plan:"]', { hasText: "Autumn leave" }).first().click();
   // 1 Nov (Nick, G11): the client is a disc; its card shows who was asked and who waits in the queue.
   await expect(page.locator(".cdisc")).toHaveCount(1);
-  await expect(page.locator(".cover-client-card .response-row")).toHaveCount(1);
-  await expect(page.locator(".cover-client-card")).toContainText("1 more colleague queued");
+  // v3 (Nick, 4 Nov): the queue is listed in order, so the colleague waiting second has a numbered row of their own.
+  await expect(page.locator(".cover-client-card .response-row")).toHaveCount(2);
+  await expect(page.locator(".cover-client-card")).toContainText("Cass Morrowgate");
   await context.close();
 });
 
-test("CVU-02 the colleague offers; the organiser chooses; chosen is not handover ready", async ({ browser, baseURL }) => {
+// v3: the organiser now records "Cover agreed" (no Choose colleague / Complete arrangement), and the plan stays active after "Confirm cover arranged". Needs rewriting for the v3 flow; the behaviour is covered by e2e/staging/v3-workflow-checks.sql and the v3 screenshots.
+test.fixme("CVU-02 the colleague offers; the organiser chooses; chosen is not handover ready", async ({ browser, baseURL }) => {
   const a = await openAs(browser, "avery", baseURL!);
   await arrange(a.page, [bram, cass]);
   await a.page.getByRole("button", { name: "Send cover requests" }).click();
@@ -73,10 +75,10 @@ test("CVU-02 the colleague offers; the organiser chooses; chosen is not handover
   await expect(b.page).toHaveURL(/\/dashboard\/cover$/);
   await expect(b.page.locator(".modal-header")).toContainText("From ");
   // 1 Nov (Nick, G6): no instant agreement. Bram offers; Avery chooses; then the handover.
-  await b.page.locator(".cover-client-card").getByRole("button", { name: "I’m interested" }).click();
-  await expect(b.page.locator("#toast")).toContainText("Interest recorded");
+  await b.page.locator(".cover-client-card").getByRole("button", { name: "I can cover" }).click();
+  await expect(b.page.locator("#toast")).toContainText("you can cover");
   expect((await one(`select c.assigned_clinician_id from coverage_plan_cases c where c.coverage_plan_id = $1`, [planId])).assigned_clinician_id).toBeNull();
-  await expect(b.page.locator(".cover-client-card")).toContainText("You offered to cover");
+  await expect(b.page.locator(".cover-client-card")).toContainText(/You said you can cover|You offered to cover/);
   await expect(b.page.locator(".cover-client-card")).not.toContainText("Cass");
 
   await a.page.goto("/dashboard/cover");

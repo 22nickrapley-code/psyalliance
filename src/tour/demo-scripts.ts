@@ -176,8 +176,8 @@ const REFER: DemoScript = {
         },
         {
           title: "Interest is not a placement",
-          text: "Talk with any colleague who is interested. When you have decided, choose one. The others are told it has been placed.",
-          beats: [["click", '[data-action="referral-choose:1:maya"]'], ["look", "text=Confirm placement"], ["click", "text=Confirm placement"]],
+          text: "Talk with any colleague who can accept it. When you have decided, record the agreement. The others are told it has been placed.",
+          beats: [["click", '[data-action="referral-choose:1:maya"]'], ["look", "text=Referral agreed"], ["click", "text=Referral agreed"]],
         },
       ],
     },
@@ -194,7 +194,7 @@ const REFER: DemoScript = {
         {
           title: "Confirm your capacity first",
           text: "Before saying you are interested you confirm you have capacity now. It does not reserve a place; only the referring colleague chooses.",
-          beats: [["tick", 'input[name="capacity"]'], ["click", "text=Confirm & express interest"]],
+          beats: [["tick", 'input[name="capacity"]'], ["click", "text=Confirm, I can accept this referral"]],
         },
       ],
     },
@@ -504,9 +504,9 @@ const LIBRARY: DemoScript = {
           beats: [["click", '[data-action="resource:102"]'], ["look", ".modal h2"]],
         },
         {
-          title: "Saved, and easy to find",
-          text: "Save it with the bookmark and it joins your Saved list, private to you. Every resource has a PDF to download.",
-          beats: [["do", "close-modal"], ["click", '[data-action="resource-save:102"]'], ["click", '[data-action="resource-filter:Saved"]']],
+          title: "Open it, download it, keep a copy",
+          text: "Open the PDF, download it, or save a copy to My Files, where it goes in your PsyAlliance documents folder, private to you.",
+          beats: [["look", ".modal .before-use"], ["do", "close-modal"]],
         },
       ],
     },

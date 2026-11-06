@@ -43,22 +43,21 @@ async function openAs(browser: any, who: string, baseURL: string, path = "/dashb
 const clean = (page: Page) => expect((page as any).__errs).toEqual([]);
 
 // ---------------------------------------------------------------------------------------------
-test("FU-01 availability window: cover openness, pause-until and consult openness are saved and come back", async ({ browser, baseURL }) => {
+test("FU-01 availability window: cover openness and consult openness are saved and come back; no pause field (v3)", async ({ browser, baseURL }) => {
   const a = await openAs(browser, "avery", baseURL!, "/dashboard?availability=1");
   await a.page.locator("#availability-slots").fill("4");
   await a.page.locator('input[name="cover"][value="ask"]').check({ force: true });
-  await a.page.locator("#availability-pause").fill(isoDay(10));
+  // v3 (Nick, 4 Nov): the pause field is gone from this window.
+  await expect(a.page.locator("#availability-pause")).toHaveCount(0);
   await a.page.locator('input[name="consult"]').uncheck({ force: true });
   await a.page.locator('input[name="virtual-NY"]').check();
   await a.page.getByRole("button", { name: /Save & confirm availability/ }).click();
   await expect(a.page.locator("#toast")).toContainText("confirmed");
   const p = await one(`select approx_spaces, availability_paused_until::text as paused, accepting_referrals, coverage_availability, consultation_availability from profiles where id = $1`, [avery]);
-  expect(p).toMatchObject({ approx_spaces: 4, paused: isoDay(10), accepting_referrals: false, coverage_availability: "ask_me", consultation_availability: "no" });
+  expect(p).toMatchObject({ approx_spaces: 4, coverage_availability: "ask_me", consultation_availability: "no" });
   // Nothing lived only in the browser.
   await a.page.goto("/dashboard?availability=1");
-  await expect(a.page.locator(".av-side")).toContainText("Paused");
   await expect(a.page.locator('input[name="cover"][value="ask"]')).toBeChecked();
-  await expect(a.page.locator("#availability-pause")).toHaveValue(isoDay(10));
   await expect(a.page.locator('input[name="consult"]')).not.toBeChecked();
   clean(a.page);
   await a.context.close();

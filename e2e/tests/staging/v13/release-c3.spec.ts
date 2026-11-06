@@ -43,10 +43,10 @@ test("AU-04 Credentials never says 'Expires Not given'", async ({ browser, baseU
 
 test("AU-05 Notifications is named in the top bar, under Messages in the menu, and says its introduction once", async ({ browser, baseURL }) => {
   const { context, page } = await as(browser, "avery", baseURL!);
+  // v3 (Nick, 4 Nov): the old page opens the one notifications window over the workspace.
   await page.goto(`${baseURL}/dashboard/notifications`);
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Notifications");
-  await expect(page.locator(".breadcrumbs")).toContainText("Messages");
-  await expect(page.locator(".breadcrumbs")).not.toContainText("Account");
+  await expect(page).toHaveURL(/\/dashboard\?notifications=1/);
+  await expect(page.locator(".modal")).toContainText("Notifications.");
   expect(await page.locator("body").innerText()).not.toContain("The bell opens this list");
   await context.close();
 });

@@ -114,7 +114,8 @@ test("AV-07 the 120-day rule: confirmed through day 120, stale from day 121", as
     await page.goto("/dashboard");
     // The Hub's Actions (1 Nov): a gentle reminder from day 60, and "needs reconfirming" once the 120 days have passed.
     const line = await openActions(page);
-    await expect(line).toContainText(fresh ? "Reconfirm your availability" : "needs reconfirming");
+    // v3: from day 90 it is the quarterly check.
+    await expect(line).toContainText(fresh ? /Reconfirm your availability|quarterly availability check/ : /needs reconfirming/);
     if (fresh) await expect(line).not.toContainText("needs reconfirming");
   }
 });
@@ -138,7 +139,8 @@ test("AV-09 a member whose verification is still in progress gets the Hub with a
   await page.goto("/dashboard");
   await expect(page).toHaveURL(/\/dashboard$/);
   // 1 Nov (Nick, E): the waiting note is an action in the Hub's Actions.
-  await expect(await openActions(page)).toContainText("Nothing reaches a colleague until you are verified");
+  // v3 (Nick, 4 Nov): a submitted license leaves Actions; the waiting member sees Profile setup.
+  await expect(await openActions(page)).toContainText("Profile setup");
   await expect(page.locator(".hub-card")).toHaveCount(3);
   await page.goto("/dashboard/overview");
   await expect(page).toHaveURL(/\/dashboard$/);

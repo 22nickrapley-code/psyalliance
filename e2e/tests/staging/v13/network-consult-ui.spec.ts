@@ -215,22 +215,19 @@ test("NCU-06 replies: posted once even when retried, ordered newest first; follo
   await a.context.close(); await b.context.close();
 });
 
-test("NCU-07 library: save, find under Saved, templates not yet reviewed say so and have no file", async ({ browser, baseURL }) => {
+test("NCU-07 library: no Saved pill (v3), templates not yet reviewed say so and have no file", async ({ browser, baseURL }) => {
   const { page, context } = await openAs(browser, "avery", baseURL!, "/dashboard/library");
   // The PDF templates come first, so find the guide by searching for it.
   await page.locator("#resource-search").fill("Planning your practice cover");
   const card = page.locator(".resource-card", { hasText: "Planning your practice cover" });
-  await card.locator('[data-action^="resource-save:"]').click();
-  await expect(page.locator("#toast")).toContainText("Saved to your Library");
-  expect((await q(`select resource_key from saved_resources where profile_id = $1`, [avery])).map((r) => r.resource_key)).toEqual(["guide:1"]);
-  await page.reload();
-  await page.locator('[data-action="resource-filter:Saved"]').click();
-  await expect(page.locator(".resource-card")).toHaveCount(1);
-  await page.locator('[data-action="resource-filter:All"]').click();
+  // v3 (Nick, 4 Nov): templates are saved to My Files instead; a guide has no file, so no save button, and there is no Saved pill.
+  await expect(card).toHaveCount(1);
+  await expect(page.locator('[data-action="resource-filter:Saved"]')).toHaveCount(0);
+  await page.locator("#resource-search").fill("");
   // A template waiting for review is listed with the same label as the design and no file.
   const tpl = page.locator(".resource-card", { hasText: "Reciprocal Coverage Agreement" });
   await expect(tpl.locator(".library-review-label")).toContainText("Coming soon");
-  await tpl.getByRole("button", { name: "Open resource" }).click();
+  await tpl.getByRole("button", { name: "Resource overview" }).click();
   await expect(page.locator(".modal")).toContainText("coming soon");
   await expect(page.locator('.modal a[href^="/dashboard/library-files/"]')).toHaveCount(0);
   const res = await page.request.get("/dashboard/library-files/PA-01");

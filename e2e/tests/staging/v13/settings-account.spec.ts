@@ -26,7 +26,6 @@ test("SET-01 Settings lists the account pages, and every link goes to a page tha
     ["Verification", "/dashboard/credentials"],
     ["My files", "/dashboard/documents?tab=mine"],
     ["Continuity plan", "/dashboard/continuity"],
-    ["All notifications", "/dashboard/notifications"],
     ["Account and privacy", "/dashboard/settings"],
   ]) {
     const row = modal.locator("a.global-result", { hasText: label });
@@ -35,6 +34,8 @@ test("SET-01 Settings lists the account pages, and every link goes to a page tha
     const res = await page.request.get(href);
     expect(res.status(), `${label} → ${href}`).toBeLessThan(400);
   }
+  // v3 (Nick, 4 Nov): All notifications opens the one notifications window in place.
+  await expect(modal.locator('button.global-result[data-action="notifications"]', { hasText: "All notifications" })).toHaveCount(1);
   // No admin row for a member who is not an admin.
   await expect(modal.locator("a.global-result", { hasText: "Admin console" })).toHaveCount(0);
   // Preview controls are for the sample data only, never on a member's own account.
