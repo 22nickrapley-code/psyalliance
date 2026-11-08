@@ -1,6 +1,6 @@
-# PsyAlliance v3: written designs (not built)
+# PsyAlliance v3: written designs
 
-Nick asked for written designs only for these three areas on 5 Nov. Nothing here is in the code yet. Each section says what the member sees, the rules, what we would build, and what has to be decided first.
+Nick asked for written designs only for these three areas on 5 Nov. **Update, v4 (6 Nov):** smart requests (section 2, plus speaking and dropping a file) and phase 1 of the practice assistant (section 3, "Ask PsyAlliance") are now built behind the "AI tech enabled" switch in Admin, off by default; see `docs/psyalliance-v4/acceptance_ledger.md`. Sharing and phone alerts (section 1) are not built: email at the pilot, push and SMS after the mobile pass. Each section says what the member sees, the rules, what we would build, and what has to be decided first.
 
 ## 1. Sharing and phone alerts
 
@@ -70,4 +70,4 @@ A chat assistant in the Hub is worth doing, but only after the request flows are
 
 ## Where the GPT review differs from Nick's direct feedback
 
-Outstanding. Nick asked for a list of anything in the GPT review that contradicts his direct feedback. That cross-check was not finished in this pass, so no list is given here rather than a guessed one. Where the build had to choose, it followed Nick's answers of 5 Nov (see the v3 decisions doc).
+Answered by Nick on 6 Nov: see the project doc `psyalliance-final-build-questions` (A1 to A8, B1 to B9).
