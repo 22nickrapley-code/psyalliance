@@ -186,19 +186,15 @@ export default async function AdminLibraryPage(props: {
                   {d.review_status !== "published" && (
                     <form action={publishDocumentAction} className="inline publish-control">
                       <input type="hidden" name="document_id" value={d.id} />
-                      <button
-                        type="submit"
-                        className="btn small-btn"
-                        disabled={required.length === 0 || missing.length > 0}
-                        aria-describedby={required.length === 0 || missing.length > 0 ? `why-${d.id}` : undefined}
-                      >
-                        Publish
+                      {/* v6 (Nick, 9 Nov): an admin can approve and publish a resource on their own; reviewer approvals are optional. */}
+                      <button type="submit" className="btn small-btn">
+                        {required.length > 0 && missing.length === 0 ? "Publish" : "Approve and publish"}
                       </button>
                       {(required.length === 0 || missing.length > 0) && (
-                        <span id={`why-${d.id}`} className="why-disabled">
+                        <span className="why-disabled">
                           {required.length === 0
-                            ? "Set the reviewer roles this resource needs first."
-                            : `Waiting for ${missing.length === 1 ? "an approval" : `${missing.length} approvals`}: ${missing.map((r) => ROLE_LABELS[r]).join(", ")}.`}
+                            ? "No reviewer roles set. Publishing records your approval as admin."
+                            : `Not yet approved by: ${missing.map((r) => ROLE_LABELS[r]).join(", ")}. You can approve it yourself as admin.`}
                         </span>
                       )}
                     </form>

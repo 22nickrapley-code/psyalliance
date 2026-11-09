@@ -9,8 +9,6 @@ import { PublicNav, PublicFooter } from "../../_public/chrome";
 import { DegreeField } from "./degree-field";
 import { PasswordField } from "../../_public/password-field";
 import { clinicianName } from "@/lib/profession";
-import { FOUNDING_AFTER, FOUNDING_HOW, FOUNDING_LINE } from "@/lib/founding";
-import { FoundingCount } from "../../_public/founding-count";
 import { cookies } from "next/headers";
 import { GUIDE, HANDOFF_COOKIE, NEED_IDS, CONTEXTS, parseHandoff, type Need } from "@/lib/start-guide";
 import { GoalCookie } from "./goal-cookie";
@@ -61,7 +59,7 @@ export default async function SignUpPage(props: {
                   <b>{inviterName}</b> invited you. Create your account and you&rsquo;ll be each other&rsquo;s trusted colleagues once you&rsquo;re verified.
                 </p>
               )}
-              <div className="eyebrow">Founding places: the first 40 in each state</div>
+              <div className="eyebrow">Join PsyAlliance</div>
               <h1>Create your account.</h1>
               <p className="lead">
                 For doctoral psychologists and psychiatrists in private practice. Open now in {openText || "the Northeast"}; other states open as colleagues
@@ -72,19 +70,14 @@ export default async function SignUpPage(props: {
                 <li><b>Add your license</b><span>A person checks it against the state board before anyone can see you.</span></li>
                 <li><b>Start while we check</b><span>Fill in your profile in a minute from your Psychology Today page or website, draft a cover plan, referral or question, and try the sandbox with fictional colleagues. Nothing reaches a real colleague until you&rsquo;re verified.</span></li>
                 <li>
-                  <b>You&rsquo;re in</b>
-                  <span>
-                    Licensed in {openText || "an open state"}? You join the network as soon as you&rsquo;re verified. Elsewhere, you&rsquo;ll see your place in line
-                    and we open your state as colleagues join.
-                  </span>
+                  <b>You&rsquo;re verified</b>
+                  <span>Once your license is verified, you can use everything PsyAlliance offers.</span>
                 </li>
               </ol>
+              {/* v6 (Nick, 9 Nov): two sentences at most, no counts. */}
               <div className="founding-note">
-                <b>{FOUNDING_LINE}</b>
-                <span>
-                  {FOUNDING_HOW} {FOUNDING_AFTER}
-                </span>
-                <FoundingCount />
+                <b>The first 40 members in each state are founding members, free for life.</b>
+                <span>After that, membership is $30 a month, and nothing is charged until payments open.</span>
               </div>
               <p className="small">
                 Want to see it first? <a href={TOUR_URL}>Watch the two-minute demo</a>.
@@ -158,7 +151,7 @@ export default async function SignUpPage(props: {
                 </fieldset>
                 <button type="submit" className="btn lg block">Create your account</button>
                 <p className="micro-note" style={{ margin: 0, textAlign: "center" }}>
-                  The first 40 members in each state are founding members, free for life. See <a href="/privacy">Privacy</a> and <a href="/terms">Terms</a>. Already have an account?{" "}
+                  See our <a href="/privacy">Privacy</a> and <a href="/terms">Terms</a>. Already have an account?{" "}
                   <a href="/auth/sign-in">Sign in</a>.
                 </p>
                 </div>

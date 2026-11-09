@@ -20,7 +20,7 @@ export const viewport: Viewport = {
 } as Viewport;
 
 const STYLES = ["styles", "product", "refinements", "home", "pulse", "directions", "polish", "feedback", "hub"];
-const V = "18";
+const V = "19";
 
 export default function WorkspaceRootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -49,6 +49,7 @@ export default function WorkspaceRootLayout({ children }: { children: React.Reac
         {/* v5 (8 Nov walkthrough): the guided sandbox steps, Hub, Network and list fixes. After v1 so it wins. */}
         {/* eslint-disable-next-line @next/next/no-css-tags */}
         <link rel="stylesheet" href={`/workspace/v5.css?v=${V}`} />
+        <link rel="stylesheet" href={`/workspace/v6.css?v=${V}`} />
       </head>
       <body>
         <a className="skip-link" href="#main">Skip to content</a>

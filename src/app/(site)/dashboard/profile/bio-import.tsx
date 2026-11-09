@@ -293,8 +293,8 @@ export default function BioImportBox({ prominent = true, demo, mode = "setup" }:
             <div className="quick-start-photo">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={photo.src} alt="Photo found in your profile" />
-              <span className="small">Your photo. It's used when you save.</span>
-              <button type="button" className="plain-button small" onClick={() => { setPhoto(null); if (urlField.current) urlField.current.value = ""; if (fileField.current) fileField.current.value = ""; }}>Don&rsquo;t use it</button>
+              <span className="small">We found this photo on your page. It becomes your profile photo when you save. If it isn&rsquo;t you, or you&rsquo;d rather add your own, you can leave it out.</span>
+              <button type="button" className="plain-button small" onClick={() => { setPhoto(null); if (urlField.current) urlField.current.value = ""; if (fileField.current) fileField.current.value = ""; }}>Leave this photo out</button>
             </div>
           )}
           <div className="row wrap" style={{ marginTop: 10, gap: 12 }}>

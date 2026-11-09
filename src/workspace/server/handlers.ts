@@ -165,7 +165,12 @@ export const handlers: Record<string, Handler> = {
       id: num(c.id), age: text(c.age, 40), setting: text(c.setting, 20), insurance: text(c.insurance, 120), frequency: text(c.frequency, 40),
       prescribing: c.prescribing === true, language: text(c.language, 60), city: text(c.city, 60), secondary: text(c.secondary, 120),
     })) : [];
-    const payload: any = { name: text(a.name, 80), message, start: text(a.start, 10), clients };
+    // v6: a change to one client's needs sends only the clients; the plan's name, message and dates stay as they are
+    // (before, the empty name was refused with "Give the plan a short name" and an empty message would have cleared it).
+    const payload: any = { clients };
+    if (a.name !== undefined) payload.name = text(a.name, 80);
+    if (a.message !== undefined) payload.message = message;
+    if (a.start !== undefined) payload.start = text(a.start, 10);
     if (a.end !== undefined) payload.end = text(a.end, 10);
     const { data, error } = await ctx.supabase.rpc("cover_change_details", { p_plan: num(a.plan), p_payload: payload });
     if (error) return fail(error, "The changes didn't save. Nothing was changed; please try again.");
@@ -701,6 +706,23 @@ export const handlers: Record<string, Handler> = {
     if (error) return fail(error);
     if (!data?.length) return bad("That referral has already been answered.");
     return { ok: true, ...(await physicianState(ctx)) };
+  },
+
+  // v6 (Nick, 9 Nov): attach a file from My files in any message. The member's own files, newest first, with short-lived links.
+  "files.mine": async (ctx) => {
+    const { data, error } = await ctx.supabase
+      .from("documents")
+      .select("id, title, storage_path, created_at")
+      .eq("profile_id", ctx.userId)
+      .eq("owner_scope", "personal")
+      .order("created_at", { ascending: false })
+      .limit(40);
+    if (error) return fail(error);
+    const rows = (data as any[]) || [];
+    const paths = rows.map((d) => d.storage_path).filter(Boolean);
+    const signed = paths.length ? (await ctx.supabase.storage.from("documents").createSignedUrls(paths, 10 * 60)).data || [] : [];
+    const url = new Map((signed as any[]).filter((x) => x.path && x.signedUrl).map((x) => [x.path, x.signedUrl]));
+    return { ok: true, data: rows.map((d) => ({ id: d.id, title: d.title, url: url.get(d.storage_path) || null, name: String(d.storage_path || "").split("/").pop() || d.title })).filter((d) => d.url) };
   },
 
   "resource.save": async (ctx, a) => {

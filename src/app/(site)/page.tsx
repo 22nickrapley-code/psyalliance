@@ -4,8 +4,6 @@ import { IS_DEMO_SITE, REAL_SITE_URL, SITE_URL } from "@/lib/env";
 import { createClient } from "@/lib/supabase/server";
 import { loadOpenStates, stateList } from "@/lib/open-states";
 import { PublicNav, PublicFooter } from "./_public/chrome";
-import { FOUNDING_LINE } from "@/lib/founding";
-import { FoundingCount } from "./_public/founding-count";
 
 // Public landing. Written for a busy clinician who gives it a few seconds:
 // what it is and the benefit first, then the three moments it helps with,
@@ -145,8 +143,6 @@ export default async function HomePage() {
               <a className="btn lg" href="/auth/sign-up">Create your account</a>
               <a className="btn secondary lg" href="/start">Show me how it could help</a>
             </div>
-            <p className="v1-found">{FOUNDING_LINE}</p>
-            <FoundingCount className="founding-count hero-count" />
             <ul className="v1-proof" aria-label="Who it's for">
               <li><Tick />Doctoral-level only</li>
               <li><Tick />Every license checked by a person</li>
@@ -250,17 +246,16 @@ export default async function HomePage() {
         </section>
 
         <section className="v1-band v1-dark" id="why">
-          <div className="v1-wrap v1-story">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/team/rena-pazienza.jpg" alt="Rena Pazienza, PhD" />
+          {/* v6 (Nick, 9 Nov): no founder photo or names until launch. */}
+          <div className="v1-wrap v1-story no-photo">
             <div>
               <div className="eyebrow">Why we built it</div>
               <blockquote>A directory helps patients find you. <em>PsyAlliance helps clinicians find each other.</em></blockquote>
               <p>
-                Going on maternity leave, Rena Pazienza, PhD, needed her clients covered by someone qualified, and there was no good way to find them. So she
-                co-founded PsyAlliance with Nick Rapley to build the professional circle she wished she&rsquo;d had.
+                Going on maternity leave, XXX, PhD, needed her clients covered by someone qualified, and there was no good way to find them. So she
+                co-founded PsyAlliance with XXX to build the professional circle she wished she&rsquo;d had.
               </p>
-              <div className="v1-sig">Rena Pazienza, PhD, co-founder</div>
+              <div className="v1-sig">XXX, PhD, co-founder</div>
             </div>
           </div>
         </section>
@@ -306,8 +301,7 @@ export default async function HomePage() {
               <div>
                 <div className="eyebrow">Founding members</div>
                 <h2>Be one of the first 40 <em>in your state.</em></h2>
-                <p>{FOUNDING_LINE} Open now in {open || "the Northeast"}; other states open as colleagues join.</p>
-                <FoundingCount className="founding-count on-dark" />
+                <p>The first 40 members in each state are founding members, free for life. Open now in {open || "the Northeast"}, with more states opening as colleagues join.</p>
               </div>
               <a className="btn lg" href="/auth/sign-up">Create your account</a>
             </div>

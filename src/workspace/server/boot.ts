@@ -70,7 +70,29 @@ export async function loadWorkspaceBoot(path: string): Promise<LiveBoot> {
     reviewed: ((lic as any[]) || []).some((l) => !!l.reviewed_at),
     availability: !!prof?.availability_confirmed_at,
   };
-  return { ...rest, ...shapeLibrary({ resources: boot.resources, saved }), demo: IS_DEMO_SITE, sandbox, userId: user.id, setup, ai: (ai as any) || { enabled: false, left: 0 }, membership: (membership as any) || null, foundingCircle: (circles as any) || [], features: (features as any) || { consultGroups: false } } as LiveBoot;
+  // Photos (v6, Nick 9 Nov): every colleague disc shows their photo once they have added one; initials otherwise.
+  // Signed links last six hours; demo members keep their initials.
+  const photos: Record<string, string> = {};
+  const loadPhotos = async () => {
+    const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const ids = Array.from(new Set([...(((rest as any).people as any[]) || []), ...(((rest as any).known as any[]) || [])].map((p: any) => String(p?.id || "")).filter((id) => uuid.test(id))));
+    const pathOf = new Map<string, string>();
+    if (prof?.avatar_path) pathOf.set(user.id, prof.avatar_path);
+    if (ids.length) {
+      const { data: rows } = await supabase.rpc("workspace_photos", { p_ids: ids.slice(0, 400) });
+      for (const r of (rows as any[]) || []) if (r.avatar_path) pathOf.set(r.id, r.avatar_path);
+    }
+    const paths = Array.from(new Set(Array.from(pathOf.values()).filter((p) => !p.startsWith("demo/"))));
+    if (paths.length) {
+      const { data: signed } = await supabase.storage.from("avatars").createSignedUrls(paths, 6 * 60 * 60);
+      const url = new Map(((signed as any[]) || []).filter((s) => s.path && s.signedUrl).map((s) => [s.path, s.signedUrl]));
+      for (const [id, path] of pathOf) if (url.get(path)) photos[id] = url.get(path) as string;
+      if (photos[user.id]) photos.me = photos[user.id];
+    }
+  };
+  // Never hold the workspace up for photos: two seconds at most, then initials.
+  await Promise.race([loadPhotos().catch(() => {}), new Promise((done) => setTimeout(done, 2000))]);
+  return { ...rest, photos, ...shapeLibrary({ resources: boot.resources, saved }), demo: IS_DEMO_SITE, sandbox, userId: user.id, setup, ai: (ai as any) || { enabled: false, left: 0 }, membership: (membership as any) || null, foundingCircle: (circles as any) || [], features: (features as any) || { consultGroups: false } } as LiveBoot;
 }
 
 export type { WorkspaceView };

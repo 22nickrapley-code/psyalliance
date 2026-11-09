@@ -3013,3 +3013,8 @@
 .pa .demo-home{display:inline-flex}
 /* Sign-up on a phone (Nick, 1 Nov): the explanation first, then the form. Desktop keeps both side by side. */
 @media (max-width:900px){.pa .join-v1 .join-layout .join-card{order:1}.pa .join-v1 .join-layout .join-intro{order:0}}
+/* v6 (Nick, 9 Nov): the homepage uses one brand colour for Cover, Referrals and Consult; the service colours live inside the workspace. */
+.pa.v1 .svc-cover,.pa.v1 .svc-ref,.pa.v1 .svc-con{--svc:#2C5546;--svc-pale:#EEF3EF}
+/* The founders' story without photographs until launch. */
+.pa.v1 .v1-story.no-photo{grid-template-columns:minmax(0,1fr)}
+.pa.v1 .v1-story.no-photo blockquote{max-width:820px}

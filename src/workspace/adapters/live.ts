@@ -57,6 +57,8 @@ export function buildLiveEnv(boot: LiveBoot, view: WorkspaceView) {
     membership: boot.membership || null,
     foundingCircle: boot.foundingCircle || [],
     features: boot.features || { consultGroups: false },
+    // v6: signed photo links by profile id (and "me"), so every disc shows a face once one is uploaded.
+    photos: boot.photos || {},
     account: { admin: !!boot.me?.isAdmin, physician: Number(boot.inbound?.physician || 0), demoSite: !!boot.demo },
     data: {
       people,

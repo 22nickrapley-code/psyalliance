@@ -34,8 +34,8 @@ export default async function SandboxPage(props: { params: Promise<{ token: stri
               <h2>Step into Rachel&rsquo;s practice.</h2>
               <p>
                 The real PsyAlliance workspace, with Rachel Davis&rsquo;s practice and 1,200 fictional colleagues across six Northeast
-                states. You start with nothing waiting: pick something to try and we walk you through it. Nothing is emailed and nothing
-                reaches the real network.
+                states. You start with nothing waiting. Try anything you like, and colleagues get in touch every few minutes. Nothing is emailed and
+                nothing reaches the real network.
               </p>
             </div>
             {error && <div className="banner error" role="alert">{error}</div>}
@@ -66,10 +66,10 @@ export default async function SandboxPage(props: { params: Promise<{ token: stri
                 <div className="eyebrow" style={{ marginBottom: 10 }}>How it works</div>
                 <div className="chapter-list">
                   {[
-                    ["Pick something to try", "The Hub asks what you’d like to try: refer a client, plan cover, ask a question, message a colleague or set your availability."],
-                    ["We take you there", "Each task opens in the right place, with a short note on what to do next."],
+                    ["Start from a calm Hub", "Nothing is waiting when you arrive. Refer a client, plan cover, ask a question or set your availability whenever you like."],
                     ["Your work comes back to you", "A colleague answers what you sent, and it arrives in your Hub’s Actions, just as it would in practice."],
-                    ["Then try something else, or look around", "Do another task, or look around freely: the full story of Rachel’s practice, with colleagues getting in touch as you go."],
+                    ["Colleagues get in touch", "Every few minutes a colleague sends you a referral, a cover request or a question, so you can see both sides."],
+                    ["Watch a demo any time", "Each part of PsyAlliance has a short step-by-step demo. Open them from Settings."],
                   ].map(([t, b], n) => (
                     <div key={t} className="chapter">
                       <div className="chapter-head"><span className="n">{n + 1}</span><h3>{t}</h3></div>

@@ -73,18 +73,12 @@ test.describe("V5-SBX the calmer, guided sandbox", () => {
     await context.close();
   });
 
-  test("V5-SBX-04 a guided task puts the step in the pop-up header and outlines the next thing to use", async ({ browser }) => {
+  test("V5-SBX-04 (v6) the guided tasks are retired: no task panel, and Settings points to the demos", async ({ browser }) => {
     const { context, page } = await enter(browser);
-    await click(page, "guide-start:referral");
-    await page.waitForTimeout(900);
-    await expect(page.locator(".modal-header .guide-step")).toContainText("Trying: Refer a client");
-    await expect(page.locator("#guide-step-text")).toContainText("main need");
-    await expect(page.locator(".guide-target")).toHaveCount(1);
-    await expect(page.locator(".guide-target")).toContainText("Main need");
-    const v = await page.locator(".guide-target select").first().locator("option").nth(1).getAttribute("value");
-    await page.locator(".guide-target select").first().selectOption(v!);
-    await page.waitForTimeout(400);
-    await expect(page.locator("#guide-step-text")).toContainText("See matched colleagues");
+    await expect(page.locator(".guide-panel, .guide-step")).toHaveCount(0);
+    await click(page, "settings");
+    await page.waitForTimeout(500);
+    await expect(page.locator(".modal .sandbox-panel")).toContainText("Watch a demo");
     await context.close();
   });
 

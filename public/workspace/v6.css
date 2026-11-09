@@ -1,0 +1,153 @@
+/* PsyAlliance v6 (Nick's 9 Nov walkthrough). Loads last. */
+
+/* The progress track (Nick, 9 Nov): people and stages on one continuous rail, the same size, evenly spaced. */
+.jt{list-style:none;margin:10px 0 0;padding:0;display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);align-items:start}
+.jt-node{position:relative;display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;min-width:0;padding:0 4px}
+.jt-node::before{content:"";position:absolute;top:17px;left:calc(-50% + 22px);right:calc(50% + 22px);height:2px;border-radius:2px;background:#d9d3c4}
+.jt-node:first-child::before{display:none}
+.jt-node.done::before,.jt-node.current::before{background:var(--feature,#3f6958)}
+.jt-node.current::before{background:linear-gradient(90deg,var(--feature,#3f6958),#d9d3c4)}
+.jt-mark{width:36px;height:36px;display:grid;place-items:center;position:relative;z-index:1}
+.jt-mark .avatar{width:36px;height:36px;font-size:12px;margin:0;box-shadow:0 0 0 3px #fff}
+.jt-av.is-pending .avatar{opacity:.5;filter:grayscale(.4)}
+.jt-dot{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-size:12.5px;font-weight:650;background:#fff;border:2px solid #d9d3c4;color:#8a826f;box-shadow:0 0 0 3px #fff}
+.jt-dot svg{width:15px;height:15px;stroke-width:2.6}
+.jt-stage.done .jt-dot{background:var(--feature,#3f6958);border-color:var(--feature,#3f6958);color:#fff}
+.jt-stage.current .jt-dot{border-color:var(--feature,#3f6958);color:var(--feature,#3f6958);box-shadow:0 0 0 3px #fff,0 0 0 6px var(--feature-pale,#e9efea)}
+.jt-open{width:34px;height:34px;border-radius:50%;border:2px dashed #cfc7b4;display:grid;place-items:center;color:#b3aa95;background:#fff}
+.jt-open svg{width:16px;height:16px}
+.jt-text{display:flex;flex-direction:column;gap:2px;min-width:0}
+.jt-text strong{font-size:13.5px;font-weight:650;color:var(--ink);line-height:1.25}
+.jt-text small{font-size:12px;color:var(--muted);line-height:1.3}
+.jt-stage.current .jt-text strong{color:var(--feature,#3f6958)}
+.jt-person .jt-text small{text-transform:uppercase;letter-spacing:.06em;font-size:10.5px}
+.referral-journey .jt{margin-top:12px}
+.referral-journey{padding-bottom:4px}
+@media(max-width:620px){.jt-text small{display:none}.jt-text strong{font-size:11.5px}.jt-node::before{left:calc(-50% + 19px);right:calc(50% + 19px)}}
+
+/* The need: one collapsible box, the details inside it with bold titles. */
+.need-card{border:1px solid #e4dccb;background:#faf7ef;border-radius:14px;margin:18px 0 0;overflow:hidden}
+.need-card-head{all:unset;box-sizing:border-box;width:100%;display:flex;align-items:center;gap:14px;padding:16px 20px;cursor:pointer}
+.need-card-head:focus-visible{outline:2px solid var(--feature,#3f6958);outline-offset:-2px;border-radius:14px}
+.need-card-title{display:flex;flex-direction:column;gap:3px;min-width:0;flex:1}
+.need-card-title .eyebrow{margin:0;color:#8a7346}
+.need-card-title strong{font-size:17px;font-weight:650;color:var(--ink);line-height:1.3}
+.need-card-title small{font-size:13px;color:var(--muted)}
+.need-card.is-open .need-card-title small{display:none}
+.need-card-chev{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:#fff;border:1px solid #e4dccb;color:#6f6650;flex:0 0 auto}
+.need-card-chev svg{width:16px;height:16px}
+.need-dl{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px 28px;margin:0;padding:4px 20px 18px;border-top:1px solid #ece5d5;padding-top:16px}
+.need-dl div{min-width:0}
+.need-dl dt{font-size:13px;font-weight:700;color:var(--ink);margin:0 0 3px}
+.need-dl dd{margin:0;font-size:14.5px;color:#4d5a53;line-height:1.45}
+
+/* The colleague's message: its own contrasting box. */
+.need-message{margin:12px 0 0;padding:14px 18px;border-radius:12px;background:var(--feature-pale,#e9efea);border-left:4px solid var(--feature,#3f6958)}
+.need-message .eyebrow{margin:0 0 4px;display:block;color:var(--feature,#3f6958)}
+.need-message p{margin:0;font-size:15px;line-height:1.55;color:var(--ink)}
+
+/* What you can do next: one panel, once. */
+.reply-panel{display:flex;gap:14px;align-items:flex-start;margin:18px 0 0;padding:18px 20px;border:1px solid var(--line);border-radius:14px;background:#fff}
+.reply-icon{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;flex:0 0 auto;background:var(--feature-pale,#e9efea);color:var(--feature,#3f6958)}
+.reply-icon svg{width:18px;height:18px}
+.reply-body{flex:1;min-width:0}
+.reply-body h3{margin:0;font-size:16.5px;font-weight:650;color:var(--ink);line-height:1.35}
+.reply-body>p{margin:5px 0 0;font-size:14px;line-height:1.55;color:var(--muted)}
+.reply-actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:14px}
+.reply-panel.is-offered{background:#f4f9f5;border-color:#cfe3d5}
+.reply-panel.is-offered .reply-icon{background:#e1f0e6;color:#2f7d4f}
+.reply-panel.is-confirm{background:#fdf8ec;border-color:#ecdcb4}
+.reply-panel.is-confirm .reply-icon{background:#f6ead0;color:#8a6a1f}
+.reply-panel.is-closed{background:#f6f7f6;border-color:#e2e5e3}
+.reply-panel.is-closed .reply-icon{background:#eceeed;color:#66716b}
+.ask-inline{margin-top:14px;display:flex;flex-direction:column;gap:8px}
+.ask-inline label{font-size:13.5px;font-weight:650;color:var(--ink)}
+.ask-inline textarea{width:100%;box-sizing:border-box;border:1px solid #d9dfd9;border-radius:10px;padding:11px 13px;font:inherit;font-size:14.5px;line-height:1.5;resize:vertical;min-height:84px;background:#fff}
+.ask-inline textarea:focus{outline:2px solid var(--feature,#3f6958);outline-offset:0;border-color:transparent}
+.ask-hint{margin:0;font-size:12.5px;color:var(--muted);display:flex;gap:6px;align-items:center}
+.ask-hint svg{width:13px;height:13px}
+.ask-inline .reply-actions{margin-top:4px}
+
+/* The conversation, in the card. */
+.convo-box{margin:18px 0 0;border:1px solid var(--line);border-radius:14px;background:#fff;padding:16px 18px}
+.convo-box>header{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.convo-box>header .eyebrow{margin:0}
+.convo-new{font-size:11px;font-weight:700;color:#fff;background:#c0392b;border-radius:999px;padding:1px 8px}
+.convo-empty{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.convo-empty p{margin:0;font-size:14px;color:var(--muted)}
+.convo-box .quick-thread{margin:0;padding:0;border:0;background:none}
+.convo-box .quick-msgs{max-height:340px;overflow:auto;padding:4px 2px 10px}
+
+/* Recipient rows: "Reply by" always sits under the name, so long names don't push it onto its own line in some rows only. */
+.response-who{display:flex;flex-wrap:wrap;align-items:center;column-gap:8px;row-gap:2px;min-width:0}
+.response-who .resp-due{flex-basis:100%;margin:0;font-size:12.5px;color:var(--muted)}
+
+/* Agreement record: the middle card centred, the names under each disc set neatly. */
+.handover-visual{align-items:center}
+.handover-visual .hv-card{text-align:center;align-items:center;justify-content:center}
+.handover-visual .hv-card strong{font-size:15.5px}
+.handover-visual .hv-person{width:96px;flex:0 0 96px;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center}
+.handover-visual .hv-person .avatar{width:48px;height:48px;font-size:15px;margin:0}
+.handover-visual .hv-person small{font-size:13px;line-height:1.3;font-weight:600;color:var(--ink);word-break:normal;overflow-wrap:anywhere}
+
+/* Cover: the client's own card footer keeps "Change this client's needs" beside Add recipients. */
+.cover-client-foot-actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.cover-client-card .need-card{margin:12px 0 14px}
+.cover-client-card .need-card-head{padding:12px 16px}
+.cover-client-card .need-card-title strong{font-size:15px}
+
+/* Add recipients (Nick, 9 Nov): the need stays in view, clearly, while you choose. */
+.addrec-context{margin:0 0 16px}
+.addrec-for{margin:0;font-size:14px;color:var(--muted)}
+.addrec-for strong{color:var(--ink)}
+.addrec-context .need-card{margin-top:10px}
+.addrec-asked{display:flex;gap:8px;align-items:flex-start;margin:12px 0 0;padding:10px 14px;border-radius:10px;background:#f6f7f6;font-size:13.5px;line-height:1.5;color:#55615a}
+.addrec-asked svg{width:16px;height:16px;flex:0 0 auto;margin-top:2px}
+.addrec-head{margin:20px 0 0;font-size:15px;font-weight:650;color:var(--ink)}
+
+/* Review your cover plan: room between the invitations summary and "Your message". */
+.outreach-summary{margin-bottom:22px}
+.outreach-summary+.form-grid{margin-top:0}
+.outreach-summary small{display:block;margin-top:4px}
+.handover-lead{margin:0 0 12px;font-size:14px;color:var(--muted)}
+
+/* Hub: snoozed actions are tucked away in one quiet line. */
+.hub-snoozed-line{display:flex;align-items:center;gap:10px;margin:0;padding:12px 4px 0;font-size:13.5px;color:var(--muted);border-top:1px solid var(--line)}
+.hub-snoozed-line svg{width:16px;height:16px;flex:0 0 auto}
+.hub-snoozed-line span{flex:1}
+.hub-group-aside ul{margin-top:8px}
+.snooze-setting{cursor:default}
+.snooze-setting>span{display:block}
+.seg-buttons{display:inline-flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+.seg-buttons button{border:1px solid #d6ddd7;background:#fff;border-radius:999px;padding:6px 14px;font:inherit;font-size:13px;color:var(--ink);cursor:pointer}
+.seg-buttons button.active{background:var(--forest);border-color:var(--forest);color:#fff}
+
+/* Network (Nick, 9 Nov): each column's count sits top right; the Worked with before period moves up under the heading. */
+.relationship-group>header{display:grid!important;grid-template-columns:minmax(0,1fr) auto;column-gap:12px;row-gap:10px;align-items:start}
+.relationship-group>header .net-head{grid-column:1;grid-row:1;min-width:0}
+.relationship-group>header>.badge,.relationship-group>header>.label{grid-column:2;grid-row:1;align-self:start;justify-self:end;margin:2px 0 0}
+.relationship-group>header .net-recency{grid-column:1/-1;grid-row:2;order:0;padding:0;margin:0}
+
+/* Photos in every disc. */
+.avatar.has-photo{overflow:hidden;padding:0;background:#e9efea}
+.avatar.has-photo img{width:100%;height:100%;object-fit:cover;border-radius:50%;display:block}
+
+/* Attach a file: computer, saved items or the Library. */
+.attach-computer{all:unset;box-sizing:border-box;width:100%;display:flex;align-items:center;gap:14px;padding:14px 16px;border:1px solid var(--line);border-radius:12px;background:#fff;cursor:pointer}
+.attach-computer:hover{border-color:#c9d4cc;background:#fafcfa}
+.attach-computer>span{flex:1;display:flex;flex-direction:column;gap:2px}
+.attach-computer strong{font-size:15px;color:var(--ink)}
+.attach-computer small{font-size:13px;color:var(--muted)}
+.attach-group{margin-top:20px}
+.attach-group h3{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:0 0 8px;font-weight:650}
+.attach-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.attach-row{display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#fff}
+.attach-ic{width:32px;height:32px;border-radius:8px;display:grid;place-items:center;background:#f3f1ea;color:#7a6a45;flex:0 0 auto}
+.attach-ic svg{width:16px;height:16px}
+.attach-words{flex:1;min-width:0;display:flex;flex-direction:column}
+.attach-words strong{font-size:14px;color:var(--ink);font-weight:600}
+.attach-words small{font-size:12px;color:var(--muted)}
+.ask-inline textarea,.modal .ask-inline textarea{width:100%!important;max-width:none!important;display:block}
+.convo-box .quick-form textarea{min-height:46px}
+.handover-visual .hv-card{flex:1 1 auto;max-width:300px;gap:4px}
+.modal .handover-lead{font-size:13.5px;line-height:1.5;color:var(--muted)}

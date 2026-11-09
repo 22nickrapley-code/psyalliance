@@ -60,7 +60,7 @@ export default async function DemoStoryPage(props: { searchParams: Promise<{ cha
                     <b>You&rsquo;ve seen the homepage and these short demos.</b>
                   </li>
                   <li>
-                    <b>Create your account.</b> Inside are a demo of every part of PsyAlliance and a guided sandbox, where you try each task yourself with
+                    <b>Create your account.</b> Inside are a demo of every part of PsyAlliance and a sandbox, where you try anything yourself with
                     fictional colleagues. Nothing you do there reaches anyone.
                   </li>
                   <li>
