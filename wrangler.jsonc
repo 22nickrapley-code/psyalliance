@@ -11,6 +11,9 @@
     "directory": ".open-next/assets",
     "binding": "ASSETS"
   },
+  // v7: Workers AI, used only to show voice notes as text (Whisper). Cloudflare
+  // already hosts the site, so the audio stays with the same provider.
+  "ai": { "binding": "AI" },
   // NEXT_PUBLIC_* values are safe to keep here since they're already public
   // in the client bundle. Nothing secret goes in this file - set the same
   // two vars (plus NEXT_PUBLIC_SITE_URL once the domain is live) as
@@ -29,6 +32,7 @@
   "env": {
     "demo": {
       "name": "psyalliance-demo",
+      "ai": { "binding": "AI" },
       "vars": {
         "NEXT_PUBLIC_APP_ENV": "demo"
       }

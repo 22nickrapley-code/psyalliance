@@ -63,7 +63,7 @@ const MOMENTS: { key: string; svc: string; title: string; without: string; with:
   },
   {
     key: "Referrals", svc: "ref", title: "You’re full.",
-    without: "The inquiry goes on a waitlist, or to a name you half remember.",
+    without: "The inquiry goes on a waitlist, to a name you half remember, or to a directory listing you can’t vouch for.",
     with: "The referral is matched to the right colleague by license, focus and insurance, for much better continuity of care for your client.",
     demo: "/tour/client-referral", label: "Watch how Referrals work",
   },
@@ -137,15 +137,14 @@ export default async function HomePage() {
               Your own practice, <em>with a group behind you.</em>
             </h1>
             <p className="v1-lead">
-              Colleagues who cover your clients when you&rsquo;re away, take the referrals you can&rsquo;t, and talk a hard decision through with you. Every member is verified by a person.
+              Colleagues who cover your clients when you&rsquo;re away, take the referrals you can&rsquo;t, and talk a hard decision through with you. Every member is a doctoral-level psychologist or psychiatrist, verified by a person.
             </p>
             <div className="v1-cta">
               <a className="btn lg" href="/auth/sign-up">Create your account</a>
               <a className="btn secondary lg" href="/start">Show me how it could help</a>
             </div>
             <ul className="v1-proof" aria-label="Who it's for">
-              <li><Tick />Doctoral-level only</li>
-              <li><Tick />Every license checked by a person</li>
+              <li><Tick />Built for private practice</li>
               <li><Tick />Co-founded by a licensed psychologist</li>
             </ul>
           </div>
@@ -167,6 +166,21 @@ export default async function HomePage() {
                 <span className="v1-ok">Ready</span>
               </div>
             ))}
+          </div>
+        </section>
+
+        {/* v7 (Nick, 9 Nov): doctoral-level only, said plainly and early. */}
+        <section className="v1-doctoral" aria-label="Who can join">
+          <div className="v1-wrap v1-doctoral-in">
+            <b className="v1-doctoral-lead">Doctoral-level only</b>
+            <ul className="v1-doctoral-creds" aria-label="Qualifications">
+              <li>PhD</li>
+              <li>PsyD</li>
+              <li>EdD</li>
+              <li>MD</li>
+              <li>DO</li>
+            </ul>
+            <span className="v1-doctoral-note">Every license checked against the state board by a person. A network of doctoral peers, not an open directory.</span>
           </div>
         </section>
 

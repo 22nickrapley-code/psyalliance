@@ -41,3 +41,7 @@
   .guide-dialog{margin:12px auto auto;max-height:calc(100dvh - 24px)}
   .guide-dialog form{padding:22px 18px}
 }
+
+/* v7: the Library tile. */
+.guide-needs .need-library{--svc:#7A5C25;--svc-bg:#F6EEDD}
+@media (min-width:761px){.guide-needs>.need-explore{grid-column:1/-1}}

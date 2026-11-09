@@ -46,7 +46,7 @@ export default async function DemoWatch({ params, searchParams }: { params: Prom
               <div>
                 <div className="eyebrow">{length} &middot; fictional people</div>
                 <h1>{d.title}</h1>
-                <p className="lead">{d.blurb} It plays on its own; pause or skip at any time.</p>
+                <p className="lead">{d.blurb} It plays on its own; pause, or step through it yourself.</p>
               </div>
             </div>
             {(() => {
@@ -59,7 +59,7 @@ export default async function DemoWatch({ params, searchParams }: { params: Prom
               return sc ? <Director script={sc} tryHref={tryHref} end={end} /> : <SectionReel demo={j!} tryHref={tryHref} end={end} />;
             })()}
             <h2 className="serif-title demo-next-title">Watch another</h2>
-            <OtherNeeds current={DEMO_NEED(d.key)} ctx={ctx} />
+            <OtherNeeds current={DEMO_NEED(d.key)} ctx={ctx} demo={d.key} />
             <p className="micro-note" style={{ marginTop: 22 }}>
               Everyone and everything in these demos is invented. No real clinicians, clients or outcomes are shown.
             </p>

@@ -3018,3 +3018,16 @@
 /* The founders' story without photographs until launch. */
 .pa.v1 .v1-story.no-photo{grid-template-columns:minmax(0,1fr)}
 .pa.v1 .v1-story.no-photo blockquote{max-width:820px}
+
+/* v7 (Nick, 9 Nov): the demo pages start right under the navigation, with no empty band above "Return to homepage". */
+.pa .public-section.demo-hub{padding-top:22px}
+@media (max-width:760px){.pa .public-section.demo-hub{padding-top:14px}}
+
+/* v7: the doctoral-level strip under the hero. */
+.pa.v1 .v1-doctoral{background:var(--forest,#1E4A3A);color:#fff}
+.pa.v1 .v1-doctoral-in{display:flex;align-items:center;flex-wrap:wrap;gap:12px 22px;padding-top:16px;padding-bottom:16px}
+.pa.v1 .v1-doctoral-lead{font-size:13px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#fff}
+.pa.v1 .v1-doctoral-creds{list-style:none;display:flex;gap:6px;margin:0;padding:0}
+.pa.v1 .v1-doctoral-creds li{padding:3px 10px;border:1px solid rgba(255,255,255,.35);border-radius:999px;font-size:12.5px;font-weight:600;letter-spacing:.04em;color:#fff}
+.pa.v1 .v1-doctoral-note{font-size:14px;line-height:1.45;color:rgba(255,255,255,.86);margin-left:auto;max-width:520px}
+@media (max-width:900px){.pa.v1 .v1-doctoral-note{margin-left:0;max-width:none}}

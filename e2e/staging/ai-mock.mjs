@@ -42,6 +42,15 @@ function answer(tool, text) {
   }
   if (tool === "answer") {
     const q = text.split("QUESTION:\n")[1] || "";
+    // v7: the assistant reads the member's own data. The mock answers from the context it was given, so a test sees the plumbing.
+    let ctx = {};
+    try { ctx = JSON.parse((text.split("CONTEXT:\n")[1] || "").split("\n\nQUESTION:")[0] || "{}"); } catch {}
+    if (/worked with most/i.test(q) && ctx.network?.workedWithBefore?.length) {
+      const w = ctx.network.workedWithBefore[0];
+      return { answer: `${w.name}: ${w.timesWorkedTogether} times, most recently ${w.lastWorkedTogether}.`, sources: [], people: [w.id] };
+    }
+    if (/message most/i.test(q) && ctx.messaging?.length) return { answer: `${ctx.messaging[0].name}, ${ctx.messaging[0].messages} messages.`, sources: [], people: [ctx.messaging[0].id] };
+    if (/top \d|find me/i.test(q) && ctx.candidates?.length) return { answer: ctx.candidates.slice(0, 3).map((c) => `- ${c.name}, ${c.city}`).join("\n"), sources: [], people: ctx.candidates.slice(0, 3).map((c) => c.id) };
     if (/who/i.test(q)) return { answer: "Here is who matches, by PsyAlliance's usual rules.", sources: ["guide:cover"], search: { kind: "cover", ...need(q) } };
     if (/continuity/i.test(q)) return { answer: "Your continuity plan names a backup colleague. Review it once a year.", sources: ["guide:continuity", "made-up:1"] };
     return { answer: "I made this up.", sources: [] };

@@ -76,3 +76,8 @@
 @media (prefers-reduced-motion:reduce){
   .pa .dp-frame-el,.pa .dp-cursor,.pa .dp-caption h3,.pa .dp-caption p{transition:none;animation:none}
 }
+
+/* v7: the chapter, not a person's name, above the step; a clear shield over the screen (the video is watched, not used). */
+.pa .dp-who{font:700 11.5px/1.2 var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--forest)}
+.pa .dp-shield{position:absolute;inset:0;z-index:3;background:transparent;cursor:pointer}
+.pa .dp-cursor,.pa .dp-ripple,.pa .dp-loading,.pa .dp-end{z-index:4}

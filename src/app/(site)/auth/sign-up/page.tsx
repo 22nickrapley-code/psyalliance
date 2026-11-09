@@ -62,8 +62,8 @@ export default async function SignUpPage(props: {
               <div className="eyebrow">Join PsyAlliance</div>
               <h1>Create your account.</h1>
               <p className="lead">
-                For doctoral psychologists and psychiatrists in private practice. Open now in {openText || "the Northeast"}; other states open as colleagues
-                join.
+                For doctoral-level psychologists (PhD, PsyD, EdD) and psychiatrists (MD, DO) in private practice. Open now in {openText || "the Northeast"};
+                other states open as colleagues join.
               </p>
               <ol className="join-steps">
                 <li><b>Create your account</b><span>About two minutes.</span></li>

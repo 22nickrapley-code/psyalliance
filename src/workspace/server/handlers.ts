@@ -4,6 +4,7 @@ import { identifierError } from "@/lib/deidentify";
 import { loadInvite } from "@/lib/invite";
 import { shapeLibrary, resourceKey } from "./library";
 import { LIBRARY_SELECT, isAvailable, isMemberVisible } from "@/lib/library";
+import { transcribeAudio } from "./transcribe";
 
 // Every change the workspace makes goes through one of these. Each runs as
 // the signed-in member (their own session, so row-level security and the
@@ -459,6 +460,19 @@ export const handlers: Record<string, Handler> = {
     const ids = mentionIds(a.mentions);
     if (ids.length && data && !(data as any).duplicate) await ctx.supabase.rpc("mention_notify", { p_kind: "message", p_ref: Number((data as any).dbId), p_ids: ids });
     return { ok: true, data };
+  },
+
+  // v7: a voice note as text, for either person in the conversation (message_file checks that).
+  "message.transcribe": async (ctx, a) => {
+    const id = Number(a.id);
+    if (!Number.isSafeInteger(id) || id <= 0) return bad("That voice note can't be found.");
+    const { data: meta } = await ctx.supabase.rpc("message_file", { p_message: id });
+    const f = meta as { path: string; kind: string } | null;
+    if (!f || f.kind !== "audio") return bad("That voice note can't be found.");
+    const { data: blob, error } = await ctx.supabase.storage.from("message-files").download(f.path);
+    if (error || !blob) return bad("That voice note can't be opened right now.");
+    const out = await transcribeAudio(new Uint8Array(await blob.arrayBuffer()));
+    return out.ok ? { ok: true, data: { text: out.text } } : bad(out.error);
   },
 
   "message.edit": async (ctx, a) => {

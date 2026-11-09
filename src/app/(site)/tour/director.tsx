@@ -24,7 +24,9 @@ import { makeUi, setValue } from "@/workspace/tour/ui";
 // a step left off after a jump, and to check every beat of every script
 // against the product (?check=1, used by the demo tests).
 
-const VIEW = { desktop: { w: 1100, h: 700 }, phone: { w: 390, h: 720 } };
+// v7 (Nick, 9 Nov): the screen is the full desktop product, scaled down, so the demo looks exactly like what a
+// member sees (no squeezed, narrow-window layout).
+const VIEW = { desktop: { w: 1366, h: 860 }, phone: { w: 390, h: 720 } };
 const CANCEL = Symbol("cancel");
 
 type Cursor = { x: number; y: number; ms: number; down: boolean; on: boolean };
@@ -66,6 +68,8 @@ const FRAME_CSS = `
 .pa-demo-hover{outline:3px solid rgba(214,161,56,.9)!important;outline-offset:3px!important;border-radius:10px;transition:outline-color .2s}
 .pa-demo-typing{outline:2px solid rgba(52,87,74,.85)!important;outline-offset:2px!important;caret-color:#34574a}
 html[data-demo] *{scroll-behavior:smooth}
+html[data-demo],html[data-demo] *{scrollbar-width:none!important}
+html[data-demo] ::-webkit-scrollbar{display:none!important;width:0!important;height:0!important}
 `;
 
 export function Director({
@@ -152,13 +156,6 @@ export function Director({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  const untilPlaying = async (id: number) => {
-    while (pausedRef.current) {
-      chk(id);
-      await new Promise((r) => setTimeout(r, 100));
-    }
-    chk(id);
-  };
 
   const docOf = () => {
     try {
@@ -516,17 +513,10 @@ export function Director({
             si < chapters[ci].steps.length;
             si++
           ) {
-            const stepByHand = first && manual;
+            // v7 (Nick, 9 Nov): a step chosen with the arrows starts from its beginning: the words first, then the
+            // screen does exactly what they say. While paused it waits at the start of the step.
             first = false;
-            await runStep(ci, si, id, { fast: stepByHand });
-            if (stepByHand) {
-              // The screen already shows this step's result, so the caption and the picture agree.
-              if (pausedRef.current) await untilPlaying(id);
-              else {
-                const st = chapters[ci].steps[si];
-                await sleep(READ_MS(`${st.title} ${st.text}`) * (phoneRef.current ? 1.3 : 1), id);
-              }
-            }
+            await runStep(ci, si, id);
           }
         }
         // Let the last result be seen before the closing card.
@@ -766,10 +756,7 @@ export function Director({
       <div className="dp-stage">
         <div className="dp-caption" aria-live="polite">
           <span className="dp-who">
-            <span className="dp-initials" aria-hidden="true">
-              RD
-            </span>
-            Rachel Davis <small>fictional</small>
+            {chapter?.name || script.what}
           </span>
           <h3 key={`t${pos.c}.${pos.s}`}>{stepNow?.title}</h3>
           <p key={`p${pos.c}.${pos.s}`}>{stepNow?.text}</p>
@@ -864,6 +851,12 @@ export function Director({
                   />
                 </svg>
               </span>
+              <div
+                className="dp-shield"
+                aria-hidden="true"
+                onClick={() => toggle()}
+                title={playing ? "Pause" : "Play"}
+              />
               {ripple.k > 0 && (
                 <span
                   key={ripple.k}

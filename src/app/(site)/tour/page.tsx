@@ -20,7 +20,7 @@ export default async function DemoStoryPage(props: { searchParams: Promise<{ cha
   if (IS_DEMO_SITE && process.env.NODE_ENV === "production") redirect(REAL_SITE_URL + "/tour");
   const { chapter, ctx } = await props.searchParams;
   // The homepage's "Watch how" links start the story at the part they are about.
-  const startChapter = ({ cover: 0, refer: 1, referrals: 1, consult: 2, messages: 3 } as Record<string, number>)[chapter || ""] || 0;
+  const startChapter = ({ hub: 0, cover: 1, refer: 2, referrals: 2, consult: 3, library: 4 } as Record<string, number>)[chapter || ""] || 0;
   return (
     <div className="pa">
       <PublicNav />
@@ -33,8 +33,8 @@ export default async function DemoStoryPage(props: { searchParams: Promise<{ cha
                 <div className="eyebrow">PsyAlliance in two minutes &middot; fictional people</div>
                 <h1>Your own practice, with a group behind you.</h1>
                 <p className="lead">
-                  Watch it work on the real screens: cover for time away, a referral out, a question to colleagues, and messages that keep each context
-                  apart. It plays on its own; pause or skip at any time, or step through it yourself.
+                  Watch it work on the real screens: your Hub, cover for time away, a referral, a question to colleagues and the Library. It plays on
+                  its own; pause, or step through it yourself.
                 </p>
               </div>
             </div>
@@ -49,7 +49,7 @@ export default async function DemoStoryPage(props: { searchParams: Promise<{ cha
               }}
             />
             <h2 className="serif-title demo-next-title">Watch another</h2>
-            <OtherNeeds current="explore" ctx={ctx} />
+            <OtherNeeds current="explore" ctx={ctx} demo="overview" />
             {/* What happens next, in order (Nick, 18 Oct). */}
             <section className="card demo-join">
               <div>

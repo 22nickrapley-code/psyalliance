@@ -1,0 +1,136 @@
+/* PsyAlliance v7 (Nick's 9 Nov walkthrough, second pass). Loaded last. */
+
+/* Hub: each service card carries its own availability as a footer band, so action and availability read as one unit. */
+.hub-page .hub-services{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin:0 0 10px;align-items:stretch}
+.hub-svc{display:flex;flex-direction:column;min-width:0;background:#fff;border:1px solid var(--line);border-radius:var(--r-card,14px);overflow:hidden;transition:border-color .15s,box-shadow .15s}
+.hub-svc:has(>.hub-card:hover){border-color:color-mix(in srgb,var(--feature) 45%,var(--line));box-shadow:0 6px 18px -10px #203b3233}
+.hub-svc>.hub-card{flex:1 1 auto;border:0!important;border-radius:0!important;box-shadow:none!important;background:transparent;min-height:0}
+.hub-svc>.hub-card:hover{box-shadow:none}
+.hub-svc>.hub-card:focus-visible{outline:2px solid var(--feature);outline-offset:-4px;border-radius:12px!important}
+.hub-svc-av{display:grid;gap:6px;padding:10px 12px 12px;border-top:1px solid color-mix(in srgb,var(--feature) 16%,var(--line));background:color-mix(in srgb,var(--feature) 5%,#fff)}
+.hub-svc-seg{display:flex;gap:3px;padding:3px;background:#fff;border:1px solid color-mix(in srgb,var(--feature) 18%,var(--line));border-radius:11px}
+.hub-svc-seg button{all:unset;box-sizing:border-box;flex:1 1 auto;display:flex;align-items:center;justify-content:center;min-height:32px;padding:5px 6px;border-radius:8px;font-size:12.5px;line-height:1.2;font-weight:560;color:#4A534D;text-align:center;white-space:nowrap;cursor:pointer;transition:background .12s,color .12s}
+.hub-svc-seg button:hover{background:color-mix(in srgb,var(--feature) 8%,#fff);color:var(--ink)}
+.hub-svc-seg button:focus-visible{outline:2px solid var(--feature);outline-offset:1px}
+.hub-svc-seg button[aria-pressed="true"]{background:var(--feature);color:#fff;font-weight:650;box-shadow:0 1px 2px #0002}
+.hub-svc-seg button[aria-pressed="true"].tone-some{background:#8A6526}
+.hub-svc-seg button[aria-pressed="true"].tone-stop{background:#7A3428}
+.hub-svc-paused{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;color:#7A3428}
+.hub-svc-paused svg{width:14px;height:14px}
+.hub-svc-av.is-paused .hub-svc-seg{opacity:.75}
+.hub-av-line{display:flex;align-items:center;flex-wrap:wrap;gap:4px 10px;margin:0 2px 20px;font-size:13px;color:var(--muted,#5b6b61)}
+.hub-av-line strong{font-size:13px;font-weight:650;color:var(--ink)}
+.hub-av-line>span::before{content:"·";margin-right:10px;color:#9aa69e}
+.hub-av-line .button{margin-left:auto}
+@media (max-width:1100px) and (min-width:761px){.hub-svc-seg button{font-size:11.5px;padding:5px 3px}}
+@media (max-width:760px){
+  .hub-page .hub-services{grid-template-columns:1fr;gap:10px}
+  .hub-svc-seg button{min-height:40px;font-size:13px}
+  .hub-av-line{margin-bottom:14px}
+  .hub-av-line .button{margin-left:0}
+}
+
+/* Hub actions: the whole row opens the item; no Collapse button, a tighter panel. */
+.hub-row.is-clickable{cursor:pointer;border-radius:10px;transition:background .12s}
+.hub-row.is-clickable:hover{background:#F5F8F5}
+.hub-row.is-clickable:hover .hub-row-text strong{text-decoration:underline;text-underline-offset:3px;text-decoration-color:#9fb3a7}
+.hub-attn-panel{padding-bottom:6px!important}
+.hub-attn-panel .hub-group:last-child{margin-bottom:0}
+
+/* Empty list columns read the same on Cover and Referrals. */
+.split-lists .panel .no-results{text-align:center}
+
+/* Cover, choosing colleagues: a client with nobody chosen asks for action in red; chosen counts in green. */
+.client-match-tabs b.is-needed{color:#B23A28!important;font-weight:700}
+.client-match-tabs b.is-set{color:#1E6B47!important;font-weight:650}
+.client-match-tabs button.active b.is-needed{color:#B23A28!important}
+
+/* Cover plan, a client's responses: the active invitation stands out; colleagues not yet asked are quiet. */
+.resp-set{display:grid;gap:8px}
+.resp-set.st-awaiting>.resp-group::before,.resp-set.st-interested>.resp-group::before,.resp-set.st-discussing>.resp-group::before,.resp-set.st-confirming>.resp-group::before{content:"";display:inline-block;width:7px;height:7px;margin-right:7px;border-radius:50%;background:#D9A441;vertical-align:2px}
+.resp-set.st-interested>.resp-group::before,.resp-set.st-confirming>.resp-group::before{background:#1E6B47}
+.response-row.st-queued,.response-row.st-expired,.response-row.st-closed{background:#FAFAF8}
+.response-row.st-queued .response-who,.response-row.st-queued .response-who *,.response-row.st-expired .response-who *,.response-row.st-closed .response-who *{color:#8A948D!important}
+.response-row.st-queued .avatar,.response-row.st-expired .avatar,.response-row.st-closed .avatar{filter:grayscale(1);opacity:.55}
+.response-row.st-queued .resp-pill,.response-row.st-queued .order-index{opacity:.7}
+.resp-set.st-queued>.resp-group,.resp-set.st-expired>.resp-group,.resp-set.st-closed>.resp-group{color:#8A948D}
+
+/* Record cover agreed: each disc sits centred over its name. */
+.handover-visual .hv-person{align-items:center!important;justify-content:flex-start}
+.handover-visual .hv-person .avatar{margin:0 auto!important}
+.handover-visual .hv-person small{display:block;width:100%;text-align:center!important}
+
+/* The plan overview: room between the progress line and Needs from you. */
+.jt+.needs-box{margin-top:28px}
+
+/* Network: the three column headers share one height, so the lists start level. */
+@media (min-width:1100px){
+  .relationship-groups{grid-template-rows:auto auto auto;align-items:stretch}
+  .relationship-group{display:grid!important;grid-row:span 3;grid-template-rows:subgrid;row-gap:0}
+  .relationship-group>header{align-content:start}
+  .relationship-group>.net-list{align-content:start;align-self:start}
+  .relationship-group>.net-empty{align-self:start}
+}
+
+/* Cover clients: rename a client; flag what an import didn't give. */
+.client-title{display:flex;align-items:center;gap:6px}
+.client-title .client-rename{width:30px;height:30px;min-height:30px;padding:0;border-radius:8px;color:var(--muted,#5b6b61)}
+.client-title .client-rename svg{width:15px;height:15px}
+.client-entry-head .client-rename-field,.client-rename-field{display:grid!important;grid-template-columns:minmax(0,1fr)!important;gap:6px;min-width:0;flex:1 1 280px;max-width:420px}
+.client-rename-field label{font-size:13px;font-weight:650;color:var(--ink)}
+.client-rename-field input{font:inherit;font-size:16px;font-weight:650;padding:8px 10px;border:1px solid #C9D3CC;border-radius:10px}
+.client-rename-field small{display:flex;gap:6px;align-items:flex-start;font-size:12.5px;line-height:1.4;color:#7A5C25}
+.client-rename-field small svg{flex:none;width:14px;height:14px;margin-top:2px}
+.cdisc.needs-fix small{color:#B23A28;font-weight:600}
+.import-gaps,.import-note{display:flex;gap:8px;align-items:flex-start;margin:10px 0 0;font-size:13.5px;line-height:1.45}
+.import-gaps{color:#8F2F22}
+.import-note{color:#3F5B4C}
+.import-gaps svg,.import-note svg{flex:none;width:16px;height:16px;margin-top:2px}
+
+/* Import caseload from a spreadsheet (replaces the AI box in Plan cover). */
+.import-panel{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:14px;margin:0 0 20px;padding:14px 16px;border:1px solid #D8E3DC;border-radius:14px;background:linear-gradient(180deg,#F8FBF9,#F3F8F5)}
+.import-mark{display:grid;place-items:center;width:40px;height:40px;border-radius:10px;background:#E3EEE7;color:#1E5A3F}
+.import-mark svg{width:20px;height:20px}
+.import-copy{display:grid;gap:3px;min-width:0}
+.import-copy strong{font-size:15px;color:var(--ink)}
+.import-copy small{font-size:12.5px;line-height:1.45;color:#5b6b61;max-width:62ch}
+.import-actions{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+.import-panel.is-compact{margin-top:4px}
+@media (max-width:760px){.import-panel{grid-template-columns:auto minmax(0,1fr)}.import-actions{grid-column:1/-1;flex-direction:row;align-items:center;justify-content:space-between}}
+
+/* Conversations inside a card: attach and voice notes, as in Messages. */
+.quick-form{display:grid!important;gap:6px;align-items:stretch}
+.quick-compose{display:flex;align-items:flex-end;gap:6px;min-width:0}
+.quick-compose textarea{flex:1 1 auto;min-width:0;min-height:44px;border:1px solid #D9D1C0;border-radius:10px;padding:10px 12px;font:inherit;resize:vertical;background:#fff}
+.quick-compose .quick-tool{flex:none;width:38px;height:38px;min-height:38px;border-radius:10px;margin-bottom:3px;color:#4A534D}
+.quick-compose .quick-tool:hover{background:#F1F4F1;color:var(--ink)}
+.quick-compose .quick-tool svg{width:18px;height:18px}
+.quick-compose>.button{flex:none;margin-bottom:3px}
+.quick-draft .draft-attachment{display:inline-flex;align-items:center;gap:8px;max-width:100%;padding:5px 6px 5px 10px;border:1px solid #D8E3DC;border-radius:9px;background:#F6FAF7;font-size:13px}
+.quick-draft .draft-attachment>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.quick-draft .draft-attachment svg{width:15px;height:15px;flex:none}
+.quick-draft .icon-button{width:26px;height:26px;min-height:26px}
+.quick-form.is-recording .quick-compose,.quick-form.has-audio .quick-compose{align-items:center;padding:6px;border:1px solid #E7D7C2;border-radius:12px;background:#FFFBF4}
+.quick-form .recording{flex:1;display:flex;align-items:center;gap:8px;font-size:13.5px;color:#7A3428}
+.quick-form .recording-dot{width:9px;height:9px;border-radius:50%;background:#C0503E;animation:paPulse 1.2s ease-in-out infinite}
+.quick-form .record-preview{flex:1;min-width:0}
+.quick-form .record-preview audio{width:100%;height:36px}
+@keyframes paPulse{50%{opacity:.35}}
+
+/* Voice notes as text. */
+.note-text-toggle{font-size:inherit!important;padding:0!important;min-height:0!important}
+.note-transcript{margin:6px 0 0;padding:8px 10px;border-left:3px solid #CFE0D6;background:#F6FAF7;border-radius:0 8px 8px 0;font-size:13.5px;line-height:1.5;white-space:pre-wrap}
+.message-group.outgoing .note-transcript{background:#ffffff26;border-left-color:#ffffff66}
+
+/* Ask PsyAlliance: lists, the colleagues it names, and places to open. */
+.hub-ask-answer .hub-ask-list{margin:0;padding-left:18px;display:grid;gap:3px}
+.hub-ask-people{list-style:none;margin:2px 0 0;padding:0;display:grid;gap:6px}
+.hub-ask-people li{display:flex;align-items:center;gap:10px;padding:6px 8px;border:1px solid #E4EBE6;border-radius:10px;background:#fff}
+.hub-ask-people li>span:not(.avatar){flex:1;min-width:0;display:grid}
+.hub-ask-people li>.avatar{flex:none}
+.hub-ask-people li small{font-size:12px;color:#5b6b61}
+.hub-ask-sources{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.hub-ask-sources>span{font-size:12.5px;color:#5b6b61}
+.hub-ask-src{all:unset;display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border:1px solid #D8E3DC;border-radius:999px;background:#fff;font-size:12.5px;font-weight:600;color:var(--forest,#1E4A3A);cursor:pointer}
+.hub-ask-src:hover{background:#F2F7F4}
+.hub-ask-src svg{width:12px;height:12px}

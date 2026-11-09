@@ -2,8 +2,10 @@ import type { DemoChapter, DemoScript } from "@/tour/scripts";
 
 // The scripted demos, one for each part of the product a member can open:
 // Cover, Referrals, Consult, Network, Messages, Library, the Hub and
-// Availability. Each is a walk through the real screens. Keep the facts here
-// identical to the fictional sample data (Rachel Davis and her colleagues).
+// Availability, and one for each job on the public site. Each is a walk through
+// the real screens. Keep the facts here identical to the fictional sample data.
+// v7 (Nick, 9 Nov): every caption says "you", says what is about to happen, and
+// the screen then does exactly that and finishes it.
 
 const COVER: DemoScript = {
   key: "cover",
@@ -18,14 +20,15 @@ const COVER: DemoScript = {
       view: "cover",
       steps: [
         {
-          title: "You need time away",
-          text: "Parental leave is coming. Covering your clients starts here, on the Cover page.",
-          beats: [["click", '[data-action="cover-start"]']],
+          title: "Start a cover plan",
+          text: "Your plans sit on the left of the Cover page, and colleagues’ requests on the right. Press Plan cover to start.",
+          beats: [["look", ".split-lists"], ["click", '[data-action="cover-start"]']],
         },
         {
           title: "Say what kind of cover you need",
-          text: "Choose the kind of absence and name the plan. The states start from where you are licensed; add another if a client is elsewhere.",
+          text: "Choose the kind of absence and name the plan, then add any state where a client lives. You could also import your whole caseload from a spreadsheet.",
           beats: [
+            ["look", ".import-panel"],
             ["tick", 'input[name="reason"][value="extended"]'],
             ["type", "#cover-name", "Parental leave"],
             ["click", ".state-picker summary"],
@@ -35,7 +38,7 @@ const COVER: DemoScript = {
         },
         {
           title: "Each client, described by need",
-          text: "Focus, state, age group and setting. Never a name or anything that identifies someone. Add as many clients as you have.",
+          text: "Add each client by need: focus, state, age group and setting. Never a name. Here, three clients are saved one after another.",
           beats: [
             ["choose", "#cover-focus", "Anxiety/Panic Disorders"],
             ["choose", "#cover-age", "Adults"],
@@ -44,71 +47,72 @@ const COVER: DemoScript = {
             ["choose", "#cover-state", "NY"],
             ["click", "text=Save & add another"],
             ["choose", "#cover-focus", "Depression"],
-            ["tick", 'input[name="prescribing"]'],
             ["click", "text=Save client"],
+            ["look", ".client-discs"],
           ],
         },
         {
-          title: "Colleagues who fit, with the reasons",
-          text: "Only colleagues who match each need are offered, and every match says why. Tick the people you want to ask.",
+          title: "The best colleagues, already chosen",
+          text: "Continue, and up to two of the best matches are chosen for each client, with the reasons they fit. Switch clients on the left to check each one.",
           beats: [
             ["click", '[data-action="needs-continue"]'],
             ["look", ".match-list"],
-            ["tick", 'input[value="maya"]'],
+            ["click", '[data-action="match-client:2"]'],
+            ["look", ".client-match-tabs"],
           ],
         },
         {
-          title: "Reviewed before anything is sent",
-          text: "You see exactly who is asked, in what order and by when. Nothing goes out until you tick that you have checked it.",
+          title: "Reviewed, then sent",
+          text: "Review exactly who is asked and by when. Tick that you have checked it, and send. Nothing goes out before that.",
           beats: [
             ["click", '[data-action="cover-review"]'],
             ["choose", "#cover-deadline", "24"],
             ["tick", 'input[name="reviewed"]'],
             ["click", "text=Send cover requests"],
           ],
+          hold: 1,
         },
       ],
     },
     {
-      name: "See where each client stands",
+      name: "Where each client stands",
       view: "cover",
+      macro: "cover-plan",
       steps: [
         {
           title: "One picture of every client",
-          text: "Open a plan and the journey bar shows where you are: asked, interested, chosen, handover. Each client is a disc showing where they stand.",
-          beats: [
-            ["click", ".arrangement-row"],
-            ["look", ".journey-bar"],
-            ["look", ".cdisc-row"],
-          ],
+          text: "Open a plan. The line at the top shows asked, interested, chosen and handover, and Needs from you lists anything waiting on you.",
+          beats: [["look", ".jt"], ["look", ".needs-box"], ["look", ".cdisc-row"]],
         },
         {
-          title: "Agreed is not the same as ready",
-          text: "A colleague saying yes is not a finished handover. You confirm each one yourself: contact, a short summary, and the client told.",
+          title: "Agreed, then ready",
+          text: "A colleague saying yes is not a finished handover. Confirm each one yourself once contact, a summary and the client are sorted.",
           beats: [
-            ["look", ".needs-box"],
             ["click", '[data-action="handover:1:2"]'],
             ["tick", 'input[name="contact"]'],
             ["tick", 'input[name="summary"]'],
             ["tick", 'input[name="client"]'],
-            ["click", "text=Mark handover ready"],
+            ["click", "text=Confirm handover"],
           ],
+          hold: 1,
         },
       ],
     },
     {
       name: "When a colleague asks you",
       view: "cover",
+      macro: "cover-incoming",
       steps: [
         {
           title: "A colleague asks you for cover",
-          text: "Cover works both ways. Their request arrives with what the client needs and when, and you answer in one place.",
-          beats: [["click", ".arrangement-row.row-reply"], ["look", ".needs-box"]],
+          text: "Their request opens with the need in one box and their message below it, so you can decide quickly.",
+          beats: [["look", ".modal .need-card"], ["look", ".modal .need-message"]],
         },
         {
-          title: "Offer, or ask first",
-          text: "Say you are interested, ask a question first, or say you are not available. The colleague who asked chooses who covers.",
-          beats: [["click", '[data-action^="cover-answer:4:1:interested"]']],
+          title: "Say you can cover",
+          text: "Press I can cover. The colleague who asked chooses who covers, and you hear either way.",
+          beats: [["click", '[data-action^="cover-answer:4:1:interested"]'], ["look", ".modal .reply-panel"]],
+          hold: 1,
         },
       ],
     },
@@ -120,7 +124,7 @@ const REFER: DemoScript = {
   key: "refer",
   title: "Refer a client",
   what: "Referrals",
-  blurb: "Describe the need, see who fits and why, choose who is asked, then choose from the colleagues who are interested.",
+  blurb: "Describe the need, see who fits and why, choose who is asked, then choose from the colleagues who can accept.",
   outcome: "The right colleague, chosen by you, with their current capacity confirmed.",
   tryHref: "/tour/refer/need",
   chapters: [
@@ -130,12 +134,12 @@ const REFER: DemoScript = {
       steps: [
         {
           title: "A client you can’t take",
-          text: "Start on the Referrals page. You describe what the client needs and where they are, never who they are.",
-          beats: [["click", '[data-action="referral-start"]']],
+          text: "Referrals you send sit on the left, and referrals sent to you on the right. Press Refer a client to start.",
+          beats: [["look", ".split-lists"], ["click", '[data-action="referral-start"]']],
         },
         {
           title: "The need, and the place",
-          text: "The main need and the state are enough. Setting, age group, language and a prescriber narrow the search if you need them to.",
+          text: "Choose the main need and the state the client is in. Everything else only narrows the search. Then see who fits.",
           beats: [
             ["choose", "#referral-focus", "Anxiety/Panic Disorders"],
             ["choose", "#referral-state", "NY"],
@@ -144,23 +148,20 @@ const REFER: DemoScript = {
         },
         {
           title: "A shortlist that explains itself",
-          text: "Only colleagues who fit are offered, each with the reasons: licensed in the state, works with this need, accepting referrals now. Up to three are chosen to start, and you can change them.",
-          beats: [
-            ["look", '[data-action="match-profile:rena"]'],
-            ["look", ".match-list"],
-            ["click", '[data-action="referral-review"]'],
-          ],
+          text: "Only colleagues who fit are offered, each with the reasons. The best are chosen to start; change them if you like, then review.",
+          beats: [["look", ".match-list"], ["click", '[data-action="referral-review"]']],
         },
         {
           title: "Exactly who receives it",
-          text: "Send it to the colleagues you chose, to your trusted colleagues, or to the verified network. Say when the client needs to start, and confirm nothing identifies them.",
+          text: "Choose who receives it, say when the client needs to start, add a note, and confirm nothing identifies them. Then send.",
           beats: [
             ["tick", 'input[name="audience"][value="selected"]'],
             ["choose", "#timeframe", "Within two weeks"],
-            ["type", "#referral-message", "Evening availability would help. A calm, steady approach."],
+            ["type", "#referral-message", "Evening availability would help."],
             ["tick", 'input[name="reviewed"]'],
             ["click", "text=Send referral"],
           ],
+          hold: 1,
         },
       ],
     },
@@ -171,13 +172,14 @@ const REFER: DemoScript = {
       steps: [
         {
           title: "Where the referral stands",
-          text: "Asked, interested, placed. Replies arrive here, and you are told as soon as a colleague answers. Nothing is placed until you choose.",
-          beats: [["look", ".modal [class*=progress], .modal [class*=track], .modal h1, .modal h2"], ["look", '[data-action="referral-quick:1:maya"]']],
+          text: "The line runs from you to the colleague who takes the client. Replies arrive in the card, and nothing is agreed until you choose.",
+          beats: [["look", ".modal .jt"], ["look", '.modal [data-action^="referral-choose:1:"]']],
         },
         {
-          title: "Interest is not a placement",
-          text: "Talk with any colleague who can accept it. When you have decided, record the agreement. The others are told it has been placed.",
-          beats: [["click", '[data-action="referral-choose:1:maya"]'], ["look", "text=Referral agreed"], ["click", "text=Referral agreed"]],
+          title: "Agree the referral",
+          text: "Choose the colleague who can accept, check the record, and agree. Everyone else asked is thanked and told.",
+          beats: [["click", '[data-action^="referral-choose:1:"]'], ["look", ".modal .hv-card"], ["click", ".modal-footer .button.primary"]],
+          hold: 1,
         },
       ],
     },
@@ -188,13 +190,14 @@ const REFER: DemoScript = {
       steps: [
         {
           title: "A colleague asks you",
-          text: "Eli has a client who needs someone soon. You see the need and the setting, and you answer: interested, discuss first, or not available.",
-          beats: [["look", '[data-action="referral-answer:3:interested"]'], ["click", '[data-action="referral-answer:3:interested"]']],
+          text: "The need is in one box and the colleague’s message below it. Answer that you can accept, ask a question first, or say you can’t.",
+          beats: [["look", ".modal .need-card"], ["click", '[data-action="referral-answer:3:interested"]']],
         },
         {
-          title: "Confirm your capacity first",
-          text: "Before saying you are interested you confirm you have capacity now. It does not reserve a place; only the referring colleague chooses.",
+          title: "Confirm your capacity",
+          text: "Tick that you have room now and confirm. It doesn’t reserve a place: the colleague who referred chooses.",
           beats: [["tick", 'input[name="capacity"]'], ["click", "text=Confirm, I can accept this referral"]],
+          hold: 1,
         },
       ],
     },
@@ -205,71 +208,62 @@ const CONSULT: DemoScript = {
   key: "consult",
   title: "Ask colleagues a question",
   what: "Consult",
-  blurb: "Find a discussion by topic, read and mark the replies, then ask your own question to the people you choose.",
+  blurb: "Ask a question of the people you choose, then read, mark and reply to the answers.",
   outcome: "Answers from named, verified colleagues, shared only with the people you chose.",
   tryHref: "/tour/consult/list",
   chapters: [
     {
-      name: "Find a discussion",
-      view: "consult",
-      steps: [
-        {
-          title: "Questions from your colleagues",
-          text: "The questions you can see: ones you asked, ones you follow, and ones shared with you. Every one is labelled with its topic.",
-          beats: [["look", "#consult-results"]],
-        },
-        {
-          title: "Filter by topic, or search",
-          text: "Narrow the list to clinical practice, resources or professional life. Search finds a title, a colleague, a tag, or a word from a reply.",
-          beats: [
-            ["click", '[data-action="consult-topic:Professional life"]'],
-            ["click", '[data-action="consult-topic:"]'],
-            ["type", "#consult-search", "burnout"],
-          ],
-        },
-        {
-          title: "Read the replies",
-          text: "Replies come from named colleagues, newest first. Mark what helped (only you see that), and reply yourself.",
-          beats: [
-            ["click", '[data-action="discussion:1"]'],
-            ["look", "#reply-d1-reply-0"],
-            ["click", '[data-action="useful:1:d1-reply-0"]'],
-          ],
-        },
-        {
-          title: "Reply, and ask a clarifying question",
-          text: "Add your perspective. If you need to know more before you can help, tick that this is a clarifying question, so the author sees it as one.",
-          beats: [
-            ["type", "#discussion-reply", "I found a fixed weekly hour with no clients booked helped most. Do you have one?"],
-            ["tick", 'input[name="clarifying"]'],
-            ["click", "text=Post reply"],
-          ],
-        },
-      ],
-    },
-    {
-      name: "Ask your own question",
+      name: "Ask your question",
       view: "consult",
       steps: [
         {
           title: "A focused question",
-          text: "A short title and a little context. Nothing that identifies a client, and you confirm that before it can be posted.",
+          text: "Press Ask a question. Give it a short title and a little context, without anything that identifies a client.",
           beats: [
             ["click", '[data-action="peer-start"]'],
             ["type", "#peer-title", "How do you end therapy when a client is moving away?"],
-            ["type", "#peer-body", "A long-term client is relocating abroad in the spring. I would like to plan the last sessions well."],
+            ["type", "#peer-body", "A long-term client is relocating in the spring. I would like to plan the last sessions well."],
           ],
         },
         {
           title: "You choose who sees it",
-          text: "Your trusted colleagues, one person, a few people you pick, one of your groups, or the verified network. You see exactly who can read and reply.",
+          text: "Pick the colleagues who may read and reply: here, two trusted colleagues. Then review the question before it is posted.",
           beats: [
             ["tick", 'input[name="audience"][value="few"]'],
             ["tick", 'input[name="recipients"][value="rena"]'],
             ["tick", 'input[name="recipients"][value="maya"]'],
-            ["tick", 'input[name="reviewed"]'],
             ["click", "text=Review before posting"],
           ],
+          hold: 1,
+        },
+      ],
+    },
+    {
+      name: "Read and reply",
+      view: "consult",
+      steps: [
+        {
+          title: "Questions from your colleagues",
+          text: "Every question you can see is listed with its topic. Filter by topic, or search for a word you remember.",
+          beats: [
+            ["look", "#consult-results"],
+            ["click", '[data-action="consult-topic:Professional life"]'],
+            ["click", '[data-action="consult-topic:"]'],
+          ],
+        },
+        {
+          title: "Read the replies",
+          text: "Open a discussion. Replies come from named colleagues; mark the one that helped. Only you see that.",
+          beats: [["click", '[data-action="discussion:1"]'], ["look", "#reply-d1-reply-0"], ["click", '[data-action="useful:1:d1-reply-0"]']],
+        },
+        {
+          title: "Add your reply",
+          text: "Write your perspective and post it. The person who asked is told straight away.",
+          beats: [
+            ["type", "#discussion-reply", "A fixed weekly hour with no clients booked helped me most."],
+            ["click", "text=Post reply"],
+          ],
+          hold: 1,
         },
       ],
     },
@@ -368,44 +362,37 @@ const HUB: DemoScript = {
   key: "hub",
   title: "Your day on the Hub",
   what: "Hub",
-  blurb: "A calm start: one list of what needs you, three places to start something, and a small invitation to grow your circle.",
+  blurb: "A calm start: what needs you, three places to start something, and your availability in one click.",
   outcome: "You know what is waiting and where to start.",
   tryHref: "/tour/circle/home",
   chapters: [
     {
-      name: "What needs you",
+      name: "The Hub",
       view: "home",
       steps: [
         {
           title: "A calm start to the day",
           text: "Your greeting sits at the top. One line says how many things need you, and three cards below start a referral, plan cover or ask a question.",
-          beats: [["look", ".breadcrumbs strong, .hub-hello"], ["look", ".hub-attn-toggle"], ["look", ".hub-cards"]],
+          beats: [["look", ".hub-hello"], ["look", ".hub-attn-toggle"], ["look", ".hub-services"]],
         },
         {
           title: "Everything that needs you, in one list",
-          text: "Open the list to see every request and task waiting for you, grouped by Referrals, Cover and Consult. Choose Later to set one aside. It comes back if anything new happens.",
-          beats: [["click", ".hub-attn-toggle"], ["look", ".hub-attn-panel"]],
+          text: "Open the list to see every request and task waiting for you, grouped by Referrals, Cover and Consult. Click any line to open it. Close the list when you’re done.",
+          beats: [["click", ".hub-attn-toggle"], ["look", ".hub-attn-panel .hub-group"], ["look", ".hub-row.is-clickable"], ["click", ".hub-attn-toggle"]],
+        },
+        {
+          title: "Your availability, one click away",
+          text: "Under each card, say whether you are taking referrals, can cover and are open to questions. Here, referrals change to Selected only, then back.",
+          beats: [
+            ["click", '[data-action="hub-av:referrals:limited"]'],
+            ["look", ".hub-av-line"],
+            ["click", '[data-action="hub-av:referrals:yes"]'],
+          ],
         },
         {
           title: "Start anything from here",
-          text: "Refer a client, plan cover or ask a question. Each card opens its own window and nothing is sent until you say so.",
-          beats: [["look", '[data-action="referral-start"]'], ["look", '[data-action="cover-start"]'], ["look", '[data-action="peer-start"]']],
-        },
-      ],
-    },
-    {
-      name: "Your circle and your availability",
-      view: "home",
-      steps: [
-        {
-          title: "Questions you could help with",
-          text: "Recent questions that match your interests can appear in their own group, never in the count. You can turn this off in your notification preferences.",
-          beats: [["look", ".hub-attn-toggle"]],
-        },
-        {
-          title: "Grow your circle",
-          text: "A card at the bottom invites a colleague you know. A bigger circle makes every other part more useful.",
-          beats: [["scroll", ".hub-invite-card"], ["look", ".hub-invite-card"]],
+          text: "Press a card to start: here, Refer a client. Nothing is sent until you say so. Close it, and you are back on the Hub.",
+          beats: [["click", '[data-action="referral-start"]'], ["look", ".modal #referral-focus"], ["do", "close-modal"], ["look", ".hub-services"]],
         },
       ],
     },
@@ -485,7 +472,7 @@ const LIBRARY: DemoScript = {
   key: "library",
   title: "Find the right template",
   what: "Library",
-  blurb: "Planning leave: search the Library, see what is inside a template, and save it.",
+  blurb: "Templates and guides for the parts of practice that are easy to put off: leave, closing, continuity. Search, check what is inside, and keep a copy.",
   outcome: "The right template, in the moment you need it.",
   tryHref: "/tour/library/search",
   chapters: [
@@ -495,18 +482,24 @@ const LIBRARY: DemoScript = {
       steps: [
         {
           title: "Search for what you need",
-          text: "Search the Library or filter by category. Each resource sits beside the work it supports.",
+          text: "Type what you need into the Library search: here, leave. Templates and guides that match appear straight away.",
           beats: [["type", "#resource-search", "leave"], ["look", "#library-results"]],
         },
         {
           title: "What is inside",
-          text: "Before you open it: what is inside, and what to check before you use it. Templates are adapted to your state and practice.",
+          text: "Open a template to see what is inside and what to check before you use it, before you download anything.",
           beats: [["click", '[data-action="resource:102"]'], ["look", ".modal h2"]],
         },
         {
           title: "Open it, download it, keep a copy",
-          text: "Open the PDF, download it, or save a copy to My Files, where it goes in your PsyAlliance documents folder, private to you.",
-          beats: [["look", ".modal .before-use"], ["do", "close-modal"]],
+          text: "Open the PDF, or download it to adapt to your practice. Close it, and you are back in the Library.",
+          beats: [["look", ".modal .before-use"], ["look", ".modal-footer"], ["do", "close-modal"], ["look", "#library-results"]],
+        },
+        {
+          title: "The things that are easy to put off",
+          text: "A professional will is one many clinicians mean to write. Search for it, and the template and its steps are ready when you are.",
+          beats: [["type", "#resource-search", "will"], ["look", "#library-results"]],
+          hold: 1,
         },
       ],
     },
@@ -551,22 +544,134 @@ const AVAILABILITY: DemoScript = {
   ],
 };
 
-// The public "PsyAlliance in two minutes": the best of the longer demos, in one run.
+// The public demos (v7, Nick 9 Nov): one per job a member comes for, built from the same steps as the in-app demos,
+// so every demo shows the product exactly as it is. "Just explore" is the whole story in about two minutes.
 const pick = (s: DemoScript, c: number, steps: number[], name: string): DemoChapter => ({ ...s.chapters[c], name, steps: steps.map((i) => s.chapters[c].steps[i]) });
 const OVERVIEW: DemoScript = {
   key: "overview",
   title: "PsyAlliance in two minutes",
   what: "PsyAlliance",
-  blurb: "From starting out to winding down: set your availability, arrange cover, refer a client, ask a colleague, and keep each conversation with its context.",
+  blurb: "The Hub, cover for time away, a referral, a question to colleagues, and the Library, on the real screens.",
   outcome: "Your own practice, with a group behind you.",
   tryHref: "/join",
   chapters: [
+    pick(HUB, 0, [0, 1], "The Hub"),
     pick(COVER, 0, [0, 1, 2, 3, 4], "Cover"),
     pick(REFER, 0, [0, 1, 2], "Referrals"),
-    pick(CONSULT, 1, [0, 1], "Consult"),
-    pick(MESSAGES, 1, [0, 1], "Messages"),
+    pick(CONSULT, 0, [0, 1], "Consult"),
+    pick(LIBRARY, 0, [0, 1, 2], "Library"),
   ],
 };
 
-export const DEMO_SCRIPTS: Record<string, DemoScript> = { cover: COVER, refer: REFER, consult: CONSULT, circle: CIRCLE, hub: HUB, messages: MESSAGES, library: LIBRARY, availability: AVAILABILITY, overview: OVERVIEW };
+const TIME_AWAY: DemoScript = {
+  key: "time-away",
+  title: "Arrange time away",
+  what: "Cover",
+  blurb: "Describe each client by need, let PsyAlliance choose the best colleagues, review who is asked, and see every handover through.",
+  outcome: "Every client has a colleague, and every handover is ready, before you go.",
+  tryHref: "/join",
+  chapters: [pick(COVER, 0, [0, 1, 2, 3, 4], "Plan your time away"), pick(COVER, 1, [0, 1], "Where each client stands")],
+};
+
+const CLIENT_REFERRAL: DemoScript = {
+  key: "client-referral",
+  title: "Find a colleague for a client",
+  what: "Referrals",
+  blurb: "Describe the need, see who fits and why, choose who is asked, then agree with the colleague who can take the client.",
+  outcome: "The right colleague, chosen by you, with their current capacity confirmed.",
+  tryHref: "/join",
+  chapters: [pick(REFER, 0, [0, 1, 2, 3], "Make a referral"), pick(REFER, 1, [0, 1], "Choose who takes the client")],
+};
+
+const CASELOAD: DemoScript = {
+  key: "caseload",
+  title: "Establish or rebuild my caseload",
+  what: "Referrals",
+  blurb: "Say honestly how much room you have, and answer the referrals colleagues send you.",
+  outcome: "Colleagues can see when you have room, and when you do not.",
+  tryHref: "/join",
+  chapters: [
+    {
+      name: "Say you have room",
+      view: "home",
+      macro: "availability",
+      steps: [
+        {
+          title: "Take referrals",
+          text: "Open your availability and choose Accepting referrals, so colleagues with a client who fits can find you.",
+          beats: [["tick", 'input[name="referrals"][value="yes"]']],
+        },
+        {
+          title: "How many spaces, and where",
+          text: "Say how many new clients you can take, and where you see people. Zero is a fine answer.",
+          beats: [["type", "#availability-slots", "3"], ["tick", 'input[name="inPerson-NY"]']],
+        },
+        {
+          title: "Saved, and confirmed today",
+          text: "Save it. Colleagues see that it was confirmed today, so they can rely on it.",
+          beats: [["click", "text=Save & confirm availability"]],
+          hold: 1,
+        },
+      ],
+    },
+    pick(REFER, 2, [0, 1], "When a referral comes to you"),
+  ],
+};
+
+const PERSPECTIVE: DemoScript = {
+  key: "perspective",
+  title: "Get another professional perspective",
+  what: "Consult",
+  blurb: "Ask a focused question of the colleagues you choose, and keep the discussion together.",
+  outcome: "Answers from named, verified colleagues, shared only with the people you chose.",
+  tryHref: "/join",
+  chapters: [pick(CONSULT, 0, [0, 1], "Ask your question"), pick(CONSULT, 1, [1, 2], "Read and reply")],
+};
+
+const REDUCING: DemoScript = {
+  key: "reducing",
+  title: "Reduce or close my practice",
+  what: "Your practice",
+  blurb: "Take fewer new clients, pass a client on to the right colleague, and arrange temporary cover while you wind down.",
+  outcome: "Fewer new requests, and every client placed with care.",
+  tryHref: "/join",
+  chapters: [
+    {
+      name: "Take fewer new clients",
+      view: "home",
+      macro: "availability",
+      steps: [
+        {
+          title: "Selected referrals only",
+          text: "Open your availability and choose Selected referrals only. You are asked directly, never matched automatically.",
+          beats: [["tick", 'input[name="referrals"][value="limited"]']],
+        },
+        {
+          title: "Fewer spaces, saved",
+          text: "Lower your spaces, then save. Colleagues see the change at once, and work already under way is not affected.",
+          beats: [["type", "#availability-slots", "1"], ["click", "text=Save & confirm availability"]],
+          hold: 1,
+        },
+      ],
+    },
+    pick(REFER, 0, [0, 1, 2], "Pass a client on"),
+    {
+      name: "Cover while you close",
+      view: "cover",
+      steps: [
+        {
+          title: "Temporary cover while you close",
+          text: "Start a cover plan and choose Closing or reducing practice. PsyAlliance reminds you that a permanent move is a referral.",
+          beats: [["click", '[data-action="cover-start"]'], ["tick", 'input[name="reason"][value="closing"]'], ["look", ".closing-note"]],
+          hold: 1,
+        },
+      ],
+    },
+  ],
+};
+
+export const DEMO_SCRIPTS: Record<string, DemoScript> = {
+  cover: COVER, refer: REFER, consult: CONSULT, circle: CIRCLE, hub: HUB, messages: MESSAGES, library: LIBRARY, availability: AVAILABILITY, overview: OVERVIEW,
+  "time-away": TIME_AWAY, "client-referral": CLIENT_REFERRAL, caseload: CASELOAD, perspective: PERSPECTIVE, reducing: REDUCING,
+};
 export const findScript = (key: string) => DEMO_SCRIPTS[key] || null;

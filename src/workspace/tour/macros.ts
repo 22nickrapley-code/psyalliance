@@ -125,6 +125,8 @@ export const MACROS: Record<string, Macro> = {
   "cover-incoming": async (ui) => {
     await ui.act("nav:cover");
     await ui.act("plan:4");
+    // The plan opens on the client already agreed; the request still waiting for you is Client 1.
+    await ui.act("cover-client:4:1");
     await ui.wait(`${M} [data-action^="cover-answer:4:1"]`);
   },
   "cover-calendar": async (ui) => {
