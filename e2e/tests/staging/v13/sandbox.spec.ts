@@ -68,8 +68,8 @@ test.describe("SBX sandbox", () => {
     expect(plans.filter((p) => !p.mine).length).toBe(2);
     const cases = await q<{ status: string; ready: boolean; asks: string | null }>(
       "select c.status, c.handover_confirmed_at is not null as ready, (select string_agg(r.status::text, ',') from coverage_requests r where r.coverage_plan_case_id = c.id) as asks from coverage_plan_cases c join coverage_plans p on p.id=c.coverage_plan_id where p.profile_id=$1 and p.title='Fall leave cover' order by c.id", [gid]);
-    // one client "Handover ready", one agreed but not yet ready, one paused on a question
-    expect(cases.map((c) => `${c.status}/${c.ready ? "ready" : "not-ready"}/${c.asks}`)).toEqual(["confirmed/ready/accepted", "confirmed/not-ready/accepted", "awaiting_response/not-ready/discussing"]);
+    // v5 (nothing waiting at the start): two clients "Handover ready", one paused on a question
+    expect(cases.map((c) => `${c.status}/${c.ready ? "ready" : "not-ready"}/${c.asks}`)).toEqual(["confirmed/ready/accepted", "confirmed/ready/accepted", "awaiting_response/not-ready/discussing"]);
     // the sequential request that is paused for a question has a queued colleague behind it
     const queued = await one<{ n: number }>("select coalesce(sum(cardinality(c.outreach_queue)), 0)::int n from coverage_plan_cases c join coverage_plans p on p.id=c.coverage_plan_id where p.profile_id=$1 and c.status='awaiting_response'", [gid]);
     expect(queued.n).toBeGreaterThan(0);
@@ -80,8 +80,9 @@ test.describe("SBX sandbox", () => {
     await expect(page.locator("#app")).toContainText("Fall leave cover");
     await expect(page.locator("#app")).toContainText("October practice cover");
     await click(page, "nav:referrals");
-    await expect(page.locator("#app")).toContainText("1 interested");
-    await expect(page.locator("#app")).toContainText("Placed");
+    // v5: nothing waiting at the start, so Rachel's New York referral is already placed with Maya
+    await expect(page.locator("#app")).toContainText("Placed with Maya Patel");
+    await expect(page.locator("#app")).toContainText("Waiting for the sender");
     await clickWith(page, "plan:", "Fall").catch(() => {});
     await context.close();
   });
@@ -182,9 +183,10 @@ test.describe("SBX sandbox", () => {
     expect(Number((await one<{ s: string }>("select max(step) s from private.sandbox_story where profile_id=$1", [gid])).s)).toBe(1);
     await page.keyboard.press("Escape");
     await expect(page.locator(".sandbox-arrival")).toBeVisible();
-    await expect(page.locator(".sandbox-arrival")).toContainText("Imani Ambershaw");
+    // v5: the first colleague asks about cover (no group invitation in the story)
+    await expect(page.locator(".sandbox-arrival")).toContainText("Eli Kestrelby");
     await page.locator('.sandbox-arrival [data-action="arrival-open"]').click();
-    await expect(page.locator(".chat-pane")).toBeVisible();
+    await expect(page.locator(".modal")).toContainText("Winter holiday cover");
     await context.close();
   });
 
@@ -290,11 +292,12 @@ test.describe("SBX sandbox", () => {
     // nobody answers instantly; after the minute the sandbox colleague does
     await q("update coverage_requests set sent_at = sent_at - interval '3 minutes' where id in (select r.id from coverage_requests r join coverage_plan_cases c on c.id=r.coverage_plan_case_id where c.coverage_plan_id=$1)", [plans[0].id]);
     await runJobs(["pa_demo_autorespond"]);
-    const after = await one<{ status: string }>("select r.status::text status from coverage_requests r join coverage_plan_cases c on c.id=r.coverage_plan_case_id where c.coverage_plan_id=$1", [plans[0].id]);
+    // v4: "I can cover" keeps the request open (status sent) with interested_at set until the owner agrees
+    const after = await one<{ status: string }>("select case when r.status::text = 'sent' and r.interested_at is not null then 'accepted' else r.status::text end status from coverage_requests r join coverage_plan_cases c on c.id=r.coverage_plan_case_id where c.coverage_plan_id=$1", [plans[0].id]);
     expect(["accepted", "declined", "discussing"]).toContain(after.status);
     if (after.status === "accepted") {
       const c = await one<{ status: string; ready: boolean }>("select status, handover_confirmed_at is not null ready from coverage_plan_cases where coverage_plan_id=$1", [plans[0].id]);
-      expect(c).toEqual({ status: "confirmed", ready: false });
+      expect(c.ready).toBe(false); // "I can cover" is not Handover ready (and not agreed until the owner chooses)
     }
     await context.close();
   });
@@ -342,7 +345,7 @@ test.describe("SBX sandbox", () => {
     await page.locator('#peer-form input[name="reviewed"]').check();
     await page.getByRole("button", { name: "Review before posting" }).click();
     await page.getByRole("button", { name: "Post question" }).dblclick();
-    await expect(page.locator("#toast")).toContainText("shared");
+    await expect(page.locator("#toast")).toContainText(/posted|shared/);
     const rows = await q<{ id: string; audience_type: string }>("select id, audience_type from consultations where author_profile_id=$1 and question='How do you pace a first session?'", [gid]);
     expect(rows).toHaveLength(1);
     expect(rows[0].audience_type).toBe("trusted");

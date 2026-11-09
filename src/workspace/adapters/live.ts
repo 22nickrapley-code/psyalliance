@@ -56,6 +56,7 @@ export function buildLiveEnv(boot: LiveBoot, view: WorkspaceView) {
     ai: boot.ai || { enabled: false, left: 0 },
     membership: boot.membership || null,
     foundingCircle: boot.foundingCircle || [],
+    features: boot.features || { consultGroups: false },
     account: { admin: !!boot.me?.isAdmin, physician: Number(boot.inbound?.physician || 0), demoSite: !!boot.demo },
     data: {
       people,

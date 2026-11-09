@@ -38,7 +38,7 @@ export async function loadWorkspaceBoot(path: string): Promise<LiveBoot> {
   }
   // Profile setup (Nick, 1 Nov): what a member still has to do, shown in the Hub's Actions as "Profile setup"
   // and, until the essentials are done, as "Finish setup" in the sidebar. Same rules as the Profile page.
-  const [{ data: prof }, { data: lic }, { data: looks }, { data: plan }, { data: ai }, { data: membership }, { data: circles }] = await Promise.all([
+  const [{ data: prof }, { data: lic }, { data: looks }, { data: plan }, { data: ai }, { data: membership }, { data: circles }, { data: features }] = await Promise.all([
     supabase.rpc("my_profile").select("full_name, qualification_level, avatar_path, bio, primary_practice_city, primary_state, availability_confirmed_at").maybeSingle<any>(),
     supabase.from("licenses").select("status, expiration_date, reviewed_at").eq("profile_id", user.id),
     supabase.from("profile_lookup_values").select("lookup_values!inner(category)").eq("profile_id", user.id).in("lookup_values.category", ["treatment_specialism", "insurance"]),
@@ -49,6 +49,8 @@ export async function loadWorkspaceBoot(path: string): Promise<LiveBoot> {
     supabase.rpc("my_membership").then((r) => (r.error ? { data: null } : r)),
     // States building their founding circle: referrals to the whole network wait there.
     supabase.rpc("founding_circle_states").then((r) => (r.error ? { data: [] } : r)),
+    // Site switches (v5): consultation groups are off unless the admin Features page turns them on.
+    supabase.rpc("feature_flags").then((r) => (r.error ? { data: null } : r)),
   ]);
   const hub = computeHubStates({
     profile: prof || null,
@@ -68,7 +70,7 @@ export async function loadWorkspaceBoot(path: string): Promise<LiveBoot> {
     reviewed: ((lic as any[]) || []).some((l) => !!l.reviewed_at),
     availability: !!prof?.availability_confirmed_at,
   };
-  return { ...rest, ...shapeLibrary({ resources: boot.resources, saved }), demo: IS_DEMO_SITE, sandbox, userId: user.id, setup, ai: (ai as any) || { enabled: false, left: 0 }, membership: (membership as any) || null, foundingCircle: (circles as any) || [] } as LiveBoot;
+  return { ...rest, ...shapeLibrary({ resources: boot.resources, saved }), demo: IS_DEMO_SITE, sandbox, userId: user.id, setup, ai: (ai as any) || { enabled: false, left: 0 }, membership: (membership as any) || null, foundingCircle: (circles as any) || [], features: (features as any) || { consultGroups: false } } as LiveBoot;
 }
 
 export type { WorkspaceView };

@@ -79,14 +79,15 @@ test("V1-04 edit profile: a pencil opens a section's card, a link to a section o
   await context.close();
 });
 
-test("V1-05 quick start: a link that isn't a Psychology Today profile is not opened, and says what to do instead", async ({ browser, baseURL }) => {
+// v5 (Nick, 8 Nov): any public profile or practice website can be read now; a private or local address never is.
+test("V1-05 quick start: a link to a private address is not opened, and says what to do instead", async ({ browser, baseURL }) => {
   const { context, page } = await as(browser, "dara", baseURL!);
   await page.goto(`${baseURL}/dashboard/profile?edit=1`);
   const open = page.getByRole("button", { name: "Import" });
   if (await open.isVisible().catch(() => false)) await open.click();
-  await page.getByLabel("Your existing profile").fill("https://example.com/my-profile");
+  await page.getByLabel("Your existing profile").fill("https://127.0.0.1/my-profile");
   await page.getByRole("button", { name: "Fill in from this link" }).click();
-  await expect(page.locator("#quick-start [role=status]")).toContainText("We couldn't open that page");
+  await expect(page.locator("#quick-start [role=status]")).toContainText("didn't let us read it");
   await context.close();
 });
 

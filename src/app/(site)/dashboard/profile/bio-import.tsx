@@ -78,6 +78,7 @@ export default function BioImportBox({ prominent = true, demo, mode = "setup" }:
   const [bioText, setBioText] = useState(demo?.text || "");
   const [isPending, startTransition] = useTransition();
   const [applied, setApplied] = useState<string[] | null>(demo?.applied || null);
+  void applied;
   const [message, setMessage] = useState<string | null>(demo?.applied ? "Filled in and highlighted below. Check each part, then press Save profile." : null);
   const [isError, setIsError] = useState(false);
   const [photo, setPhoto] = useState<{ src: string; file?: File; url?: string } | null>(null);
@@ -244,14 +245,17 @@ export default function BioImportBox({ prominent = true, demo, mode = "setup" }:
       setConflicts(found);
       setNotes(result.conflicts || []);
       refreshPreviews();
-      if (photo) {
-        applyPhoto(photo);
+      // A photo pasted with the text, or found on the linked page (v5).
+      const pic = photo || (result.photoUrl ? { src: result.photoUrl, url: result.photoUrl } : null);
+      if (pic) {
+        if (!photo) setPhoto(pic);
+        applyPhoto(pic);
         list.push("Photo");
       }
       setApplied(list);
       setMessage(
         list.length > 0 || found.length > 0
-          ? `${list.length ? "New details are filled in below and marked Not saved yet." : "Nothing new to add."}${found.length ? ` ${found.length} saved value${found.length === 1 ? "" : "s"} would change: choose below.` : ""} Check each part, then press Save profile.`
+          ? `${list.length ? "Done. Check your profile below, then press Save profile." : "Nothing new to add."}${found.length ? ` ${found.length} saved value${found.length === 1 ? "" : "s"} would change: choose below.` : ""}`
           : mode === "update"
             ? "Everything in that text is already on your profile. Nothing was changed."
             : "We couldn't find anything to fill in from that text. You can still complete the form below."
@@ -267,8 +271,8 @@ export default function BioImportBox({ prominent = true, demo, mode = "setup" }:
           <h3>{mode === "update" ? "Paste an updated profile" : "Start from a profile you already have"}</h3>
           <p className="small" style={{ margin: 0 }}>
             {mode === "update"
-              ? "Paste your updated Psychology Today link or text, your website or CV. We add anything new, show anything that has changed so you can choose, and keep everything you've saved that the new text doesn't mention. Nothing is saved until you press Save."
-              : "Paste a link to your Psychology Today profile, or the text of your profile, practice website or CV. We fill in the fields, your photo and your top specialties for you to check. Nothing is saved until you press Save."}
+              ? "Paste a link or text. We add what's new and ask about anything that changed."
+              : "Paste a link to your Psychology Today profile or website, or paste its text. We fill in your profile for you to check."}
           </p>
         </div>
 
@@ -282,14 +286,15 @@ export default function BioImportBox({ prominent = true, demo, mode = "setup" }:
             onPaste={onPaste}
             onDrop={onDrop}
             rows={4}
-            placeholder="https://www.psychologytoday.com/us/therapists/… or paste your profile text"
+            placeholder="Paste a link or your profile text"
             aria-label="Your existing profile"
           />
           {photo && (
             <div className="quick-start-photo">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={photo.src} alt="Photo found in your profile" />
-              <span className="small">Photo found. It becomes your profile photo when you save.</span>
+              <span className="small">Your photo. It's used when you save.</span>
+              <button type="button" className="plain-button small" onClick={() => { setPhoto(null); if (urlField.current) urlField.current.value = ""; if (fileField.current) fileField.current.value = ""; }}>Don&rsquo;t use it</button>
             </div>
           )}
           <div className="row wrap" style={{ marginTop: 10, gap: 12 }}>
@@ -302,11 +307,6 @@ export default function BioImportBox({ prominent = true, demo, mode = "setup" }:
               </span>
             )}
           </div>
-          {applied && applied.length > 0 && (
-            <ul className="quick-start-applied" aria-label="What was filled in">
-              {applied.map((a) => <li key={a}>{a}</li>)}
-            </ul>
-          )}
           {conflicts.length > 0 && (
             <div className="import-conflicts" role="group" aria-label="Changes to choose">
               <p className="label-line">These are already on your profile. Keep them, or use the new text:</p>
@@ -329,7 +329,7 @@ export default function BioImportBox({ prominent = true, demo, mode = "setup" }:
           )}
           {notes.length > 0 && (
             <div className="notice-line warn" role="note">
-              <b>Worth checking:</b> {notes.join(" ")} Nothing was decided for you; open the section to choose.
+              <b>Worth checking:</b> {notes.join(" ")}
             </div>
           )}
           {lowRes && (

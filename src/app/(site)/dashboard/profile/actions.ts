@@ -146,6 +146,12 @@ const AI_MATCHABLE_CATEGORIES = [
 const RANKED_CATEGORIES = ["treatment_specialism", "treatment_modality"];
 const SINGLE_SELECT_CATEGORIES = ["sex"];
 
+function cleanWebsite(v: unknown): string | null {
+  const s = String(v || "").trim();
+  if (!s || /\s/.test(s) || !/\.[a-z]{2,}/i.test(s)) return null;
+  return /^https?:\/\//i.test(s) ? s : `https://${s}`;
+}
+
 export async function saveProfile(formData: FormData) {
   const supabase = await createClient();
   const {
@@ -178,7 +184,7 @@ export async function saveProfile(formData: FormData) {
     pronoun: String(formData.get("pronoun") || "") || null,
     practice_website: String(formData.get("practice_website") || "") || null,
     contact_phone: String(formData.get("contact_phone") || "") || null,
-    contact_email: String(formData.get("contact_email") || "") || null,
+    contact_email: /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(formData.get("contact_email") || "").trim()) ? String(formData.get("contact_email")).trim() : null,
     open_to_group_consultation: formData.get("open_to_group_consultation") === "on",
     // Supervision is hidden from the final product (decision D-03). Its two answers are kept as they are and are only
     // written when a form sends them, so saving the profile never clears what a member said before.
@@ -349,20 +355,51 @@ function cleanPastedProfile(text: string): string {
   return lines.join("\n").slice(0, 15000);
 }
 
-async function fetchProfilePage(url: string): Promise<string | null> {
-  let u: URL;
-  try { u = new URL(url); } catch { return null; }
-  if (u.protocol !== "https:" || !/^(www\.)?psychologytoday\.com$/i.test(u.hostname) || u.username || u.password) return null;
+// A link the member pastes (v5, Nick 8 Nov): their Psychology Today profile or their own practice website. Public
+// https pages only (http is upgraded), every redirect checked the same way as photos, at most three, a 10-second
+// limit and a 2 MB cap. Returns the page text and, when there is one, the profile photo (og:image or the
+// Psychology Today headshot) for the member to keep or not.
+async function fetchProfilePage(url: string): Promise<{ text: string; photo: string | null } | null> {
+  let u = publicHttpsUrl(url.replace(/^http:\/\//i, "https://"));
+  const deadline = AbortSignal.timeout(10000);
   try {
-    const res = await fetch(u.toString(), { redirect: "manual", headers: { accept: "text/html", "user-agent": "PsyAlliance profile import (member request)" } });
-    if (!res.ok) return null;
-    const html = (await res.text()).slice(0, 2_000_000);
-    const text = html
-      .replace(/<(script|style|noscript|svg)[\s\S]*?<\/\1>/gi, " ")
-      .replace(/<(br|\/p|\/div|\/li|\/h[1-6])[^>]*>/gi, "\n")
-      .replace(/<[^>]+>/g, " ")
-      .replace(/&nbsp;/g, " ").replace(/&amp;/g, "&").replace(/&#39;|&rsquo;/g, "'").replace(/&quot;/g, '"');
-    return text.trim().length > 200 ? text : null;
+    for (let hop = 0; u && hop <= 3; hop += 1) {
+      const res = await fetch(u.toString(), {
+        signal: deadline,
+        redirect: "manual",
+        headers: {
+          accept: "text/html,application/xhtml+xml",
+          "accept-language": "en-US,en;q=0.9",
+          "user-agent": "Mozilla/5.0 (compatible; PsyAlliance profile import; member request)",
+        },
+      });
+      if (res.status >= 300 && res.status < 400) {
+        const next = res.headers.get("location");
+        await res.body?.cancel();
+        u = next ? publicHttpsUrl(new URL(next, u).toString()) : null;
+        continue;
+      }
+      if (!res.ok || !/html/i.test(res.headers.get("content-type") || "text/html")) return null;
+      const html = (await res.text()).slice(0, 2_000_000);
+      const meta = (name: string) =>
+        html.match(new RegExp(`<meta[^>]+(?:property|name)=["']${name}["'][^>]*content=["']([^"']+)["']`, "i"))?.[1] ||
+        html.match(new RegExp(`<meta[^>]+content=["']([^"']+)["'][^>]*(?:property|name)=["']${name}["']`, "i"))?.[1] ||
+        null;
+      const ptImg = /psychologytoday\.com$/i.test(u.hostname)
+        ? html.match(/<img[^>]+src=["'](https:\/\/[^"']*psychologytoday\.com[^"']*\/profile[^"']*)["']/i)?.[1] || null
+        : null;
+      const rawPhoto = ptImg || meta("og:image");
+      const photo = rawPhoto && !/logo|icon|sprite|default|placeholder/i.test(rawPhoto) && publicHttpsUrl(new URL(rawPhoto, u).toString()) ? new URL(rawPhoto, u).toString() : null;
+      const description = [meta("og:title"), meta("description"), meta("og:description")].filter(Boolean).join("\n");
+      const text = (description + "\n" + html
+        .replace(/<(script|style|noscript|svg|nav|footer)[\s\S]*?<\/\1>/gi, " ")
+        .replace(/<(br|\/p|\/div|\/li|\/h[1-6]|\/section|\/article)[^>]*>/gi, "\n")
+        .replace(/<[^>]+>/g, " ")
+        .replace(/&nbsp;/g, " ").replace(/&amp;/g, "&").replace(/&#39;|&rsquo;|&#8217;/g, "'").replace(/&quot;|&ldquo;|&rdquo;/g, '"'))
+        .trim();
+      return text.length > 200 ? { text, photo } : null;
+    }
+    return null;
   } catch {
     return null;
   }
@@ -385,15 +422,18 @@ export async function parseProfileBio(bioText: string): Promise<{
   matchedLabels?: string[];
   rankedSpecialtyIds?: number[];
   conflicts?: string[];
+  photoUrl?: string | null;
   error?: string;
 }> {
   let raw = bioText.trim();
+  let photoUrl: string | null = null;
   if (!raw) return { error: "Paste a link to your profile, or its text, first." };
-  // A link: only a Psychology Today profile page is opened by us (a known host, no redirects, a size cap).
+  // A link: a public profile or practice page, opened with the same care as photos (see fetchProfilePage).
   if (/^https?:\/\/\S+$/i.test(raw)) {
     const page = await fetchProfilePage(raw);
-    if (!page) return { error: "We couldn't open that page. Open your profile, select all its text, copy it and paste it here instead." };
-    raw = page;
+    if (!page) return { error: "That page didn't let us read it (some sites block this). Open it, select all the text, copy it and paste it here instead." };
+    raw = page.text;
+    photoUrl = page.photo;
   }
   // A pasted web page carries menus and footers; keep the profile itself and stay within a sensible size.
   const trimmed = cleanPastedProfile(raw);
@@ -508,9 +548,10 @@ export async function parseProfileBio(bioText: string): Promise<{
         primary_practice_city: result.primary_practice_city ? result.primary_practice_city.replace(/,\s*[A-Z]{2}$/, "").trim() || null : null,
         states_qualified: (result.states_qualified || []).map((s) => s.toUpperCase()),
         pronoun: result.pronoun || null,
-        practice_website: result.practice_website || null,
-        contact_phone: result.contact_phone || null,
-        contact_email: result.contact_email || null,
+        // Only values that will pass the form (v5): an imported "Email me" or a bare word used to block Save silently.
+        practice_website: cleanWebsite(result.practice_website),
+        contact_phone: /\d{3}.*\d{4}/.test(String(result.contact_phone || "")) ? String(result.contact_phone).trim().slice(0, 40) : null,
+        contact_email: /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(result.contact_email || "").trim()) ? String(result.contact_email).trim() : null,
         bio: result.bio ? result.bio.trim().slice(0, 700) : null,
       },
       // Ranked specialties are also covered areas.
@@ -518,6 +559,7 @@ export async function parseProfileBio(bioText: string): Promise<{
       matchedLabels,
       rankedSpecialtyIds,
       conflicts: (result.conflicts || []).map((c) => String(c).slice(0, 240)).slice(0, 5),
+      photoUrl,
     };
   } catch (err) {
     if (err instanceof AiNotConfiguredError) {

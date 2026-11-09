@@ -1,0 +1,133 @@
+/* PsyAlliance v5 (Nick's 8 Nov walkthrough). Loads last. */
+
+/* Consult: no gold box on followed questions, a gold Following label instead; the tabs wrap inside the panel. */
+.discussion-row.is-following{box-shadow:none}
+.discussion-row .follow-tag{background:#fbf1dc;border:1px solid #ead9b3;color:#6b4e0e;border-radius:999px;padding:1px 8px 1px 6px;margin-left:4px;font-size:11.5px;line-height:18px}
+.consult-pills{flex-wrap:wrap;gap:6px;max-width:100%}
+.consult-pills button{padding:6px 11px;font-size:13px;flex:0 0 auto}
+.consult-grid>.panel{min-width:0;overflow:hidden}
+
+/* Referrals move to a calm blue everywhere (Nick, 8 Nov). Cover stays green, Consult purple. */
+:root{--svc-referrals:#2B5C8A}
+.feature-referrals,.modal-feature-referrals{--feature:#2B5C8A;--feature-pale:#E5EDF5;--feature-page:var(--cream)}
+
+/* Lists (Nick, 8 Nov): Active green and Completed grey in Referrals and Cover, the same as Consult. */
+.arrangement-row.tint-active{background:#f7fbf8;box-shadow:inset 4px 0 0 #2f7d4f}
+.arrangement-row.tint-completed,.arrangement-row.tint-closed{background:#f4f5f4;box-shadow:inset 4px 0 0 #9aa5a0}
+.arrangement-row.tint-completed strong .text-link,.arrangement-row.tint-closed strong .text-link{color:#3f4a44}
+.filter-pills button[data-action$=":discussion"].active,.filter-pills button[data-action$=":active"].active{background:#2f7d4f!important;border-color:#2f7d4f!important;color:#fff!important}
+.filter-pills button[data-action$=":discussion"]:not(.active),.filter-pills button[data-action$=":active"]:not(.active){background:#eef6f0;border-color:#cfe3d5}
+.filter-pills button[data-action$=":placed"].active,.filter-pills button[data-action$=":past"].active{background:#5f6b65!important;border-color:#5f6b65!important;color:#fff!important}
+.filter-pills button[data-action$=":placed"]:not(.active),.filter-pills button[data-action$=":past"]:not(.active){background:#f1f2f1;border-color:#d9dcda}
+
+/* Hub (Nick, 8 Nov): the service cards and availability boxes were too airy and the Consult box sat lower.
+   Cards become compact rows (icon beside the words); the three availability boxes share one height and alignment. */
+.hub-cards{gap:14px;margin:0 0 6px}
+.hub-card{display:grid;grid-template-columns:40px minmax(0,1fr);column-gap:14px;row-gap:8px;align-items:start;min-height:0;padding:16px 18px}
+.hub-card-icon{grid-row:1/span 2}
+.hub-card-words strong{font-size:17px}
+.hub-card-words small{font-size:13.5px}
+.hub-card-go{margin-top:0}
+.hub-availability{gap:8px}
+.hub-av-grid{gap:14px;align-items:stretch}
+.hub-av-card{grid-template-rows:auto 1fr;align-content:start;padding:12px 14px;gap:10px}
+.hub-av-now{align-items:center;min-height:36px}
+.hub-av-seg{align-content:flex-start}
+.hub-av-card .hub-av-seg button,.hub-av-card.feature-consult .hub-av-seg button{padding:5px 10px!important;font-size:12.5px!important;line-height:1.35!important;min-height:0!important;height:auto!important;border-radius:999px!important;font-weight:500}
+.hub-av-card .hub-av-seg button[aria-pressed="true"]{font-weight:600}
+.workspace.feature-home .content{padding-bottom:24px}
+.demo-toggle{margin:0 0 14px;padding-bottom:12px;border-bottom:1px solid var(--line)}
+
+/* Referral review: room above and below "How long each colleague has to reply". */
+.deadline-grid{margin:22px 0 22px}
+.deadline-grid small{display:block;margin-top:6px;line-height:1.45}
+
+/* Referral journey: the line now runs from the sender's disc through each stage to the colleague's disc. */
+.journey-people{gap:0;align-items:flex-start}
+.journey-people .jp-link{flex:0 0 10px;margin-top:17px}
+.journey-people .journey-stage:first-child::before{display:block;left:0;width:50%;background:#C9BFA9}
+.journey-people .journey-stage:last-child::after{content:"";position:absolute;top:15px;left:50%;width:50%;height:2px;background:#C9BFA9;z-index:0}
+.journey-people .journey-stage.done:first-child::before,.journey-people .journey-stage.current:first-child::before{background:var(--feature)}
+.journey-people .journey-stage.done:last-child::after{background:var(--feature)}
+.journey-people .journey-dot{position:relative;z-index:1}
+
+/* Cover colleagues step: the client list keeps its place, the last client is not cut off, and a Next client button. */
+.client-match-layout:not(.single) .client-match-tabs{padding-bottom:18px;scroll-padding-bottom:18px;align-content:start}
+.client-match-layout:not(.single) .client-match-tabs button{flex:0 0 auto}
+.next-client-row{display:flex;justify-content:flex-end;padding:14px 0 6px;border-top:1px solid var(--line);margin-top:12px}
+
+/* Cover review (v5): mode first, then the order, like the Referrals review. */
+.cover-who{margin:18px 0 4px}
+.cover-who-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:10px}
+.cover-who-head h3{margin:0;font-size:15px}
+.cover-who .review-client{border:1px solid var(--line);border-radius:12px;background:#fff;margin:0 0 10px;padding:0 12px}
+.cover-who .review-client>summary{display:flex;align-items:center;gap:10px;padding:12px 0;cursor:pointer;list-style:none}
+.cover-who .review-client>summary small{margin-left:auto;color:var(--muted)}
+.cover-who .review-client[open]>summary{border-bottom:1px solid var(--line-soft,#eee9dd)}
+.cover-order{margin:8px 0 12px;padding:0;list-style:none;display:grid;gap:6px}
+.cover-order .addrec-row{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:#fffefb}
+.cover-order .addrec-row[draggable="true"]{cursor:grab}
+.cover-order .addrec-row.is-dragging{opacity:.5}
+.cover-order .addrec-who{flex:1;min-width:0}
+.cover-order .addrec-who small{display:block;color:var(--muted);font-size:12.5px}
+
+/* Network (Nick, 8 Nov): each column only as long as its own list (five a page, its own pager); every colleague box
+   the same height; the Worked with before recency filter sits in that column's coloured header. */
+@media(min-width:761px){.relationship-groups{align-items:start}.relationship-group{display:block}.relationship-group .net-list{flex:none}}
+.relationship-group>header{flex-wrap:wrap;row-gap:0}
+.relationship-group>header .net-recency{flex:1 0 100%;order:3;padding:10px 0 0;margin:0}
+.net-worked>header .net-recency button:not(.active){background:#fff;border-color:#dccfe6}
+.net-worked>header .net-recency button.active{background:#5B3D78!important;border-color:#5B3D78!important;color:#fff!important}
+@media(min-width:761px){.relationship-group .net-list .net-row{min-height:128px;box-sizing:border-box;align-items:center}}
+.relationship-group .net-row .net-why{display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+
+/* Profile: Professional history lists each collaboration. */
+.pf-collabs{display:grid;gap:8px;margin-top:4px}
+.pf-collab-count{margin:0;font-size:14px}
+.pf-collab-list{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.pf-collab-list li{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:#fffefb}
+.pf-collab-list li svg{width:16px;height:16px;flex:none;margin-top:2px;color:var(--brass-ink)}
+.pf-collab-list strong{display:block;font-size:13.5px;font-weight:600}
+.pf-collab-list small{display:block;color:var(--muted);font-size:12.5px}
+.pf-collabs .net-pager{justify-content:flex-start;padding:0}
+
+/* Messages: room around the "Just chatting" empty state; the red dot explained. */
+.message-workspace .empty-state.small{display:grid;justify-items:center;gap:10px;padding:36px 20px 40px;text-align:center}
+.message-workspace .empty-state.small h3,.message-workspace .empty-state.small p{margin:0}
+.message-workspace .empty-state.small .button{margin-top:6px}
+.tab-legend{display:flex;align-items:center;gap:6px;margin:6px 0 0;font-size:12.5px;color:var(--muted)}
+.tab-legend .unread-dot{margin-left:0}
+
+/* Guided sandbox (Nick, 8 Nov): the step sits in the pop-up's header beside the title; the next thing to use is outlined. */
+.modal-header{display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap}
+.modal-header>div:first-of-type{flex:1 1 260px;min-width:0}
+.guide-step{display:flex;gap:10px;align-items:flex-start;flex:0 1 360px;margin-left:auto;background:#fbf1dc;border:1px solid #e6d2a4;border-radius:12px;padding:10px 12px;color:#4a3a14;font-size:13px;line-height:1.4}
+.guide-step-mark{display:grid;place-items:center;flex:none;width:28px;height:28px;border-radius:8px;background:#fff;color:#7a5a12}
+.guide-step-mark svg{width:16px;height:16px}
+.guide-step>div{flex:1;min-width:0}
+.guide-step strong{display:block;font-size:12.5px;font-weight:600;color:#6b4e0e}
+#guide-step-text{display:block;margin-top:2px;font-size:14px;font-weight:600;color:#1f2a24}
+.guide-step .text-link{flex:none;font-size:12.5px;color:#6b4e0e;text-decoration:underline;background:none;border:0;padding:0;cursor:pointer}
+.guide-target{outline:3px solid #d99a1e!important;outline-offset:3px;border-radius:10px;animation:pa-guide-pulse 1.8s ease-in-out infinite}
+@keyframes pa-guide-pulse{0%,100%{outline-color:#d99a1e}50%{outline-color:rgba(217,154,30,.35)}}
+@media (prefers-reduced-motion:reduce){.guide-target{animation:none}}
+@media (max-width:720px){.guide-step{flex:1 0 100%;margin-left:0;order:3}}
+body:not(.dialog-open) .guide-bar{display:flex!important;z-index:70}
+body:not(.dialog-open) .guide-bar{top:calc(78px + env(safe-area-inset-top,0px));bottom:auto}
+.modal:not(.wide) .guide-step{flex:1 0 100%;margin-left:0;order:3}
+.consult-pills{margin:10px 20px 6px!important}
+.discussion-row h3 button,.discussion-row h3 .text-link{white-space:normal;text-align:left;overflow-wrap:anywhere}
+.cover-who .view-tabs{margin:0}
+.cover-who .workload>p.muted{margin-top:0}
+.match-card .match-reasons,.match-card .mchips,.match-card .need-chips{flex-wrap:wrap}
+.client-match-layout:not(.single){height:calc(100dvh - 440px);min-height:300px}
+.message-workspace .empty-state.small{align-content:center;justify-content:center;grid-auto-rows:min-content;min-height:280px}
+.message-workspace .empty-state.small svg{width:32px;height:32px;color:var(--muted)}
+@media(min-width:761px){
+.relationship-group .net-row>div{min-width:0}
+.relationship-group .net-row strong button,.relationship-group .net-row>div>small:not(.net-why){display:block;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.relationship-group .net-list .net-row{height:150px;min-height:0;overflow:hidden}
+}
+.demo-toggle{display:flex!important;gap:12px;align-items:flex-start;justify-content:flex-start;text-align:left}
+.demo-toggle input{margin-top:3px;flex:none}
+.demo-toggle span{flex:1;text-align:left}

@@ -34,6 +34,12 @@ function answer(tool, text) {
     const parts = text.includes("Row ") ? text.split("\n").filter((l) => l.startsWith("Row ")) : text.split(/;|\n/).filter((x) => x.trim());
     return { clients: parts.map(need) };
   }
+  // v5: profile import. Echoes a city and bio, and the kind of "email" a scraped page often gives ("Email me"), which
+  // the app must drop rather than let it block Save profile.
+  if (tool === "extract_profile") {
+    return { primary_practice_city: /Rochester/.test(text) ? "Rochester" : "", bio: "I work with adults through anxiety and life transitions, in person and by video.",
+      contact_email: /Email me/.test(text) ? "Email me" : "", practice_website: /www\.[a-z-]+\.com/.exec(text)?.[0] || "", top_specialties: [] };
+  }
   if (tool === "answer") {
     const q = text.split("QUESTION:\n")[1] || "";
     if (/who/i.test(q)) return { answer: "Here is who matches, by PsyAlliance's usual rules.", sources: ["guide:cover"], search: { kind: "cover", ...need(q) } };

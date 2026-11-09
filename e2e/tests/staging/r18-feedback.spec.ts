@@ -245,7 +245,7 @@ test("R18-13 founding places are 40 everywhere; the privacy policy and join step
   const con = await one(`select pg_get_constraintdef(oid) d from pg_constraint where conname = 'founding_places_place_check'`);
   expect(con.d).toMatch(/40/);
   const left = await one(`select pg_get_functiondef('public.founding_places_left'::regproc) d`);
-  expect(left.d).toMatch(/40 - count/);
+  expect(left.d).toMatch(/40 - (count|coalesce)/);
   await page.goto("/privacy");
   await expect(page.getByRole("heading", { name: /How PsyAlliance handles information/ })).toBeVisible();
   const p = await page.locator("main").innerText();
@@ -255,15 +255,12 @@ test("R18-13 founding places are 40 everywhere; the privacy policy and join step
   await expect(page.locator(".join-steps li")).toHaveCount(4);
 });
 
-test("R18-14 sandbox arrivals are at least 6 minutes apart", async () => {
+test("R18-14 sandbox arrivals: the first after about two minutes, then one every four (v5, Nick 8 Nov)", async () => {
   const d = await one(`select pg_get_functiondef('public.sandbox_tick'::regproc) d`);
-  // v13 (0119) spaces the next arrivals with a list of gaps; every real gap is 6 minutes or more
-  // (the last entry, 0 seconds, is the step after the final arrival).
-  const gaps = [...String(d.d).matchAll(/interval '(\d+) (minutes|seconds)'/g)].map((m) => Number(m[1]) * (m[2] === "minutes" ? 60 : 1));
-  expect(gaps.length, "the gaps between arrivals are listed").toBeGreaterThanOrEqual(4);
-  for (const g of gaps.filter((x) => x > 0)) expect(g, "each gap between arrivals").toBeGreaterThanOrEqual(6 * 60);
+  expect(d.d).toContain("interval '4 minutes'");
+  expect(d.d).toContain("st.step >= 8");
   const seed = await one(`select pg_get_functiondef('private.seed_demo_viewer_story'::regproc) d`);
-  expect(seed.d).toMatch(/240 seconds/);
+  expect(seed.d).toMatch(/120 seconds/);
 });
 
 test("R18-15 Network keeps the suggested list that colours avatars elsewhere", async ({ page, context, baseURL }) => {

@@ -175,8 +175,24 @@ export function ProfileCards() {
     document.addEventListener("change", onInput, true);
     document.addEventListener("cancel", onCancel, true);
     form?.addEventListener("submit", onSubmit);
+    // A field the browser won't accept, inside a closed card, used to stop Save without a word (v5). Open the card
+    // with the field and say what is wrong instead.
+    const onInvalid = (e: Event) => {
+      const el = e.target as HTMLInputElement;
+      if (shownInvalid) return;
+      e.preventDefault();
+      shownInvalid = true;
+      setTimeout(() => (shownInvalid = false), 600);
+      const dlg = el.closest("dialog");
+      if (dlg instanceof HTMLDialogElement && !dlg.open) dlg.showModal();
+      // Once the card is open the browser can point at the field itself.
+      setTimeout(() => el.reportValidity(), 80);
+    };
+    let shownInvalid = false;
+    form?.addEventListener("invalid", onInvalid, true);
     window.addEventListener("beforeunload", onBeforeUnload);
     return () => {
+      form?.removeEventListener("invalid", onInvalid, true);
       window.removeEventListener("hashchange", fromHash);
       watch.disconnect();
       document.removeEventListener("click", onClick, true);
@@ -192,7 +208,7 @@ export function ProfileCards() {
   return (
     <div className="import-bar" role="status">
       <span>
-        <b>Filled in from your profile:</b> {imported} section{imported === 1 ? "" : "s"}, shown below as &ldquo;Not saved yet&rdquo;. Open any to check it, then save. Profile strength counts saved information, so it updates when you save.
+        <b>{imported} section{imported === 1 ? "" : "s"} filled in.</b> Check {imported === 1 ? "it" : "them"} below, then save.
       </span>
       <button type="submit" form="profile-form" className="btn">
         Save profile

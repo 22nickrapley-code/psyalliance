@@ -24,17 +24,17 @@ export async function loadFoundingPlace(supabase: any, profileId: string): Promi
 
 export const foundingLabel = (f: FoundingPlace) => `${stateName(f.state)} · #${f.place}`;
 
-// Places left per state, shown publicly once a state has 10 founding members.
+// Places left in every open state (v5, Nick 8 Nov: always shown, from 40 of 40).
 export async function loadFoundingCounts(supabase: any): Promise<FoundingCount[]> {
   const { data, error } = await supabase.rpc("founding_places_left");
   if (error || !Array.isArray(data)) return [];
   return data.map((r: any) => ({ state: String(r.state), taken: Number(r.taken), left: Math.max(0, Number(r.places_left)) }));
 }
 
-// "31 founding places left in New York · Massachusetts: all taken"
+// "38 of 40 founding places left in New York · Massachusetts: all founding places taken"
 export function foundingCountsLine(counts: FoundingCount[]) {
   if (!counts.length) return null;
   return counts
-    .map((c) => (c.left > 0 ? `${c.left} founding place${c.left === 1 ? "" : "s"} left in ${stateName(c.state)}` : `${stateName(c.state)}: all founding places taken`))
+    .map((c) => (c.left > 0 ? `${c.left} of ${FOUNDING_PLACES} founding places left in ${stateName(c.state)}` : `${stateName(c.state)}: all founding places taken`))
     .join(" · ");
 }

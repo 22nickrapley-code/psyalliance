@@ -115,7 +115,8 @@ test("R17-06 the profile import never shows setup details to a member", async ({
   if (await open.isVisible().catch(() => false)) await open.click();
   await page.getByLabel("Your existing profile").fill("Dr Dara Vennholt, PhD. Licensed psychologist in Boston, MA, working with adults with anxiety.");
   await page.getByRole("button", { name: "Fill in from this text" }).click();
-  const msg = page.locator("[role=status]").filter({ hasText: /import|fill in|read/i }).first();
+  // With the local AI stand-in running the import succeeds ("Done. Check your profile..."); without it, it explains.
+  const msg = page.locator("[role=status]").filter({ hasText: /import|fill in|read|check your profile/i }).first();
   await expect(msg).toBeVisible();
   await expect(msg).not.toContainText(/ANTHROPIC|API|admin|configured/i);
 });

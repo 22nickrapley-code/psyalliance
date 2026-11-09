@@ -53,7 +53,9 @@ test.describe("SBX-F the final product's examples", () => {
     await expect(page.locator("#app")).toContainText(/Paused until/);
     await click(page, "nav:consult");
     await page.waitForTimeout(800);
-    // The list is newest first and paged, so find the resolved question by its own words.
+    // The list is newest first and paged, so find the resolved question by its own words (v5: Consult opens on Active).
+    await click(page, "discussion-tab:All discussions");
+    await page.waitForTimeout(500);
     await page.locator("#consult-search").fill(resolved[0].question.slice(0, 40));
     await page.waitForTimeout(800);
     await expect(page.locator("#consult-results")).toContainText(/Resolved/);

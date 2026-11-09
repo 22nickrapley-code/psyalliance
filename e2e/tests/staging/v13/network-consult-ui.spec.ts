@@ -2,6 +2,12 @@ import { test, expect, type Page } from "@playwright/test";
 import { signInAs, account } from "../../../lib/auth";
 import { assertLocal, q, one } from "../../../lib/staging";
 
+// v5: consultation groups are behind a switch (off by default); the group tests switch it on for themselves.
+const groupsOn = (on: boolean) => q(`update app_config set value = $1 where key = 'consult_groups'`, [on ? "true" : "false"]);
+test.beforeEach(async ({}, info) => { if (/NCU-10|NC-04/.test(info.title)) await groupsOn(true); });
+test.afterEach(async ({}, info) => { if (/NCU-10|NC-04/.test(info.title)) await groupsOn(false); });
+
+
 // V13 workspace: Network, Consult and Library screens on the real database,
 // as signed-in fictional staging members in separate browsers.
 test.beforeEach(({ baseURL }) => assertLocal(baseURL!));

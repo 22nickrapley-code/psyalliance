@@ -47,6 +47,7 @@ export function buildNavGroups(opts: {
     { href: "/dashboard/admin/network-health", label: "Network health", glyph: "pulse" },
     { href: "/dashboard/admin/activation", label: "Activation", glyph: "check" },
     { href: "/dashboard/admin/ai", label: "AI", glyph: "pulse" },
+    { href: "/dashboard/admin/features", label: "Features", glyph: "check" },
     { href: "/dashboard/admin/membership", label: "Membership", glyph: "members" },
   ];
 

@@ -84,10 +84,10 @@ test("B-01b C01 a copy is independent: it carries no colleague choice, and editi
   await dup(page);
   await expect(page.locator(DISC)).toHaveCount(2);
   await page.getByRole("button", { name: "Continue to colleagues" }).click();
-  await page.locator('[data-action="match-client:2"]').click();
+  await page.locator('.client-match-tabs [data-action="match-client:2"]').click();
   await expect(box(2)).toBeEnabled();
   await expect(box(2)).not.toBeChecked(); // the copy did not take the original's colleague
-  await page.locator('[data-action="match-client:1"]').click();
+  await page.locator('.client-match-tabs [data-action="match-client:1"]').click();
   await expect(box(1)).toBeChecked();
   // Editing the copy leaves the original alone.
   await page.getByRole("button", { name: "Back" }).click();
@@ -95,9 +95,9 @@ test("B-01b C01 a copy is independent: it carries no colleague choice, and editi
   await page.locator('#client-form input[name="prescribing"]').check();
   await page.getByRole("button", { name: "Save client", exact: true }).click();
   await page.getByRole("button", { name: "Continue to colleagues" }).click();
-  await page.locator('[data-action="match-client:1"]').click();
+  await page.locator('.client-match-tabs [data-action="match-client:1"]').click();
   await expect(box(1)).toBeChecked();
-  await page.locator('[data-action="match-client:2"]').click();
+  await page.locator('.client-match-tabs [data-action="match-client:2"]').click();
   // 1.1: a gap is a warning, not a block; client 2 now needs prescribing, which Bram does not do, so he is not ticked
   await expect(box(2)).not.toBeChecked();
   await context.close();
@@ -124,7 +124,7 @@ test("B-02 C02 mixed eligibility: both views agree, bulk apply says what was add
   await expect(page.locator('input[data-match="cover"]:checked')).toHaveCount(0);
   // By client: Bram can be asked for clients 1 and 2 (2 with a warning), not client 3 (no reviewed MA license).
   for (const id of [1, 2, 3]) {
-    await page.locator(`[data-action="match-client:${id}"]`).click();
+    await page.locator(`.client-match-tabs [data-action="match-client:${id}"]`).click();
     const box = page.locator(`input[data-match="cover"][data-client="${id}"][value="${bram}"]`);
     if (id === 3) expect((await box.count()) === 0 || (await box.isDisabled())).toBe(true);
     else await expect(box).toBeEnabled();
@@ -153,7 +153,7 @@ test("B-02 C02 mixed eligibility: both views agree, bulk apply says what was add
   await expect(page.locator(".change-note")).toHaveCount(0);
   await page.getByRole("button", { name: "Continue to colleagues" }).click();
   await page.locator('[data-action="match-view:client"]').click();
-  await page.locator('[data-action="match-client:1"]').click();
+  await page.locator('.client-match-tabs [data-action="match-client:1"]').click();
   await expect(page.locator(`input[data-match="cover"][data-client="1"][value="${bram}"]`)).toBeChecked();
   await context.close();
 });
@@ -168,13 +168,13 @@ test("B-03 C03 workload before review: totals per colleague, first and queued, g
   await saveClient(page);
   await page.getByRole("button", { name: "Continue to colleagues" }).click();
   for (const id of [1, 2, 3]) {
-    await page.locator(`[data-action="match-client:${id}"]`).click();
+    await page.locator(`.client-match-tabs [data-action="match-client:${id}"]`).click();
     await page.locator(`input[data-match="cover"][data-client="${id}"][value="${bram}"]`).check();
   }
-  await page.locator('[data-action="match-client:1"]').click();
+  await page.locator('.client-match-tabs [data-action="match-client:1"]').click();
   await page.locator(`input[data-match="cover"][data-client="1"][value="${cass}"]`).check();
   await page.getByRole("button", { name: "Review invitations" }).click();
-  await page.locator(".review-who > summary").click();
+  // v5: the review shows who is asked straight away (no collapsed "Who will be asked" box).
   await page.locator('[data-action="review-view:colleague"]').click();
   const work = page.locator(".workload-list");
   await expect(work).toBeVisible();
@@ -191,10 +191,10 @@ test("B-03 C03 workload before review: totals per colleague, first and queued, g
   // Reordering: only where there is someone to reorder with, and not past either end.
   const clientOne = page.locator("details.review-client").nth(0), clientTwo = page.locator("details.review-client").nth(1);
   await expect(clientTwo.locator(".order-controls")).toHaveCount(0);
-  const rows = clientOne.locator(".invite-order-row");
+  const rows = clientOne.locator(".cover-order-row");
   await expect(rows).toHaveCount(2);
-  await expect(rows.nth(0).locator('button[aria-label="Ask this colleague earlier"]')).toBeDisabled();
-  await expect(rows.nth(1).locator('button[aria-label="Ask this colleague later"]')).toBeDisabled();
+  await expect(rows.nth(0).locator('button[aria-label$="earlier"]')).toBeDisabled();
+  await expect(rows.nth(1).locator('button[aria-label$="later"]')).toBeDisabled();
   // A route back to a client.
   await clientTwo.getByRole("button", { name: "Change this client" }).click();
   await expect(page.locator(".client-entry")).toBeVisible();
@@ -219,7 +219,7 @@ test("B-03b C03 twenty requests to one colleague are visible, counted and asked 
   await expect(page.locator(".inline-note[role=status]").first()).toContainText("Client 20");
   await page.getByRole("button", { name: "Review invitations" }).click();
   // 1 Nov (Nick, G5): one collapsible "Who will be asked", By client or By colleague.
-  await page.locator(".review-who > summary").click();
+  // v5: the review shows who is asked straight away (no collapsed "Who will be asked" box).
   await page.locator('[data-action="review-view:colleague"]').click();
   const line = page.locator(".workload-list li", { hasText: "Bram Tellinghast" });
   await expect(line).toContainText("20 requests");
