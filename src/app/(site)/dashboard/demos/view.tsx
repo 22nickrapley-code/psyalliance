@@ -26,7 +26,7 @@ const WHERE: Record<string, { href: string; label: string }> = {
 };
 
 // Every part of the product that has a self-playing demo, then the two pages the workspace does not cover.
-const DEMO_KEYS = ["hub", "cover", "refer", "consult", "circle", "messages", "library", "availability", "profile", "verified"];
+const DEMO_KEYS = ["hub", "assistant", "cover", "refer", "consult", "circle", "messages", "library", "availability", "profile", "verified"];
 
 export default function DemosPage() {
   const keys = DEMO_KEYS;

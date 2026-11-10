@@ -39,7 +39,10 @@ export const GUIDE_INFO: Record<number, { pdf: string; inside: string; before: s
 );
 
 export function templateBefore(code: string, warning?: string): string {
-  return (warning && warning.trim()) || `${TEMPLATE_BEFORE[code] || "Adapt it to your state and your practice before use."} ${NOT_ADVICE}`;
+  // v9 (Nick, 10 Nov): the note is specific to each template; a general database note is used only where none is written.
+  const own = TEMPLATE_BEFORE[code];
+  if (own) return `${own} ${NOT_ADVICE}`;
+  return (warning && warning.trim()) || `Adapt it to your state and your practice before use. ${NOT_ADVICE}`;
 }
 
 // The six guides as the screens read them: a PDF each, and an overview of what is inside and what to check first.

@@ -202,7 +202,7 @@ export default async function HomePage() {
                 </div>
               ))}
             </div>
-            <p className="v1-more"><a href={DEMO()}>Watch the whole story in two minutes &rarr;</a></p>
+            <p className="v1-more"><a className="v1-story-link" href={DEMO()}><span aria-hidden="true">&#9654;</span>Watch the whole story in two minutes</a></p>
           </div>
         </section>
 

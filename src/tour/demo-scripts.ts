@@ -85,14 +85,14 @@ const COVER: DemoScript = {
           beats: [["look", ".jt"], ["look", ".needs-box"], ["look", ".cdisc-row"]],
         },
         {
-          title: "Agreed, then ready",
-          text: "A colleague saying yes is not a finished handover. Confirm each one yourself once contact, a summary and the client are sorted.",
+          title: "Agree cover in one step",
+          text: "When a colleague can cover, agree it with one press. The handover is recorded with it, with a short checklist to keep you right, and everyone else asked is thanked.",
           beats: [
-            ["click", '[data-action="handover:1:2"]'],
-            ["tick", 'input[name="contact"]'],
-            ["tick", 'input[name="summary"]'],
-            ["tick", 'input[name="client"]'],
-            ["click", "text=Confirm handover"],
+            ["click", '[data-action="cover-client:1:3"]'],
+            ["click", '[data-action^="cover-choose:1:3:"]'],
+            ["look", ".handover-visual"],
+            ["look", ".handover-remind"],
+            ["click", '.modal [data-action^="cover-confirm:"]'],
           ],
           hold: 1,
         },
@@ -293,7 +293,7 @@ const CIRCLE: DemoScript = {
         },
         {
           title: "Trust is yours to give",
-          text: "Add someone to your trusted colleagues, or remove them, in one click. Being trusted by someone does not make you trust them back.",
+          text: "Add a colleague to your trusted circle in one click, and they come first in every match you make. Your circle is yours to shape.",
           beats: [["click", '[data-action="network-tab:circle"]'], ["look", '[data-action="trust:alex"]'], ["click", '[data-action="trust:alex"]']],
         },
       ],
@@ -333,7 +333,7 @@ const CIRCLE: DemoScript = {
         },
         {
           title: "What you can do from here",
-          text: "Message them, refer a client, ask for cover, add or remove trust, or exclude them from suggestions. Each action has its own rules.",
+          text: "Message them, refer a client or ask for cover: every next step with this colleague is one click from their profile.",
           beats: [["look", '[data-action="profile-referral:imani"]'], ["look", '[data-action="profile-cover:imani"]'], ["look", '[data-action="exclude-toggle:imani"]']],
         },
       ],
@@ -422,7 +422,7 @@ const MESSAGES: DemoScript = {
         },
         {
           title: "Reply in one place",
-          text: "Open a conversation, write your message and send it. You see whether it is sending, sent, or failed.",
+          text: "Open a conversation, write your message and send it. It arrives at once, with Sent and Read beside it.",
           beats: [
             ["click", '[data-action="colleague:rena"]'],
             ["type", "#message-input", "Thursday still works for me. I will bring the handover summary."],
@@ -449,19 +449,19 @@ const MESSAGES: DemoScript = {
       ],
     },
     {
-      name: "If a message does not send",
+      name: "Files and voice notes",
       view: "messages",
-      macro: "messages-failed",
+      macro: "messages-media",
       steps: [
         {
-          title: "A failed message says so",
-          text: "If a message cannot be sent, it says so plainly. Your words are kept, and nothing is lost.",
-          beats: [["look", '[data-action^="message-retry"]']],
+          title: "Share a file from wherever it lives",
+          text: "The paperclip offers your computer, your own saved files and the PsyAlliance Library, so a template reaches a colleague in two taps.",
+          beats: [["look", '[data-action="attach"]'], ["click", '[data-action="attach"]'], ["look", ".modal"], ["do", "close-modal"]],
         },
         {
-          title: "Retry sends it once",
-          text: "Retry sends the same message to the same conversation, once. Your next draft is never lost.",
-          beats: [["click", '[data-action^="message-retry"]']],
+          title: "Or simply say it",
+          text: "Hold a quick voice note when typing would take longer. Your colleague can play it, or read it as text.",
+          beats: [["look", '[data-action="record-start"]']],
         },
       ],
     },
@@ -497,7 +497,7 @@ const LIBRARY: DemoScript = {
         },
         {
           title: "The things that are easy to put off",
-          text: "A professional will is one many clinicians mean to write. Search for it, and the template and its steps are ready when you are.",
+          text: "The professional will most clinicians mean to write is ready to start. Search for it, and the template and its steps are there.",
           beats: [["type", "#resource-search", "will"], ["look", "#library-results"]],
           hold: 1,
         },
@@ -526,7 +526,7 @@ const AVAILABILITY: DemoScript = {
         },
         {
           title: "Spaces, and where",
-          text: "How many spaces you have, which states, and whether you see people virtually or in person. Pausing stops new requests only, never work under way, and it does not reopen by itself: you decide when to resume.",
+          text: "Say how many spaces you have, in which states, and whether you see people virtually or in person. Colleagues only ask when it fits.",
           beats: [["type", "#availability-slots", "1"], ["tick", 'input[name="inPerson-NY"]']],
         },
         {
@@ -536,7 +536,7 @@ const AVAILABILITY: DemoScript = {
         },
         {
           title: "Saved, and confirmed today",
-          text: "Saving confirms it is current. Colleagues see when you last did, so they can rely on it. If you ask for an alert, it is one short line: a first name, the kind of request, and Review request.",
+          text: "Save, and colleagues see it was confirmed today, so the right requests reach you and the wrong ones don’t.",
           beats: [["click", "text=Save & confirm availability"]],
         },
       ],
@@ -670,8 +670,47 @@ const REDUCING: DemoScript = {
   ],
 };
 
+// v9 (Nick, 10 Nov): the assistant has its own demo. One box answers anything about your own PsyAlliance world.
+const ASSISTANT: DemoScript = {
+  key: "assistant",
+  title: "Ask your PsyAlliance assistant",
+  what: "Assistant",
+  blurb: "One box on the Hub answers anything about your practice on PsyAlliance: referrals, cover, consults, your network and the Library.",
+  outcome: "Ask in your own words, get the answer and the people, then open the right place in one click.",
+  tryHref: "/tour/circle/home",
+  chapters: [
+    {
+      name: "The assistant",
+      view: "home",
+      steps: [
+        {
+          title: "One box for everything on PsyAlliance",
+          text: "The gold box at the top of your Hub knows your referrals, cover plans, consult questions, conversations and network. Ask it anything, in your own words.",
+          beats: [["look", ".hub-ask-form"]],
+        },
+        {
+          title: "Ask the way you would ask a colleague",
+          text: "Here you ask who could cover a teenager with anxiety while you are away. It answers from your own practice, not the internet.",
+          beats: [["type", "#hub-ask-input", "Who could cover a teenager with anxiety in Massachusetts in December?"], ["click", '#hub-ask-form button[type="submit"]'], ["wait", 1400], ["look", ".hub-ask-answer"]],
+        },
+        {
+          title: "The right people, and the next step",
+          text: "It names the colleagues who fit and why, and opens the right place in one click: here, your cover plans.",
+          beats: [["look", ".hub-ask-people"], ["look", ".hub-ask-sources"]],
+        },
+        {
+          title: "Private by design",
+          text: "It reads what you can already see in your workspace, never the words of your messages, and nothing you ask is shared with colleagues.",
+          beats: [["look", ".hub-ask-form"]],
+          hold: 1,
+        },
+      ],
+    },
+  ],
+};
+
 export const DEMO_SCRIPTS: Record<string, DemoScript> = {
-  cover: COVER, refer: REFER, consult: CONSULT, circle: CIRCLE, hub: HUB, messages: MESSAGES, library: LIBRARY, availability: AVAILABILITY, overview: OVERVIEW,
+  cover: COVER, refer: REFER, consult: CONSULT, circle: CIRCLE, hub: HUB, assistant: ASSISTANT, messages: MESSAGES, library: LIBRARY, availability: AVAILABILITY, overview: OVERVIEW,
   "time-away": TIME_AWAY, "client-referral": CLIENT_REFERRAL, caseload: CASELOAD, perspective: PERSPECTIVE, reducing: REDUCING,
 };
 export const findScript = (key: string) => DEMO_SCRIPTS[key] || null;

@@ -36,7 +36,7 @@ export function NeedIcon({ need }: { need: Need | "library" }) {
 // database), so choosing it goes straight to the demo.
 export const LIBRARY_TILE = {
   choice: "Find practice templates",
-  line: "Leave, closing and continuity templates, ready when you need them.",
+  line: "Leave, closing and continuity templates, ready to use.",
   href: "/tour/library",
   path: "M4 5.5A1.5 1.5 0 0 1 5.5 4H10l2 2h6.5A1.5 1.5 0 0 1 20 7.5v11a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 18.5zM8 12h8M8 15.5h5",
 };

@@ -45,3 +45,8 @@
 /* v7: the Library tile. */
 .guide-needs .need-library{--svc:#7A5C25;--svc-bg:#F6EEDD}
 @media (min-width:761px){.guide-needs>.need-explore{grid-column:1/-1}}
+/* v9 (Nick, 10 Nov): six tiles of one size; Just explore smaller and centred beneath them. */
+.guide-needs{grid-auto-rows:1fr}
+.guide-needs>.need-explore{grid-column:1/-1;justify-self:center;width:min(100%,440px);justify-content:center;align-items:center;padding:14px 22px}
+.guide-needs>.need-explore .need-txt{text-align:left}
+@media (max-width:760px){.guide-needs{grid-auto-rows:auto}.guide-needs>.need-explore{width:100%}}
