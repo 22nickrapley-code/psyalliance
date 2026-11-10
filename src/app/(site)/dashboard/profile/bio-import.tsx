@@ -293,16 +293,19 @@ export default function BioImportBox({ prominent = true, demo, mode = "setup" }:
             <div className="quick-start-photo">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={photo.src} alt="Photo found in your profile" />
-              <span className="small">We found this photo on your page. It becomes your profile photo when you save. If it isn&rsquo;t you, or you&rsquo;d rather add your own, you can leave it out.</span>
-              <button type="button" className="plain-button small" onClick={() => { setPhoto(null); if (urlField.current) urlField.current.value = ""; if (fileField.current) fileField.current.value = ""; }}>Leave this photo out</button>
+              <span className="qsp-copy">
+                <b>We found your photo</b>
+                <span className="small">It becomes your profile photo when you save. Not you, or rather use your own?</span>
+                <button type="button" className="plain-button small" onClick={() => { setPhoto(null); if (urlField.current) urlField.current.value = ""; if (fileField.current) fileField.current.value = ""; }}>Leave this photo out</button>
+              </span>
             </div>
           )}
-          <div className="row wrap" style={{ marginTop: 10, gap: 12 }}>
+          <div className="row wrap qs-actions" style={{ marginTop: 10, gap: 12 }}>
             <button type="button" className="btn" onClick={handleParse} disabled={isPending || !bioText.trim()}>
               {isPending ? "Reading..." : /^https?:\/\/\S+$/i.test(bioText.trim()) ? "Fill in from this link" : "Fill in from this text"}
             </button>
             {message && (
-              <span className="small" role="status" style={{ color: isError ? "#9b2c22" : undefined }}>
+              <span className={`small qs-status${isError ? " is-error" : " is-ok"}`} role="status">
                 {message}
               </span>
             )}

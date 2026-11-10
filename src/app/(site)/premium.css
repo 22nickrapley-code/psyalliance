@@ -3031,3 +3031,50 @@
 .pa.v1 .v1-doctoral-creds li{padding:3px 10px;border:1px solid rgba(255,255,255,.35);border-radius:999px;font-size:12.5px;font-weight:600;letter-spacing:.04em;color:#fff}
 .pa.v1 .v1-doctoral-note{font-size:14px;line-height:1.45;color:rgba(255,255,255,.86);margin-left:auto;max-width:520px}
 @media (max-width:900px){.pa.v1 .v1-doctoral-note{margin-left:0;max-width:none}}
+
+/* v8 (Nick, 9 Nov, phone pass): the homepage on a phone is shorter and quicker to move around. */
+.pa.v1 .v1-lead-short{display:none}
+.pa.v1 .v1-jump{display:none}
+@media (max-width:760px){
+  .pa.v1 .v1-lead-long{display:none}
+  .pa.v1 .v1-lead-short{display:inline}
+  .pa.v1 .v1-hero{padding-top:28px!important;padding-bottom:20px!important;gap:20px!important}
+  .pa.v1 .v1-hero h1{font-size:38px!important;line-height:1.06!important}
+  .pa.v1 .v1-lead{font-size:17px!important;margin-top:14px!important}
+  .pa.v1 .v1-cta{display:grid!important;grid-template-columns:1fr;gap:10px!important;margin-top:20px!important}
+  .pa.v1 .v1-cta .btn{width:100%;justify-content:center}
+  .pa.v1 .v1-proof{margin-top:14px!important;gap:6px 14px!important;font-size:13.5px}
+  .pa.v1 .v1-panel{display:none!important}
+  /* Quick links under the bar. */
+  .pa.v1 .v1-jump{display:block;position:sticky;top:64px;z-index:15;background:rgba(247,245,240,.97);border-bottom:1px solid var(--line);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+  .pa.v1 .v1-jump-in{display:flex;gap:8px;overflow-x:auto;padding:10px 16px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+  .pa.v1 .v1-jump-in::-webkit-scrollbar{display:none}
+  .pa.v1 .v1-jump a{flex:none;display:inline-flex;align-items:center;min-height:36px;padding:0 14px;border:1px solid #D7DDD6;border-radius:999px;background:#fff;font-size:14px;font-weight:600;color:var(--ink);text-decoration:none;white-space:nowrap}
+  .pa.v1 .v1-jump a.is-cta{background:var(--forest,#1E4A3A);border-color:var(--forest,#1E4A3A);color:#fff}
+  .pa.v1 [id]{scroll-margin-top:124px}
+  /* Sections: tighter, and the long lists become swipeable rows. */
+  .pa.v1 .v1-band{padding-top:44px!important;padding-bottom:44px!important}
+  .pa.v1 .v1-intro h2{font-size:29px!important;line-height:1.12!important}
+  .pa.v1 .v1-intro p{font-size:16px!important;line-height:1.55}
+  .pa.v1 .v1-compare{margin-top:24px!important}
+  .pa.v1 .v1-crow .v1-today{display:none!important}
+  .pa.v1 .v1-crow>div{padding:16px 18px!important}
+  .pa.v1 .v1-crow .v1-with .v1-tag{display:none}
+  .pa.v1 .v1-stages,.pa.v1 .v1-libgrid,.pa.v1 .v1-trust{display:flex!important;gap:12px!important;overflow-x:auto;scroll-snap-type:x mandatory;margin-left:-16px!important;margin-right:-16px!important;padding:4px 16px 12px!important;scrollbar-width:none;border-top:0!important}
+  .pa.v1 .v1-stages::-webkit-scrollbar,.pa.v1 .v1-libgrid::-webkit-scrollbar,.pa.v1 .v1-trust::-webkit-scrollbar{display:none}
+  .pa.v1 .v1-stage,.pa.v1 .v1-lib,.pa.v1 .v1-trust>div{flex:0 0 82%;scroll-snap-align:start;border:1px solid var(--line)!important;border-radius:14px;background:#fff;padding:18px!important;margin:0!important}
+  .pa.v1 .v1-stages{margin-top:24px!important}
+  .pa.v1 .v1-trust{margin-top:24px!important}
+  .pa.v1 .v1-trust b{font-size:20px!important}
+  .pa.v1 #stages .v1-note,.pa.v1 .v1-libnote{display:none}
+  .pa.v1 .v1-story blockquote{font-size:26px!important;line-height:1.2!important}
+  .pa.v1 .v1-final{display:grid!important;gap:18px!important}
+  .pa.v1 .v1-final .btn{width:100%;justify-content:center}
+}
+/* v8: what you type on a phone is 16px everywhere (an iPhone zooms the page for anything smaller); labels sit above it. */
+@media (max-width:760px){
+  .pa input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=file]),.pa select,.pa textarea{font-size:16px!important}
+  .pa ::placeholder{font-size:16px}
+  .pa .field>label,.pa label.field,.pa .auth-form label{font-size:14px}
+}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}

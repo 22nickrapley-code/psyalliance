@@ -20,7 +20,7 @@ export const viewport: Viewport = {
 } as Viewport;
 
 const STYLES = ["styles", "product", "refinements", "home", "pulse", "directions", "polish", "feedback", "hub"];
-const V = "20";
+const V = "21";
 
 export default function WorkspaceRootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -51,6 +51,7 @@ export default function WorkspaceRootLayout({ children }: { children: React.Reac
         <link rel="stylesheet" href={`/workspace/v5.css?v=${V}`} />
         <link rel="stylesheet" href={`/workspace/v6.css?v=${V}`} />
         <link rel="stylesheet" href={`/workspace/v7.css?v=${V}`} />
+        <link rel="stylesheet" href={`/workspace/v8.css?v=${V}`} />
       </head>
       <body>
         <a className="skip-link" href="#main">Skip to content</a>

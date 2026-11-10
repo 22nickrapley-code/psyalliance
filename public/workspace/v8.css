@@ -1,0 +1,283 @@
+/* PsyAlliance v8: the phone pass (Nick, 9 Nov, evening). Loaded last.
+   One type scale for every form on every page: what you type is 16px (an iPhone zooms the page for anything smaller),
+   labels sit above it at 14px, section titles above that. On a phone every pop-up is a full-screen sheet with the X
+   top-right, and a footer holds the main action, Back and More. */
+
+/* Settings rows: the reply window, timeframe and private title read as one card (all widths). */
+.review-settings{display:grid;margin:18px 0 0;border:1px solid var(--line);border-radius:14px;background:#fff;overflow:hidden}
+.review-settings+.review-settings{margin-top:0;border-top:0;border-radius:0 0 14px 14px}
+.review-settings:has(+.review-settings){border-radius:14px 14px 0 0}
+.rs-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(180px,240px);gap:8px 20px;align-items:center;padding:14px 16px}
+.rs-row+.rs-row,.review-settings+.review-settings>.rs-row:first-child{border-top:1px solid color-mix(in srgb,var(--line) 70%,transparent)}
+.rs-copy{display:grid;gap:3px;min-width:0}
+.rs-copy label{margin:0;font-size:14px;font-weight:650;color:var(--ink);line-height:1.3}
+.rs-copy label span{font-weight:500;color:var(--muted,#5b6b61);margin-left:4px}
+.rs-copy small{font-size:13px;line-height:1.45;color:var(--muted,#5b6b61)}
+.rs-control select,.rs-control input{width:100%}
+
+/* Import: a slim row; the explanation opens with the arrow (all widths). */
+.import-panel.is-slim{grid-template-columns:auto minmax(0,1fr) auto;padding:10px 12px;gap:12px;margin-bottom:16px}
+.import-panel.is-slim .import-mark{width:34px;height:34px;border-radius:9px}
+.import-panel.is-slim .import-mark svg{width:17px;height:17px}
+.import-panel.is-slim .import-copy strong{font-size:14.5px}
+.import-panel.is-slim .import-sub{font-size:12.5px;color:#5b6b61}
+.import-panel.is-slim .import-actions{flex-direction:row;align-items:center;gap:4px}
+.import-toggle{width:36px;height:36px;min-height:36px;border-radius:9px;color:#3F5B4C}
+.import-toggle svg{transition:transform .15s}
+.import-panel.is-open .import-toggle svg{transform:rotate(180deg)}
+.import-more{grid-column:1/-1;display:grid;gap:8px;justify-items:start;padding:10px 2px 2px;border-top:1px solid #DDE7E0}
+.import-more p{margin:0;font-size:13px;line-height:1.5;color:#4A5A50;max-width:68ch}
+.import-more .text-link{display:inline-flex;align-items:center;gap:6px}
+.import-more .text-link svg{width:15px;height:15px}
+.import-panel.is-slim>.import-note{grid-column:1/-1;margin:0}
+
+/* The profile dialogs: Safari collapsed the body (flex-basis 0 in a column without a height). */
+dialog.pf-card .pf-card-body{flex:1 1 auto;min-height:0}
+dialog.pf-card .pf-card-head{flex-wrap:nowrap!important;align-items:flex-start}
+dialog.pf-card .pf-card-x:focus:not(:focus-visible){outline:none;box-shadow:none}
+
+/* ---------------------------------------------------------------- Phones */
+@media (max-width:760px){
+  /* Type: one scale for forms everywhere. */
+  input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=file]),select,textarea{font-size:16px!important;line-height:1.35}
+  input::placeholder,textarea::placeholder{font-size:16px!important;color:#8A948D!important;opacity:1}
+  select{background-color:#fff!important;color:var(--ink)}
+  .rs-control input,.rs-control select{border:1px solid #D9D1C0!important;border-radius:12px!important;background-color:#fff!important;box-shadow:none;min-height:48px;padding:10px 12px;font:inherit}
+  .rs-control input:focus,.rs-control select:focus{outline:none;border-color:var(--feature,#1E4A3A)!important;box-shadow:0 0 0 3px color-mix(in srgb,var(--feature,#1E4A3A) 18%,transparent)!important}
+  .check-line{display:flex!important;align-items:flex-start!important;gap:10px!important;font-size:15px!important;line-height:1.4!important;font-weight:550}
+  .check-line input{flex:none;width:20px!important;height:20px!important;margin:1px 0 0!important}
+  .choice-card small,.outreach-options label small,.cover-kind small,.radio-card small{font-size:13.5px!important;line-height:1.45!important}
+  .field>label,.field label:first-child,.form-grid label:not(.state-option):not(.check):not(.choice-card),.pf-card-body label:not(.check-grid label),.auth-form label{font-size:14px!important;font-weight:650!important;color:var(--ink)!important;letter-spacing:0}
+  .field>label span,.rs-copy label span{font-size:13px!important;font-weight:500!important;color:#6B756E!important}
+  .field small,.field-hint,.field .help,.rs-copy small{font-size:13px!important;line-height:1.45!important}
+  select,input[type=text],input[type=email],input[type=tel],input[type=url],input[type=search],input[type=number],input[type=date],input:not([type]),.field select,.field input{min-height:48px;padding:10px 12px;border-radius:12px}
+  select{padding-right:34px}
+  textarea{min-height:96px;padding:12px;border-radius:12px}
+  input[type=date]{-webkit-appearance:none;appearance:none;display:block;width:100%;text-align:left}
+  .form-grid{gap:14px 12px!important}
+  .form-grid .field{min-width:0}
+  .modal h3,.modal .section-title,.client-entry .eyebrow+*{letter-spacing:-.01em}
+  fieldset legend,.outreach-options legend,.field.full>label:first-child{font-size:15px!important;font-weight:700!important;color:var(--ink)!important}
+
+  /* Top bar: menu and logo left; Sandbox, Search and the bell as three matching 40px buttons right. */
+  .topbar{height:56px!important;padding:0 8px 0 4px!important;gap:6px!important}
+  .mobile-brand{gap:2px!important;flex:1 1 auto;min-width:0}
+  .mobile-brand .mobile-menu{width:44px!important;height:44px!important}
+  .mobile-brand img{width:112px!important;height:26px!important}
+  .top-actions{display:flex;align-items:center;gap:4px!important;flex:none}
+  .top-actions>.sandbox-chip,.top-actions>.mobile-search,.top-actions>.icon-button{width:40px;height:40px;min-height:40px;padding:0!important;margin:0!important;display:inline-grid;place-items:center;border-radius:12px}
+  .top-actions>.sandbox-chip{border:1px solid #E9DFC3;background:#F7F1E2;color:#7A6A3A;gap:0}
+  .top-actions>.sandbox-chip b{display:none}
+  .top-actions>.sandbox-chip svg{width:17px;height:17px}
+  .top-actions>.mobile-search{border:1px solid var(--line)!important;background:#fff}
+  .top-actions>.mobile-search span{display:none}
+  .top-actions>.mobile-search svg,.top-actions>.icon-button svg{width:19px;height:19px}
+  .top-actions>.icon-button{position:relative;border:1px solid transparent}
+  .top-actions>.avatar{display:none}
+  .top-actions .notification-dot{top:8px;right:9px}
+
+  /* "Watch the demo": one slim line. */
+  .demo-line{flex-wrap:nowrap!important;justify-content:space-between;gap:10px!important;margin:2px 0 12px!important;padding:6px 6px 6px 8px;border:1px solid #E6E0D2;border-radius:12px;background:#FBF8F1}
+  .demo-line-watch{display:flex!important;align-items:center;gap:9px!important;min-width:0;text-align:left!important;font-size:14px!important;padding:2px 0!important}
+  .demo-line-watch span{text-align:left!important}
+  .demo-line-watch b{font-weight:650}
+  .demo-line-icon{flex:none;width:28px!important;height:28px!important;font-size:10px!important}
+  .demo-line-off{flex:none;font-size:13px!important;padding:6px 8px!important;color:#5b6b61!important;text-decoration:none!important;border-radius:8px}
+
+  /* Ask PsyAlliance: one compact row. */
+  .hub-ask{margin:0 0 14px!important;padding:0!important;border:0!important;background:none!important;box-shadow:none!important}
+  .hub-ask-form{flex-wrap:nowrap!important;border-radius:14px!important;padding:5px 5px 5px 12px!important;gap:6px!important;min-height:54px}
+  .hub-ask-form input{flex:1 1 auto!important;min-width:0;font-size:16px!important;min-height:40px!important;padding:6px 2px!important;border:0!important}
+  .hub-ask-form .ai-mark{flex:none;display:grid;place-items:center;width:22px;height:22px;padding:0;background:none}
+  .hub-ask-form .ai-mark svg{width:18px;height:18px}
+  .hub-ask-form .ai-mic{flex:none;width:40px;height:40px;min-height:40px;border-radius:11px}
+  .hub-ask-form>.button{flex:none;min-height:42px;padding:0 16px;border-radius:11px}
+
+  /* Pop-ups: full-screen sheets. */
+  .overlay{position:fixed!important;inset:0!important;top:var(--visible-top,0px)!important;height:var(--visible-height,100dvh)!important;padding:0!important;align-items:stretch!important;justify-content:stretch!important;background:var(--paper,#FBF9F4)!important;backdrop-filter:none!important}
+  .overlay>.modal,.overlay>.modal.wide{width:100%!important;max-width:none!important;height:100%!important;max-height:none!important;margin:0!important;border-radius:0!important;border:0!important;box-shadow:none!important;display:flex!important;flex-direction:column!important;transform:none!important}
+  .modal:focus{outline:none}
+  .modal-header{position:relative;display:block!important;padding:12px 60px 12px 16px!important;border-radius:0!important;border-top-width:3px!important;flex:none}
+  .modal-header>div{min-width:0}
+  .modal-header .eyebrow{font-size:11.5px!important;letter-spacing:.12em!important;margin:0 0 3px!important}
+  .modal-header h2{font-size:21px!important;line-height:1.2!important;margin:0!important;overflow-wrap:anywhere}
+  .modal-header p:not(.eyebrow){font-size:13.5px!important;line-height:1.4!important;margin:3px 0 0!important}
+  .modal-header .modal-sandbox{display:none!important}
+  .modal-header>.icon-button[data-action="close-modal"],.modal-header>.icon-button:last-child{position:absolute!important;top:8px;right:8px;width:44px!important;height:44px!important;min-height:44px!important;border:0!important;background:transparent!important;box-shadow:none!important;margin:0!important}
+  .modal-header>.icon-button svg{width:22px;height:22px}
+  .modal-header.has-lead{display:grid!important;grid-template-columns:auto minmax(0,1fr);gap:12px;align-items:start}
+  .modal-header.has-lead .modal-lead .avatar{width:48px!important;height:48px!important;font-size:16px!important}
+  .modal-header .chip,.modal-header .pill,.modal-header [class*=badge]{font-size:12.5px!important;padding:3px 9px!important;margin:4px 4px 0 0!important}
+  .workflow-steps{padding:8px 16px!important;flex:none}
+  .modal-body{flex:1 1 auto!important;min-height:0!important;padding:16px!important;overflow-x:hidden!important}
+  .modal-body>*{max-width:100%}
+  .modal-footer{flex:none;position:relative;display:flex!important;flex-wrap:nowrap!important;align-items:center;gap:8px!important;padding:10px 12px max(10px,env(safe-area-inset-bottom,0px))!important;border-radius:0!important;box-shadow:0 -8px 20px -16px #20302833}
+  .modal-footer>.button,.modal-footer>button{min-height:48px;white-space:nowrap;font-size:15px}
+  .modal-footer>.primary,.modal-footer>[type=submit]{flex:1 1 auto;justify-content:center;min-width:0}
+  .modal-footer>.foot-quiet{display:none!important}
+  .modal-footer>.save-note[data-state=failed]{display:flex!important;position:absolute;bottom:100%;left:0;right:0;padding:6px 14px;background:#FFF4F1;font-size:13px}
+  .modal-footer.is-phone-foot>.button:not(.primary):not([type=submit]){flex:none}
+  .foot-more{position:static;flex:none}
+  .foot-more-btn{min-height:48px;padding:0 14px!important;gap:6px}
+  .modal-footer:has(.foot-more)>[data-action="flow-back"]{width:48px;padding:0!important;font-size:0!important;justify-content:center;gap:0}
+  .modal-footer:has(.foot-more)>[data-action="flow-back"] svg{width:20px;height:20px;margin:0}
+  .foot-more-btn svg{width:18px;height:18px}
+  .foot-more-menu{position:absolute;left:10px;right:10px;bottom:calc(100% + 6px);z-index:5;display:grid;gap:2px;padding:6px;border:1px solid var(--line);border-radius:16px;background:#fff;box-shadow:0 18px 44px -18px #1a2b2366}
+  .foot-more-menu[hidden]{display:none}
+  .foot-more-menu>*{all:unset;box-sizing:border-box;display:flex!important;align-items:center;gap:12px;width:100%;min-height:48px;padding:10px 12px!important;border-radius:11px;font:inherit;font-size:15.5px!important;font-weight:600;color:var(--ink);cursor:pointer;text-align:left;white-space:normal;background:none!important;border:0!important;box-shadow:none!important}
+  .foot-more-menu>*:hover,.foot-more-menu>*:focus-visible{background:#F2F5F2!important;outline:none}
+  .foot-more-menu>* svg{flex:none;width:19px;height:19px;color:#4A5A50}
+  .foot-more-menu>.danger,.foot-more-menu>[data-action*=withdraw],.foot-more-menu>[data-action*=cancel-plan],.foot-more-menu>[data-action^=plan-cancel]{color:#9A3324}
+  .foot-more-menu>.support-foot,.foot-more-menu>p,.foot-more-menu>span{font-weight:500;font-size:14px!important;color:#5b6b61}
+
+  /* Who is asked, in order: small arrows, names whole. */
+  .addrec-row,.cover-order-row{display:grid!important;grid-template-columns:auto auto minmax(0,1fr) 34px;align-items:center;gap:10px!important;padding:10px 8px 10px 12px!important}
+  .addrec-row .drag-handle{display:none!important}
+  .addrec-row .order-index{width:24px!important;height:24px!important;font-size:12px!important}
+  .addrec-row .avatar{width:32px!important;height:32px!important;font-size:11.5px!important}
+  .addrec-who{min-width:0;display:grid!important;gap:2px}
+  .addrec-who strong{font-size:15px!important;line-height:1.3;word-break:normal!important;overflow-wrap:normal!important;hyphens:none}
+  .addrec-who small{font-size:12.5px!important;line-height:1.4!important;word-break:normal!important;overflow-wrap:break-word}
+  .addrec-row .review-flags{grid-column:3/-1}
+  .order-controls{display:grid!important;grid-template-rows:1fr 1fr;gap:2px!important;justify-self:end;width:34px}
+  .order-controls .icon-button{width:34px!important;height:26px!important;min-height:26px!important;padding:0!important;border-radius:7px!important;border:1px solid var(--line)!important;background:#fff!important}
+  .order-controls .icon-button svg{width:15px!important;height:15px!important}
+  .order-controls .icon-button[disabled]{opacity:.35}
+  .cover-order-row>.order-controls{grid-column:4;grid-row:1}
+
+  /* Settings card stacks. */
+  .rs-row{grid-template-columns:1fr;gap:8px;padding:14px}
+  .rs-copy label{font-size:15px}
+
+  /* States: compact two-column checklist, box beside the name. */
+  .state-picker summary{min-height:48px;display:flex;align-items:center;padding:0 12px;font-size:16px}
+  .state-options{grid-template-columns:1fr 1fr!important;gap:6px!important;padding:8px!important;max-height:46vh;overflow:auto}
+  .state-option{display:flex!important;flex-direction:row!important;align-items:center!important;gap:9px!important;min-height:40px;padding:6px 10px!important;font-size:14.5px!important;line-height:1.25;border-radius:10px!important}
+  .state-option input{flex:none;margin:0!important;width:18px;height:18px;order:-1}
+
+  /* Client details: one hierarchy. */
+  .client-entry{padding:14px!important}
+  .client-entry>.eyebrow{font-size:11.5px!important;margin:0 0 4px!important}
+  .client-entry-head{margin:0 0 10px!important}
+  .client-entry-head strong,.client-title strong{font-size:18px!important;font-weight:700;letter-spacing:-.01em}
+  .need-grid{grid-template-columns:1fr 1fr!important}
+  .need-grid>.field:first-child,.need-grid .field.full{grid-column:1/-1}
+  .modal .section-head h3,.modal h3{font-size:17px!important;line-height:1.3}
+
+  /* Match cards: reasons wrap instead of running off. */
+  .match-lines .match-line,.match-line .chips,.match-card .chips{flex-wrap:wrap!important;overflow:visible!important;mask-image:none!important;-webkit-mask-image:none!important}
+  .mchip{max-width:100%;white-space:normal!important}
+  .match-card{padding:12px!important}
+  .match-card-top{gap:8px!important}
+
+  /* Responses and the card conversation: full width, names whole, a proper composer. */
+  .response-main{display:flex!important;flex-wrap:wrap!important;align-items:flex-start!important;gap:10px 12px!important}
+  .response-main>.avatar{flex:none}
+  .response-main>.order-index{flex:none;align-self:center}
+  .response-who{flex:1 1 150px!important;min-width:0!important;display:grid!important;gap:3px;justify-items:start}
+  .response-who .person-link,.response-who strong{font-size:15.5px!important;font-weight:650;word-break:normal!important;overflow-wrap:normal!important;white-space:normal;text-align:left}
+  .response-who .resp-due{font-size:13px}
+  .response-main>.resp-pill{flex:none;margin-left:auto}
+  .response-main>.response-actions{flex:1 1 100%!important;display:flex!important;flex-wrap:wrap;align-items:center;gap:8px 14px!important;margin:0!important}
+  .response-actions>.button{min-height:42px}
+  .quick-decide{display:flex!important;flex-wrap:wrap;gap:8px!important}
+  .quick-decide>.button{flex:1 1 auto;min-height:44px;justify-content:center}
+  .recipient-tally,.modal h3.section-label{font-size:14px!important;font-weight:600!important;line-height:1.45!important;letter-spacing:0!important}
+  .quick-thread,.quick-msgs,.resp-convo{grid-column:1/-1;min-width:0;max-width:100%}
+  .quick-form{grid-column:1/-1;width:100%}
+  .quick-compose{display:grid!important;grid-template-columns:auto minmax(0,1fr) auto;grid-template-areas:"text text text" "attach mic send";gap:8px!important;align-items:center!important}
+  .quick-compose textarea{grid-area:text;width:100%;min-height:52px!important;font-size:16px!important}
+  .quick-compose .quick-tool[data-action^="qattach"]{grid-area:attach}
+  .quick-compose .quick-tool[data-action^="qrecord"]{grid-area:mic;justify-self:start}
+  .quick-compose>.button,.quick-compose>button[type=submit]{grid-area:send;min-height:44px;padding:0 18px;margin:0!important}
+  .quick-form.is-recording .quick-compose,.quick-form.has-audio .quick-compose{display:flex!important}
+  .case-card,.plan-case,.client-case{min-width:0;max-width:100%;overflow:hidden}
+  .case-card *,.plan-case *{max-width:100%}
+
+  /* A colleague's profile. */
+  .pf-band{display:grid!important;grid-template-columns:minmax(0,1fr);gap:10px!important;padding:12px 14px!important}
+  .pf-band .pf-band-icon{display:none!important}
+  .pf-band-copy b{font-size:15px}
+  .pf-band-copy small{font-size:13px!important;line-height:1.45}
+  .pf-band>.button{justify-self:start;min-height:42px}
+
+  /* Profile edit dialogs: full-screen sheets. */
+  dialog.pf-card{position:fixed;inset:0;width:100%!important;max-width:none!important;height:100dvh!important;max-height:none!important;margin:0!important;border-radius:0!important}
+  dialog.pf-card .pf-card-head{position:relative;padding:14px 60px 14px 16px!important}
+  dialog.pf-card .pf-card-head h2{font-size:21px!important}
+  dialog.pf-card .pf-card-help{font-size:13.5px!important;line-height:1.45}
+  dialog.pf-card .pf-card-x{position:absolute;top:8px;right:8px;width:44px!important;height:44px!important;font-size:28px!important}
+  dialog.pf-card .pf-card-body{padding:16px!important}
+  dialog.pf-card .pf-card-foot{padding:10px 12px max(10px,env(safe-area-inset-bottom,0px))!important}
+  dialog.pf-card .pf-card-foot .btn{flex:1;min-height:48px}
+  dialog.pf-card textarea{min-height:200px}
+  .import-panel.is-slim{grid-template-columns:auto minmax(0,1fr) auto!important}
+  .import-panel.is-slim .import-actions{grid-column:auto!important;flex-direction:row!important;align-items:center;justify-content:flex-end}
+  .import-panel.is-slim .import-actions .button{min-height:38px;padding:0 10px;font-size:13.5px}
+  .import-panel.is-slim .import-actions .button svg{width:15px;height:15px}
+
+  /* Long words never break mid-name anywhere. */
+  .modal strong,.modal b,.modal h3,.modal h4{word-break:normal;overflow-wrap:break-word}
+}
+
+/* Profile, filled in from a link: the found photo with its note and choice; the result as a clear status line. */
+.quick-start-photo{display:flex!important;align-items:flex-start!important;gap:14px!important;margin-top:12px!important;padding:12px;border:1px solid #EADFCB;border-radius:14px;background:#FFFCF6}
+.quick-start-photo img{flex:none}
+.qsp-copy{display:grid;gap:3px;min-width:0}
+.qsp-copy b{font-size:14.5px;color:var(--ink)}
+.qsp-copy .small{font-size:13.5px;line-height:1.45;color:#5b6b61}
+.qsp-copy .plain-button{justify-self:start;margin-top:4px;padding:0;font-weight:650;color:#7A3428;text-decoration:underline;text-underline-offset:3px}
+.qs-status{display:inline-flex;align-items:center;gap:6px;font-size:14px!important;line-height:1.4}
+.qs-status.is-ok{color:#1E6B47;font-weight:600}
+.qs-status.is-ok::before{content:"";flex:none;width:8px;height:8px;border-radius:50%;background:#1E6B47}
+.qs-status.is-error{color:#9b2c22}
+
+@media (max-width:760px){
+  .qs-actions{display:grid!important;gap:10px!important}
+  .qs-actions .btn{width:100%;min-height:48px;justify-content:center}
+  /* Profile head: photo and pencil on one line, the name below at full width. */
+  .pf-layout .pf-head-row{display:grid!important;grid-template-columns:auto minmax(0,1fr) auto;gap:12px 14px!important;align-items:start}
+  .pf-layout .pf-head-row>.pf-avatar{grid-row:1;grid-column:1}
+  .pf-layout .pf-head-row>.pf-head-text{grid-column:1/-1;grid-row:2;min-width:0}
+  .pf-layout .pf-head-row>.pf-edit{grid-row:1;grid-column:3;position:static!important}
+  .pf-layout .pf-name{white-space:normal!important;overflow:visible!important;text-overflow:clip!important;font-size:24px!important;line-height:1.2!important}
+  .pf-layout .pf-avatar .avatar,.pf-layout .pf-avatar img{width:72px!important;height:72px!important;font-size:24px!important}
+  /* Rows: the text takes the width; the status sits under it; the pencil stays on the right. */
+  .pf-rows .pf-row{display:grid!important;grid-template-columns:minmax(0,1fr) auto;column-gap:14px;row-gap:8px;align-items:center}
+  .pf-rows .pf-row>.pf-row-text{grid-column:1;grid-row:1;min-width:0}
+  .pf-rows .pf-row>.pf-state{grid-column:1;grid-row:2;justify-self:start;margin:0!important}
+  .pf-rows .pf-row>.pf-edit{grid-column:2;grid-row:1/span 2;align-self:center}
+  .pf-row-text b{font-size:15.5px}
+  .pf-row-text span,.pf-row-text small{font-size:14px;line-height:1.45}
+}
+@media (max-width:760px){
+  .import-panel.is-slim .import-mark{display:none!important}
+  .import-panel.is-slim{grid-template-columns:minmax(0,1fr) auto!important}
+  .import-panel.is-slim .import-copy strong{white-space:nowrap}
+}
+/* Safari on iPhone: no automatic text inflation; a select keeps to one line; dates sit left; the client card never runs off. */
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+@media (max-width:760px){
+  select{white-space:nowrap;text-overflow:ellipsis;overflow:hidden}
+  input[type=date]::-webkit-date-and-time-value{text-align:left}
+  .need-grid>.field:has(#referral-setting),.need-grid>.field:has(#cover-setting){grid-column:1/-1}
+  .cover-client-card,.cover-client-card>*,.need-card,.need-card>*{min-width:0!important;max-width:100%!important}
+  .cover-client-card{overflow:hidden}
+  .cover-client-card>header{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between}
+  .cover-client-card>header>div{min-width:0;flex:1 1 160px}
+  .client-tiles,.cover-client-tiles{max-width:100%}
+}
+@media (max-width:760px){
+  .search-field input,.search-field input:focus{border:0!important;box-shadow:none!important;outline:none!important;min-height:44px;padding:0 4px!important;background:transparent}
+  .search-field:focus-within{border-color:var(--feature,#1E4A3A)!important;box-shadow:0 0 0 3px color-mix(in srgb,var(--feature,#1E4A3A) 16%,transparent)}
+  .pf-band>.button{width:auto!important}
+}
+/* The settings card's controls match every other box at all widths. */
+.rs-control input,.rs-control select{width:100%;min-height:44px;padding:9px 12px;border:1px solid #D9D1C0;border-radius:11px;background-color:#fff;font:inherit;font-size:15px;color:var(--ink)}
+.rs-control select{padding-right:32px}
+.rs-control input:focus,.rs-control select:focus{outline:none;border-color:var(--feature,#1E4A3A);box-shadow:0 0 0 3px color-mix(in srgb,var(--feature,#1E4A3A) 18%,transparent)}
+@media (max-width:760px){
+  .response-main>.resp-pill{margin-left:0!important;order:3}
+  .response-main>.avatar+.response-who+.resp-pill,.response-main>.order-index~.resp-pill{margin-left:52px!important}
+  .response-main>.response-actions{order:4;justify-content:flex-start!important}
+}

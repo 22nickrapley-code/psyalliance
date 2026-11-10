@@ -54,8 +54,8 @@ test("V15-01 Cover and Referrals use the same filters, clearer panel titles, no 
   await page.locator(`input[data-match="cover"][value="${bram.id}"]`).check();
   await page.getByRole("button", { name: "Review invitations" }).click();
   // The deadline says what happens when the time is up.
-  await expect(page.locator('label[for="cover-deadline"]')).toHaveText("How long each colleague has to reply");
-  await expect(page.locator("#cover-send-form")).toContainText("the next colleague on your list is asked automatically");
+  await expect(page.locator('label[for="cover-deadline"]')).toHaveText("Time each colleague has to reply");
+  await expect(page.locator("#cover-send-form")).toContainText("No reply in time? The next colleague on your list is asked.");
   await page.locator('#cover-send-form input[name="reviewed"]').check();
   await page.getByRole("button", { name: "Send cover requests" }).click();
   await expect(page.locator("#toast")).toContainText("Cover requests sent");

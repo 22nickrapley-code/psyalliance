@@ -137,7 +137,8 @@ export default async function HomePage() {
               Your own practice, <em>with a group behind you.</em>
             </h1>
             <p className="v1-lead">
-              Colleagues who cover your clients when you&rsquo;re away, take the referrals you can&rsquo;t, and talk a hard decision through with you. Every member is a doctoral-level psychologist or psychiatrist, verified by a person.
+              <span className="v1-lead-long">Colleagues who cover your clients when you&rsquo;re away, take the referrals you can&rsquo;t, and talk a hard decision through with you. Every member is a doctoral-level psychologist or psychiatrist, verified by a person.</span>
+              <span className="v1-lead-short">Colleagues who cover your clients, take the referrals you can&rsquo;t and talk a hard case through. Doctoral-level only, each verified by a person.</span>
             </p>
             <div className="v1-cta">
               <a className="btn lg" href="/auth/sign-up">Create your account</a>
@@ -169,20 +170,18 @@ export default async function HomePage() {
           </div>
         </section>
 
-        {/* v7 (Nick, 9 Nov): doctoral-level only, said plainly and early. */}
-        <section className="v1-doctoral" aria-label="Who can join">
-          <div className="v1-wrap v1-doctoral-in">
-            <b className="v1-doctoral-lead">Doctoral-level only</b>
-            <ul className="v1-doctoral-creds" aria-label="Qualifications">
-              <li>PhD</li>
-              <li>PsyD</li>
-              <li>EdD</li>
-              <li>MD</li>
-              <li>DO</li>
-            </ul>
-            <span className="v1-doctoral-note">Every license checked against the state board by a person. A network of doctoral peers, not an open directory.</span>
+        {/* v8 (Nick, 9 Nov, phone pass): the doctoral strip repeated the hero, so it went; on a phone, a row of quick links stays under the bar. */}
+        <nav className="v1-jump" aria-label="Jump to">
+          <div className="v1-jump-in">
+            <a href="#m-cover">Cover</a>
+            <a href="#m-ref">Referrals</a>
+            <a href="#m-con">Consult</a>
+            <a href="#library">Library</a>
+            <a href="#verification">Trust</a>
+            <a href="#faq">Questions</a>
+            <a href="/start" className="is-cta">See how it helps</a>
           </div>
-        </section>
+        </nav>
 
         <section className="v1-band v1-paper" id="how">
           <div className="v1-wrap">
@@ -196,7 +195,7 @@ export default async function HomePage() {
             <div className="v1-compare" role="table" aria-label="Without PsyAlliance, and with PsyAlliance">
               <div className="v1-crow v1-chead" role="row"><div role="columnheader">The moment</div><div role="columnheader">Without PsyAlliance</div><div role="columnheader" className="v1-chead-with">With PsyAlliance</div></div>
               {MOMENTS.map((m) => (
-                <div key={m.key} className={`v1-crow svc-${m.svc}`} role="row">
+                <div key={m.key} id={`m-${m.svc}`} className={`v1-crow svc-${m.svc}`} role="row">
                   <div className="v1-m" role="rowheader"><small>{m.key}</small><b>{m.title}</b></div>
                   <div className="v1-today" role="cell"><span className="v1-tag">Without PsyAlliance</span>{m.without}</div>
                   <div className="v1-with" role="cell"><span className="v1-tag">With PsyAlliance</span>{m.with}<a className="moment-watch" href={m.demo}>{m.label} &rarr;</a></div>
