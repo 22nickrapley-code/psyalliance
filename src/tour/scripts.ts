@@ -80,7 +80,8 @@ const beatMs = (b: Beat): number => {
   }
 };
 export const stepMs = (s: DemoStep) => READ_MS(`${s.title} ${s.text}`) + s.beats.reduce((n, b) => n + beatMs(b), 0) + (s.hold || 0) * 1000 + 900;
-export const scriptSeconds = (d: DemoScript) => Math.round(d.chapters.reduce((n, c) => n + c.steps.reduce((m, s) => m + stepMs(s), 0), 0) / 1000);
+// v10 (Nick, 12 Nov): calibrated against real playback (pointer travel, scrolling and each chapter's screen loading add about a tenth).
+export const scriptSeconds = (d: DemoScript) => Math.round((d.chapters.reduce((n, c) => n + c.steps.reduce((m, s) => m + stepMs(s), 0), 0) * 1.1 + d.chapters.length * 2500) / 1000);
 // "75-second", "2-minute": what a note says before someone presses play.
 export function lengthLabel(d: DemoScript) {
   const s = scriptSeconds(d);

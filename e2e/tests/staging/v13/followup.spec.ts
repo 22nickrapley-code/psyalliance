@@ -167,9 +167,8 @@ test("FOL-04 Availability (G4, D8): three referral choices saved as the member's
 test("FOL-05 Referral matches (G5): ranked 1, 2, 3 with reasons; a colleague who takes selected referrals only is listed but not ticked", async ({ browser, baseURL }) => {
   const { page, context } = await openAs(browser, "avery", baseURL!, "/dashboard/referrals");
   await startReferral(page);
-  const ranks = await page.locator(".match-rank").allInnerTexts();
-  expect(ranks.length).toBeGreaterThanOrEqual(2);
-  expect(ranks).toEqual(ranks.map((_, i) => String(i + 1)));
+  // v10 (Nick, 12 Nov): no rank numbers; the cards are listed best first.
+  expect(await page.locator(".match-card").count()).toBeGreaterThanOrEqual(2);
   for (const r of await page.locator(".match-reasons").all()) expect(await r.locator("span").count()).toBeGreaterThanOrEqual(2);
   const first = await ticked(page);
   expect(first.length).toBeGreaterThan(0);

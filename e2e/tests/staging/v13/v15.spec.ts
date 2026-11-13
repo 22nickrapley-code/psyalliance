@@ -178,9 +178,9 @@ test("V15-06 Library (1.1): no PDF templates pill since every resource has a PDF
   // v3 (Nick, 4 Nov): no Saved pill; templates are saved to My Files instead.
   await expect(page.locator('[data-action="resource-filter:Saved"]')).toHaveCount(0);
   const tile = page.locator(".resource-card").first();
-  await expect(tile.getByRole("button", { name: /Resource overview/ })).toBeVisible();
+  await expect(tile.getByRole("button", { name: /Overview/ })).toBeVisible();
   // A template whose file isn't on this copy yet reads "Coming soon" instead (a freshly rebuilt staging copy has no files).
-  if (!/Coming soon/i.test((await tile.textContent()) || "")) await expect(tile.getByRole("link", { name: /Download PDF/ }).or(tile.getByRole("button", { name: /Download PDF/ }))).toBeVisible();
+  if (!/Coming soon/i.test((await tile.textContent()) || "")) await expect(tile.getByRole("link", { name: /Download/ }).or(tile.getByRole("button", { name: /Download/ }))).toBeVisible();
   await clean(page);
   await context.close();
 });

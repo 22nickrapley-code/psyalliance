@@ -233,7 +233,7 @@ test("NCU-07 library: no Saved pill (v3), templates not yet reviewed say so and 
   // A template waiting for review is listed with the same label as the design and no file.
   const tpl = page.locator(".resource-card", { hasText: "Reciprocal Coverage Agreement" });
   await expect(tpl.locator(".library-review-label")).toContainText("Coming soon");
-  await tpl.getByRole("button", { name: "Resource overview" }).click();
+  await tpl.getByRole("button", { name: "Overview" }).click();
   await expect(page.locator(".modal")).toContainText("coming soon");
   await expect(page.locator('.modal a[href^="/dashboard/library-files/"]')).toHaveCount(0);
   const res = await page.request.get("/dashboard/library-files/PA-01");

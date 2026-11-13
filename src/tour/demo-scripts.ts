@@ -520,46 +520,79 @@ const AVAILABILITY: DemoScript = {
       macro: "availability",
       steps: [
         {
-          title: "Who you take referrals from",
-          text: "Accepting referrals, selected referrals only, or not accepting. Selected only means you are asked, never matched automatically.",
+          title: "Who can send you referrals",
+          text: "Accepting, Selected only, or Not accepting. Selected only means colleagues ask you directly.",
           beats: [["tick", 'input[name="referrals"][value="limited"]']],
         },
         {
-          title: "Spaces, and where",
-          text: "Say how many spaces you have, in which states, and whether you see people virtually or in person. Colleagues only ask when it fits.",
-          beats: [["type", "#availability-slots", "1"], ["tick", 'input[name="inPerson-NY"]']],
+          title: "Your room, and where",
+          text: "Say how many spaces you have and where you see people. Colleagues only ask when it fits.",
+          beats: [["type", "#availability-slots", "1"], ["tick", 'input[name="inPerson-NY"]'], ["type", "#availability-city-NY", "Brooklyn"]],
         },
         {
-          title: "Cover and consultation",
-          text: "Say whether you can cover for colleagues, or only when asked, and keep the box ticked if you are open to consultation questions.",
-          beats: [["tick", 'input[name="cover"][value="ask"]'], ["look", 'input[name="consult"]']],
-        },
-        {
-          title: "Saved, and confirmed today",
-          text: "Save, and colleagues see it was confirmed today, so the right requests reach you and the wrong ones don’t.",
-          beats: [["click", "text=Save & confirm availability"]],
+          title: "Cover too, then save",
+          text: "Say whether you can cover for colleagues, then save. They see it was confirmed today.",
+          beats: [["tick", 'input[name="cover"][value="ask"]'], ["click", "text=Save & confirm availability"]],
         },
       ],
     },
   ],
 };
 
-// The public demos (v7, Nick 9 Nov): one per job a member comes for, built from the same steps as the in-app demos,
-// so every demo shows the product exactly as it is. "Just explore" is the whole story in about two minutes.
 const pick = (s: DemoScript, c: number, steps: number[], name: string): DemoChapter => ({ ...s.chapters[c], name, steps: steps.map((i) => s.chapters[c].steps[i]) });
+// v9 (Nick, 10 Nov): the assistant has its own demo. One box answers anything about your own PsyAlliance world.
+const ASSISTANT: DemoScript = {
+  key: "assistant",
+  title: "Ask your PsyAlliance assistant",
+  what: "Assistant",
+  blurb: "One box on the Hub answers anything about your practice on PsyAlliance: referrals, cover, consults, your network and the Library.",
+  outcome: "Ask in your own words, get the answer and the people, then open the right place in one click.",
+  tryHref: "/tour/circle/home",
+  chapters: [
+    {
+      name: "The assistant",
+      view: "home",
+      steps: [
+        {
+          title: "One box for everything on PsyAlliance",
+          text: "The gold box at the top of your Hub knows your referrals, cover plans, consult questions, conversations and network. Ask it anything, in your own words.",
+          beats: [["look", ".hub-ask-form"]],
+        },
+        {
+          title: "Ask the way you would ask a colleague",
+          text: "Here you ask who could cover a teenager with anxiety while you are away. It answers from your own practice, not the internet.",
+          beats: [["type", "#hub-ask-input", "Who could cover a teenager with anxiety in Massachusetts in December?"], ["click", '#hub-ask-form button[type="submit"]'], ["wait", 1400], ["look", ".hub-ask-answer"]],
+        },
+        {
+          title: "The right people, and the next step",
+          text: "It names the colleagues who fit and why, and opens the right place in one click: here, your cover plans.",
+          beats: [["look", ".hub-ask-people"], ["look", ".hub-ask-sources"]],
+        },
+        {
+          title: "Private by design",
+          text: "It reads what you can already see in your workspace, never the words of your messages, and nothing you ask is shared with colleagues.",
+          beats: [["look", ".hub-ask-form"]],
+          hold: 1,
+        },
+      ],
+    },
+  ],
+};
+
 const OVERVIEW: DemoScript = {
   key: "overview",
-  title: "PsyAlliance in two minutes",
+  title: "The whole story",
   what: "PsyAlliance",
-  blurb: "The Hub, cover for time away, a referral, a question to colleagues, and the Library, on the real screens.",
+  blurb: "The Hub and its assistant, cover for time away, a referral, a question to colleagues, and the Library, on the real screens.",
   outcome: "Your own practice, with a group behind you.",
   tryHref: "/join",
   chapters: [
-    pick(HUB, 0, [0, 1], "The Hub"),
-    pick(COVER, 0, [0, 1, 2, 3, 4], "Cover"),
+    pick(HUB, 0, [0], "The Hub"),
+    pick(ASSISTANT, 0, [1], "Your assistant"),
+    pick(COVER, 0, [0, 1, 2, 3], "Cover"),
     pick(REFER, 0, [0, 1, 2], "Referrals"),
     pick(CONSULT, 0, [0, 1], "Consult"),
-    pick(LIBRARY, 0, [0, 1, 2], "Library"),
+    pick(LIBRARY, 0, [0], "Library"),
   ],
 };
 
@@ -604,7 +637,7 @@ const CASELOAD: DemoScript = {
         {
           title: "How many spaces, and where",
           text: "Say how many new clients you can take, and where you see people. Zero is a fine answer.",
-          beats: [["type", "#availability-slots", "3"], ["tick", 'input[name="inPerson-NY"]']],
+          beats: [["type", "#availability-slots", "3"], ["tick", 'input[name="inPerson-NY"]'], ["type", "#availability-city-NY", "Brooklyn"]],
         },
         {
           title: "Saved, and confirmed today",
@@ -670,44 +703,6 @@ const REDUCING: DemoScript = {
   ],
 };
 
-// v9 (Nick, 10 Nov): the assistant has its own demo. One box answers anything about your own PsyAlliance world.
-const ASSISTANT: DemoScript = {
-  key: "assistant",
-  title: "Ask your PsyAlliance assistant",
-  what: "Assistant",
-  blurb: "One box on the Hub answers anything about your practice on PsyAlliance: referrals, cover, consults, your network and the Library.",
-  outcome: "Ask in your own words, get the answer and the people, then open the right place in one click.",
-  tryHref: "/tour/circle/home",
-  chapters: [
-    {
-      name: "The assistant",
-      view: "home",
-      steps: [
-        {
-          title: "One box for everything on PsyAlliance",
-          text: "The gold box at the top of your Hub knows your referrals, cover plans, consult questions, conversations and network. Ask it anything, in your own words.",
-          beats: [["look", ".hub-ask-form"]],
-        },
-        {
-          title: "Ask the way you would ask a colleague",
-          text: "Here you ask who could cover a teenager with anxiety while you are away. It answers from your own practice, not the internet.",
-          beats: [["type", "#hub-ask-input", "Who could cover a teenager with anxiety in Massachusetts in December?"], ["click", '#hub-ask-form button[type="submit"]'], ["wait", 1400], ["look", ".hub-ask-answer"]],
-        },
-        {
-          title: "The right people, and the next step",
-          text: "It names the colleagues who fit and why, and opens the right place in one click: here, your cover plans.",
-          beats: [["look", ".hub-ask-people"], ["look", ".hub-ask-sources"]],
-        },
-        {
-          title: "Private by design",
-          text: "It reads what you can already see in your workspace, never the words of your messages, and nothing you ask is shared with colleagues.",
-          beats: [["look", ".hub-ask-form"]],
-          hold: 1,
-        },
-      ],
-    },
-  ],
-};
 
 export const DEMO_SCRIPTS: Record<string, DemoScript> = {
   cover: COVER, refer: REFER, consult: CONSULT, circle: CIRCLE, hub: HUB, assistant: ASSISTANT, messages: MESSAGES, library: LIBRARY, availability: AVAILABILITY, overview: OVERVIEW,

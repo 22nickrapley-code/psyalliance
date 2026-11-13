@@ -50,3 +50,5 @@
 .guide-needs>.need-explore{grid-column:1/-1;justify-self:center;width:min(100%,440px);justify-content:center;align-items:center;padding:14px 22px}
 .guide-needs>.need-explore .need-txt{text-align:left}
 @media (max-width:760px){.guide-needs{grid-auto-rows:auto}.guide-needs>.need-explore{width:100%}}
+/* v10 (Nick, 12 Nov): under a demo, Just explore takes the place of the demo being watched, as an ordinary tile. */
+.other-needs>.need-explore{grid-column:auto!important;justify-self:stretch!important;width:auto!important;justify-content:flex-start!important;align-items:flex-start!important;padding:18px!important}

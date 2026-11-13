@@ -21,6 +21,9 @@ export async function GET(req: Request, { params }: { params: Promise<{ code: st
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return new NextResponse("Please sign in again.", { status: 401 });
+  // v10 (Nick, 12 Nov): members can browse the Library before verification; the templates themselves open once verified.
+  const { data: vs } = await supabase.from("profiles").select("verification_status").eq("id", user.id).maybeSingle();
+  if ((vs as any)?.verification_status !== "verified") return NextResponse.redirect(new URL("/verification?from=library", req.url));
 
   const { data: doc } = await supabase.from("documents").select(LIBRARY_SELECT).eq("owner_scope", "world").eq("library_code", code).maybeSingle();
   if (!doc || !isMemberVisible(doc) || !isAvailable(doc) || !doc.storage_path) return new NextResponse("Not found", { status: 404 });

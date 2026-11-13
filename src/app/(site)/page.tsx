@@ -4,6 +4,8 @@ import { IS_DEMO_SITE, REAL_SITE_URL, SITE_URL } from "@/lib/env";
 import { createClient } from "@/lib/supabase/server";
 import { loadOpenStates, stateList } from "@/lib/open-states";
 import { PublicNav, PublicFooter } from "./_public/chrome";
+import { findScript } from "@/tour/demo-scripts";
+import { lengthLabel } from "@/tour/scripts";
 
 // Public landing. Written for a busy clinician who gives it a few seconds:
 // what it is and the benefit first, then the three moments it helps with,
@@ -202,7 +204,7 @@ export default async function HomePage() {
                 </div>
               ))}
             </div>
-            <p className="v1-more"><a className="v1-story-link" href={DEMO()}><span aria-hidden="true">&#9654;</span>Watch the whole story in two minutes</a></p>
+            <p className="v1-more"><a className="v1-story-link" href={DEMO()}><span aria-hidden="true">&#9654;</span>Watch the whole story in {lengthLabel(findScript("overview")!).replace("-minute", " minutes").replace("-second", " seconds")}</a></p>
           </div>
         </section>
 

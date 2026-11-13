@@ -634,7 +634,7 @@ test("B-14 D19 the day sheet stacks the two directions, a direction with nothing
 test("B-15 D12 the handover window names the client it is about, and the incoming plan summary says what the colleague has been asked", async ({ page }) => {
   await page.goto("/tour/scene/cover/handover");
   await page.waitForFunction(() => document.documentElement.dataset.scene === "ready", null, { timeout: 30000 });
-  await expect(page.locator("#modal-title")).toHaveText("Confirm handover for Client 2");
+  await expect(page.locator("#modal-title")).toHaveText("Record the handover for Client 2");
   await expect(page.locator(".modal-header p:not(.eyebrow)")).toContainText("Cover agreed with");
   await page.goto("/tour/scene/cover/incoming");
   await page.waitForFunction(() => document.documentElement.dataset.scene === "ready", null, { timeout: 30000 });

@@ -752,6 +752,9 @@ export const handlers: Record<string, Handler> = {
   "resource.copy": async (ctx, a) => {
     const key = resourceKey(Number(a.id));
     if (!key || !/^PA-\d{2}$/.test(key)) return bad("Only Library templates can be saved to My Files.");
+    // v10 (Nick, 12 Nov): templates open once your license is verified.
+    const { data: vs } = await ctx.supabase.from("profiles").select("verification_status").eq("id", ctx.userId).maybeSingle();
+    if ((vs as any)?.verification_status !== "verified") return bad("Templates open once your license is verified.");
     const { data: doc } = await ctx.supabase.from("documents").select(LIBRARY_SELECT).eq("owner_scope", "world").eq("library_code", key).maybeSingle();
     if (!doc || !isMemberVisible(doc as any) || !isAvailable(doc as any) || !(doc as any).storage_path) return bad("That resource isn't available yet.");
     const d: any = doc;

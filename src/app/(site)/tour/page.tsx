@@ -6,9 +6,12 @@ import { TOUR_ENABLED, IS_DEMO_SITE, REAL_SITE_URL, JOIN_HREF } from "@/lib/env"
 import { PublicNav, PublicFooter } from "../_public/chrome";
 import { Director } from "./director";
 import { findScript } from "@/tour/demo-scripts";
+import { lengthLabel } from "@/tour/scripts";
+
+const STORY_LEN = lengthLabel(findScript("overview")!);
 import { FOUNDING_LINE } from "@/lib/founding";
 
-export const metadata = { title: "See PsyAlliance in two minutes", robots: { index: false, follow: false } };
+export const metadata = { title: "See PsyAlliance at work", robots: { index: false, follow: false } };
 
 // The public demo is one story of about two minutes, playing on its own on
 // the approved workspace itself (the same screens members use, on fictional
@@ -20,7 +23,7 @@ export default async function DemoStoryPage(props: { searchParams: Promise<{ cha
   if (IS_DEMO_SITE && process.env.NODE_ENV === "production") redirect(REAL_SITE_URL + "/tour");
   const { chapter, ctx } = await props.searchParams;
   // The homepage's "Watch how" links start the story at the part they are about.
-  const startChapter = ({ hub: 0, cover: 1, refer: 2, referrals: 2, consult: 3, library: 4 } as Record<string, number>)[chapter || ""] || 0;
+  const startChapter = ({ hub: 0, assistant: 1, cover: 2, refer: 3, referrals: 3, consult: 4, library: 5 } as Record<string, number>)[chapter || ""] || 0;
   return (
     <div className="pa">
       <PublicNav />
@@ -30,10 +33,10 @@ export default async function DemoStoryPage(props: { searchParams: Promise<{ cha
             <a className="btn secondary small-btn demo-home back-home" href="/" data-return-home>&larr; Return to homepage</a>
             <div className="demo-hub-head story-head" style={{ marginTop: 18 }}>
               <div>
-                <div className="eyebrow">PsyAlliance in two minutes &middot; fictional people</div>
+                <div className="eyebrow">PsyAlliance in {STORY_LEN.replace("-", " ").replace("minute", "minutes")} &middot; fictional people</div>
                 <h1>Your own practice, with a group behind you.</h1>
                 <p className="lead">
-                  Watch it work on the real screens: your Hub, cover for time away, a referral, a question to colleagues and the Library. It plays on
+                  Watch it work on the real screens: your Hub and its assistant, cover for time away, a referral, a question to colleagues and the Library. It plays on
                   its own; pause, or step through it yourself.
                 </p>
               </div>
@@ -44,7 +47,7 @@ export default async function DemoStoryPage(props: { searchParams: Promise<{ cha
               startAt={startChapter}
               end={{
                 title: "That’s PsyAlliance.",
-                text: "Every member’s license is checked by a person before anyone is listed. Create your account for longer demos and a fictional sandbox to learn in. Once you are verified, you use it for real.",
+                text: "Everything you saw, and more: the Library, your network, Messages, continuity planning and a sandbox to try it all. A person checks every license before anyone is listed; once you are verified, you use it for real.",
                 tryLabel: "Create your account",
               }}
             />

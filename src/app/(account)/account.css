@@ -144,3 +144,26 @@ body.account-body{margin:0;background:var(--cream);color:var(--ink);font-family:
 }
 .sandbox-controls{display:flex;gap:14px;margin-top:6px}
 .sandbox-controls .text-link{font-size:13px;font-weight:600;color:inherit;text-decoration:underline;text-underline-offset:2px}
+
+/* My files (v10, Nick 12 Nov): upload first, folders as chips, one tidy row per file. */
+.mf{display:grid;gap:14px;max-width:880px}
+.mf-bar{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-start}
+.mf-drop>summary{list-style:none;cursor:pointer}
+.mf-drop>summary::-webkit-details-marker{display:none}
+.mf-drop[open]{flex:1 1 100%}
+.mf-drop[open]>summary{margin-bottom:10px}
+.mf-panel{padding:16px;border:1px solid var(--line);border-radius:14px;background:#fff}
+.mf-list{list-style:none;margin:0;padding:0;border:1px solid var(--line);border-radius:14px;background:#fff;overflow:visible}
+.mf-item{position:relative;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:12px;padding:12px 14px;border-top:1px solid var(--line)}
+.mf-item:first-child{border-top:0}
+.mf-ic{display:grid;place-items:center;width:38px;height:44px;border-radius:7px;background:#F4EFE3;color:#8C6A2F;font-size:10.5px;font-weight:800;letter-spacing:.06em}
+.mf-text{display:grid;gap:2px;min-width:0}
+.mf-text strong{font-size:15px;line-height:1.3;overflow-wrap:anywhere}
+.mf-text strong a{color:var(--ink);text-decoration:none}
+.mf-text small{font-size:12.5px;color:var(--muted)}
+.mf-more>summary{list-style:none;display:grid;place-items:center;width:36px;height:36px;border-radius:9px;cursor:pointer;font-size:20px;line-height:1;color:#4A534D}
+.mf-more>summary::-webkit-details-marker{display:none}
+.mf-more[open]>summary{background:#F2F5F2}
+.mf-menu{position:absolute;right:10px;top:calc(100% - 6px);z-index:5;display:grid;gap:8px;min-width:220px;padding:10px;border:1px solid var(--line);border-radius:12px;background:#fff;box-shadow:0 16px 40px -18px #1a2b2380}
+.mf-menu a{font-weight:600;color:var(--ink);text-decoration:none}
+.mf-delete{color:#9A3324!important;font-weight:600}

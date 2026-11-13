@@ -39,7 +39,7 @@ export async function loadWorkspaceBoot(path: string): Promise<LiveBoot> {
   // Profile setup (Nick, 1 Nov): what a member still has to do, shown in the Hub's Actions as "Profile setup"
   // and, until the essentials are done, as "Finish setup" in the sidebar. Same rules as the Profile page.
   const [{ data: prof }, { data: lic }, { data: looks }, { data: plan }, { data: ai }, { data: membership }, { data: circles }, { data: features }] = await Promise.all([
-    supabase.rpc("my_profile").select("full_name, qualification_level, avatar_path, bio, primary_practice_city, primary_state, availability_confirmed_at").maybeSingle<any>(),
+    supabase.rpc("my_profile").select("full_name, qualification_level, avatar_path, bio, primary_practice_city, primary_state, availability_confirmed_at, verification_status").maybeSingle<any>(),
     supabase.from("licenses").select("status, expiration_date, reviewed_at").eq("profile_id", user.id),
     supabase.from("profile_lookup_values").select("lookup_values!inner(category)").eq("profile_id", user.id).in("lookup_values.category", ["treatment_specialism", "insurance"]),
     supabase.from("continuity_plans").select("answers, backup_profile_id, reviewed_at, updated_at").eq("profile_id", user.id).maybeSingle(),
@@ -69,6 +69,7 @@ export async function loadWorkspaceBoot(path: string): Promise<LiveBoot> {
     continuityReviewedAt: (plan as any)?.reviewed_at || (plan as any)?.updated_at || null,
     reviewed: ((lic as any[]) || []).some((l) => !!l.reviewed_at),
     availability: !!prof?.availability_confirmed_at,
+    verified: prof?.verification_status === "verified",
   };
   // Photos (v6, Nick 9 Nov): every colleague disc shows their photo once they have added one; initials otherwise.
   // Signed links last six hours; demo members keep their initials.

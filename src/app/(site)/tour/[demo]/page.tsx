@@ -51,7 +51,7 @@ export default async function DemoWatch({ params, searchParams }: { params: Prom
             </div>
             {(() => {
               // Public demos are to watch. Trying things yourself is for members, in the sandbox (Nick, 1 Nov).
-              const end = { title: sc?.outcome || j?.outcome || d.title, text: "Create your account to use it for real. A person checks every license before anyone is listed.", tryLabel: "Create your account" };
+              const end = { title: sc?.outcome || j?.outcome || d.title, text: "What you just saw is one part of PsyAlliance. Your account also gives you the Library, your network, Messages, continuity planning and a sandbox to try everything. A person checks every license before anyone is listed.", tryLabel: "Create your account" };
               // A demo chosen deliberately ("Watch another" or the choice page) carries its goal to sign-up; a demo opened
               // directly leaves any goal already chosen alone (R08).
               const goalNeed = pick === "1" ? DEMO_NEED(d.key) : null;

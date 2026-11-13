@@ -1,0 +1,249 @@
+/* PsyAlliance v10 (Nick, 12 Nov): the last round before the road test. Loaded last. */
+
+/* Library cards: Save to My Files sits in the top corner; three small buttons below. */
+.resource-card.rc-v10{position:relative;display:flex;flex-direction:column;gap:6px;padding:16px 16px 14px!important}
+.resource-card.rc-v10 .eyebrow{padding-right:40px}
+.resource-card.rc-v10 h3{margin:0;padding-right:36px;font-size:16px;line-height:1.3}
+.resource-card.rc-v10>p{margin:0 0 6px;font-size:13.5px;line-height:1.45;color:#5b6b61;flex:1 1 auto}
+.resource-card.rc-v10 .rc-save{position:absolute;top:10px;right:10px;width:34px!important;height:34px!important;min-height:34px!important;border-radius:9px;color:#4A534D;border:1px solid transparent}
+.resource-card.rc-v10 .rc-save:hover{background:#F2F5F2;border-color:var(--line)}
+.resource-card.rc-v10 .rc-save svg{width:17px;height:17px}
+.resource-card.rc-v10 .resource-actions{display:flex!important;flex-wrap:nowrap!important;gap:6px!important;margin-top:auto}
+.resource-card.rc-v10 .resource-actions .button{flex:1 1 0;min-width:0;justify-content:center;gap:5px;min-height:34px!important;padding:0 8px!important;font-size:12.5px!important;white-space:nowrap;border-radius:9px}
+.resource-card.rc-v10 .resource-actions .button svg{width:14px;height:14px;flex:none}
+.button.is-locked{opacity:.75}
+.verify-first{display:flex;gap:14px;align-items:flex-start}
+.verify-first-ic{flex:none;display:grid;place-items:center;width:42px;height:42px;border-radius:12px;background:#E4EFEA;color:#1F6B55}
+.verify-first p{margin:0;font-size:15px;line-height:1.55;color:#3d4842}
+
+/* Messages, like WhatsApp (Nick, 12 Nov): speech-bubble tails, the sender's disc on the bubble's corner, actions on a small arrow (desktop) or by holding (phone), the conversation as big as possible. Applies to Messages and to conversations inside cards. */
+.chat-messages .message-group,.quick-msgs .message-group{position:relative;display:flex!important;align-items:flex-start!important;gap:0!important;margin:0 0 10px!important;padding:0!important}
+.chat-messages .message-group.outgoing,.quick-msgs .message-group.outgoing{justify-content:flex-end}
+.chat-messages .message-group>.avatar,.quick-msgs .message-group>.avatar{position:relative;z-index:2;flex:none;width:26px!important;height:26px!important;font-size:10px!important;margin:-6px -10px 0 0!important;box-shadow:0 0 0 2px var(--chat-bg,#FBFAF6)}
+.chat-messages .bubble-wrap,.quick-msgs .bubble-wrap{max-width:min(78%,560px);min-width:0;display:flex;flex-direction:column}
+.chat-messages .outgoing .bubble-wrap,.quick-msgs .outgoing .bubble-wrap{align-items:flex-end}
+.chat-messages .bubble,.quick-msgs .bubble{position:relative;padding:8px 12px 8px!important;border-radius:14px!important;line-height:1.45;font-size:15px;box-shadow:0 1px 1px #1b2b2214}
+.chat-messages .message-group:not(.outgoing) .bubble,.quick-msgs .message-group:not(.outgoing) .bubble{border-top-left-radius:4px!important;padding-left:16px!important;background:#fff!important;color:var(--ink)!important;border:0!important}
+.chat-messages .outgoing .bubble,.quick-msgs .outgoing .bubble{border-top-right-radius:4px!important;background:#DCEBE2!important;color:#16241D!important;border:0!important}
+.chat-messages .message-group:not(.outgoing) .bubble::before,.quick-msgs .message-group:not(.outgoing) .bubble::before{content:"";position:absolute;top:0;left:-7px;width:8px;height:11px;background:inherit;clip-path:polygon(100% 0,0 0,100% 100%)}
+.chat-messages .outgoing .bubble::before,.quick-msgs .outgoing .bubble::before{content:"";position:absolute;top:0;right:-7px;width:8px;height:11px;background:inherit;clip-path:polygon(0 0,100% 0,0 100%)}
+.chat-messages .message-meta,.quick-msgs .message-meta{font-size:11.5px!important;color:#6B756E;margin:2px 4px 0!important}
+.chat-messages .bubble-author,.quick-msgs .bubble-author{margin:0 0 2px 16px}
+.message-menu-button{position:absolute!important;top:3px!important;right:4px!important;left:auto!important;width:24px!important;height:24px!important;min-width:0!important;min-height:0!important;padding:0!important;display:grid!important;place-items:center;border:0!important;border-radius:50%!important;background:inherit!important;color:#5b6b61!important;opacity:0;transition:opacity .12s;box-shadow:-6px 0 8px -2px currentColor;box-shadow:none}
+.message-menu-button svg{width:16px!important;height:16px!important}
+.message-group:hover .message-menu-button,.message-menu-button:focus-visible{opacity:1}
+.message-group .popover{position:absolute;z-index:20;top:calc(100% - 4px);display:grid;gap:2px;min-width:170px;padding:6px;border:1px solid var(--line);border-radius:14px;background:#fff;box-shadow:0 16px 40px -18px #1a2b2380}
+.message-group:not(.outgoing) .popover{left:30px}
+.message-group.outgoing .popover{right:0}
+.message-group .popover button{display:flex;align-items:center;gap:10px;min-height:40px;padding:6px 10px;border:0;border-radius:9px;background:none;font:inherit;font-size:14.5px;color:var(--ink);text-align:left;cursor:pointer}
+.message-group .popover button:hover{background:#F2F5F2}
+.message-group .popover button svg{width:16px;height:16px;color:#4A534D}
+.message-group.is-held .bubble{transform:scale(.98);transition:transform .12s}
+@media (hover:none){.message-menu-button{display:none!important}}
+
+/* One send button everywhere: a filled circle with an upward arrow. */
+.send-button,.quick-compose>.button[type=submit],#ask-form button[type=submit],#reply-form button[type=submit]{gap:6px}
+
+@media (max-width:760px){
+  .messages-page.thread-open .chat-pane{--chat-bg:#F4F1EA;background:var(--chat-bg)!important}
+  .messages-page.thread-open .chat-header{min-height:52px!important;padding:4px 6px!important;gap:8px!important}
+  .messages-page.thread-open .chat-header .avatar{width:34px!important;height:34px!important;font-size:12px!important}
+  .messages-page.thread-open .chat-header small{display:none!important}
+  .messages-page.thread-open .colleague-tabs{padding:0 8px!important}
+  .messages-page.thread-open .colleague-tabs button{padding:8px 10px!important;font-size:13.5px!important}
+  .messages-page.thread-open .context-strip.ctx-v9{padding:4px 8px!important;min-height:0}
+  .messages-page.thread-open .ctx-v9 .ctx-ic{width:26px;height:26px}
+  .messages-page.thread-open .ctx-v9 .ctx-text small{display:none}
+  .messages-page.thread-open .ctx-v9 .ctx-open{min-height:30px;padding:0 10px;font-size:12.5px}
+  .messages-page.thread-open .ctx-v9 .ctx-back{width:30px!important;height:30px!important;min-height:30px!important}
+  /* While you type, only the person and the conversation show, as in WhatsApp. */
+  .messages-page.thread-open .chat-pane:has(#message-input:focus) .colleague-tabs,.messages-page.thread-open .chat-pane:has(#message-input:focus) .context-strip{display:none!important}
+  .messages-page.thread-open .chat-messages{padding:10px 10px 6px!important;background:var(--chat-bg)}
+  .messages-page.thread-open .date-rule{margin:4px 0 10px!important}
+  .chat-messages .bubble-wrap{max-width:84%}
+  .chat-composer{background:var(--chat-bg,#F4F1EA)!important;border-top:0!important}
+  .chat-composer #message-form{align-items:center!important}
+  .chat-composer textarea{display:block;height:44px;line-height:20px!important;padding:11px 14px!important}
+  .chat-composer .recording,.chat-composer .record-preview{align-self:center;display:flex;align-items:center;min-height:44px;margin:0!important}
+  .chat-composer .record-preview audio{height:40px;margin:0}
+}
+
+/* Consult discussion: the question, its asker and context sit together in the purple header; replies below on white. */
+.modal-feature-consult .dq-block{margin:-20px -25px 16px;padding:4px 25px 18px;background:var(--feature-pale,#ECE7F2);border-bottom:1px solid color-mix(in srgb,var(--feature,#5E4A86) 18%,transparent)}
+.modal-feature-consult .modal-header{border-bottom:0!important}
+.dq-tags{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 8px}
+.dq-tags span{padding:2px 9px;border-radius:999px;background:#fff9;font-size:12px;font-weight:600;color:#4B3C6E}
+.dq-text{margin:0;font-size:15.5px;line-height:1.55;color:#2A2338}
+.modal-feature-consult .modal-header.has-lead .modal-lead .avatar{width:46px;height:46px;font-size:15px}
+.reply-tools{display:flex;align-items:center;gap:8px;margin:8px 0 4px}
+.reply-lib{display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:0 10px;border:1px solid var(--line);border-radius:999px;background:#fff;color:#4A534D}
+.reply-lib svg{width:15px;height:15px;flex:none}
+.reply-lib select{border:0!important;background:transparent!important;font:inherit;font-size:13.5px!important;min-height:0!important;padding:0 18px 0 0!important;max-width:220px;color:inherit;box-shadow:none!important}
+.reply-mic{width:36px!important;height:36px!important;min-height:36px!important;border-radius:50%!important;border:1px solid var(--line)!important}
+.reply-mic.is-on{background:#C0503E!important;color:#fff!important;border-color:#C0503E!important}
+.lib-chip{display:inline-flex;align-items:center;gap:5px;margin:2px 0;padding:3px 10px;border:1px solid #E6DCC6;border-radius:999px;background:#F8F3E8;font:inherit;font-size:13px;font-weight:600;color:#7A5A1F;cursor:pointer}
+.lib-chip svg{width:13px;height:13px}
+@media (max-width:760px){
+  .modal-feature-consult .dq-block{margin:-16px -16px 14px;padding:4px 16px 16px}
+  .foot-dock>#reply-form.is-docked{grid-template-columns:auto minmax(0,1fr) auto!important}
+  .foot-dock>#reply-form.is-docked>.reply-tools{grid-column:1;grid-row:2;margin:0;gap:4px}
+  .foot-dock>#reply-form.is-docked>.reply-tools .reply-lib{width:40px;height:44px;padding:0;justify-content:center;position:relative;overflow:hidden;border-radius:50%}
+  .foot-dock>#reply-form.is-docked>.reply-tools .reply-lib select{position:absolute;inset:0;opacity:0;width:100%;max-width:none}
+  .foot-dock>#reply-form.is-docked>.reply-tools .reply-mic{width:40px!important;height:44px!important;border:0!important;background:transparent}
+  .foot-dock>#reply-form.is-docked textarea{grid-column:2!important}
+  .foot-dock>#reply-form.is-docked>div:last-child{grid-column:3!important}
+  /* Consult page: the title sits higher, and discs clear the green rule. */
+  .consult-phone{padding-top:0!important}
+  .consult-phone-head{margin-top:0!important}
+  .consult-list-panel{padding:4px 12px 4px 16px!important}
+  .consult-list-panel .discussion-row{padding-left:4px!important}
+  .consult-list-panel .discussion-row.is-active{padding-left:12px!important;margin-left:-4px}
+}
+
+/* Who is asked, in order: the row you drag lifts; the others make room. */
+.modal [draggable="true"].is-dragging{opacity:.55;box-shadow:0 10px 24px -14px #1a2b2399}
+.modal [draggable="true"]{cursor:grab}
+
+/* Review, "Still true for your choices": one line per colleague; more chips scroll sideways. */
+.review-gaps ul{display:grid;gap:4px}
+.review-gaps li{display:flex!important;align-items:center!important;flex-wrap:nowrap!important;gap:10px!important;min-width:0}
+.review-gaps li>.avatar{flex:none}
+.review-gaps li>span:not(.review-flags):not(.avatar){flex:0 0 auto;min-width:150px}
+.review-gaps .review-flags{flex:1 1 auto;min-width:0;display:flex!important;flex-wrap:nowrap!important;gap:6px;overflow-x:auto;scrollbar-width:thin;padding:2px 0 4px;mask-image:linear-gradient(90deg,#000 calc(100% - 24px),transparent);-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 24px),transparent)}
+.review-gaps .review-flags .mchip{flex:none;white-space:nowrap}
+/* Review summary: the colleague discs never overlap the text or run off a phone. */
+.review-hero{flex-wrap:wrap}
+.review-hero>div:not(.review-recipients){min-width:0;flex:1 1 260px}
+.review-recipients .disc-stack{flex-wrap:nowrap;max-width:100%}
+@media (max-width:760px){
+  .review-hero{display:grid!important;grid-template-columns:auto minmax(0,1fr);gap:8px 12px!important}
+  .review-hero>.review-recipients{grid-column:1/-1;margin:4px 0 0!important;flex-direction:row!important;align-items:center!important;justify-content:flex-start;gap:10px}
+  .review-recipients .disc-stack .avatar:nth-child(n+6){display:none}
+  .review-hero h3{overflow-wrap:break-word}
+}
+/* Match cards: the tick, the disc and the name sit on one centre line; the disc centres on the name and role together. */
+.match-card-top{display:flex!important;align-items:center!important;gap:10px!important;flex-wrap:wrap}
+.match-card-select{display:grid!important;grid-template-columns:auto auto minmax(0,1fr);align-items:center!important;gap:12px!important;flex:1 1 240px;min-width:0}
+.match-card-select>input{margin:0!important;width:20px;height:20px}
+.match-card-select>.avatar{align-self:center!important;margin:0!important}
+.match-card-select>span{display:grid;gap:2px;min-width:0}
+.match-card-select>span strong{display:flex;align-items:center;gap:6px;line-height:1.25}
+.match-card-select>span small{line-height:1.3}
+/* A tick box always sits beside its words, on the same line. */
+.field .check-line,label.check-line{display:flex!important;flex-direction:row!important;align-items:center!important;gap:10px!important;font-size:15px!important;font-weight:600!important;line-height:1.35!important}
+.field .check-line>input,label.check-line>input{order:-1;flex:none;width:20px!important;height:20px!important;min-height:0!important;margin:0!important}
+@media (max-width:760px){
+  .reason-grid{grid-auto-rows:auto!important}
+  .reason-card{height:auto!important;min-height:0!important;overflow:visible!important}
+  .client-title,.client-entry-head h3{display:flex!important;justify-content:flex-start!important;align-items:center;gap:4px!important;width:auto!important}
+  .client-title .client-rename{margin-left:2px!important}
+  /* Notifications: centred at the very top of the screen. */
+  .toast,.sandbox-arrival{top:calc(8px + env(safe-area-inset-top,0px))!important;left:50%!important;right:auto!important;width:max-content!important;max-width:calc(100vw - 24px)!important;transform:translate(-50%,-8px)!important;z-index:400!important}
+  .toast.visible,.sandbox-arrival.visible{transform:translate(-50%,0)!important}
+  .sandbox-arrival{width:calc(100vw - 24px)!important}
+}
+.client-pick-now{margin:-6px 2px 12px;font-size:13.5px;color:#4A534D}
+.client-pick-now b{color:var(--ink)}
+
+/* A colleague's reply, in a cover plan or a referral: one tidy card. Name and status on one line, relationship and reply-by below, actions in one row. */
+.response-row{padding:12px 14px!important;border-radius:14px!important}
+.response-main{display:grid!important;grid-template-columns:auto minmax(0,1fr) auto!important;grid-template-areas:"av who pill" "act act act";align-items:center!important;gap:6px 12px!important}
+.response-main>.order-index{grid-area:av;margin-right:4px}
+.response-main>.avatar{grid-area:av;width:40px!important;height:40px!important}
+.response-main>.order-index+.avatar{margin-left:30px}
+.response-main>.response-who{grid-area:who;display:flex!important;flex-wrap:wrap;align-items:center;gap:4px 8px!important;min-width:0}
+.response-who .person-link{flex:1 1 100%;font-size:15.5px!important;font-weight:650!important;text-align:left}
+.response-who .rel-badge,.response-who [class*=badge],.response-who .resp-due{font-size:12px!important;line-height:1.3}
+.response-main>.resp-pill{grid-area:pill;margin:0!important;align-self:start;font-size:12.5px!important;white-space:nowrap}
+.response-main>.response-actions{grid-area:act;display:flex!important;flex-wrap:wrap;align-items:center;gap:8px 12px!important;margin:4px 0 0!important;padding-top:10px;border-top:1px solid color-mix(in srgb,var(--line) 70%,transparent)}
+.response-main>.response-actions:empty{display:none!important}
+.response-actions>.button{min-height:38px!important;font-size:13.5px!important}
+.response-actions .button.text,.response-actions .text-link,.quick-decide .button.secondary{font-weight:600}
+.quick-decide{display:flex!important;flex-wrap:wrap;gap:8px!important;margin-top:10px}
+@media (max-width:760px){
+  .response-main{grid-template-columns:auto minmax(0,1fr)!important;grid-template-areas:"av who" "av pill" "act act"}
+  .response-main>.resp-pill{justify-self:start;margin-left:0!important}
+  .response-main>.order-index+.avatar{margin-left:0}
+  .response-main>.order-index{display:none}
+}
+/* Closed requests (By colleague): greyed, so active work stands out. */
+.colleague-plan-row.is-closed,.by-colleague .is-closed,[class*=colleague] li.is-closed{opacity:.55}
+.colleague-client-row.is-closed{opacity:1;background:#F6F6F3;border-radius:8px}
+.colleague-client-row.is-closed strong,.colleague-client-row.is-closed small{color:#8A948D!important}
+.colleague-client-row.is-closed [class*=badge],.colleague-client-row.is-closed .pill{opacity:.7}
+@media (max-width:760px){
+  .handover-visual{justify-items:stretch!important}
+  .handover-visual .hv-person{width:100%!important;max-width:none!important;flex:none!important;align-items:center!important;text-align:center}
+  .handover-visual .hv-person small{width:100%!important;text-align:center!important;overflow-wrap:normal!important;word-break:normal!important}
+  .handover-visual .hv-arrow{justify-self:center}
+}
+.handover-visual{margin-bottom:22px!important}
+.modal .confirm-gaps{margin-top:16px!important}
+.modal .confirm-fresh{margin-top:8px!important}
+
+/* Hub on a phone: compact action rows (Reply and Later sit beside the text), equal service cards. */
+@media (max-width:760px){
+  .hub-attn-panel .hub-row{display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;align-items:end!important;gap:6px 10px!important;padding:10px 14px!important}
+  .hub-attn-panel .hub-row-icon{display:none!important}
+  .hub-attn-panel .hub-row-text strong{font-size:15px!important;line-height:1.3}
+  .hub-attn-panel .hub-row-text span{font-size:13px!important;line-height:1.35}
+  .hub-attn-panel .hub-row-actions{display:flex!important;flex-direction:column;align-items:flex-end;gap:2px!important;margin:0!important}
+  .hub-attn-panel .hub-row-actions .button{min-height:34px!important;padding:0 12px!important;font-size:13.5px!important}
+  .hub-attn-panel .hub-row-actions .text-link{min-height:28px!important;font-size:13px!important;padding:2px 4px!important}
+  .hub-attn-panel .hub-group h2{margin:10px 0 2px!important}
+  .hub-page .hub-svc>.hub-card p,.hub-page .hub-svc>.hub-card small{min-height:2.9em}
+}
+/* Your availability on the Hub: a proper footer, not an afterthought. */
+.hub-av-line{padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:#fff;margin-top:4px!important}
+.hub-av-line strong{display:inline-flex;align-items:center;gap:6px}
+.hub-av-line strong::before{content:"";width:8px;height:8px;border-radius:50%;background:#1E6B47;box-shadow:0 0 0 3px #1E6B4726}
+
+/* A colleague's profile is tinted by your relationship: trusted blue, worked with before purple, suggested teal, everyone else grey. */
+.modal-feature-network.rel-trusted{--feature:var(--relation-trusted,#3D5F99);--feature-pale:#E8EEF9}
+.modal-feature-network.rel-worked{--feature:var(--relation-worked,#6E4FA0);--feature-pale:#F0EAFA}
+.modal-feature-network.rel-suggested{--feature:var(--relation-suggested,#2F7A86);--feature-pale:#E6F1F3}
+.modal-feature-network.rel-other{--feature:#5F6B73;--feature-pale:#EEF1F3}
+.modal-feature-network[class*=rel-] .modal-header .eyebrow{color:var(--feature)!important}
+/* Header chips: evenly spaced and never squeezed. */
+.modal-header .pf-chips,.modal-header .head-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.modal-header .pf-chip,.modal-header .relationship-label{display:inline-flex;align-items:center;gap:5px;padding:3px 10px!important;margin:0!important;white-space:nowrap}
+.modal-header .pf-chip svg{width:14px!important;height:14px!important;flex:none;stroke:currentColor}
+.modal-header .pf-chip.is-trusted{background:#E8EEF9;color:var(--relation-trusted,#3D5F99);border-color:#B9C9E5}
+.modal-header .pf-chip.is-worked{background:#F0EAFA;color:var(--relation-worked,#6E4FA0);border-color:#D3C4E9}
+/* Network search cards: name and degree, role and place, licenses, and the relationship on the right. */
+.person-card .pc-head{display:grid!important;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:12px}
+.person-card .pc-head>.relationship-label{align-self:start;font-size:11.5px;padding:2px 8px;border-radius:999px;border:1px solid;white-space:nowrap}
+.person-card .pc-id h3{margin:0;font-size:16px;line-height:1.25;display:flex;align-items:center;gap:6px}
+.person-card .pc-id h3 button{font-weight:650}
+.person-card .pc-id p{margin:2px 0 0;font-size:13px;line-height:1.35;color:#5b6b61}
+.person-card .pc-lic{display:flex;align-items:center;gap:5px;color:#1E6B47!important;font-size:12.5px!important}
+.person-card .pc-lic svg{width:13px;height:13px}
+@media (max-width:760px){.person-card .pc-head>.relationship-label{grid-column:2;grid-row:2;justify-self:start;margin-top:2px}}
+/* Settings: links never underlined, on every screen. */
+a.global-result,a.global-result *,a.global-result:hover h3{text-decoration:none!important}
+a.global-result{color:inherit}
+
+/* One type scale on phone pages (Nick, 12 Nov): page title, one lead size, one eyebrow, one row title, one meta size. */
+@media (max-width:760px){
+  #main .content{padding-top:6px!important}
+  .page-heading{margin:2px 0 12px!important;gap:10px!important;align-items:flex-start}
+  .page-heading h1{font-size:27px!important;line-height:1.1!important;letter-spacing:-.02em;margin:0!important}
+  .page-heading p{font-size:13.5px!important;line-height:1.45!important;margin:4px 0 0!important;color:#5b6b61!important}
+  .page-heading .heading-buttons .button{min-height:42px;font-size:14.5px!important;font-weight:650}
+  .filter-pills button,.view-tabs button,.view-tabs a,.inbox-filters button{font-size:14px!important;font-weight:600!important}
+  .panel .list-section-header{gap:10px!important;padding:14px!important}
+  .direction-caption,.panel .eyebrow,.list-section-header .eyebrow{font-size:11px!important;font-weight:700!important;letter-spacing:.12em!important}
+  .list-section-header h2,.panel>header h2,.panel-header h2{font-size:17px!important;font-weight:650!important;line-height:1.25!important;margin:2px 0 0!important}
+  .list-section-header p{font-size:13px!important;line-height:1.4!important;font-weight:400!important}
+  .list-section-body h3,.arrangement-row strong,.plan-row strong,.referral-row strong{font-size:15px!important;font-weight:650!important;line-height:1.3!important}
+  .list-section-body small,.list-section-body p,.arrangement-row small{font-size:13px!important;font-weight:400!important}
+  .demo-line{margin-bottom:8px!important}
+  .library-tabs,.view-tabs{margin-top:0!important}
+}
+a.button,a.button:hover{text-decoration:none!important}
+@media (max-width:760px){
+  .consult-filters{grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important}
+  .consult-filters select{width:100%;min-width:0}
+  .context-strip.ctx-v9{flex-wrap:nowrap!important}
+  .ctx-v9 .ctx-text strong{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+}

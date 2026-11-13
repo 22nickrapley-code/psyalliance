@@ -135,7 +135,7 @@ const COVER: Journey = {
       what: "One client is still being discussed with the first colleague in the queue, so nobody else is asked yet. One has a colleague who has agreed. One is ready to go. You see it all in one plan.",
       focusNote: "Agreed is where the handover begins.",
       scene: w("cover", "cover-plan"),
-      focus: "Confirm handover",
+      focus: "Record handover",
       scenarios: ["DEM-04", "DEM-05"],
     },
     {

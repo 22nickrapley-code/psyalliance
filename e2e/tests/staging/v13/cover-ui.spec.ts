@@ -75,24 +75,21 @@ test("CVU-02 the colleague offers; the organiser agrees; agreed is not handover 
   const b = await openAs(browser, "bram", baseURL!, `/dashboard/cover/requests/${planId}`);
   await expect(b.page).toHaveURL(/\/dashboard\/cover$/);
   await expect(b.page.locator(".modal-header")).toContainText("From ");
-  await b.page.locator(".cover-client-card").getByRole("button", { name: "I can cover" }).click();
+  await b.page.locator(".modal").getByRole("button", { name: "I can cover" }).click();
   await expect(b.page.locator("#toast")).toContainText("you can cover");
   expect((await one(`select c.assigned_clinician_id from coverage_plan_cases c where c.coverage_plan_id = $1`, [planId])).assigned_clinician_id).toBeNull();
-  await expect(b.page.locator(".cover-client-card")).toContainText(/You said you can cover/);
-  await expect(b.page.locator(".cover-client-card")).not.toContainText("Cass");
+  await expect(b.page.locator(".modal")).toContainText(/You offered to cover/);
+  await expect(b.page.locator(".modal")).not.toContainText("Cass");
 
   await a.page.goto("/dashboard/cover");
   await a.page.locator('[data-action^="plan:"]', { hasText: "Autumn leave" }).first().click();
-  await a.page.locator(".cover-client-card").getByRole("button", { name: "Cover agreed" }).first().click();
+  await a.page.locator(".cover-client-card").getByRole("button", { name: "Agree cover" }).first().click();
   await expect(a.page.locator(".handover-visual")).toBeVisible();
   await expect(a.page.locator(".modal")).toContainText("said they can cover, so this agrees it now");
-  await a.page.getByRole("button", { name: "Cover agreed", exact: true }).click();
+  await a.page.locator(".modal-footer").getByRole("button", { name: "Agree cover", exact: true }).click();
   await expect(a.page.locator("#toast")).toContainText("Cover agreed with Bram Tellinghast");
   expect((await one(`select assigned_clinician_id from coverage_plan_cases where coverage_plan_id = $1`, [planId])).assigned_clinician_id).toBe(bram);
-  await expect(a.page.getByRole("button", { name: /Confirm cover arranged/ })).toBeDisabled();
-  await a.page.locator(".cover-client-card").getByRole("button", { name: "Confirm handover" }).click();
-  for (const k of ["contact", "summary", "client"]) await a.page.locator(`#handover-form input[name="${k}"]`).check();
-  await a.page.locator("#handover-form").evaluate((f: HTMLFormElement) => f.requestSubmit());
+  // v10: agreeing cover with a colleague who offered records the handover in the same step.
   await expect(a.page.getByRole("button", { name: /Confirm cover arranged/ })).toBeEnabled();
   await a.page.getByRole("button", { name: /Confirm cover arranged/ }).click();
   await expect.poll(async () => (await one(`select arranged_at from coverage_plans where id = $1`, [planId])).arranged_at).not.toBeNull();

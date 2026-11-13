@@ -274,74 +274,21 @@ export function MyLibraryView({
         lead="Your working copies and uploads. Nobody else can see these."
       />
       <Banner error={error} ok={notice} />
-      <div className="split">
-        <div className="stack">
-          <LibraryTabs tab="mine" mineCount={total} />
-          <div className="chip-row" aria-label="Folders">
-            <a className={`chip${folder === "all" ? " selected" : ""}`} href="/dashboard/documents?tab=mine">All ({total})</a>
-            {folders.map((f) => (
-              <a key={f.id} className={`chip${folder === String(f.id) ? " selected" : ""}`} href={`/dashboard/documents?tab=mine&folder=${f.id}`}>
-                {f.name} ({folderCounts[String(f.id)] || 0})
-              </a>
-            ))}
-            {(folderCounts.unfiled || 0) > 0 && folders.length > 0 && (
-              <a className={`chip${folder === "unfiled" ? " selected" : ""}`} href="/dashboard/documents?tab=mine&folder=unfiled">
-                Unfiled ({folderCounts.unfiled})
-              </a>
-            )}
-          </div>
-          {docs.length === 0 ? (
-            <Empty
-              symbol={"▤"}
-              title={total === 0 ? "Your working copies live here." : "Nothing in this folder."}
-              body={total === 0 ? "Open a Library template and save its PDF, or upload your own practice documents." : "Move documents here from the list, or pick another folder."}
-              action={total === 0 ? <a className="btn secondary small-btn" href="/dashboard/documents">Browse the Library</a> : undefined}
-            />
-          ) : (
-            <section className="card">
-              {docs.map((d) => (
-                <div key={d.id} className="item row between wrap">
-                  <span>
-                    <strong>{d.url ? <a href={d.url} target="_blank" rel="noopener noreferrer">{d.title}</a> : d.title}</strong>
-                    <p>
-                      Added {formatDate(d.createdAt.slice(0, 10))}
-                      {d.source ? ` · ${d.source}` : ""}
-                    </p>
-                  </span>
-                  <span className="row wrap" style={{ gap: 6 }}>
-                    {folders.length > 0 && (
-                      <form action={moveDocumentToFolder} className="inline row" style={{ gap: 6 }}>
-                        <input type="hidden" name="document_id" value={d.id} />
-                        <select name="folder_id" defaultValue={d.folderId ? String(d.folderId) : ""} aria-label={`Folder for ${d.title}`} className="compact-select">
-                          <option value="">Unfiled</option>
-                          {folders.map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
-                        </select>
-                        <button type="submit" className="btn ghost small-btn">Move</button>
-                      </form>
-                    )}
-                    <form action={deleteDocument} className="inline">
-                      <input type="hidden" name="id" value={d.id} />
-                      <input type="hidden" name="storage_path" value={d.storagePath} />
-                      <button type="submit" className="btn ghost small-btn">Delete</button>
-                    </form>
-                  </span>
-                </div>
-              ))}
-            </section>
-          )}
-        </div>
-        <aside className="stack">
-          <section className="card">
-            <h3>Upload a document</h3>
-            <form action={uploadDocument} className="stack" style={{ gap: 12 }}>
+      {/* v10 (Nick, 12 Nov): upload first, folders as chips, each file one tidy row with its actions tucked away. */}
+      <div className="mf">
+        <LibraryTabs tab="mine" mineCount={total} />
+        <div className="mf-bar">
+          <details className="mf-drop mf-upload">
+            <summary className="btn">Upload a document</summary>
+            <form action={uploadDocument} className="mf-panel stack" style={{ gap: 12 }}>
               <label className="field">
                 File
                 <input type="file" name="file" required accept=".pdf,.png,.jpg,.jpeg,.webp,.doc,.docx,.txt,.csv" />
-                <small>PDF, Word, image, text or CSV, up to 15MB.</small>
+                <small>PDF, Word, image, text or CSV, up to 15MB. Practice documents only; nothing that identifies a client.</small>
               </label>
               <label className="field">
-                Title (optional)
-                <input name="title" placeholder="Uses the file name if left blank" />
+                Title <span className="micro-note">optional</span>
+                <input name="title" placeholder="The file name" />
               </label>
               {folders.length > 0 && (
                 <label className="field">
@@ -352,28 +299,86 @@ export function MyLibraryView({
                   </select>
                 </label>
               )}
-              <p className="micro-note" style={{ margin: 0 }}>Practice documents only. Don&rsquo;t upload anything that identifies a client.</p>
               <button type="submit" className="btn">Upload</button>
             </form>
-          </section>
-          <section className="card tint">
-            <h3>Folders</h3>
-            <form action={createFolder} className="row" style={{ gap: 8 }}>
-              <input name="name" placeholder="New folder name" aria-label="New folder name" required style={{ flex: 1 }} className="compact-input" />
-              <button type="submit" className="btn secondary small-btn">Add</button>
-            </form>
-            {folders.map((f) => (
-              <div key={f.id} className="item row between">
-                <span className="small">{f.name}</span>
-                <form action={deleteFolder} className="inline">
-                  <input type="hidden" name="id" value={f.id} />
-                  <button type="submit" className="plain-button small">Remove</button>
-                </form>
-              </div>
+          </details>
+          <details className="mf-drop mf-folder">
+            <summary className="btn secondary">New folder</summary>
+            <div className="mf-panel stack" style={{ gap: 10 }}>
+              <form action={createFolder} className="row" style={{ gap: 8 }}>
+                <input name="name" placeholder="Folder name" aria-label="New folder name" required style={{ flex: 1 }} className="compact-input" />
+                <button type="submit" className="btn secondary small-btn">Add</button>
+              </form>
+              {folders.map((f) => (
+                <div key={f.id} className="row between">
+                  <span className="small">{f.name}</span>
+                  <form action={deleteFolder} className="inline">
+                    <input type="hidden" name="id" value={f.id} />
+                    <button type="submit" className="plain-button small">Remove</button>
+                  </form>
+                </div>
+              ))}
+              {folders.length > 0 && <p className="micro-note" style={{ margin: 0 }}>Removing a folder keeps its documents; they move to Unfiled.</p>}
+            </div>
+          </details>
+        </div>
+        <div className="chip-row mf-folders" aria-label="Folders">
+          <a className={`chip${folder === "all" ? " selected" : ""}`} href="/dashboard/documents?tab=mine">All ({total})</a>
+          {folders.map((f) => (
+            <a key={f.id} className={`chip${folder === String(f.id) ? " selected" : ""}`} href={`/dashboard/documents?tab=mine&folder=${f.id}`}>
+              {f.name} ({folderCounts[String(f.id)] || 0})
+            </a>
+          ))}
+          {(folderCounts.unfiled || 0) > 0 && folders.length > 0 && (
+            <a className={`chip${folder === "unfiled" ? " selected" : ""}`} href="/dashboard/documents?tab=mine&folder=unfiled">
+              Unfiled ({folderCounts.unfiled})
+            </a>
+          )}
+        </div>
+        {docs.length === 0 ? (
+          <Empty
+            symbol={"▤"}
+            title={total === 0 ? "Your working copies live here." : "Nothing in this folder."}
+            body={total === 0 ? "Save a Library template, or upload your own practice documents." : "Move documents here from the list, or pick another folder."}
+            action={total === 0 ? <a className="btn secondary small-btn" href="/dashboard/documents">Browse the Library</a> : undefined}
+          />
+        ) : (
+          <ul className="mf-list">
+            {docs.map((d) => (
+              <li key={d.id} className="mf-item">
+                <span className="mf-ic" aria-hidden="true">{/\.pdf$/i.test(d.title) || /PA-\d/.test(d.source || "") ? "PDF" : "DOC"}</span>
+                <span className="mf-text">
+                  <strong>{d.url ? <a href={d.url} target="_blank" rel="noopener noreferrer">{d.title}</a> : d.title}</strong>
+                  <small>
+                    Added {formatDate(d.createdAt.slice(0, 10))}
+                    {d.source ? ` · ${d.source}` : ""}
+                  </small>
+                </span>
+                <details className="mf-more">
+                  <summary aria-label={`More for ${d.title}`}>&hellip;</summary>
+                  <div className="mf-menu">
+                    {d.url && <a href={d.url} target="_blank" rel="noopener noreferrer">Open</a>}
+                    {folders.length > 0 && (
+                      <form action={moveDocumentToFolder} className="row" style={{ gap: 6 }}>
+                        <input type="hidden" name="document_id" value={d.id} />
+                        <select name="folder_id" defaultValue={d.folderId ? String(d.folderId) : ""} aria-label={`Folder for ${d.title}`} className="compact-select">
+                          <option value="">Unfiled</option>
+                          {folders.map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
+                        </select>
+                        <button type="submit" className="btn ghost small-btn">Move</button>
+                      </form>
+                    )}
+                    <form action={deleteDocument}>
+                      <input type="hidden" name="id" value={d.id} />
+                      <input type="hidden" name="storage_path" value={d.storagePath} />
+                      <button type="submit" className="plain-button mf-delete">Delete</button>
+                    </form>
+                  </div>
+                </details>
+              </li>
             ))}
-            {folders.length > 0 && <p className="micro-note" style={{ marginBottom: 0 }}>Removing a folder keeps its documents; they move to Unfiled.</p>}
-          </section>
-        </aside>
+          </ul>
+        )}
       </div>
     </>
   );
