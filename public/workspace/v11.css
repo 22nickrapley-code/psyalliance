@@ -1,0 +1,41 @@
+/* v11: Nick's 13 Nov desktop tweaks. */
+
+/* Network search cards: the relationship badge gets its own row, so the name sits right beside the disc. */
+.person-card .pc-head>.relationship-label{grid-column:1/-1!important;grid-row:2!important;justify-self:start;align-self:start;margin-top:2px}
+.person-card .pc-head{column-gap:12px!important;row-gap:8px!important}
+
+/* Hub service cards: the action link sits on one line across all three cards. */
+@media (min-width:761px){
+  .hub-svc>.hub-card{grid-template-rows:1fr auto;align-content:stretch}
+  .hub-svc>.hub-card .hub-card-go{align-self:end}
+  .hub-page .hub-svc>.hub-card p,.hub-page .hub-svc>.hub-card small{min-height:0}
+}
+
+/* Agreed records: names centre under their disc; one type scale across the card. */
+.handover-visual .hv-person .person-link{display:block;width:100%;text-align:center;font:inherit}
+.handover-visual .hv-person small{font-size:14px!important;font-weight:650;line-height:1.3}
+.handover-visual .hv-card{gap:4px!important;font-size:14px!important;line-height:1.45}
+.handover-visual .hv-card strong{font-size:15.5px!important;line-height:1.3}
+.handover-visual .hv-card span{font-size:14px!important;color:#4A534D}
+.modal .confirm-gaps{gap:8px!important;font-size:14px}
+.modal .confirm-gaps .muted{font-size:14px}
+.modal .confirm-gaps .mchip{font-size:13px}
+.modal .confirm-fresh{font-size:14px!important;color:#5b6b61}
+.modal .handover-visual~.form-intro{font-size:14px!important;line-height:1.55;color:#4A534D}
+.modal .handover-remind-title{font-size:14px!important}
+.modal .handover-remind ul{font-size:14px!important}
+
+/* Tick boxes: brand body type, the same as before v10. */
+.modal label.check-line,.modal .field .check-line{font-weight:400!important;color:#3F4A43}
+
+/* Consult discussion: the category and the question itself belong to the header. */
+.modal-feature-consult .modal-header .eyebrow{display:inline-block;vertical-align:middle}
+.modal-feature-consult .dq-tag{display:inline-flex;align-items:center;vertical-align:middle;margin:0 0 0 8px;padding:3px 10px;border-radius:999px;background:#fff;border:1px solid color-mix(in srgb,var(--feature,#5E4A86) 22%,transparent);font-size:12px;font-weight:600;letter-spacing:0;text-transform:none;color:#4B3C6E;line-height:1.3}
+.modal-feature-consult .modal-header .dq-meta{margin:6px 0 0;font-size:13.5px;color:#5C5470}
+.modal-feature-consult .modal-header .dq-text{margin:14px 0 0;max-width:72ch;max-height:30vh;overflow:auto;font-size:15.5px;line-height:1.6;color:#2A2338}
+.modal-feature-consult .modal-header{padding-bottom:22px!important;border-bottom:1px solid color-mix(in srgb,var(--feature,#5E4A86) 16%,transparent)!important}
+.modal-feature-consult .discussion-detail>.discussion-reply-form{margin-top:4px}
+@media (max-width:760px){
+  .modal-feature-consult .modal-header .dq-text{font-size:15px;max-height:26vh;margin-top:10px}
+  .modal-feature-consult .dq-tag{margin:4px 0 0 0}
+}

@@ -179,7 +179,6 @@
 .net-row .net-actions{display:flex!important;gap:8px!important;margin-top:8px!important;flex-wrap:wrap}
 .net-row .net-actions .button{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:36px!important;padding:0 14px!important;border-radius:999px!important;font-size:13.5px!important;font-weight:650;border:1px solid #D5DDD6!important;background:#fff!important;color:var(--ink)!important;box-shadow:0 1px 1px #0000000a}
 .net-row .net-actions .button svg{width:15px;height:15px}
-.net-row .net-actions .net-message{background:var(--forest,#1E4A3A)!important;border-color:var(--forest,#1E4A3A)!important;color:#fff!important}
 .net-row .net-actions .net-trust:hover{border-color:#B9C7BD!important;background:#F5F8F5!important}
 
 /* Phone: client lists fold into one row of overlapping numbered discs. */
@@ -236,8 +235,8 @@
   .content.consult-phone{min-width:0;max-width:100%;overflow-x:hidden}
   .consult-phone>*{min-width:0;max-width:100%}
   .consult-phone .discussion-row h3{white-space:normal;overflow-wrap:break-word}
-  .foot-dock>form.is-docked>div:last-child>:not(button){display:none!important}
-  .foot-dock>form.is-docked>div:last-child{justify-content:flex-end}
+  .foot-dock>form.is-docked:not(.quick-form)>div:last-child>:not(button){display:none!important}
+  .foot-dock>form.is-docked:not(.quick-form)>div:last-child{justify-content:flex-end}
 }
 @media (max-width:760px){.net-row .net-why{-webkit-line-clamp:unset!important;line-clamp:unset!important;max-height:none!important;height:auto!important;display:block!important;white-space:normal!important;overflow:visible!important;color:#4A534D}.net-row{height:auto!important;min-height:0!important}}
 .hub-ask-how{display:inline-flex;align-items:center;gap:6px;margin:6px 4px 0;font-size:13px!important;color:#7A5A1F!important;text-decoration:none!important}
