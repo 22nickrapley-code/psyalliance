@@ -39,3 +39,9 @@
   .modal-feature-consult .modal-header .dq-text{font-size:15px;max-height:26vh;margin-top:10px}
   .modal-feature-consult .dq-tag{margin:4px 0 0 0}
 }
+
+/* QA C4: the demo prompt never squeezes; if its words are long for the width, the hide link drops below. */
+@media (max-width:760px){
+  .demo-line{flex-wrap:wrap!important}
+  .demo-line-watch{flex:1 1 200px}
+}

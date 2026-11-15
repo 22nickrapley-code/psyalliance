@@ -1,6 +1,10 @@
 import "../../premium.css";
 import { notFound } from "next/navigation";
 import { IS_DEMO_SITE, REAL_SITE_URL, TOUR_URL } from "@/lib/env";
+import { lengthLabel } from "@/tour/scripts";
+import { findScript } from "@/tour/demo-scripts";
+// v11 (QA M5): the whole-story length is worked out from the demo itself, never written by hand.
+const STORY_LEN = lengthLabel(findScript("overview")!);
 import { PublicNav } from "../../_public/chrome";
 import { enterSandboxAction } from "./actions";
 import { RachelCard } from "../../tour/story";
@@ -54,7 +58,7 @@ export default async function SandboxPage(props: { params: Promise<{ token: stri
                     <p>Sandbox links last 7 days. Sign in to PsyAlliance and open a fresh sandbox from your account in one click.</p>
                     <div className="row wrap" style={{ gap: 10 }}>
                       <a className="btn lg" href={`${REAL_SITE_URL}/dashboard`}>Open a new sandbox &rarr;</a>
-                      <a className="btn secondary" href={TOUR_URL}>Watch the two-minute demo</a>
+                      <a className="btn secondary" href={TOUR_URL}>Watch the {STORY_LEN} demo</a>
                     </div>
                   </div>
                 )}

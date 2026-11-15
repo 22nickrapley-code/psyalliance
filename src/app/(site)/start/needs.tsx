@@ -10,7 +10,7 @@ export const NEED_LINE: Record<Need, string> = {
   caseload: "Referrals that fit your focus, from colleagues who are full.",
   perspective: "A focused question to colleagues you trust.",
   reducing: "Place clients carefully and plan what comes next.",
-  explore: "A two-minute look at the whole product.",
+  explore: "A short look at the whole product.",
   offer_support: "Be there for colleagues who need cover, referrals or advice.",
 };
 

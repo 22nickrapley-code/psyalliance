@@ -171,7 +171,7 @@ async function suggest(ctx: Ctx, a: any): Promise<Result> {
             untilFurtherNotice: !!res?.untilFurtherNotice && (reason === "closing" || reason === "reciprocal"),
             states,
             name: clip(res?.name, 60),
-            clientCount: Math.max(0, Math.min(20, Number(res?.clientCount) || 0)),
+            clientCount: Math.max(0, Math.min(30, Number(res?.clientCount) || 0)),
           },
           left: use.left,
         },
@@ -179,13 +179,13 @@ async function suggest(ctx: Ctx, a: any): Promise<Result> {
     }
     // cover-clients: several anonymous client needs from a description or a de-identified file.
     const res: any = await extractStructuredData({
-      system: system + "\n- Each client becomes one entry. Up to 20. Never include a name or identifier in any field.",
+      system: system + "\n- Each client becomes one entry. Up to 30. Never include a name or identifier in any field.",
       userContent: `The member's clients who need cover while they are away (${source === "file" ? "from a file they uploaded, with identifying columns already removed" : "in their own words"}):\n\n${text}`,
       toolName: "fill_cover_clients",
       toolDescription: "One entry per client who needs cover.",
-      inputSchema: { type: "object", properties: { clients: { type: "array", items: needSchema(o), maxItems: 20 } }, required: ["clients"] },
+      inputSchema: { type: "object", properties: { clients: { type: "array", items: needSchema(o), maxItems: 30 } }, required: ["clients"] },
     });
-    const clients = (Array.isArray(res?.clients) ? res.clients : []).slice(0, 20).map((c: any) => cleanNeed(c, o));
+    const clients = (Array.isArray(res?.clients) ? res.clients : []).slice(0, 30).map((c: any) => cleanNeed(c, o));
     return { ok: true, data: { clients, left: use.left } };
   } catch (e) {
     return modelError(e);
@@ -194,7 +194,7 @@ async function suggest(ctx: Ctx, a: any): Promise<Result> {
 
 // What Ask PsyAlliance knows about the product, so how-to answers have a source too.
 const GUIDE: { id: string; title: string; text: string; link: string }[] = [
-  { id: "cover", title: "Cover", link: "/dashboard/cover", text: "Plan cover for time away: choose the reason and dates, add up to 20 anonymous client needs, choose colleagues for each client, then send. Colleagues reply I can cover, Ask a question or Not available. You agree a colleague for each client; after a discussion alone the colleague confirms with one tap. Confirm cover arranged once every client has an agreed colleague and a ready handover. The plan stays active until the absence ends." },
+  { id: "cover", title: "Cover", link: "/dashboard/cover", text: "Plan cover for time away: choose the reason and dates, add up to 30 anonymous client needs, choose colleagues for each client, then send. Colleagues reply I can cover, Ask a question or Not available. You agree a colleague for each client; after a discussion alone the colleague confirms with one tap. Confirm cover arranged once every client has an agreed colleague and a ready handover. The plan stays active until the absence ends." },
   { id: "referrals", title: "Referrals", link: "/dashboard/referrals", text: "Refer a client: describe the main need and the client's state, see matched colleagues, choose selected colleagues, trusted colleagues or the whole network, and send. Selected or trusted colleagues can be asked one at a time in your order with a reply deadline. Colleagues reply I can accept this referral, Ask a question or Not available. Agree one colleague; then Close moves it to Completed." },
   { id: "consult", title: "Consult", link: "/dashboard/consult", text: "Ask a de-identified question of chosen colleagues, a group or the network. Tabs: All discussions, Active, Resolved, Following. Mark a discussion resolved when it is answered. Consultation groups have a charter, meeting details and a group chat." },
   { id: "availability", title: "Availability", link: "/dashboard/availability", text: "Set whether you take referrals, cover and consultation, and how many spaces you have. Confirmed within 60 days ranks normally; 60 to 120 days shows as not recently confirmed; after 120 days you drop out of suggestions. The Hub has quick controls under the three service cards." },
@@ -298,11 +298,12 @@ async function ask(ctx: Ctx, a: any): Promise<Result> {
   }).filter(Boolean).sort((x: any, y: any) => y.score - x.score || String(x.p.name).localeCompare(String(y.p.name))).slice(0, 10).map((x: any) => card(x.p));
 
   const ownPlans = ((data.plans as any[]) || []).filter((p) => p.owner === "me").slice(0, 20).map((p) => ({
-    id: `plan:${p.id}`, name: p.name, status: p.status, from: p.start, to: p.openEnded ? "until further notice" : p.end,
-    clients: (p.clients || []).map((c: any) => `${c.label} (${c.focus}, ${c.state}): ${c.assignee ? `covered by ${nameOf(c.assignee)}` : c.status}`).join("; "), link: `/dashboard/cover?plan=${p.id}`,
+    id: `plan:${p.id}`, name: p.name, status: p.status, sent: String(p.createdAt || "").slice(0, 10), from: p.start, to: p.openEnded ? "until further notice" : p.end,
+    // v11 (QA M4): who each client's request went to and where it stands, so "what did I send today" can be answered.
+    clients: (p.clients || []).map((c: any) => `${c.label} (${c.focus}, ${c.state}): ${c.assignee ? `covered by ${nameOf(c.assignee)}` : c.status}${(c.requests || []).length ? `; asked: ${(c.requests || []).map((r: any) => `${nameOf(r.person)} (${r.status})`).join(", ")}` : ""}`).join("; "), link: `/dashboard/cover?plan=${p.id}`,
   }));
   const otherPlans = ((data.plans as any[]) || []).filter((p) => p.owner !== "me").slice(0, 15).map((p) => ({
-    id: `plan:${p.id}`, name: p.name, by: nameOf(p.owner), status: p.status, from: p.start, to: p.end,
+    id: `plan:${p.id}`, name: p.name, by: nameOf(p.owner), status: p.status, sent: String(p.createdAt || "").slice(0, 10), from: p.start, to: p.end,
     yourPart: (p.clients || []).map((c: any) => { const mine = (c.requests || []).find((r: any) => r.person === "me"); return `${c.label}: ${c.assignee === "me" ? "you are covering" : mine ? mine.status : c.status}`; }).join("; "), link: `/dashboard/cover?plan=${p.id}`,
   }));
   const refs = ((data.referrals as any[]) || []).slice(0, 25).map((r) => ({
@@ -311,7 +312,7 @@ async function ask(ctx: Ctx, a: any): Promise<Result> {
   }));
   const cons = (data.consult as any) || {};
   const discussions = ((cons.discussions as any[]) || []).slice(0, 40).map((d) => ({
-    id: `discussion:${d.id}`, title: d.title, askedBy: d.person === "me" ? "you" : nameOf(d.person), topic: (d.tags || [d.tag]).filter(Boolean).join(", "), status: d.status,
+    id: `discussion:${d.id}`, title: d.title, askedBy: d.person === "me" ? "you" : nameOf(d.person), asked: String(d.createdAt || "").slice(0, 10), audience: d.audience || "", topic: (d.tags || [d.tag]).filter(Boolean).join(", "), status: d.status,
     question: clip(d.text, 240), replies: ((d.history || []) as any[]).filter((h) => h.type === "reply").slice(0, 4).map((h) => `${h.person === "me" ? "you" : nameOf(h.person)}: ${clip(h.text, 160)}`), link: `/dashboard/consult?discussion=${d.id}`,
   }));
   const groups = ((cons.groups as any[]) || []).map((g) => ({ id: `group:${g.id}`, name: g.name, purpose: clip(g.purpose, 160), cadence: g.cadence, members: (g.members || []).map(nameOf), link: "/dashboard/consult" }));

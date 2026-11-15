@@ -2,6 +2,10 @@ import "../../premium.css";
 import { PublicNav, PublicFooter } from "../../_public/chrome";
 import { cookies } from "next/headers";
 import { REAL_SITE_URL, TOUR_URL } from "@/lib/env";
+import { lengthLabel } from "@/tour/scripts";
+import { findScript } from "@/tour/demo-scripts";
+// v11 (QA M5): the whole-story length is worked out from the demo itself, never written by hand.
+const STORY_LEN = lengthLabel(findScript("overview")!);
 
 export const metadata = { title: "Sandbox session ended", robots: { index: false, follow: false } };
 
@@ -28,7 +32,7 @@ export default async function SandboxEndedPage(props: { searchParams: Promise<{ 
               <div className="row wrap" style={{ gap: 10, marginTop: 8 }}>
                 {canResume && <a className="btn" href="/sandbox/resume" data-reload="">Continue in your sandbox</a>}
                 <a className={canResume ? "btn secondary" : "btn"} href={`${REAL_SITE_URL}/auth/sign-in`}>Sign in to PsyAlliance</a>
-                <a className="btn secondary" href={TOUR_URL}>Watch the two-minute demo</a>
+                <a className="btn secondary" href={TOUR_URL}>Watch the {STORY_LEN} demo</a>
               </div>
             </div>
           </div>

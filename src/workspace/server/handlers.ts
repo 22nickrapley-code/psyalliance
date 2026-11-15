@@ -5,6 +5,10 @@ import { loadInvite } from "@/lib/invite";
 import { shapeLibrary, resourceKey } from "./library";
 import { LIBRARY_SELECT, isAvailable, isMemberVisible } from "@/lib/library";
 import { transcribeAudio } from "./transcribe";
+import { headers } from "next/headers";
+import { getCloudflareContext } from "@opennextjs/cloudflare";
+import { GUIDE_INFO } from "../fixtures/library-guidance";
+import { REFERENCE_DATA } from "../fixtures/reference-data";
 
 // Every change the workspace makes goes through one of these. Each runs as
 // the signed-in member (their own session, so row-level security and the
@@ -12,7 +16,7 @@ import { transcribeAudio } from "./transcribe";
 // change in one transaction, and sends back the parts of the workspace that
 // changed so the screen shows what is true, not what was hoped.
 export type Ctx = { supabase: SupabaseClient; userId: string };
-export type Result = { ok: boolean; error?: string; patch?: Record<string, any>; data?: any; signedOut?: boolean };
+export type Result = { ok: boolean; error?: string; patch?: Record<string, any>; data?: any; signedOut?: boolean; switched?: boolean };
 type Handler = (ctx: Ctx, args: any) => Promise<Result>;
 
 export async function slices(ctx: Ctx, names: string[]) {
@@ -264,12 +268,15 @@ export const handlers: Record<string, Handler> = {
       [/is interested in covering your client/, "can cover your client"],
       [/confirmed they can cover your client/, "agreed to cover your client"],
       [/is interested in your referral request/, "can accept your referral request"],
+      [/responded "interested" to your referral request/, "can accept your referral request"],
+      [/responded "interested" to your coverage request/, "can cover your client"],
     ];
     const reword = (t: string) => WORDS.reduce((x, [re, to]) => x.replace(re, to), t);
     const items = [
       ...((deliveries as any[]) || []).filter((d) => d.notification_events).map((d) => {
         const e = d.notification_events;
-        const name = e.actor?.full_name ? String(e.actor.full_name) : "";
+        // v11 (QA M9): an older notice whose colleague can no longer be named still reads as a sentence.
+        const name = e.actor?.full_name ? String(e.actor.full_name) : e.event_type !== "system_notice" && /^[a-z]/.test(String(e.summary || "")) ? "A colleague" : "";
         const link = typeof e.deep_link === "string" && e.deep_link.startsWith("/") && !e.deep_link.startsWith("//") ? e.deep_link : "";
         return { key: `d${d.id}`, kind: "delivery", id: d.id, at: d.created_at, unread: !d.read_at, cat: cat(String(e.event_type || ""), link), title: name && e.event_type !== "system_notice" ? reword(`${name} ${e.summary}`) : reword(String(e.summary || "")), body: "", link };
       }),
@@ -751,17 +758,45 @@ export const handlers: Record<string, Handler> = {
   // "Save to My Files" (Nick, 4 Nov): a private copy of a Library template, kept in a "PsyAlliance documents" folder.
   "resource.copy": async (ctx, a) => {
     const key = resourceKey(Number(a.id));
-    if (!key || !/^PA-\d{2}$/.test(key)) return bad("Only Library templates can be saved to My Files.");
+    if (!key || !/^(PA-\d{2}|guide:\d)$/.test(key)) return bad("Only Library resources can be saved to My Files.");
     // v10 (Nick, 12 Nov): templates open once your license is verified.
     const { data: vs } = await ctx.supabase.from("profiles").select("verification_status").eq("id", ctx.userId).maybeSingle();
     if ((vs as any)?.verification_status !== "verified") return bad("Templates open once your license is verified.");
-    const { data: doc } = await ctx.supabase.from("documents").select(LIBRARY_SELECT).eq("owner_scope", "world").eq("library_code", key).maybeSingle();
-    if (!doc || !isMemberVisible(doc as any) || !isAvailable(doc as any) || !(doc as any).storage_path) return bad("That resource isn't available yet.");
-    const d: any = doc;
-    const tail = String(d.storage_path).split("/").pop() || `${key}.pdf`;
-    const target = `personal/${ctx.userId}/${Date.now()}-copy-${tail.replace(/^\d+-/, "")}`;
-    const { error: copyError } = await ctx.supabase.storage.from("documents").copy(d.storage_path, target);
-    if (copyError) return bad("The copy didn't save. Nothing was kept; please try again.");
+    let d: any, target: string;
+    if (key.startsWith("guide:")) {
+      // v11 (QA C7): the six guides are part of the product, not database files; Save copies the guide's own PDF.
+      const id = Number(key.slice(6)), g = GUIDE_INFO[id], ref = (REFERENCE_DATA.resources as any[]).find((r) => r.id === id);
+      if (!g || !ref) return bad("That resource isn't available yet.");
+      // On Cloudflare the file comes from the site's own static assets; running locally, from the site itself.
+      let res: Response | null = null;
+      try {
+        const assets = (getCloudflareContext().env as any)?.ASSETS;
+        if (assets) res = await assets.fetch(new URL(g.pdf, "https://assets.local"));
+      } catch {
+        res = null;
+      }
+      if (!res || !res.ok) {
+        const h = await headers();
+        const host = h.get("x-forwarded-host") || h.get("host");
+        const proto = h.get("x-forwarded-proto") || (host && /^(localhost|127\.)/.test(host) ? "http" : "https");
+        res = host ? await fetch(`${proto}://${host}${g.pdf}`).catch(() => null) : null;
+      }
+      if (!res || !res.ok) return bad("The copy didn't save. Nothing was kept; please try again.");
+      const bytes = new Uint8Array(await res.arrayBuffer());
+      if (!bytes.length || bytes.length > 20 * 1024 * 1024) return bad("The copy didn't save. Nothing was kept; please try again.");
+      target = `personal/${ctx.userId}/${Date.now()}-copy-${g.pdf.split("/").pop()}`;
+      const { error: upError } = await ctx.supabase.storage.from("documents").upload(target, bytes, { contentType: "application/pdf", upsert: false });
+      if (upError) return bad("The copy didn't save. Nothing was kept; please try again.");
+      d = { title: ref.title, version: 1 };
+    } else {
+      const { data: doc } = await ctx.supabase.from("documents").select(LIBRARY_SELECT).eq("owner_scope", "world").eq("library_code", key).maybeSingle();
+      if (!doc || !isMemberVisible(doc as any) || !isAvailable(doc as any) || !(doc as any).storage_path) return bad("That resource isn't available yet.");
+      d = doc;
+      const tail = String(d.storage_path).split("/").pop() || `${key}.pdf`;
+      target = `personal/${ctx.userId}/${Date.now()}-copy-${tail.replace(/^\d+-/, "")}`;
+      const { error: copyError } = await ctx.supabase.storage.from("documents").copy(d.storage_path, target);
+      if (copyError) return bad("The copy didn't save. Nothing was kept; please try again.");
+    }
     const FOLDER = "PsyAlliance documents";
     let { data: folder } = await ctx.supabase.from("document_folders").select("id").eq("profile_id", ctx.userId).eq("name", FOLDER).maybeSingle();
     if (!folder) {
@@ -771,7 +806,7 @@ export const handlers: Record<string, Handler> = {
     const title = `${String(d.title).replace(/^PA-\d+:\s*/, "")} (your copy)`;
     const { error } = await ctx.supabase.from("documents").insert({
       profile_id: ctx.userId, owner_scope: "personal", title, storage_path: target, uploaded_by: ctx.userId, is_general: true,
-      folder_id: folder?.id ?? null, sources: `Your copy of ${key}, version ${d.version || 1}`,
+      folder_id: folder?.id ?? null, sources: key.startsWith("guide:") ? `Your copy of the PsyAlliance guide "${d.title}"` : `Your copy of ${key}, version ${d.version || 1}`,
     });
     if (error) {
       await ctx.supabase.storage.from("documents").remove([target]);

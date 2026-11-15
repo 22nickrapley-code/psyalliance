@@ -72,7 +72,7 @@ export function ContinuityView({
       />
       <Banner
         error={sp.error}
-        ok={sp.reviewed ? "Marked as reviewed today." : savedTitle ? `${savedTitle} saved.` : null}
+        ok={sp.reviewed ? "Marked as reviewed today." : sp.saved === "backup" && !hasBackup ? "Saved, but you haven’t named a backup yet. Choose a colleague, or add someone not on PsyAlliance." : savedTitle ? `${savedTitle} saved.` : null}
       />
       <ContinuityDrafts savedSection={sp.saved || null} owner={owner} site={site} base={updatedAt} />
 

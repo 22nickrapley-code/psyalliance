@@ -3,6 +3,10 @@ import { redirect } from "next/navigation";
 import { signUp } from "../actions";
 import { createClient } from "@/lib/supabase/server";
 import { IS_DEMO_SITE, JOIN_URL, TOUR_URL } from "@/lib/env";
+import { lengthLabel } from "@/tour/scripts";
+import { findScript } from "@/tour/demo-scripts";
+// v11 (QA M5): the whole-story length is worked out from the demo itself, never written by hand.
+const STORY_LEN = lengthLabel(findScript("overview")!);
 import { US_STATES } from "@/lib/us-states";
 import { loadOpenStates, stateList } from "@/lib/open-states";
 import { PublicNav, PublicFooter } from "../../_public/chrome";
@@ -80,7 +84,7 @@ export default async function SignUpPage(props: {
                 <span>After that, membership is $30 a month, and nothing is charged until payments open.</span>
               </div>
               <p className="small">
-                Want to see it first? <a href={TOUR_URL}>Watch the two-minute demo</a>.
+                Want to see it first? <a href={TOUR_URL}>Watch the {STORY_LEN} demo</a>.
               </p>
             </div>
 

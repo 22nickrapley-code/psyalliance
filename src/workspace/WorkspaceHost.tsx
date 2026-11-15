@@ -24,7 +24,7 @@ function Host({ boot }: { boot: LiveBoot }) {
       if (cancelled) return;
       const env: any = {
         ...buildLiveEnv(boot, first.current.view),
-        call: workspaceCall,
+        call: (name: string, args: unknown) => workspaceCall(name, args, boot.userId),
         signOut: () => signOutAction(),
         open: first.current.open,
         navigate: (url: string) => {
