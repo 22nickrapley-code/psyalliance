@@ -29,6 +29,8 @@ export type Beat =
 export type DemoStep = {
   title: string;
   text: string;
+  // v14: words for a phone, where the screen is stacked rather than side by side.
+  phoneText?: string;
   beats: Beat[];
   // Extra seconds to hold the finished screen, for a step that is mostly reading.
   hold?: number;

@@ -1,0 +1,85 @@
+/* v14: Nick's 16 Nov phone review. */
+
+/* Ask box: on one line the star, clear, mic and Ask sit in the middle of the box. */
+.hub-ask-form:not(.is-tall){align-items:center!important}
+.hub-ask-form:not(.is-tall)>.ai-mark,.hub-ask-form:not(.is-tall)>.ai-mic,.hub-ask-form:not(.is-tall)>.ai-clear,.hub-ask-form:not(.is-tall)>.button{align-self:center!important;margin-bottom:0!important}
+.hub-ask-form .ai-mark{display:grid!important;place-items:center}
+
+/* Match cards: the relationship badge sits under the name on a phone, left-aligned with it. */
+.mc-badge-phone{display:none}
+.mc-badge-wide{display:contents}
+@media (max-width:760px){
+  .mc-badge-phone{display:block;margin-top:4px}
+  .mc-badge-phone>.relationship-label{display:inline-flex;margin:0!important}
+  .mc-badge-wide{display:none}
+}
+
+/* A profile's chips (licenses reviewed and the rest) scroll sideways rather than being cut off. */
+.pf-chips .pf-chip{max-width:100%;overflow-x:auto;white-space:nowrap;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.pf-chips .pf-chip::-webkit-scrollbar{display:none}
+
+/* Library: once a resource is saved, its folder turns PsyAlliance green. */
+.resource-card.rc-v10 .rc-save.is-saved{background:#1E4A3A!important;border-color:#1E4A3A!important;color:#fff!important}
+.resource-card.rc-v10 .rc-save.is-saved svg{color:#fff;stroke:#fff}
+
+/* Choose colleagues on a phone: Back (arrow only), Next client, Review in one bar. */
+@media (max-width:760px){
+  .modal-footer .foot-icon-only{font-size:0!important;gap:0!important;width:48px;min-width:48px;padding:0!important;justify-content:center}
+  .modal-footer .foot-icon-only svg{width:20px;height:20px}
+  .modal-footer .foot-keep{flex:1 1 auto;min-width:0;white-space:nowrap}
+  .modal-footer.is-phone-foot:has(.foot-keep) .button.primary{flex:1 1 auto;min-width:0;white-space:nowrap}
+}
+
+/* Consult on a phone: while the keyboard is up, the question in the header shrinks to two lines so the reply box stays in view. */
+@media (max-width:760px){
+  body.compact-viewport .modal-feature-consult .modal-header{padding-top:10px!important;padding-bottom:10px!important}
+  body.compact-viewport .modal-feature-consult .modal-header .modal-lead,
+  body.compact-viewport .modal-feature-consult .modal-header .eyebrow,
+  body.compact-viewport .modal-feature-consult .modal-header .modal-sandbox,
+  body.compact-viewport .modal-feature-consult .modal-header .dq-tag,
+  body.compact-viewport .modal-feature-consult .modal-header .dq-meta{display:none!important}
+  body.compact-viewport .modal-feature-consult .modal-header h2{font-size:17px!important;line-height:1.3!important;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  body.compact-viewport .modal-feature-consult .modal-header .dq-text{margin-top:4px!important;font-size:13.5px!important;max-height:none!important;overflow:hidden!important;display:-webkit-box!important;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+}
+
+/* Notices: a colleague arriving looks like every other notice, a small green bar. Swipe one away to dismiss it. */
+.sandbox-arrival{background:#203b32!important;border:1px solid #45604b!important;color:#f3f5ee!important;border-radius:12px!important;padding:10px 10px 10px 12px!important;gap:10px!important;box-shadow:0 8px 30px #203b3233!important;touch-action:pan-y}
+.sandbox-arrival .arrival-icon{width:30px!important;height:30px!important;border-radius:50%!important;background:rgba(255,255,255,.12)!important;color:#E0B25A!important}
+.sandbox-arrival strong{color:#fff!important;font-size:13.5px!important;line-height:1.3!important}
+.sandbox-arrival p{color:#cfdcd3!important;font-size:12.5px!important;line-height:1.35!important;margin-top:1px!important;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+.sandbox-arrival .button{background:#fff!important;color:#203b32!important;border-color:#fff!important;min-height:32px!important;padding:0 12px!important;font-size:13px!important}
+.sandbox-arrival .icon-button{color:#cfdcd3!important;background:transparent!important;border:0!important}
+.toast,.sandbox-arrival{transition:transform .2s,opacity .2s}
+.is-swiping{transition:none!important}
+
+/* Hub actions on a phone: coloured by service and compact. */
+.hub-group.feature-referrals{--svc:#2F5D8A}.hub-group.feature-cover{--svc:#1F6B55}.hub-group.feature-consult{--svc:#5E4A86}.hub-group.feature-setup{--svc:#7A5A1F}
+@media (max-width:760px){
+  .hub-attn-panel.is-compact .hub-group{border-left:3px solid var(--svc,#1F6B55);padding-left:10px!important;margin-bottom:12px}
+  .hub-attn-panel.is-compact .hub-group>h2{color:var(--svc)!important;font-size:13px!important;letter-spacing:.04em;text-transform:uppercase;margin:0 0 4px!important;display:flex;align-items:center;gap:6px}
+  .hub-attn-panel.is-compact .hub-group>h2>span{background:var(--svc);color:#fff;border-radius:999px;min-width:20px;height:20px;display:inline-grid;place-items:center;font-size:11.5px;padding:0 6px}
+  .hub-attn-panel.is-compact .hub-row{display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;align-items:center!important;gap:4px 10px!important;padding:8px 0!important}
+  .hub-attn-panel.is-compact .hub-row-icon,.hub-attn-panel.is-compact .hub-row-text>span:not(.hub-row-due),.hub-attn-panel.is-compact .hub-group-note{display:none!important}
+  .hub-attn-panel.is-compact .hub-row-text strong{font-size:14px!important;line-height:1.3!important;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .hub-attn-panel.is-compact .hub-row-due{font-size:12px!important;color:#8A6526!important}
+  .hub-attn-panel.is-compact .hub-row-actions{display:flex!important;flex-direction:column!important;align-items:flex-end!important;gap:2px!important}
+  .hub-attn-panel.is-compact .hub-row-actions .button{min-height:34px!important;padding:0 12px!important}
+  .hub-attn-panel.is-compact .hub-row-actions .text-link{font-size:12px!important;padding:2px 0!important}
+  .hub-attn-panel.is-compact .hub-more{color:var(--svc)!important;font-weight:600;padding:2px 0 0!important}
+  .hub-help-line{all:unset;box-sizing:border-box;display:flex;align-items:center;gap:8px;width:100%;padding:8px 0;color:var(--svc);font-size:13px;font-weight:650;text-transform:uppercase;letter-spacing:.04em;cursor:pointer}
+  .hub-help-line b{background:var(--svc);color:#fff;border-radius:999px;min-width:20px;height:20px;display:inline-grid;place-items:center;font-size:11.5px;padding:0 6px;text-transform:none}
+  .hub-help-line svg{width:16px;height:16px;margin-left:auto}
+}
+
+/* Network cards on a phone: the two buttons sit side by side, centred on the card's bottom line. */
+@media (max-width:760px){
+  .relationship-group .net-row{--net-indent:58px}
+  .relationship-group .net-row .net-actions{margin-left:calc(-1 * var(--net-indent))!important;width:calc(100% + var(--net-indent));justify-content:center!important;flex-wrap:nowrap!important;gap:10px!important}
+  .relationship-group .net-row .net-actions .button{flex:0 1 auto;min-width:0;white-space:nowrap}
+}
+@media (max-width:760px){
+  .hub-attn-panel.is-compact .hub-group{padding-left:0!important}
+  .hub-attn-panel.is-compact .hub-row{padding:8px 0 8px 12px!important}
+  .hub-attn-panel.is-compact .hub-group>h2,.hub-attn-panel.is-compact .hub-more,.hub-attn-panel.is-compact .hub-help-line{padding-left:12px!important}
+}
+@media (max-width:760px){.hub-attn-panel.is-compact .hub-group>ul{margin-left:0!important;margin-right:0!important;padding-left:0!important}.hub-attn-panel.is-compact .hub-row{margin-left:0!important}}

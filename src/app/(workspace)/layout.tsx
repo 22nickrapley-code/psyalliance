@@ -20,7 +20,7 @@ export const viewport: Viewport = {
 } as Viewport;
 
 const STYLES = ["styles", "product", "refinements", "home", "pulse", "directions", "polish", "feedback", "hub"];
-const V = "25";
+const V = "26";
 
 export default function WorkspaceRootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -56,6 +56,7 @@ export default function WorkspaceRootLayout({ children }: { children: React.Reac
         <link rel="stylesheet" href={`/workspace/v10.css?v=${V}`} />
         <link rel="stylesheet" href={`/workspace/v11.css?v=${V}`} />
         <link rel="stylesheet" href={`/workspace/v13.css?v=${V}`} />
+        <link rel="stylesheet" href={`/workspace/v14.css?v=${V}`} />
         {/* eslint-disable-next-line @next/next/no-sync-scripts */}
         <script src={`/workspace/date-words.js?v=${V}`} defer />
       </head>

@@ -476,7 +476,7 @@ export function Director({
       if (opts.caption !== false) setPos({ c: ci, s: si });
       const t0 = Date.now();
       // A caption takes longer to read on a phone, where the screen and the words are both small.
-      const read = READ_MS(`${step.title} ${step.text}`) * (phoneRef.current ? 1.3 : 1);
+      const read = READ_MS(`${step.title} ${(phoneRef.current && step.phoneText) || step.text}`) * (phoneRef.current ? 1.3 : 1);
       // The words stay still for their whole reading time before anything on screen moves.
       if (!fastRef.current) await sleep(read, id);
       await runBeats(ci, si, id);
@@ -764,7 +764,7 @@ export function Director({
             {chapter?.name || script.what}
           </span>
           <h3 key={`t${pos.c}.${pos.s}`}>{stepNow?.title}</h3>
-          <p key={`p${pos.c}.${pos.s}`}>{stepNow?.text}</p>
+          <p key={`p${pos.c}.${pos.s}`}>{(phone && stepNow?.phoneText) || stepNow?.text}</p>
           <div className="dp-controls">
             <button
               type="button"

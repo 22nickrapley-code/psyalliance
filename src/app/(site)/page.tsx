@@ -20,7 +20,7 @@ const FAQ: [string, string][] = [
   ],
   [
     "What does it cost?",
-    "The first 40 members in each state are founding members and never pay: membership stays free for as long as you remain a member. A place counts when you activate membership after your license is approved, in your main practice state. After a state's founding places are taken, membership there is $30 a month. Once you've created your account, you'll see how many founding places are left in your state.",
+    "The first 40 members in each state are founding members and never pay: membership stays free for as long as you remain a member and sign in at least once every six months. A place counts when you activate membership after your license is approved, in your main practice state. After a state's founding places are taken, membership there is $30 a month. Once you've created your account, you'll see how many founding places are left in your state.",
   ],
   [
     "What's in the Library?",

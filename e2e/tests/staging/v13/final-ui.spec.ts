@@ -148,7 +148,8 @@ test("FU-04 consult: the asker marks a question resolved; others see why replies
   await a.page.locator("#main").getByRole("button", { name: "Following" }).click();
   await expect(a.page.locator(".discussion-row", { hasText: "late cancellations" }).locator(".label", { hasText: "Your question" })).toBeVisible();
   await expect(a.page.locator(".discussion-row", { hasText: "late cancellations" }).locator(".label", { hasText: "Resolved" })).toBeVisible();
-  await expect(a.page.getByRole("button", { name: "Mine" })).toHaveCount(0);
+  // v14 (Nick, 16 Nov): the tab is "Mine & following"; there is still no separate "Mine" tab.
+  await expect(a.page.getByRole("button", { name: "Mine", exact: true })).toHaveCount(0);
   // A colleague sees why they cannot reply, and can report the question or Cass's reply.
   const b = await openAs(browser, "bram", baseURL!, `/dashboard/consult?discussion=${post.id}`);
   await expect(b.page.locator("#discussion-resolved")).toContainText("marked this question resolved");

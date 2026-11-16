@@ -21,6 +21,9 @@ export function SandboxNudge() {
   }, [welcome]);
 
   useEffect(() => {
+    // v14 (Nick, 16 Nov): colleagues arrive only while the visitor is in the workspace, where the arrival is a small green notice
+    // and is held back while three things already need them. These account pages stay quiet.
+    if (process.env.NEXT_PUBLIC_SANDBOX_NUDGE_ON_ACCOUNT !== "1") return;
     let stopped = false;
     const tick = async () => {
       if (stopped || busy.current || document.visibilityState !== "visible") return;

@@ -26,9 +26,11 @@ export default function TermsPage() {
             </p>
             <p>
               <b>Founding members.</b> The first 40 members in each state to activate membership, once PsyAlliance has approved their license there, are founding
-              members. A place is taken when a member activates, in their main practice state, one place per person. Founding members never pay for membership, for as long
-              as they remain members, including if PsyAlliance introduces fees later. A place can&rsquo;t be transferred and isn&rsquo;t reused if a member
-              leaves. After a state&rsquo;s founding places are taken, membership in that state is $30 a month. Nothing is charged until payments open, and PsyAlliance will tell members before any charge.
+              members: one place per person, in their main practice state. Founding members never pay for membership, for as long as they remain members, including if
+              PsyAlliance introduces fees later. A founding place stays yours while your profile is active, which means signing in at least once every six months; after
+              six months without signing in, it ends, and PsyAlliance will remind you by email before that happens. A place can&rsquo;t be transferred and isn&rsquo;t
+              reused if a member leaves. After a state&rsquo;s founding places are taken, membership in that state is $30 a month. When you register, you&rsquo;ll see how
+              many founding places are left in your state, and you choose whether to activate membership.
             </p>
           </div>
         </section>

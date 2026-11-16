@@ -22,6 +22,7 @@ const COVER: DemoScript = {
         {
           title: "Start a cover plan",
           text: "Your plans sit on the left of the Cover page, and colleagues’ requests on the right. Press Plan cover to start.",
+          phoneText: "Your plans come first on the Cover page, and colleagues’ requests below. Press Plan cover to start.",
           beats: [["look", ".split-lists"], ["click", '[data-action="cover-start"]']],
         },
         {
@@ -54,6 +55,7 @@ const COVER: DemoScript = {
         {
           title: "The best colleagues, already chosen",
           text: "Continue, and up to two of the best matches are chosen for each client, with the reasons they fit. Switch clients on the left to check each one.",
+          phoneText: "Continue, and up to two of the best matches are chosen for each client, with the reasons they fit. Tap a client at the top to check each one.",
           beats: [
             ["click", '[data-action="needs-continue"]'],
             ["look", ".match-list"],
@@ -135,6 +137,7 @@ const REFER: DemoScript = {
         {
           title: "A client you can’t take",
           text: "Referrals you send sit on the left, and referrals sent to you on the right. Press Refer a client to start.",
+          phoneText: "Referrals you send come first, and referrals sent to you below. Press Refer a client to start.",
           beats: [["look", ".split-lists"], ["click", '[data-action="referral-start"]']],
         },
         {
