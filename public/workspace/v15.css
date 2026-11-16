@@ -1,0 +1,30 @@
+/* v15: Nick's 16 Nov follow-up (phone). */
+
+/* Needs from you: Review or Open lands on the client, with a short highlight. */
+.cover-client-card,.cover-client-card .response-row{scroll-margin-top:12px}
+.jump-flash{animation:jumpFlash 1.6s ease-out}
+@keyframes jumpFlash{0%,30%{box-shadow:0 0 0 3px color-mix(in srgb,var(--feature,#1F6B55) 45%,transparent)}100%{box-shadow:0 0 0 3px transparent}}
+
+/* Hub actions on a phone: one small card per action. */
+@media (max-width:760px){
+  .hub-attn-panel.is-compact .hub-group{border-left:0!important;padding-left:0!important;margin-bottom:14px}
+  .hub-attn-panel.is-compact .hub-group>h2,.hub-attn-panel.is-compact .hub-more,.hub-attn-panel.is-compact .hub-help-line{padding-left:2px!important}
+  .hub-attn-panel.is-compact .hub-group>h2{margin:0 0 8px!important}
+  .hub-attn-panel.is-compact .hub-group>ul{display:grid;gap:8px}
+  .hub-attn-panel.is-compact .hub-row.hub-card-row{display:grid!important;grid-template-columns:1fr!important;gap:10px!important;padding:12px 14px 10px!important;margin:0!important;background:#fff;border:1px solid color-mix(in srgb,var(--svc,#1F6B55) 20%,#E4E2DA);border-left:4px solid var(--svc,#1F6B55)!important;border-radius:12px;box-shadow:0 1px 2px rgba(20,40,30,.05)}
+  .hub-attn-panel.is-compact .hub-card-row .hub-row-text{display:grid;gap:3px;min-width:0}
+  .hub-attn-panel.is-compact .hub-card-row .hub-row-text strong{font-size:15px!important;line-height:1.35!important;color:#1E2A24;display:block!important;-webkit-line-clamp:unset!important;overflow:visible!important}
+  .hub-attn-panel.is-compact .hub-card-row .hub-row-text>span.hub-row-sub{display:block!important;font-size:13px;color:#5B665F;line-height:1.35;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .hub-attn-panel.is-compact .hub-card-row .hub-row-actions{margin:0!important;padding:0!important;width:100%;grid-column:1/-1!important;justify-content:flex-start!important;flex-direction:row!important;align-items:center!important;gap:14px!important}
+  .hub-attn-panel.is-compact .hub-card-row .hub-card-go{flex:1 1 auto;justify-content:center;min-height:38px!important;background:var(--svc,#1F6B55)!important;border-color:var(--svc,#1F6B55)!important;color:#fff!important;font-weight:600}
+  .hub-attn-panel.is-compact .hub-card-row .hub-row-actions .text-link{font-size:13px!important;color:#5B665F;flex:0 0 auto}
+  .hub-attn-panel.is-compact .hub-card-row .hub-row-actions .text-link+.text-link{margin-left:-4px}
+}
+
+/* Plan cover, step 1 on a phone: the option cards stack in a plain column, so each one grows with its words (Safari could size a grid row before the text wrapped). */
+@media (max-width:760px){
+  .reason-grid{display:flex!important;flex-direction:column;gap:8px}
+  .reason-card{flex:0 0 auto;height:auto!important;min-height:0!important;align-items:flex-start}
+  .reason-card>span{flex:1 1 auto;min-width:0}
+  .reason-card small{white-space:normal!important;overflow:visible!important}
+}
