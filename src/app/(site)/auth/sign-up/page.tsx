@@ -71,17 +71,17 @@ export default async function SignUpPage(props: {
               </p>
               <ol className="join-steps">
                 <li><b>Create your account</b><span>About two minutes.</span></li>
-                <li><b>Add your license</b><span>A person checks it against the state board before anyone can see you.</span></li>
-                <li><b>Start while we check</b><span>Fill in your profile in a minute from your Psychology Today page or website, draft a cover plan, referral or question, and try the sandbox with fictional colleagues. Nothing reaches a real colleague until you&rsquo;re verified.</span></li>
+                <li><b>Add your license</b><span>The PsyAlliance team checks it against the state board before anyone can see you.</span></li>
+                <li><b>Start while we check</b><span>Fill in your profile in a minute from your Psychology Today page or website, draft a cover plan, referral or question, read the overview of every Library template, and try the sandbox with fictional colleagues. Nothing reaches a real colleague, and templates open, once you&rsquo;re verified.</span></li>
                 <li>
                   <b>You&rsquo;re verified</b>
-                  <span>Once your license is verified, you can use everything PsyAlliance offers.</span>
+                  <span>Once your license is verified, you can use everything PsyAlliance offers, including opening and downloading the Library templates.</span>
                 </li>
               </ol>
               {/* v6 (Nick, 9 Nov): two sentences at most, no counts. */}
               <div className="founding-note">
                 <b>The first 40 members in each state are founding members, free for life.</b>
-                <span>After that, membership is $30 a month, and nothing is charged until payments open.</span>
+                <span>After that, membership is $30 a month. Once you&rsquo;ve created your account, you&rsquo;ll see how many founding places are left in your state.</span>
               </div>
               <p className="small">
                 Want to see it first? <a href={TOUR_URL}>Watch the {STORY_LEN} demo</a>.

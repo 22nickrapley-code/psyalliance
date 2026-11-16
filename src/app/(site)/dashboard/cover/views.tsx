@@ -1,3 +1,4 @@
+import { DateInput } from "@/app/(site)/_public/date-input";
 import { shortDate } from "@/lib/dates";
 import { libraryHref } from "@/lib/library";
 import type { ReactNode } from "react";
@@ -215,11 +216,11 @@ export function CoverIndexView({
           </label>
           <label className="field">
             First day away
-            <input type="date" name="starts" defaultValue={start?.starts} />
+            <DateInput name="starts" defaultValue={start?.starts} />
           </label>
           <label className="field">
             Back on
-            <input type="date" name="ends" defaultValue={start?.ends} />
+            <DateInput name="ends" defaultValue={start?.ends} />
           </label>
         </div>
         <div className="row wrap" style={{ marginTop: 14, gap: 12 }}>
@@ -419,9 +420,9 @@ export function CoverPlanStepView({
             <label className="field">
               <span className="when-start">First day</span>
               <span className="when-close">Last day of practice</span>
-              <input type="date" name="starts_on" defaultValue={preset?.starts} />
+              <DateInput name="starts_on" defaultValue={preset?.starts} />
             </label>
-            <label className="field return-date">Return date<input type="date" name="ends_on" defaultValue={preset?.ends} autoFocus={fix === "ends"} className={fix === "ends" ? "field-invalid" : undefined} /></label>
+            <label className="field return-date">Return date<DateInput name="ends_on" defaultValue={preset?.ends} autoFocus={fix === "ends"} className={fix === "ends" ? "field-invalid" : undefined} /></label>
             <label className="field full">
               State your clients are in
               <select name="state" required defaultValue={preset?.state || options.homeState || ""} autoFocus={fix === "state"}>

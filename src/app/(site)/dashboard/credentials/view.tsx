@@ -1,3 +1,4 @@
+import { DateInput } from "@/app/(site)/_public/date-input";
 import { APP_TIME_ZONE } from "@/lib/dates";
 import {
   addLicense,
@@ -174,7 +175,7 @@ export function CredentialsView({ sp, profile, licenses, ce, panels, npiChecks, 
                   </label>
                   <label className="field">
                     Expires
-                    <input type="date" name="expiration_date" required />
+                    <DateInput name="expiration_date" required />
                   </label>
                 </div>
                 <div className="row" style={{ marginTop: 12 }}>
@@ -212,7 +213,7 @@ export function CredentialsView({ sp, profile, licenses, ce, panels, npiChecks, 
                   <label className="field">Title<input name="title" required /></label>
                   <label className="field">Provider<input name="provider" /></label>
                   <label className="field">Hours<input type="number" name="hours" step="0.25" min="0.25" required /></label>
-                  <label className="field">Completed<input type="date" name="completed_date" required /></label>
+                  <label className="field">Completed<DateInput name="completed_date" required /></label>
                   <div><button type="submit" className="btn secondary small-btn">Add credit</button></div>
                 </form>
               </details>
@@ -226,7 +227,7 @@ export function CredentialsView({ sp, profile, licenses, ce, panels, npiChecks, 
               <form action={saveMalpracticeAction} className="fields three" style={{ marginTop: 10, alignItems: "end" }}>
                 <BackField back={back} />
                 <label className="field">Carrier<input name="malpractice_carrier" defaultValue={profile?.malpractice_carrier || ""} /></label>
-                <label className="field">Policy renews<input type="date" name="malpractice_expires" defaultValue={profile?.malpractice_expires || ""} /></label>
+                <label className="field">Policy renews<DateInput name="malpractice_expires" defaultValue={profile?.malpractice_expires || ""} /></label>
                 <div style={{ paddingBottom: 4 }}><button type="submit" className="btn secondary small-btn">Save</button></div>
               </form>
             </div>
@@ -258,7 +259,7 @@ export function CredentialsView({ sp, profile, licenses, ce, panels, npiChecks, 
               <form action={saveCaqhInfo} className="fields three" style={{ marginTop: 10, alignItems: "end" }}>
                 <BackField back={back} />
                 <label className="field">CAQH provider ID<input name="caqh_provider_id" defaultValue={profile?.caqh_provider_id || ""} /></label>
-                <label className="field">Last attested<input type="date" name="caqh_last_attested_date" defaultValue={profile?.caqh_last_attested_date || ""} /></label>
+                <label className="field">Last attested<DateInput name="caqh_last_attested_date" defaultValue={profile?.caqh_last_attested_date || ""} /></label>
                 <div style={{ paddingBottom: 4 }}><button type="submit" className="btn secondary small-btn">Save</button></div>
               </form>
             </div>
@@ -287,7 +288,7 @@ export function CredentialsView({ sp, profile, licenses, ce, panels, npiChecks, 
                     <option value="out_of_network">Out of network</option>
                   </select>
                 </label>
-                <label className="field">Renewal<input type="date" name="renewal_date" /></label>
+                <label className="field">Renewal<DateInput name="renewal_date" /></label>
                 <div><button type="submit" className="btn secondary small-btn">Add panel</button></div>
               </form>
               <p className="micro-note" style={{ margin: "8px 0 0" }}>The insurance colleagues match you on is set in your Profile.</p>

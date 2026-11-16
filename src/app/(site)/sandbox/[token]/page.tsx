@@ -38,7 +38,7 @@ export default async function SandboxPage(props: { params: Promise<{ token: stri
               <h2>Step into Rachel&rsquo;s practice.</h2>
               <p>
                 The real PsyAlliance workspace, with Rachel Davis&rsquo;s practice and 1,200 fictional colleagues across six Northeast
-                states. You start with nothing waiting. Try anything you like, and colleagues get in touch every few minutes. Nothing is emailed and
+                states. You start with nothing waiting. Try anything you like, and a colleague gets in touch every seven minutes or so. Nothing is emailed and
                 nothing reaches the real network.
               </p>
             </div>
@@ -72,7 +72,7 @@ export default async function SandboxPage(props: { params: Promise<{ token: stri
                   {[
                     ["Start from a calm Hub", "Nothing is waiting when you arrive. Refer a client, plan cover, ask a question or set your availability whenever you like."],
                     ["Your work comes back to you", "A colleague answers what you sent, and it arrives in your Hub’s Actions, just as it would in practice."],
-                    ["Colleagues get in touch", "Every few minutes a colleague sends you a referral, a cover request or a question, so you can see both sides."],
+                    ["Colleagues get in touch", "Every seven minutes or so a colleague sends you a referral, a cover request or a question, so you can see both sides."],
                     ["Watch a demo any time", "Each part of PsyAlliance has a short step-by-step demo. Open them from Settings."],
                   ].map(([t, b], n) => (
                     <div key={t} className="chapter">

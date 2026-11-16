@@ -1,3 +1,4 @@
+import { DateInput } from "@/app/(site)/_public/date-input";
 import { confirmAvailability, reconfirmAvailability } from "./actions";
 import { APP_TIME_ZONE } from "@/lib/dates";
 import { PageHead, Banner, Status, SummaryList } from "../_components/ui";
@@ -145,7 +146,7 @@ export function AvailabilityView({ p, sp, back }: { p: AvailabilityData; sp: { c
               </label>
               <label className="field">
                 Pause referrals and cover until
-                <input type="date" name="paused_until" min={today} defaultValue={paused || ""} />
+                <DateInput name="paused_until" min={today} defaultValue={paused || ""} />
                 <small>For a holiday or a full stretch. You drop out of suggestions until this date, then return automatically.</small>
               </label>
             </div>

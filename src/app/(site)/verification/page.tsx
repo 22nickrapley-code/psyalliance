@@ -7,7 +7,7 @@ import { FoundingCount } from "../_public/founding-count";
 export const metadata = {
   title: "Verification",
   description:
-    "How PsyAlliance verifies doctoral-level psychologists and psychiatrists: every license is checked against the state board and signed off by a person before anyone is listed.",
+    "How PsyAlliance verifies doctoral-level psychologists and psychiatrists: every license is checked against the state board and signed off by the PsyAlliance team before anyone is listed.",
 };
 
 // How verification works. Moved here from the home page so the home page

@@ -258,6 +258,9 @@ export async function saveWorkingCopyAction(formData: FormData) {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) throw new Error("Not signed in");
+  // v13 (security pass): Library templates open once the member's license is verified, however the copy is asked for.
+  const { data: me } = await supabase.from("profiles").select("verification_status").eq("id", user.id).maybeSingle();
+  if ((me as any)?.verification_status !== "verified") documentsError("Templates open once your license is verified");
 
   const id = Number(formData.get("document_id"));
   const { data: doc } = await supabase

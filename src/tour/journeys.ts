@@ -437,11 +437,11 @@ const CIRCLE: Journey = {
 const VERIFIED: Journey = {
   key: "verified",
   title: "Join, get verified, stay visible",
-  blurb: "What joining involves: your license checked by a person, availability you control and keep current, and the profile colleagues see.",
+  blurb: "What joining involves: your license checked by the PsyAlliance team, availability you control and keep current, and the profile colleagues see.",
   minutes: "2 minutes",
   outcome: "Verified, visible, and in control of what colleagues see.",
   learned: [
-    "Every license is checked against the state board by a person.",
+    "Every license is checked against the state board by the PsyAlliance team.",
     "Availability is one number across your states, and you confirm it as things change.",
     "A confirmation counts for 120 days. After that, matching stops treating it as current.",
     "Your profile shows facts colleagues can rely on.",

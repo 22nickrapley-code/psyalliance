@@ -20,7 +20,7 @@ const FAQ: [string, string][] = [
   ],
   [
     "What does it cost?",
-    "The first 40 members in each state are founding members and never pay: membership stays free for as long as you remain a member. A place counts when you activate membership after your license is approved, in your main practice state. After a state's founding places are taken, membership there is $30 a month; nothing is charged until payments open.",
+    "The first 40 members in each state are founding members and never pay: membership stays free for as long as you remain a member. A place counts when you activate membership after your license is approved, in your main practice state. After a state's founding places are taken, membership there is $30 a month. Once you've created your account, you'll see how many founding places are left in your state.",
   ],
   [
     "What's in the Library?",
@@ -139,8 +139,8 @@ export default async function HomePage() {
               Your own practice, <em>with a group behind you.</em>
             </h1>
             <p className="v1-lead">
-              <span className="v1-lead-long">Colleagues who cover your clients when you&rsquo;re away, take the referrals you can&rsquo;t, and talk a hard decision through with you. Every member is a doctoral-level psychologist or psychiatrist, verified by a person.</span>
-              <span className="v1-lead-short">Colleagues who cover your clients, take the referrals you can&rsquo;t and talk a hard case through. Doctoral-level only, each verified by a person.</span>
+              <span className="v1-lead-long">Colleagues who cover your clients when you&rsquo;re away, take the referrals you can&rsquo;t, and talk a hard decision through with you. Every member is a doctoral-level psychologist or psychiatrist, with every license checked by the PsyAlliance team against state board records.</span>
+              <span className="v1-lead-short">Colleagues who cover your clients, take the referrals you can&rsquo;t and talk a hard case through. Doctoral-level only, every license checked by our team.</span>
             </p>
             <div className="v1-cta">
               <a className="btn lg" href="/auth/sign-up">Create your account</a>
@@ -261,16 +261,18 @@ export default async function HomePage() {
         </section>
 
         <section className="v1-band v1-dark" id="why">
-          {/* v6 (Nick, 9 Nov): no founder photo or names until launch. */}
-          <div className="v1-wrap v1-story no-photo">
+          {/* v13 (Nick, 15 Nov): Rena's name, credential and photo at launch. */}
+          <div className="v1-wrap v1-story">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/team/rena-pazienza.jpg" alt="Rena Pazienza, PhD" />
             <div>
               <div className="eyebrow">Why we built it</div>
               <blockquote>A directory helps patients find you. <em>PsyAlliance helps clinicians find each other.</em></blockquote>
               <p>
-                Going on maternity leave, XXX, PhD, needed her clients covered by someone qualified, and there was no good way to find them. So she
-                co-founded PsyAlliance with XXX to build the professional circle she wished she&rsquo;d had.
+                Going on maternity leave, Rena Pazienza, PhD, needed her clients covered by someone qualified, and there was no good way to find them. So she
+                co-founded PsyAlliance with Nick Rapley to build the professional circle she wished she&rsquo;d had.
               </p>
-              <div className="v1-sig">XXX, PhD, co-founder</div>
+              <div className="v1-sig">Rena Pazienza, PhD, co-founder</div>
             </div>
           </div>
         </section>
@@ -279,7 +281,7 @@ export default async function HomePage() {
           <div className="v1-wrap">
             <div className="v1-intro">
               <div className="eyebrow">Trust</div>
-              <h2>Verified by a person. <em>Private by design.</em></h2>
+              <h2>Checked by our team. <em>Private by design.</em></h2>
             </div>
             <div className="v1-trust">
               {TRUST.map(([t, b]) => (

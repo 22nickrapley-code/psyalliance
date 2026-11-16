@@ -1,0 +1,29 @@
+/* v13: Nick's 15 Nov list and the user test of the same day. */
+
+/* Calendar: each plan on a day opens that plan. */
+.month-day .cal-chip[data-action]{cursor:pointer}
+.month-day .cal-chip[data-action]:hover{filter:brightness(.96);outline:1px solid color-mix(in srgb,currentColor 25%,transparent)}
+
+/* A date box's date written out, US-style. */
+.date-words{display:block;margin-top:4px;font-size:12.5px;line-height:1.3;color:#5b6b61}
+.pw-wrap+.date-words,.date-words[hidden]{display:none}
+
+/* The Ask box: grows a line at a time, then scrolls; a clear button once there is text. */
+.hub-ask-form{align-items:flex-end!important}
+.hub-ask-form>.ai-mark,.hub-ask-form>.ai-mic,.hub-ask-form>.ai-clear,.hub-ask-form>.button{align-self:flex-end;margin-bottom:2px}
+.hub-ask-form textarea#hub-ask-input{flex:1 1 auto;min-width:0;border:0!important;outline:none;background:transparent!important;box-shadow:none!important;font:inherit;font-size:15px;line-height:22px;padding:9px 4px!important;resize:none;height:40px;min-height:40px!important;max-height:none;overflow-y:hidden;align-self:center;color:var(--ink)}
+.hub-ask-form .ai-clear{flex:none;width:36px!important;height:36px!important;min-height:36px!important;border-radius:50%!important;border:0!important;background:transparent!important;color:#7A6A4A!important}
+.hub-ask-form .ai-clear:hover{background:#F6EBD3!important}
+.hub-ask-form .ai-clear[hidden]{display:none!important}
+.hub-ask-form.is-tall{border-radius:18px!important}
+@media (max-width:760px){.hub-ask-form textarea#hub-ask-input{font-size:16px;line-height:22px}}
+
+/* Cover: a colleague's question shown where it needs you. */
+.need-quote{display:block;margin:2px 0 4px;padding-left:10px;border-left:3px solid #D9BF86;color:#3F4A43;font-style:italic;quotes:"\201C" "\201D"}
+.need-quote::before{content:open-quote}.need-quote::after{content:close-quote}
+/* On a phone, a longer question takes the full width and the buttons move to a row beneath it. */
+@media (max-width:760px){
+  .hub-ask-form.is-tall{flex-wrap:wrap!important;row-gap:4px!important}
+  .hub-ask-form.is-tall textarea#hub-ask-input{flex:1 1 100%!important;order:-1;padding-left:2px!important}
+  .hub-ask-form.is-tall>.ai-mark{margin-right:auto}
+}

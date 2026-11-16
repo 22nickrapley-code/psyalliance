@@ -53,7 +53,7 @@ export function ContinuityView({
     CONTINUITY_SECTIONS.find((x) => !sectionDone(x, answers))?.key ??
     null;
   const savedTitle =
-    sp.saved === "backup" ? "Your backup" : CONTINUITY_SECTIONS.find((s) => s.key === sp.saved)?.title;
+    sp.saved === "backup" ? "Your designated backup clinician" : CONTINUITY_SECTIONS.find((s) => s.key === sp.saved)?.title;
   const reviewDue = reviewedAt ? Date.now() - new Date(reviewedAt).getTime() > 365 * 86_400_000 : false;
 
   return (
@@ -72,7 +72,7 @@ export function ContinuityView({
       />
       <Banner
         error={sp.error}
-        ok={sp.reviewed ? "Marked as reviewed today." : sp.saved === "backup" && !hasBackup ? "Saved, but you haven’t named a backup yet. Choose a colleague, or add someone not on PsyAlliance." : savedTitle ? `${savedTitle} saved.` : null}
+        ok={sp.reviewed ? "Marked as reviewed today." : sp.saved === "backup" && !hasBackup ? "Saved, but you haven’t named a backup clinician yet. Choose a colleague, or add someone not on PsyAlliance." : savedTitle ? `${savedTitle} saved.` : null}
       />
       <ContinuityDrafts savedSection={sp.saved || null} owner={owner} site={site} base={updatedAt} />
 
@@ -99,7 +99,7 @@ export function ContinuityView({
             </div>
             <div className="continuity-bar" aria-hidden="true"><span style={{ width: `${progress.pct}%` }} /></div>
             <ol className="continuity-steps">
-              <li className={hasBackup ? "done" : ""}><a href="#backup">Your backup</a></li>
+              <li className={hasBackup ? "done" : ""}><a href="#backup">Your backup clinician</a></li>
               {CONTINUITY_SECTIONS.map((s) => (
                 <li key={s.key} className={sectionDone(s, answers) ? "done" : ""}>
                   <a href={`#${s.key}`}>{s.title}</a>
@@ -124,10 +124,10 @@ export function ContinuityView({
             <div className="continuity-section-head">
               <span className={`continuity-num${hasBackup ? " done" : ""}`}>{hasBackup ? "✓" : 1}</span>
               <div>
-                <h3>Your backup</h3>
+                <h3>Your designated backup clinician</h3>
                 <p className="small">
-                  The colleague who would tell your clients, arrange their care and look after your records. Name an alternate in case they
-                  can&rsquo;t. A colleague on PsyAlliance is asked to agree, and you&rsquo;re told when they do.
+                  A colleague who would step in only if you suddenly couldn&rsquo;t practice: they tell your clients, arrange their care and look
+                  after your records. Name an alternate in case they can&rsquo;t. A colleague on PsyAlliance is asked to agree, and you&rsquo;re told when they do.
                 </p>
               </div>
             </div>
@@ -151,7 +151,7 @@ export function ContinuityView({
                 <input name="alternate_outside" defaultValue={answers.alternate_outside || ""} placeholder="Name, phone, email" />
               </label>
               <div className="continuity-save">
-                <button type="submit" className="btn">Save your backup</button>
+                <button type="submit" className="btn">Save your backup clinician</button>
                 <span className="micro-note">Changing who you name asks the new colleague again.</span>
               </div>
             </form>

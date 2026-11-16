@@ -13,6 +13,9 @@ export async function POST(req: Request, { params }: { params: Promise<{ code: s
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.redirect(new URL("/auth/sign-in", req.url), 303);
+  // v13 (security pass): templates open once the member's license is verified, here as everywhere else.
+  const { data: me } = await supabase.from("profiles").select("verification_status").eq("id", user.id).maybeSingle();
+  if ((me as any)?.verification_status !== "verified") return NextResponse.redirect(new URL("/verification?from=library", req.url), 303);
   const { data: doc } = await supabase.from("documents").select(LIBRARY_SELECT).eq("owner_scope", "world").eq("library_code", code).maybeSingle();
   if (!doc || !isMemberVisible(doc) || !isAvailable(doc)) return NextResponse.redirect(new URL(`/dashboard/library?resource=${code}`, req.url), 303);
   const fd = new FormData();

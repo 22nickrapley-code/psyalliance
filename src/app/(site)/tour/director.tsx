@@ -98,6 +98,11 @@ export function Director({
   const [playing, setPlaying] = useState(false);
   const [started, setStarted] = useState(false);
   const [ended, setEnded] = useState(false);
+  // v13 (Nick, 15 Nov): a tester tried to click inside the demo. A click on the screen pauses it and says it's a recording.
+  const [nudge, setNudge] = useState(false);
+  useEffect(() => {
+    if (playing) setNudge(false);
+  }, [playing]);
   const [loading, setLoading] = useState(true);
   const [front, setFront] = useState<0 | 1>(0);
   const [phone, setPhone] = useState(false);
@@ -854,9 +859,46 @@ export function Director({
               <div
                 className="dp-shield"
                 aria-hidden="true"
-                onClick={() => toggle()}
-                title={playing ? "Pause" : "Play"}
+                onClick={() => {
+                  if (ended) return;
+                  if (playing) toggle();
+                  setNudge(true);
+                }}
+                title="A recorded demo: it plays on its own"
               />
+              {!ended && (
+                <span className="dp-badge" aria-hidden="true">
+                  <i />
+                  Recorded demo &middot; watch only
+                </span>
+              )}
+              {nudge && !ended && (
+                <div className="dp-nudge" role="dialog" aria-label="This is a recorded demo">
+                  <b>This is a recorded demo.</b>
+                  <span>It plays on its own, so nothing on this screen can be clicked. {embed ? "To do it yourself, close the demo and use the page behind it." : "To use PsyAlliance for real, create your account."}</span>
+                  <div className="dp-end-actions">
+                    {embed ? (
+                      <button type="button" className="dp-try" onClick={tryIt}>
+                        {endCard.tryLabel || "Try it yourself"} &rarr;
+                      </button>
+                    ) : (
+                      <a className="dp-try" href={tryHref}>
+                        {endCard.tryLabel || "Try it yourself"} &rarr;
+                      </a>
+                    )}
+                    <button
+                      type="button"
+                      className="dp-again"
+                      onClick={() => {
+                        setNudge(false);
+                        if (!playing) toggle();
+                      }}
+                    >
+                      Keep watching
+                    </button>
+                  </div>
+                </div>
+              )}
               {ripple.k > 0 && (
                 <span
                   key={ripple.k}

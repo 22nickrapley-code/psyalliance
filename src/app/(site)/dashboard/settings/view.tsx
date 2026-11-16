@@ -224,7 +224,7 @@ export function SettingsView({ sp, email, me, prefs, profile, emergency, exclude
               <li><span>Availability</span><strong><a href="/dashboard/availability?back=%2Fdashboard%2Fsettings">Update</a></strong></li>
               <li><span>Profile</span><strong><a href="/dashboard/profile?edit=1&back=%2Fdashboard%2Fsettings">Edit</a></strong></li>
               <li><span>Licenses</span><strong><a href="/dashboard/credentials?back=%2Fdashboard%2Fsettings">Credentials</a></strong></li>
-              <li><span>Your backup</span><strong><a href="/dashboard/continuity?back=%2Fdashboard%2Fsettings">Continuity plan</a></strong></li>
+              <li><span>Your backup clinician</span><strong><a href="/dashboard/continuity?back=%2Fdashboard%2Fsettings">Continuity plan</a></strong></li>
             </ul>
           </section>
         </aside>

@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { account, anonKey, SUPABASE_URL } from "../../../lib/auth";
+import { account, anonKey, signInAs, SUPABASE_URL } from "../../../lib/auth";
 import { assertLocal, q, asMember } from "../../../lib/staging";
 
 // v12 (release QA C3, 14 Nov 2026): one member cannot read another member's private work, and a signed-out caller
@@ -124,4 +124,76 @@ test("AI-06 sandbox visitors and their fictional colleagues never appear to a li
   expect(await count(avery.id, `select 1 from profiles where id = any($1::uuid[])`, [guests])).toBe(0);
   const people = JSON.stringify(await rpc(avery.id, `select public.workspace_slice(array['people','known']) as r`));
   for (const g of guests) expect(people, "a sandbox visitor in a live member's people").not.toContain(g);
+});
+
+// v13 security pass (15 Nov 2026) ---------------------------------------------------------------------------------
+const pell = account("pell"); // a member whose license is still being checked
+
+test("AI-07 Library files are closed to a member who is not verified yet, through the storage API too", async () => {
+  const name = `shared/ai07/${Date.now()}.pdf`;
+  await q(`insert into storage.objects (bucket_id, name) values ('documents', $1)`, [name]);
+  try {
+    expect(await count(avery.id, `select 1 from storage.objects where bucket_id = 'documents' and name = $1`, [name]), "a verified member reads it").toBe(1);
+    expect(await count(pell.id, `select 1 from storage.objects where bucket_id = 'documents' and name = $1`, [name]), "an unverified member reads it").toBe(0);
+  } finally {
+    await q(`with s as (select set_config('storage.allow_delete_query', 'true', true)) delete from storage.objects where bucket_id = 'documents' and name = $1 and (select count(*) from s) >= 0`, [name]).catch(() => {});
+  }
+});
+
+test("AI-08 text members write is shown as text, never run as code", async ({ browser, baseURL }) => {
+  const evil = `AI-08 <img src=x onerror="window.__pwned=1"><script>window.__pwned=2</script>`;
+  const open = await rpc(avery.id, `select public.conversation_open('direct', null, null, $1::uuid) as r`, [fenn.id]);
+  const key = String(open?.key || "");
+  await rpc(avery.id, `select public.message_send($1, $2, $3::uuid) as r`, [key, evil, uuid()]);
+  await rpc(avery.id, `select public.consult_reply($1, $2, $3::uuid) as r`, [ids.question, evil, uuid()]);
+  const ctx = await browser.newContext(); await signInAs(ctx, "fenn", baseURL!);
+  const page = await ctx.newPage();
+  for (const path of ["/dashboard/messages", `/dashboard/consult?discussion=${ids.question}`]) {
+    await page.goto(path); await page.waitForSelector(".sidebar"); await page.waitForTimeout(1500);
+    if (path.endsWith("messages")) await page.locator("#inbox-list [data-action]").first().click().catch(() => {});
+    await page.waitForTimeout(800);
+    expect(await page.evaluate(() => (window as any).__pwned), `code ran on ${path}`).toBeUndefined();
+    expect(await page.locator("img[onerror], #app script, #overlay-root script").count(), `markup injected on ${path}`).toBe(0);
+  }
+  await ctx.close();
+  await q(`delete from conversation_messages where body like 'AI-08 %'`);
+  await q(`delete from consultation_responses where body like 'AI-08 %'`);
+});
+
+test("AI-09 a member who is not an admin cannot open the admin pages or use admin functions", async ({ browser, baseURL }) => {
+  const ctx = await browser.newContext(); await signInAs(ctx, "dara", baseURL!);
+  const page = await ctx.newPage();
+  for (const path of ["/dashboard/admin", "/dashboard/admin/verifications", "/dashboard/admin/members", "/dashboard/admin/library-leads/csv"]) {
+    const res = await page.goto(path);
+    const url = page.url();
+    const body = (await page.locator("body").innerText().catch(() => "")).slice(0, 4000);
+    expect(!/\/dashboard\/admin/.test(new URL(url).pathname) || (res?.status() || 200) >= 400 || /not found|admins only|page not found/i.test(body), `Dara can open ${path}`).toBeTruthy();
+  }
+  await ctx.close();
+  for (const fn of ["admin_states()", "admin_library_leads()"]) {
+    await expect(asMember(dara.id, `select public.${fn}`), fn).rejects.toThrow();
+  }
+  // The member list answers with nobody rather than an error.
+  expect(await count(dara.id, `select 1 from public.admin_members()`)).toBe(0);
+});
+
+test("AI-10 a member who is not verified cannot open or copy a Library template by its address", async ({ browser, baseURL }) => {
+  const ctx = await browser.newContext(); await signInAs(ctx, "pell", baseURL!);
+  const page = await ctx.newPage();
+  await page.goto("/dashboard/library-files/PA-01");
+  expect(page.url()).toContain("/verification");
+  const res = await page.request.post("/dashboard/library-files/PA-01/copy", { maxRedirects: 0 });
+  expect([302, 303, 307, 308]).toContain(res.status());
+  expect(res.headers()["location"] || "").toContain("/verification");
+  await ctx.close();
+});
+
+test("AI-11 pages carry the security headers that stop framing and type sniffing", async ({ request }) => {
+  for (const path of ["/", "/auth/sign-in", "/dashboard"]) {
+    const res = await request.get(path, { maxRedirects: 0 });
+    const h = res.headers();
+    expect(h["x-content-type-options"], `${path} nosniff`).toBe("nosniff");
+    expect((h["content-security-policy"] || "") + (h["x-frame-options"] || ""), `${path} framing`).toMatch(/frame-ancestors|DENY|SAMEORIGIN/i);
+    expect(h["referrer-policy"], `${path} referrer policy`).toBeTruthy();
+  }
 });

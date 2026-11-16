@@ -81,3 +81,13 @@
 .pa .dp-who{font:700 11.5px/1.2 var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--forest)}
 .pa .dp-shield{position:absolute;inset:0;z-index:3;background:transparent;cursor:pointer}
 .pa .dp-cursor,.pa .dp-ripple,.pa .dp-loading,.pa .dp-end{z-index:4}
+/* v13 (Nick, 15 Nov): the demo says plainly that it is a recording. */
+.pa .dp-shield{cursor:default}
+.pa .dp-badge{position:absolute;left:12px;top:12px;z-index:5;display:inline-flex;align-items:center;gap:7px;padding:5px 11px;border-radius:999px;background:rgba(21,63,53,.88);color:#fff;font-size:12.5px;font-weight:600;letter-spacing:.01em;pointer-events:none;box-shadow:0 2px 8px rgba(0,0,0,.18)}
+.pa .dp-badge i{width:7px;height:7px;border-radius:50%;background:#E0B25A;animation:dp-pulse 1.6s ease-in-out infinite}
+@keyframes dp-pulse{0%,100%{opacity:1}50%{opacity:.35}}
+.pa .dp-nudge{position:absolute;inset:0;margin:auto;height:fit-content;z-index:7;width:min(420px,calc(100% - 32px));display:flex;flex-direction:column;align-items:center;gap:8px;padding:22px 20px;border-radius:14px;text-align:center;background:rgba(21,63,53,.96);color:#fff;box-shadow:0 12px 32px rgba(0,0,0,.25);animation:dp-in .25s ease both}
+.pa .dp-nudge b{font:500 21px/1.25 var(--display)}
+.pa .dp-nudge span{color:#d5e2d9;font-size:14px;line-height:1.55}
+@media (prefers-reduced-motion:reduce){.pa .dp-badge i{animation:none}}
+@media (max-width:600px){.pa .dp-badge{left:8px;top:8px;font-size:11.5px;padding:4px 9px}}
