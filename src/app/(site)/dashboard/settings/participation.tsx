@@ -22,6 +22,8 @@ export function ParticipationSections({ part, vapid = "", smsOn = false, alertsO
         <PushControl enabled={!!part?.alertPush} vapid={vapid} />
         <form action={saveAlertsAction}>
           <p className="small">An alert names the colleague&apos;s first name and the kind of request, then says &ldquo;Review request.&rdquo; It never includes a client or anything clinical, and opening it only takes you to the app.</p>
+          {/* v17: text alerts stay hidden until a text provider is switched on. */}
+          {smsOn ? (
           <div className="item">
             <label className="field" style={{ maxWidth: 320 }}>Phone number for text alerts (optional)
               <input type="tel" name="sms_phone" defaultValue={part?.smsPhone || ""} placeholder="+1 555 010 0199" autoComplete="tel" />
@@ -38,6 +40,7 @@ export function ParticipationSections({ part, vapid = "", smsOn = false, alertsO
               </label>
             ) : null}
           </div>
+          ) : null}
           <div className="item row wrap" style={{ gap: 12 }}>
             <label className="field" style={{ maxWidth: 160 }}>Quiet from
               <input type="time" name="quiet_start" defaultValue={(part?.quietStart || "").slice(0, 5)} />
@@ -49,7 +52,7 @@ export function ParticipationSections({ part, vapid = "", smsOn = false, alertsO
           </div>
           <div className="row wrap" style={{ marginTop: 12, gap: 8 }}>
             <button type="submit" className="btn small-btn">Save alert settings</button>
-            {part?.smsPhone ? <button type="submit" name="intent" value="remove-phone" className="btn secondary small-btn">Remove my phone number</button> : null}
+            {smsOn && part?.smsPhone ? <button type="submit" name="intent" value="remove-phone" className="btn secondary small-btn">Remove my phone number</button> : null}
           </div>
         </form>
       </details>

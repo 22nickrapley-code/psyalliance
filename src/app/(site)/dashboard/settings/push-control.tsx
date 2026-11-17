@@ -21,6 +21,14 @@ export function PushControl({ enabled, vapid }: { enabled: boolean; vapid?: stri
       setOn(true); setMsg("Alerts are on for this device.");
     } catch { setMsg("We could not turn alerts on here. Please try again."); }
   }
+  async function test() {
+    setMsg("");
+    try {
+      const r = await fetch("/api/alerts/test", { method: "POST" });
+      const j = await r.json().catch(() => ({}));
+      setMsg(j.ok ? "Test alert sent. Lock your phone: it should arrive within about a minute." : j.error || "We could not send a test alert. Please try again.");
+    } catch { setMsg("We could not send a test alert. Please try again."); }
+  }
   async function disable() {
     try {
       const reg = await navigator.serviceWorker.getRegistration();
@@ -35,7 +43,7 @@ export function PushControl({ enabled, vapid }: { enabled: boolean; vapid?: stri
       <strong>Notifications on this device</strong>
       <p>Free, and nothing to install beyond adding PsyAlliance to your home screen on a phone.</p>
       <p className="micro-note" role="status" data-push-status>{!ok ? "This browser cannot show alerts. On an iPhone: in Safari, tap Share, then Add to Home Screen. Open PsyAlliance from your home screen, sign in, and turn alerts on here." : msg || (on ? "On" : "Off")}</p>
-      {ok ? (on ? <button type="button" className="btn secondary small-btn" onClick={disable}>Turn off on this device</button> : <button type="button" className="btn small-btn" onClick={enable} disabled={!vapid}>Turn on alerts</button>) : null}
+      {ok ? (on ? <div className="row wrap" style={{ gap: 8 }}><button type="button" className="btn small-btn" onClick={test}>Send me a test alert</button><button type="button" className="btn secondary small-btn" onClick={disable}>Turn off on this device</button></div> : <button type="button" className="btn small-btn" onClick={enable} disabled={!vapid}>Turn on alerts</button>) : null}
     </div>
   );
 }
