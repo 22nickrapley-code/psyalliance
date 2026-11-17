@@ -10,7 +10,8 @@ export const metadata = {
   title: "PsyAlliance · The Hub",
   description: "The Hub on PsyAlliance. Independent practice, collective strength. Your actions, peer consultation and trusted colleagues.",
   robots: { index: false, follow: false },
-  icons: { icon: [{ url: "/workspace/assets/favicon.png", type: "image/png" }] },
+  icons: { icon: [{ url: "/workspace/assets/favicon.png", type: "image/png" }], apple: [{ url: "/icons/apple-touch-icon.png", sizes: "180x180" }] },
+  appleWebApp: { capable: true, title: "PsyAlliance", statusBarStyle: "default" },
 };
 export const viewport: Viewport = {
   width: "device-width",

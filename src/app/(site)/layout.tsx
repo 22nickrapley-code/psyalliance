@@ -20,6 +20,8 @@ const siteUrl = SITE_URL;
 
 export const metadata = {
   metadataBase: new URL(siteUrl),
+  icons: { icon: [{ url: "/workspace/assets/favicon.png", type: "image/png" }], apple: [{ url: "/icons/apple-touch-icon.png", sizes: "180x180" }] },
+  appleWebApp: { capable: true, title: "PsyAlliance", statusBarStyle: "default" },
   title: {
     default: "PsyAlliance: a professional network for psychologists and psychiatrists",
     template: IS_DEMO_SITE ? "%s | PsyAlliance demo" : "%s | psyalliance.org",

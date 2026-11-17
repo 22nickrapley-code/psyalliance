@@ -34,7 +34,7 @@ export function PushControl({ enabled, vapid }: { enabled: boolean; vapid?: stri
     <div className="item" data-push-control>
       <strong>Notifications on this device</strong>
       <p>Free, and nothing to install beyond adding PsyAlliance to your home screen on a phone.</p>
-      <p className="micro-note" role="status" data-push-status>{!ok ? "This browser cannot show alerts. On an iPhone, add PsyAlliance to your home screen first." : msg || (on ? "On" : "Off")}</p>
+      <p className="micro-note" role="status" data-push-status>{!ok ? "This browser cannot show alerts. On an iPhone: in Safari, tap Share, then Add to Home Screen. Open PsyAlliance from your home screen, sign in, and turn alerts on here." : msg || (on ? "On" : "Off")}</p>
       {ok ? (on ? <button type="button" className="btn secondary small-btn" onClick={disable}>Turn off on this device</button> : <button type="button" className="btn small-btn" onClick={enable} disabled={!vapid}>Turn on alerts</button>) : null}
     </div>
   );
